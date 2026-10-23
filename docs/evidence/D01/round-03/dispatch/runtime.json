@@ -29,13 +29,15 @@
   "review_input_revision": "3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e",
   "goal_blocked_audit": {
     "condition": "Mac locked: native Harness fix dispatch/execution unavailable; local IAB preview QA remains usable",
-    "consecutive_goal_turns": 2,
-    "goal_status": "active",
+    "consecutive_goal_turns": 3,
     "human_unlock_question_pending": true,
-    "independent_progress_this_turn": "Completed browser QA, stable viewport evidence, normal/reduced full-session equivalence, official same-profile CLI assessment; R01-R13 fix input ready but unsent",
-    "next_turn_rule": "If the same condition persists on the third consecutive goal turn and no meaningful independent work remains, mark goal blocked and stop",
+    "independent_progress_this_turn": null,
+    "next_turn_rule": "After a human resume, inspect live native state. If still blocked, start a fresh blocked audit rather than reusing these three turns.",
     "native_check_after_qa": "CUA native getAXState again returned Mac locked and automatic unlock failed; manual unlock still pending.",
-    "recorded_at": "2026-10-24T04:04:46.503702+08:00"
+    "recorded_at": "2026-10-24T04:10:25.296278+08:00",
+    "previous_goal_turn_classification": "progress: browser QA, viewport calibration, complete normal/reduced training checks, actionable R01-R13 review, same-profile CLI assessment, committed and synchronized evidence",
+    "this_goal_turn_classification": "no progress: same native Mac lock revalidated; no meaningful independent work remains before designated worker fixes",
+    "decision": "blocked audit passed; update_goal blocked is the final action after saving this checkpoint"
   },
   "lead_audit_02": "docs/evidence/D01/round-03/lead/AUDIT_02.md",
   "review_issue_range": "R01-R13 including R10a-d",
