@@ -1,0 +1,13 @@
+{
+  "htmlScroll": "smooth",
+  "mode": "reduced",
+  "sheets": [
+    {
+      "animation": "0s",
+      "class": "sheet sheet-enter-active sheet-enter-to",
+      "reducedAncestor": false,
+      "transform": "matrix(1, 0, 0, 1, 0, 0.0198265)",
+      "transition": "0.22s, 0.22s"
+    }
+  ]
+}

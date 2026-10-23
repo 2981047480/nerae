@@ -1,64 +1,38 @@
 # 第三轮设计与 UI 交付状态
 
-## 目标与当前阶段
+## 当前目标与判断
 
-用户已明确恢复设计：逐项处理 DESIGN_FOUNDATION 的全部项目和层级关系，将设计动机、产品行为、交互与视觉决定写成详尽文稿，再交给 deepseek-harness 中 OpenCode 订阅的 deepseek-v4.1-flash 实现；主代理负责设计把关、集成与验收。优先级为高级质感、美观及配套动画。中间设计推理不能出现在产品界面。
+D19已明确恢复设计：55项底层意图逐项落实产品、交互、视觉与动效，覆盖16界面族及F01–F07。先详尽文稿，再由DeepSeek Harness内OpenCode Go的deepseek-v4.1-flash实现，Lead只设计把关、验收与集成。优先高级质感、美观和配套动画，设计推理不进入产品。
 
-当前阶段：D01-02首批已交回，Lead实际检查后要求返工；Mac锁定，等待手动解锁以继续派发和屏幕验收。此前暂停生成的指令由本次目标明确解除；尚未接受新视觉或 UI，未开始业务后端开发。
+D01-01文稿已接受；D01-02首批四情境交回但changes_requested；UI接受0，D01-03未开始，完整goal active。不是文档/四屏完成，也不是正式uni-app+Go业务、微信真机、用户研究或生产发布。
 
-## 已核实的现场
+## 已冻结与隔离的产物
 
-- 旧 UI 已清理；新第一批四种情境位于独立工作树，未接受、未合并主目录，不沿用旧稿。
-- 当前目录已建立本地Git与冻结提交，独立工作树为 `/private/tmp/nerae-ui-round-three` / `ui/round-three`。应用托管入口返回 Not a git repository，已使用原生 git worktree 建立实际隔离。
-- 本机存在 `/Users/zephyr/.opencode/bin/opencode`；已读取其 `run` 与 `models` 帮助。模型选择需显式传 provider/model，不能沿用全局默认模型。
-- 执行入口已核实为 `/Applications/DeepSeek Harness.app`，活跃本地服务为 127.0.0.1:60406；配置 profile 为 desktop，默认 provider `opencode-go` / model `deepseek-v4.1-flash`。初始界面为Max，实施已调整Medium；首批报告已交回，当前真实配置证据见dispatch/medium-live-state.txt。
-- `opencode models` 实际返回 `opencode-go/deepseek-v4.1-flash`。直接 CLI 仅用于核实订阅型号；实际实现仍交给用户指定的 DeepSeek Harness。
-- 目标由当前线程 active goal 持续跟踪，不把文档完成当作 UI 交付完成。
+- 文稿：00–07、55项coverage和16界面族结构验证；冻结根9511bab91da0cfc7e9d2a5c3a538dd646299b29c。
+- 原生隔离工作树：`/private/tmp/nerae-ui-round-three`，分支ui/round-three，派发基线f7a78004c0ed0b18b56fa58e8a313b0cf3205c81。应用托管入口曾返回Not a git repository，实际已用原生git worktree隔离，不假称托管成功。
+- 未接受UI源码检查点：`1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22`，没有合并main；Lead没有代写UI。
+- 首批为S01今天、S02发现、S04训练、S15完整教练编辑审阅。其他12族及全量状态仍待执行。
+- 预览：<http://127.0.0.1:4186/>；最后实际运行PID74496，cwd为该工作树design/prototype，Homebrew `/opt/homebrew/bin/node`。Harness自带Node曾因Team ID加载限制失败，不关闭安全保护；先核实并复用服务，不另起相同项目。
+- 旧UI/旧token已按清单清理；.review、缓存和产品/API/ER真源保留。F01-01完整工程接受未完成，初始化Git不代表业务工具链完成。
 
-## 文档链与验收边界
+## 指定执行现场
 
-全量覆盖分为：G01–G07 产品基因、N01–N03 心理需要、L01–L09 九层、C01–C08 情境、B01–B05 品牌体验、V01–V08 视觉子系统、T01–T06 矛盾、H01–H05 假设、Q01–Q04 验证原则，共 55 项。逐项记录设计动机和具体决定，再形成可执行规范、执行日志与独立验收，不只做五个示例屏。
+同一Harness会话`2b3c2fb7-0ddf-4462-be74-885272454974`，标题“Nerae 第三轮 UI 首批实现”。原生模型选择与session目录交叉核实opencode-go/deepseek-v4.1-flash。初始Max请求约21分钟停在38步未落主要源码；Lead停止，保留同一会话/依赖/素材，改Medium完成首批。Medium为Lead的实施调整，不能写成人类用户要求。模型未换。
 
-业务真源继续为 PRD / APP_FLOW / API / ER。新设计文稿将明确区分设计演示与真实业务实现；不把 UI 原型或样例状态当成后端、微信真机、权限和专业审查完成。
+dispatch中保留模型选择、live-state、实际提示词和runtime.json。实现者report为partial；初始53个受控文件已保存检查点。直接OpenCode CLI只曾用于核实精确型号，不代替指定Harness实施。
 
-## 接续规则
+## 本次验收结果
 
-每次推进更新本文件并引用具体产物、命令或活跃执行句柄。执行任务使用稳定会话标识；观察超时不重启任务。没有真实执行、渲染和检查证据，不写通过或完成。
+独立初始typecheck/build和14测试exit0；额外真实store诊断与浏览器检查仍发现实质失败。唯一返工单：[REVIEW_01](../../evidence/D01/round-03/lead/REVIEW_01.md)，当前R01–R13（含R10a–d）。第二回合记录：[AUDIT_02](../../evidence/D01/round-03/lead/AUDIT_02.md)。
 
-## 文稿冻结与当前证据
+本回合IAB实际完成五档宽度、长中文、发布与焦点、筛选/收藏、完整12组普通/减少动态效果结果等价，以及真实计时/暂停/刷新/退出恢复。新失败包括515×629主操作被导航挡住、训练/饮食切回丢筛选、嵌套main/跳转缺目标、弹层焦点/Teleport减少动态效果、Vue Transition非元素根无法动画。构建通过不抵消这些失败，首批仍未接受。
 
-- D01-01 文稿已接受，冻结根提交 `9511bab91da0cfc7e9d2a5c3a538dd646299b29c`；55项、16界面族结构检查通过，计划工具29项单测通过，候选9对正文组合对比检查通过。
-- UI已有4个界面族的首批产物，视觉接受仍为0；全16界面族与55项最终UI验收未完成，整体goal继续active。
-- 本地Git已真实建立，缓存 / 虚拟环境 / 密钥模式忽略；本次只为独立UI工作树准备，不宣称F01-01完整工程工具链接受。
-- 下一步：沿同一Harness会话修复首批问题并完成剩余实际检查，接受后再扩展全量。
+可靠截图为verified前缀并有前后CSS视口/DPR日志；校准过程与scrollY120完成图不作视觉依据。QA结束已通过可见重置并刷新恢复初始3/12、正常动效；标签4已markHandoff，隐藏1440×900待续。200%文字、系统偏好、真实浏览器存储失败注入、真机和修复后同版本动效未完成。
 
-## D01-02 派发准备
+## 当前阻塞与精确接续
 
-- 主目录冻结提交 `f7a78004c0ed0b18b56fa58e8a313b0cf3205c81`。
-- 原生工作树：`/private/tmp/nerae-ui-round-three`，分支 `ui/round-three`；git worktree add成功。
-- Harness独立工作区已选中，opencode-go组下DeepSeek V4.1 Flash被选中，Max；未混用旧架构审核会话。
-- 精确派发消息：`docs/evidence/D01/round-03/dispatch/D01-02-prompt.md`。
-- 写入仅限prototype与worker证据，端口4186；第一批四情境之后停下待验。
+Mac原生工具仍报告锁定且无法自动解锁，人工解锁问题已异步提出。锁屏不影响IAB本地预览，但阻止指定原生Harness发送与执行返工。官方应用内dsh CLI明确desktop profile由Electron独占；本地web要求认证，没有复制认证、另建profile或静默换独立OpenCode。入口证据见lead/HARNESS_WEB_CLI_ASSESSMENT.md。
 
-- 实际会话标题：**Nerae 第三轮 UI 首批实现**。原生界面已显示进行中、停止生成按钮，并正在读取必需文稿；不是仅排队或待派发。模型选择证据已落盘dispatch/model-selector.txt与截图。
+**返工消息尚未发出，不能写正在修复。** 同一会话待发：`docs/evidence/D01/round-03/dispatch/D01-02-fix-01-prompt.md`。解锁后核同一会话/模型Medium，发送R01–R13，只写prototype及worker证据；修复交回后Lead同版本复测，明确接受首批后再D01-03，最后D01-I全55项及真实预览。不重建任务，不重读全部历史，不重复问是否继续指定模型。
 
-- 持久会话ID：`2b3c2fb7-0ddf-4462-be74-885272454974`，来自新工作树对应的.dsh会话目录；后续返工沿用此会话，不因观察超时重建。
-
-### 实施节奏调整
-
-初始Max请求运行约21分钟，停在38步，主要源码和progress仍未出现；一次插话纠偏未带来落盘。Lead停止该长请求，保留同一会话、工作树、局部依赖与素材；推理改为Medium用于已确定规范的有界实施。provider/model保持用户要求的opencode-go/deepseek-v4.1-flash，没有替换模型。精确继续消息为dispatch/D01-02-steer-02.md。此前Max是现场初始配置，并非用户必须使用Max的要求。
-
-## 首批交回与当前接续点
-
-- 实现者report为partial，53个受控文件已由Lead保存未接受检查点 `1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22`，分支ui/round-three；未合并main。
-- Lead实际看过390 CSS宽四情境、发现空结果、1440教练审阅；已有截图、真实操作与DOM字号证据。独立typecheck/build和14项测试exit0，但额外实际store模块诊断发现持久化自触发与草稿版本问题。
-- 当前唯一返工清单：`docs/evidence/D01/round-03/lead/REVIEW_01.md`（R01–R09，另有动效待核验）；不以构建通过接受UI。
-- Mac原生操作工具报告已锁定且无法自动解锁，已请求用户手动解锁。返工消息尚未发给Harness，不能声称正在修复。当前为首次遇到此锁屏阻塞的goal回合，尚不满足连续三回合blocked阈值。
-- 预览 http://127.0.0.1:4186/ ，已观测PID74496、cwd为上述prototype、实际Homebrew Node；不是正式业务。
-- 解锁后：先读取本状态/REVIEW_01，核实同一会话与模型Medium，派发R01–R09；不用重建、重读全部文稿或询问是否继续用指定模型。完成第一批后再继续D01-03与D01-I。
-
-- 工作树Lead输入与证据已提交 `3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e`。UI代码仍为1ad6398检查点，Lead没有代写UI。解锁后待发消息已持久化在dispatch/D01-02-fix-01-prompt.md。
-
-### 锁屏期间的收尾
-
-已保留IAB待验标签4（markHandoff），并清除临时视口覆盖；没有在锁屏后继续原生Harness操作。PATH及Harness运行时候选目录未找到可恢复同会话的已提供CLI入口，未用独立OpenCode CLI替换指定执行环境。待人工解锁。
+当前第二个连续锁屏goal回合，本回合有实质QA与入口进展，goal保持active；若下一回合同一条件仍在且无独立工作可推进，应按第三回合规则设blocked并停止。不要重复发解锁问题卡或以继续写日志假装推进。

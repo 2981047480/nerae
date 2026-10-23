@@ -1,0 +1,957 @@
+{
+  "ui_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "accepted": false,
+  "files": [
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-browser-console.json",
+      "sha256": "b644812dca9933d0f6244ca3943ba897e599ee350f6b79ef21a355908387d849",
+      "bytes": 14504
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-capture-calibration-stable.json",
+      "sha256": "0a569593b5f1aa0a5d1a757dfad2d3068f350a4b8b9f26322e96e26a6c1d5983",
+      "bytes": 233
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-capture-calibration.json",
+      "sha256": "2419122474196384dae28aa139bc6ab1f03c99cfdef152bc0c76595002a054a6",
+      "bytes": 412
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-coach-remove-undo.json",
+      "sha256": "e8ceecceeab918e7542e8e6bbd55325ab151b001760dae89d3166620ffc5451d",
+      "bytes": 10609
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-dialog-focus.json",
+      "sha256": "109ebe0748b6f9ac5456edd9d3a968ae68b1df96d417c8fe774011037f4d4599",
+      "bytes": 486
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-dialog-initial-reverse-focus.json",
+      "sha256": "ff4a8dfeba1fd6634711eb171a707355def82746bce0aefbeac65876ede0a756",
+      "bytes": 67
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-discover-diet.txt",
+      "sha256": "4b6447794de00563bde54f3a7e8190e6685497584c3a433987a1e20240899515",
+      "bytes": 1898
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-favorite-reload.txt",
+      "sha256": "f9b857cc75f276c13e550cb01a02b946df7acf5f6549b09647ac0d05dde5dd7b",
+      "bytes": 3020
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-filter-switch.txt",
+      "sha256": "945c5e9ed29d0cc9ae27f7c1bd5ed99d5338f55342b35cf60ed90438d661bd11",
+      "bytes": 6829
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-final-reset.json",
+      "sha256": "85bd180331a9c451f7912725e8db4eec76f7648ffc88c3952cf1dcd2dd95ffc8",
+      "bytes": 5121
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-long-chinese.json",
+      "sha256": "9dfd797fef02a40664284476681b2e533e845d16296cc7ecb73d538a899c81c1",
+      "bytes": 345
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-missing-field.txt",
+      "sha256": "291710e4537f227ec2a6c8e3682eb8a2b1da22dd0be1dde4adf4a1da0d9a87b0",
+      "bytes": 4194
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-normal-reduced-equivalence.json",
+      "sha256": "c8e8528759bfb22d96fcaecfcd9df017bf1e2e6f326bf9391a9358236dde80fe",
+      "bytes": 4145
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-published-local.txt",
+      "sha256": "8fed2ccdb8adc881576d1dd1cfc363157f07ac04401fe7a92cedb1fa895dfe04",
+      "bytes": 3995
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-reduced-motion-teleport.json",
+      "sha256": "a0f688fa17579dc5ccd5e6fee7f76116622786371b1486526bd146df03cb5985",
+      "bytes": 285
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-reps-zero.txt",
+      "sha256": "bdade0fa2117a9339f71a53cf5bd8af4457246e8cf0e37fd1622f631fd10bec4",
+      "bytes": 1354
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-responsive.jsonl",
+      "sha256": "c357b76f3f5d25be91ef0b6ae2b5179590e8d54349bc795af9cddf869261bc98",
+      "bytes": 1503
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-rest-extend-resume-exit.txt",
+      "sha256": "b2aa9ee2b4c0aae3a09f9d320ef5686f9819db415b4dd9ba8b7741f0a9341783",
+      "bytes": 5588
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-rest-initial.txt",
+      "sha256": "ddd8069e748c542f3519e9d49fc0410990e14c2ac6f72b01d12c3199b05f30c6",
+      "bytes": 1499
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-rest-paused-reload.txt",
+      "sha256": "f4377befe02214e4db5a128289b8541c10ebca43e7acb72c79e3ef6469880d8b",
+      "bytes": 1559
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-rest-paused.txt",
+      "sha256": "1dcce00dd17498456db3fba08938cc7b629f4624d7f56e05a4755f0531aadecd",
+      "bytes": 1568
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-rest-return.txt",
+      "sha256": "2c2841490b52f10c26a1a4a416277fdab13310403ff825aa34a327067eb16b18",
+      "bytes": 1474
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-save-version.txt",
+      "sha256": "b5600ac37b06cba76b2722d915854f7c0a1567a5e4134a6d7dc093bd7aa4c96d",
+      "bytes": 3979
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-today-320-geometry.json",
+      "sha256": "b917aaf59c148952cbf0fc5ecc48b03310608745da8023938e307a90fc55d261",
+      "bytes": 394
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-today-cta.jsonl",
+      "sha256": "e69ec91bc0c7a0e43f06ea718aaa7d0717cc7546e9306654b4aef1c08d5aa74a",
+      "bytes": 832
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-today-short-cta-hit-test.json",
+      "sha256": "cd88401d7f764248e2f28e3a8073c983c4717c39890e57f3df23838ac9d8ccd0",
+      "bytes": 461
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-training-complete-reopen.json",
+      "sha256": "de3319b8a3231f33f945358a169fabb9e5203cb5a5bc9973958cb08d7479a09a",
+      "bytes": 4515
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-training-complete-today-reload.json",
+      "sha256": "80ffc8ec52d8a0b534b4d52aa449bd50344e04118cde444d60c3ed88a07f7eac",
+      "bytes": 5118
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-training-header-geometry.json",
+      "sha256": "9adf06dc5addfaacd6f2cc052ca5cba439d31c4a4463a472a82270dd89aded58",
+      "bytes": 388
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-training-normal-complete.json",
+      "sha256": "54d6032dab51b2ad00086fe78b3f0d2424821f516e8ccc3544cbcbee09f970ce",
+      "bytes": 26173
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-training-reduced-complete.json",
+      "sha256": "c89c257c2c40a9fbcaeee4e2e1b7ebbe634dc5962a696b3b4b7ed027c1499cdb",
+      "bytes": 30090
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/audit2-verified-captures.jsonl",
+      "sha256": "3eafb4e7f4f029b94f04651f2d3336cbd859d9122d21a52e6a9b88c6d81d06e6",
+      "bytes": 6070
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/AUDIT_02.md",
+      "sha256": "24e4cbee037e699854e15b02fbc71be6f242cfb600abfed6a9e7e8d4524d7bb4",
+      "bytes": 5723
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/AUDIT_02_VERIFICATION.json",
+      "sha256": "69e5898bc92ee77a0cbd60c782af569a7eeef944b1214f226383984a15e55d18",
+      "bytes": 2588
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/HARNESS_WEB_CLI_ASSESSMENT.md",
+      "sha256": "63fa92ad5469dafecc43e7d3e0621ffbccdbaccdeb6bb6d310a9f6ba33594033",
+      "bytes": 759
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/REVIEW_01.md",
+      "sha256": "5024528c487422130113932dd1ebaa4abef61e56dd938bf395da1acf788660a9",
+      "bytes": 8411
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-editor-1440.jpg",
+      "sha256": "ced7be4c73facce26e745ced5f1b12abd66dc7d5085e95bb4d1c4618575101a6",
+      "bytes": 72608
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-editor-320.jpg",
+      "sha256": "370c7081a4071ec2aa4177025892177e7461c7d2f930b6fa6e289350b34aa1c0",
+      "bytes": 19846
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-editor-390.jpg",
+      "sha256": "32fe71f4325d98a7d8029546cba54da46f4fcefd3dd3fe8dc5e86808dccf10b6",
+      "bytes": 31305
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-editor-430.jpg",
+      "sha256": "919b13c3bdd64b98b07a9441dfbc86f73a3dec0af57c5d5ca68920641fa3b903",
+      "bytes": 39244
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-editor-768.jpg",
+      "sha256": "e2ed939133ace6b0932cc3372b1111b2639a0f45ef3e1a9d7356b8105e581d22",
+      "bytes": 52028
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-review-1440.jpg",
+      "sha256": "78f515946ef5a684389f3c90898d275872646fc83bff65d90725d8f84123aaf3",
+      "bytes": 86399
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-review-320.jpg",
+      "sha256": "0b29da74d4b699ff24eba462e5eabcd7f80d5c037f98da7a7f2d011c31123a0d",
+      "bytes": 21051
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-review-390.jpg",
+      "sha256": "a58c2940d92c07f250d82d1a159f183f471ce0a40ff24c8057e3b74a855e2a23",
+      "bytes": 39843
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-review-430.jpg",
+      "sha256": "0e1f77eeda1266031df7204938413a00978209388a34311d2627330f94323300",
+      "bytes": 48191
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-coach-review-768.jpg",
+      "sha256": "6567fd8cff6712c33d3915e695401ab8321a3c1cd0b1463638e11f73af7efc0a",
+      "bytes": 66161
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-discover-1440.jpg",
+      "sha256": "14238bce626123e10e33f243e2dbce07ece157ee9111f823697d5def9f03c067",
+      "bytes": 79365
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-discover-320.jpg",
+      "sha256": "82e8a13a72b41c1e692a4efbbd04676510b0b840054691210fff721245603fe5",
+      "bytes": 22386
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-discover-390.jpg",
+      "sha256": "54980557d1beb397a9e32f230940437da9753fbbcb0625776b9b838c3e7af3f2",
+      "bytes": 40048
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-discover-430.jpg",
+      "sha256": "168e8ebc4724116b7d19ea7005d838a1b98edc4518bc3ba853baad0940badff8",
+      "bytes": 48537
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-discover-768.jpg",
+      "sha256": "6923c85bc3a277925939f5822512cb9ac0cde77599e788e095e5cbfc86f2dba1",
+      "bytes": 99341
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-final-reset-today-1440.jpg",
+      "sha256": "0314e383e9060e5d5a1df46519ab0d74db7a1b019cfeb52316ecf9354360b1ab",
+      "bytes": 73574
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-rest-paused-320.jpg",
+      "sha256": "cef62b9e88bf48bddee9291603136f09f290e9a9f4ab581807ef518e228f9996",
+      "bytes": 18065
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-1440.jpg",
+      "sha256": "99a682af4685fe8a20ffd89744ac91528efa422b6b4e37ca1f7433741c610bcb",
+      "bytes": 81508
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-320.jpg",
+      "sha256": "a16951ec7c3e88d2a884c9fb09fc6684062ed91c35dae879a096362b0fcf6eed",
+      "bytes": 26355
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-390.jpg",
+      "sha256": "ca66c420427322bbf183298039d66f57789151bdf904e61bb8877fbc2b6c5ab4",
+      "bytes": 41422
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-430.jpg",
+      "sha256": "0110d6a31c1bf34e4e9c596f3490959308a6900e8e44178c1652fc04e92991e7",
+      "bytes": 46057
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-515-short-final.jpg",
+      "sha256": "e906ec032d8c395e948de73bd15541102ebd8a31310bfc1a6b4963eb6fb6f52d",
+      "bytes": 39207
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-515-short.jpg",
+      "sha256": "c37f1782d1e4e39122185193e458f423b2fa36daafad247377b301aca37494b5",
+      "bytes": 39182
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-768.jpg",
+      "sha256": "5ea61107f884549ea0e6089953d3849286f48c9fa50b9bb5667febb3227bc5d2",
+      "bytes": 65955
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-today-reset-390.jpg",
+      "sha256": "6a9f8e8f8ee1c398209215940f1afd4feffad88a1ec26e166812ee97aee6a67d",
+      "bytes": 41517
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-1440.jpg",
+      "sha256": "451f6a4028872b3b3be433589b08b47d0fd5c1851f07c756e196545913fa4897",
+      "bytes": 44762
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-320.jpg",
+      "sha256": "c1061b0912d192d876f9ca9d63cdd13865bc1d913d4d98c1364e95f387876f81",
+      "bytes": 21076
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-390.jpg",
+      "sha256": "a50033e2a9fd53e4ce3005e1d28363168b202e020dd48e98eee3458b665eafab",
+      "bytes": 32097
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-430.jpg",
+      "sha256": "1ed21a006258fcbb94f293c7c683ee2a73dd05f2a3f91fe22e3cb6bd35cff53f",
+      "bytes": 33920
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-768.jpg",
+      "sha256": "5700387ff2723716ffc156f7f333ea64c10461709228b09578b3e65aa6f3183f",
+      "bytes": 40411
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-complete-320.jpg",
+      "sha256": "5c57bcddbefc9a7928784bb65b58156c9eef1dd218455f9d716abddc66fd9397",
+      "bytes": 18630
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/screenshots/verified-training-complete-top-320.jpg",
+      "sha256": "3632bf096ef8b98d221a8505a16b7087a3f5d63d7c5d15c5ab45ba780fd474ce",
+      "bytes": 20954
+    }
+  ],
+  "captures": [
+    {
+      "name": "verified-today-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 1,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-515-short",
+      "before": {
+        "dpr": 1,
+        "h": 629,
+        "mainCount": 1,
+        "scrollWidth": 515,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 515
+      },
+      "after": {
+        "dpr": 1,
+        "h": 629,
+        "w": 515
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-430",
+      "before": {
+        "dpr": 1,
+        "h": 932,
+        "mainCount": 1,
+        "scrollWidth": 430,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 430
+      },
+      "after": {
+        "dpr": 1,
+        "h": 932,
+        "w": 430
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-768",
+      "before": {
+        "dpr": 1,
+        "h": 1024,
+        "mainCount": 1,
+        "scrollWidth": 768,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 768
+      },
+      "after": {
+        "dpr": 1,
+        "h": 1024,
+        "w": 768
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 1,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-discover-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-discover-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 1,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-discover-430",
+      "before": {
+        "dpr": 1,
+        "h": 932,
+        "mainCount": 1,
+        "scrollWidth": 430,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 430
+      },
+      "after": {
+        "dpr": 1,
+        "h": 932,
+        "w": 430
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-discover-768",
+      "before": {
+        "dpr": 1,
+        "h": 1024,
+        "mainCount": 1,
+        "scrollWidth": 768,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 768
+      },
+      "after": {
+        "dpr": 1,
+        "h": 1024,
+        "w": 768
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-discover-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 1,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-reset-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 1,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 1,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-430",
+      "before": {
+        "dpr": 1,
+        "h": 932,
+        "mainCount": 1,
+        "scrollWidth": 430,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 430
+      },
+      "after": {
+        "dpr": 1,
+        "h": 932,
+        "w": 430
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-768",
+      "before": {
+        "dpr": 1,
+        "h": 1024,
+        "mainCount": 1,
+        "scrollWidth": 768,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 768
+      },
+      "after": {
+        "dpr": 1,
+        "h": 1024,
+        "w": 768
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 1,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-rest-paused-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-training-complete-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 120,
+        "skipTargetExists": false,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "excluded from visual judgment: nonzero scroll capture"
+    },
+    {
+      "name": "verified-training-complete-top-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 1,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": false,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-review-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 2,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-review-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 2,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-review-430",
+      "before": {
+        "dpr": 1,
+        "h": 932,
+        "mainCount": 2,
+        "scrollWidth": 430,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 430
+      },
+      "after": {
+        "dpr": 1,
+        "h": 932,
+        "w": 430
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-review-768",
+      "before": {
+        "dpr": 1,
+        "h": 1024,
+        "mainCount": 2,
+        "scrollWidth": 768,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 768
+      },
+      "after": {
+        "dpr": 1,
+        "h": 1024,
+        "w": 768
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-review-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 2,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-editor-320",
+      "before": {
+        "dpr": 1,
+        "h": 568,
+        "mainCount": 2,
+        "scrollWidth": 320,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 320
+      },
+      "after": {
+        "dpr": 1,
+        "h": 568,
+        "w": 320
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-editor-390",
+      "before": {
+        "dpr": 1,
+        "h": 844,
+        "mainCount": 2,
+        "scrollWidth": 390,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 390
+      },
+      "after": {
+        "dpr": 1,
+        "h": 844,
+        "w": 390
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-editor-430",
+      "before": {
+        "dpr": 1,
+        "h": 932,
+        "mainCount": 2,
+        "scrollWidth": 430,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 430
+      },
+      "after": {
+        "dpr": 1,
+        "h": 932,
+        "w": 430
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-editor-768",
+      "before": {
+        "dpr": 1,
+        "h": 1024,
+        "mainCount": 2,
+        "scrollWidth": 768,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 768
+      },
+      "after": {
+        "dpr": 1,
+        "h": 1024,
+        "w": 768
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-coach-editor-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 2,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-final-reset-today-1440",
+      "before": {
+        "dpr": 1,
+        "h": 900,
+        "mainCount": 1,
+        "scrollWidth": 1440,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 1440
+      },
+      "after": {
+        "dpr": 1,
+        "h": 900,
+        "w": 1440
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    },
+    {
+      "name": "verified-today-515-short-final",
+      "before": {
+        "dpr": 1,
+        "h": 629,
+        "mainCount": 1,
+        "scrollWidth": 515,
+        "scrollY": 0,
+        "skipTargetExists": true,
+        "w": 515
+      },
+      "after": {
+        "dpr": 1,
+        "h": 629,
+        "w": 515
+      },
+      "verified": true,
+      "visual_use": "top viewport evidence; not acceptance"
+    }
+  ],
+  "usage": "Evidence index only. REVIEW_01 is the sole fix list; AUDIT_02 records limitations. verified means viewport dimensions matched, not UI accepted."
+}

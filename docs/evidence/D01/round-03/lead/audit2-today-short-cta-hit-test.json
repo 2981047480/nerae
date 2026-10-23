@@ -1,0 +1,31 @@
+{
+  "centerHitTag": "BUTTON",
+  "centerHitText": "发现",
+  "centerHitsCta": false,
+  "cta": {
+    "rect": {
+      "bottom": 606,
+      "h": 48,
+      "right": 473,
+      "w": 431,
+      "x": 42,
+      "y": 558
+    },
+    "text": "继续第 4 组 "
+  },
+  "viewport": {
+    "dpr": 1,
+    "h": 629,
+    "w": 515
+  },
+  "visibleNavigations": [
+    {
+      "bottom": 629,
+      "h": 61,
+      "right": 515,
+      "w": 515,
+      "x": 0,
+      "y": 568
+    }
+  ]
+}

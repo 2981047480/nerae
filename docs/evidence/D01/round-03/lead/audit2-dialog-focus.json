@@ -1,0 +1,32 @@
+[
+  {
+    "insideDialog": true,
+    "label": "关闭",
+    "tag": "BUTTON"
+  },
+  {
+    "insideDialog": true,
+    "label": "取消",
+    "tag": "BUTTON"
+  },
+  {
+    "insideDialog": true,
+    "label": "发布版本 7",
+    "tag": "BUTTON"
+  },
+  {
+    "insideDialog": true,
+    "label": "关闭",
+    "tag": "BUTTON"
+  },
+  {
+    "insideDialog": true,
+    "label": "取消",
+    "tag": "BUTTON"
+  },
+  {
+    "insideDialog": true,
+    "label": "发布版本 7",
+    "tag": "BUTTON"
+  }
+]

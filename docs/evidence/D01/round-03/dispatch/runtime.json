@@ -28,9 +28,23 @@
   "lead_native_completion_observed": false,
   "review_input_revision": "3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e",
   "goal_blocked_audit": {
-    "condition": "Mac locked, cannot operate native Harness or continue screen QA",
-    "consecutive_goal_turns": 1,
+    "condition": "Mac locked: native Harness fix dispatch/execution unavailable; local IAB preview QA remains usable",
+    "consecutive_goal_turns": 2,
     "goal_status": "active",
-    "human_unlock_question_pending": true
-  }
+    "human_unlock_question_pending": true,
+    "independent_progress_this_turn": "Completed browser QA, stable viewport evidence, normal/reduced full-session equivalence, official same-profile CLI assessment; R01-R13 fix input ready but unsent",
+    "next_turn_rule": "If the same condition persists on the third consecutive goal turn and no meaningful independent work remains, mark goal blocked and stop",
+    "native_check_after_qa": "CUA native getAXState again returned Mac locked and automatic unlock failed; manual unlock still pending.",
+    "recorded_at": "2026-10-24T04:04:46.503702+08:00"
+  },
+  "lead_audit_02": "docs/evidence/D01/round-03/lead/AUDIT_02.md",
+  "review_issue_range": "R01-R13 including R10a-d",
+  "qa_fixture_reset": {
+    "via": "visible Preview -> reset -> confirm, then browser reload",
+    "session": "3/12",
+    "motion": "full",
+    "preview_tab": "4",
+    "viewport_css": "1440x900"
+  },
+  "review_input_revision_note": "review_input_revision is the first Lead input checkpoint; current R01-R13 input is REVIEW_01 at this branch HEAD and synchronized without UI changes."
 }

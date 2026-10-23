@@ -1,0 +1,185 @@
+{
+  "transitionWarnings": [
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:09:40.258Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:09:40.642Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:10:15.008Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:14:08.647Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:15:14.096Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:17:49.655Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:18:06.249Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:18:06.476Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:18:06.542Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:18:07.012Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:28:22.829Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:34:50.036Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:35:57.853Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:35:58.086Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:35:58.360Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:36:35.631Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:36:35.922Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:36:36.524Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:36:36.825Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:36:37.116Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:39:30.813Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:39:39.091Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <ExploreView key=\"explore\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:39:39.210Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:44:18.521Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:44:28.931Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:44:56.250Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:45:02.259Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:45:13.782Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:45:14.084Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    },
+    {
+      "level": "warn",
+      "message": "[Vue warn]: Component inside <Transition> renders non-element root node that cannot be animated. \n  at <CoachReviewView key=\"coachPlan\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+      "timestamp": "2026-10-23T19:45:14.404Z",
+      "url": "http://127.0.0.1:4186/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=3e754560"
+    }
+  ],
+  "capturedErrors": []
+}

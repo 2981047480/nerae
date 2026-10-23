@@ -8,3 +8,4 @@
 ## 本地 UI 工具链
 
 - 从DeepSeek Harness运行Vite遇到native binding的Team ID签名不匹配时，先核实实际Node路径；本轮同一源码用现有`/opt/homebrew/bin/node`成功构建与启动。更换Vite主版本未解决该运行时限制；保留真实错误与显式启动命令，避免反复猜版本。
+- IAB显隐可能重新应用宿主缩放。响应式截图先核对实际CSS视口、DPR与滚动位置，截图后再次核对；不要按预设比例或DPR机械放大clip。本轮隐藏浏览器、稳定DPR1、按CSS单位且scrollY为0截取可复现；偏差截图保留校准说明，不能据此判布局通过或失败。
