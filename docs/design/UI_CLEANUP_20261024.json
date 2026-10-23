@@ -1,0 +1,432 @@
+{
+  "date": "2026-10-24",
+  "instruction": "用户要求清理全部之前的 UI 产物，停止 UI 生成，回到设计逻辑",
+  "recovery": "不再保留旧原型或压缩包；本文件仅保留删除清单与校验值，不包含 UI 内容",
+  "protected_sha256": {
+    "/Users/zephyr/Documents/项目/nerae/docs/PRD.md": "c7d34ae73adc9fad8aa279925e699e97cc9a1bc6f6ef98525301a61359c05b04",
+    "/Users/zephyr/Documents/项目/nerae/api/openapi.yaml": "c917575ee3ac8552e954809355c8eee18e3316d6daae934bbbb93a33d071e53e",
+    "/Users/zephyr/Documents/项目/nerae/docs/数据模型与ER设计.md": "cec02ae125ed74ddb8eabd7c15ab352ea68f25dd1ee66e97e5f1b602ba96b8d5"
+  },
+  "targets": [
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/coach-390.jpg",
+          "bytes": 33476,
+          "sha256": "985781fd68feb1c60d030641396cb998184bb290957f13651a7979f3fbfd522a"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/conversation-390.jpg",
+          "bytes": 19122,
+          "sha256": "7f4f5cbb7614d212fd3ca42c619d3eb84e400f5fd274b5a20ca47e43893a7400"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/conversation-revoked-320.jpg",
+          "bytes": 24839,
+          "sha256": "04efad96b1cde09d35899c1037730804b54a84ea361ccd23cfec3d73d3f468e2"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/draft-390.jpg",
+          "bytes": 36009,
+          "sha256": "3a68cfb756b817d3613ed08d5d08a45e9dc0685be8227bb791a3fab5f4f71559"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/draft-blocked-320.jpg",
+          "bytes": 27737,
+          "sha256": "b61feaa1f25eed4895bebd898d68ef07a57c17bb01c2ceae13f1b3a0a8f31e05"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/interaction-checks.json",
+          "bytes": 3098,
+          "sha256": "ee29ff1821fff959056d5d554584d05f71a8d229d89b8e666b7b201b0fa06162"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/layout-checks.json",
+          "bytes": 9343,
+          "sha256": "17c847f758f7e578da4b037874125c081a560fe2f6abe92fc201c87a13704210"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/state-checks.json",
+          "bytes": 8553,
+          "sha256": "9cf52ad3cb1a7989758a8a289068db0033f219b2e191b52c46065df2f08c3a6e"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/today-1440.jpg",
+          "bytes": 47616,
+          "sha256": "28bd01ea675b6f292b0e743409d124607aab60c7a80ac57865621f4a90be721a"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/today-390.jpg",
+          "bytes": 38034,
+          "sha256": "5aec83174110bbe487e99cbae049eece89c46a89907edde2b827b65c5ed73996"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/training-390.jpg",
+          "bytes": 32763,
+          "sha256": "5337cf621d19e1bcaf12d5a3651c2efe347ef8ea82761e166185e12dd0e960df"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/after/training-failed-320.jpg",
+          "bytes": 28023,
+          "sha256": "ec6555c28af6435d93c30738fef1d94b7c3218a13596851f4bc75e8fc87f3acc"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/.taste-skill/direction.json",
+          "bytes": 8911,
+          "sha256": "1574f8b94f3f842ff9294525e687bf7cb73a7529fe49a400a54524207f80a5d1"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/README.md",
+          "bytes": 5132,
+          "sha256": "ca1f8a7b32986de2f0642454089cd1197558a6626ce12e4781282021b046f595"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/app.js",
+          "bytes": 36785,
+          "sha256": "39c083d67afc8315b91530660bfa2cdb09a161ae5f9e5693c4203e16247acb19"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/Geist-Medium.ttf",
+          "bytes": 72996,
+          "sha256": "a8eefb873ba9c9020665f8a98302697ce1f3b79ab2deef6ee508c0ca6a82e876"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/Geist-OFL.txt",
+          "bytes": 4387,
+          "sha256": "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/Geist-Regular.ttf",
+          "bytes": 72916,
+          "sha256": "ccce59465ae5c61930ada5453834f60500fbd95084d85db63e0e65fad0125455"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/GeistMono-OFL.txt",
+          "bytes": 4387,
+          "sha256": "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/GeistMono-Regular.ttf",
+          "bytes": 71160,
+          "sha256": "7022da390e9b401ea35b722f8ed2376948e70add10954bc798839b4bfe17ef3f"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/dumbbell.svg",
+          "bytes": 1467,
+          "sha256": "624fa2e61145f0f6ae48cf3d7f8962b9ff1c094241951560e911dddef9355812"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/assets/mark.svg",
+          "bytes": 299,
+          "sha256": "8521ff5b219e94b5837f7c20571eb7e18a3a5eff6ba24052873c63d7c9b69f4d"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/.od-next-device-frames.json",
+          "bytes": 514,
+          "sha256": "deb9500d9f6b0240567c3b664ee4a40702462581e67aa2514c4f7b6d8b5772be"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/android.html",
+          "bytes": 8840,
+          "sha256": "ddf907bd843b88ed67c3b84fc1bf14c1655b76deb423d1c6e2cb9f6d44b6333b"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/deck-framework.md",
+          "bytes": 31630,
+          "sha256": "bfcbae696a6a0f45b10d67f7e34b0427ea1018a6922e1451311d04efbe6144f0"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/iphone.html",
+          "bytes": 8682,
+          "sha256": "a7ed87ef78519a1f66452d9faff40dae419df216935e9794c8e4537d3602692e"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/layout.css",
+          "bytes": 3983,
+          "sha256": "05b973e8ce8063897e1c1319f9550541a44b19e046bfffdf8a97c2327d05992e"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/.od-frames/neutral.html",
+          "bytes": 8821,
+          "sha256": "4c593aebb53aabf3d035327fc74136a0f761f6c34a572d4f3572512623e82743"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/app.js",
+          "bytes": 83125,
+          "sha256": "e41fdb8ccc5498b8ce37d4303d9e1b8131ad1b435d404b756590f9ed58231502"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/index.html",
+          "bytes": 22775,
+          "sha256": "d55d97366842de57c5dc45a4806e54e632f3efd991e6e6039911a10aee09db76"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/before/styles.css",
+          "bytes": 41420,
+          "sha256": "5d4759679f327b87863337ec3db1b68a9fa38527055c98415d15966603550122"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/data.js",
+          "bytes": 2623,
+          "sha256": "dba67b74afda94cdf60ae64a14c48cdbc9d90f44ff1ee8df3ca309b42260aaab"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/index.html",
+          "bytes": 662,
+          "sha256": "39bb3949020c809c744a37dabe1cbafad3f1872b799a9ef8fc213c50f3cae3bf"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/rejected-opendesign-manifest.json",
+          "bytes": 1523,
+          "sha256": "b2dea1eab04ac2dd0a7750a47b0597721e726abcc87bd5288f978d3a4eca5c46"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/rejected-opendesign.zip",
+          "bytes": 56657,
+          "sha256": "da73610936e68f011cd9630e755a7d38afd0a7e0cb938af7c656fd698510dbe6"
+        },
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reviews/taste-v1/styles.css",
+          "bytes": 18401,
+          "sha256": "6a24dd2b19db349e2fa720e8a4034c48a681ef71620b3e34196e3f4a5a3f472b"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/design/reference.html",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/reference.html",
+          "bytes": 22138,
+          "sha256": "80e7cd1ff7736d5b24924d001dc553564ca01ec4e93cd8618ef76014c3a11517"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/design/tokens.json",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/tokens.json",
+          "bytes": 1163,
+          "sha256": "dc2217c42f539e144d6ed073a02bafb24a7ef859aa002643ed7a585a036d91d2"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/design/OPENDESIGN_BRIEF.md",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/design/OPENDESIGN_BRIEF.md",
+          "bytes": 4523,
+          "sha256": "e3648dff3623d194e848c83e45da1ff213713680ced03f610fa9f4809d242058"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b",
+      "files": [
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/.od-next-device-frames.json",
+          "bytes": 514,
+          "sha256": "deb9500d9f6b0240567c3b664ee4a40702462581e67aa2514c4f7b6d8b5772be"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/android.html",
+          "bytes": 8840,
+          "sha256": "ddf907bd843b88ed67c3b84fc1bf14c1655b76deb423d1c6e2cb9f6d44b6333b"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/deck-framework.md",
+          "bytes": 31630,
+          "sha256": "bfcbae696a6a0f45b10d67f7e34b0427ea1018a6922e1451311d04efbe6144f0"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/iphone.html",
+          "bytes": 8682,
+          "sha256": "a7ed87ef78519a1f66452d9faff40dae419df216935e9794c8e4537d3602692e"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/layout.css",
+          "bytes": 3983,
+          "sha256": "05b973e8ce8063897e1c1319f9550541a44b19e046bfffdf8a97c2327d05992e"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/.od-frames/neutral.html",
+          "bytes": 8821,
+          "sha256": "4c593aebb53aabf3d035327fc74136a0f761f6c34a572d4f3572512623e82743"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/app.js",
+          "bytes": 83125,
+          "sha256": "e41fdb8ccc5498b8ce37d4303d9e1b8131ad1b435d404b756590f9ed58231502"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/index.html",
+          "bytes": 22775,
+          "sha256": "d55d97366842de57c5dc45a4806e54e632f3efd991e6e6039911a10aee09db76"
+        },
+        {
+          "path": "/Users/zephyr/Library/Application Support/Open Design/namespaces/release-stable/data/projects/nerae-ui-2026-10-23-070b/styles.css",
+          "bytes": 41420,
+          "sha256": "5d4759679f327b87863337ec3db1b68a9fa38527055c98415d15966603550122"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-board.jpg",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-board.jpg",
+          "bytes": 86785,
+          "sha256": "82576c983fe09dd7983b1f75b76c894ed3cd6961bf9f35c048a3946c44c8a00e"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-coach.jpg",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-coach.jpg",
+          "bytes": 87256,
+          "sha256": "a110d74f8afb9b625b5f7ac3c46d3c0aacfb3086178f5974f1e204132efb711a"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-conversation.jpg",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-conversation.jpg",
+          "bytes": 78783,
+          "sha256": "630041a65d8e7a1bdb17e7ff3026bd9892ef181f5831ddf3bed97af3b41680ee"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-draft.jpg",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-draft.jpg",
+          "bytes": 84454,
+          "sha256": "def3c4dd2982387bd0891d1bb84ad535bdeae6a28603a77910530da710d7e073"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-layout-checks.json",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-layout-checks.json",
+          "bytes": 1396,
+          "sha256": "d4cf885413d9a8e0341f385d74fdd4ab6730add5f87c852af70639b82b69a18c"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-today.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-today.png",
+          "bytes": 35827,
+          "sha256": "51783c9498df53fc536f1135c079e2ee5d3e62b81349e7a564ac8f3840298489"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-training.jpg",
+      "files": [
+        {
+          "path": "/Users/zephyr/.codex/visualizations/2026/10/23/01a168d0-7e73-7032-b6d1-bd6d0e223e02/nerae-first-ui-training.jpg",
+          "bytes": 84984,
+          "sha256": "4c9a63d88dd6d82f2da817cd6e65ec1d98c7585e2be8e978548d3fd13c1320fc"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/revoked-preview.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/revoked-preview.png",
+          "bytes": 62262,
+          "sha256": "073817e95473ce0f945b1a09928240e0a02b19d6c533272406c5aeb8f9f6a72a"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/student-390.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/student-390.png",
+          "bytes": 69604,
+          "sha256": "a0233612a153975e132098fd67c372f23bc21b8ba15a8fe5af9134efb55be78b"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/student-desktop.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/student-desktop.png",
+          "bytes": 83130,
+          "sha256": "e395ea26cc7ce5bc3966fd4dcff26360a386fca233e8b77f82778bfccdd89dfd"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/coach-preview.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/coach-preview.png",
+          "bytes": 64547,
+          "sha256": "45d1b13ed3efa55696a5396a0d7b90e96a46f706e0a3bbde0f97c8cd59fef6be"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/error-390.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/error-390.png",
+          "bytes": 53827,
+          "sha256": "81753ada31267dbf6a0a0de4c88af7e51bf4967bf87f54bb34912480cbc04154"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/plan-320.png",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/plan-320.png",
+          "bytes": 60158,
+          "sha256": "40b8bed2820d84f2001a5aa3ddbb7d261f3378fc0734e5c8bfcf0db71e1dbe86"
+        }
+      ]
+    },
+    {
+      "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/ui-checks.json",
+      "files": [
+        {
+          "path": "/Users/zephyr/Documents/项目/nerae/.review/plan-repair-20261023/ui-checks.json",
+          "bytes": 1396,
+          "sha256": "4094220b00d17b7cece0115f0f60434cf23865a34cd4058494a4d6f58be3d4fe"
+        }
+      ]
+    }
+  ],
+  "status": "deleted-and-verified",
+  "files_deleted": 62,
+  "bytes_deleted": 1968732,
+  "protected_unchanged": true,
+  "notes": "OpenDesign 管理接口离线，仅移除该项目已核对的本地 UI 文件目录；未改账户、其他项目或应用数据库。",
+  "verification": {
+    "deleted_targets_remaining": [],
+    "protected_hashes_match": true,
+    "changed_document_links_checked": 12,
+    "broken_links": [],
+    "preview_server": "owned session 55655 exited with code 0; port 4178 has no listener",
+    "planner_check": "valid; 37 work packages, 21 execution cards, 0 accepted; ready F01-01/L01-01",
+    "planner_unit_tests": "29 passed; unittest exit code 0",
+    "new_ui_generated": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f2053ba9-4d08-482e-90bf-a9af3d301480",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-erd.json",
+  "output": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-erd.html",
+  "specification": {
+    "sha256": "374c9419870043c9eb77a9673baa5c2c5c20c2559a9c30145c4ec3270ccf02c1",
+    "bytes": 22215
+  },
+  "artifact": {
+    "sha256": "d6f71b2e0d64b14483af43236e94aa797c0da6d89d43609d9615c0c48af4cb1a",
+    "bytes": 911795
+  }
+}

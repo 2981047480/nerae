@@ -1,0 +1,991 @@
+# Nerae 任务板（机器可读）
+#
+# 这是多 Agent 并行开发的唯一任务源。修改前先读 docs/多Agent协作规范.md。
+# 字段：
+#   id          唯一编号，永不复用
+#   title       一句话可交付结果（不是过程）
+#   wave        并行波次；同波次任务默认并行执行
+#   kind        parallel=可并行；tail=波次收尾（依赖同波次任务，串行）；serial=契约串行链
+#   role        contract|platform|backend|mini|admin|design|qa|ops|product
+#   scopes      允许写入的路径前缀（相对仓库根）；与同波次其他任务不得重叠
+#   depends_on  前置任务 id；必须指向更早波次，或同波次的 tail/serial 任务
+#   estimate    S≤1人日，M≈2–3人日，L≈4–5人日；>L 必须拆分
+#   deliverables 交付物（可检查的产物）
+#   acceptance  验收标准（可执行、可复现）
+#   status      todo|claimed|in_progress|review|done|blocked
+#
+# 波次约定：
+#   W0 契约与决策收口（串行，单人持有 api/openapi.yaml）
+#   W1 骨架并行（Git/Go/设计tokens/CI）
+#   W2 本地基础设施与两端骨架
+#   W3 身份与档案
+#   W4 教练与服务包 + 教练/计划广场
+#   W5 关系、交付、记录（首个完整交付闭环）
+#   W6 免费层与 AI 网关
+#   W7 饮食与异常筛查
+#   W8 审核与运营后台
+#   W9 质量门（契约/集成/E2E/视觉/授权）
+#   W10 试点上线准备
+
+meta:
+  version: 1
+  updated: "2026-10-23"
+  source_of_truth: docs/开发计划-v1.0.md
+  collaboration: docs/多Agent协作规范.md
+  waves:
+    - {id: 0, name: 契约定稿与仓库基线, mode: mixed, max_parallel: 4}
+    - {id: 1, name: 骨架并行, mode: parallel, max_parallel: 4}
+    - {id: 2, name: 基础设施与两端骨架, mode: parallel, max_parallel: 3}
+    - {id: 3, name: 身份与档案, mode: parallel+tail, max_parallel: 5}
+    - {id: 4, name: 教练与广场, mode: parallel+tail, max_parallel: 6}
+    - {id: 5, name: 关系交付记录, mode: parallel+tail, max_parallel: 7}
+    - {id: 6, name: 免费层与AI, mode: parallel+tail, max_parallel: 6}
+    - {id: 7, name: 饮食与异常, mode: parallel+tail, max_parallel: 4}
+    - {id: 8, name: 审核与后台, mode: parallel+tail, max_parallel: 4}
+    - {id: 9, name: 质量门, mode: parallel, max_parallel: 4}
+    - {id: 10, name: 试点准备, mode: parallel, max_parallel: 3}
+
+tasks:
+  # ---------- W0：契约与决策收口（api/openapi.yaml 单人持有） ----------
+  - id: FIX-01
+    title: 动作读模型与动作库只读接口
+    wave: 0
+    kind: serial
+    role: contract
+    scopes: [api/openapi.yaml, api/tests/, docs/数据模型与ER设计.md]
+    depends_on: []
+    estimate: M
+    status: todo
+    deliverables:
+      - TrainingDay 读模型返回 exerciseSnapshot（名称/要点/替代/器械/版本）
+      - 新增 GET /plaza/exercises（只读、分页、按器械与部位筛选）
+    acceptance:
+      - 清空客户端缓存后计划详情仍能显示动作名称与要点
+      - 动作库改名或停用后，历史计划显示内容不变
+
+  - id: FIX-02
+    title: 教练草稿读取接口与学员详情具名模型
+    wave: 0
+    kind: serial
+    role: contract
+    scopes: [api/openapi.yaml, api/tests/, docs/数据模型与ER设计.md]
+    depends_on: [FIX-01]
+    estimate: S
+    status: todo
+    deliverables:
+      - GET /coach/plans 草稿列表与 GET /coach/plans/{id} 详情
+      - 学员详情改为具名分区模型，声明各授权范围可见字段
+    acceptance:
+      - 保存草稿→退出→重进可继续编辑
+      - 学员读取仍只能得到已发布版本
+
+  - id: FIX-03
+    title: 服务关系内最小双向消息
+    wave: 0
+    kind: serial
+    role: contract
+    scopes: [api/openapi.yaml, api/tests/, docs/数据模型与ER设计.md]
+    depends_on: [FIX-02]
+    estimate: S
+    status: todo
+    deliverables:
+      - POST/GET /relations/{id}/messages（双向文字、成员校验）
+      - 结束后只读、无关教练不可读的规则写入契约
+    acceptance:
+      - 没有 appointment 的有效关系也能双向交流
+      - 无关教练访问返回不存在，不泄露关系是否存在
+
+  - id: FIX-04
+    title: AI 草稿响应按状态拆分
+    wave: 0
+    kind: serial
+    role: contract
+    scopes: [api/openapi.yaml, api/tests/]
+    depends_on: [FIX-03]
+    estimate: S
+    status: todo
+    deliverables:
+      - ready 必须包含完整 content 与草稿版本
+      - needs_input/safety_block 只返回 aiRunId、缺失项与原因
+    acceptance:
+      - 信息不足或安全阻断时不产生假计划 ID
+      - ready 但缺 content 的响应被拒绝
+
+  - id: FIX-05
+    title: 训练日程与今日训练语义
+    wave: 0
+    kind: serial
+    role: product
+    scopes: [docs/PRD.md, api/openapi.yaml, docs/数据模型与ER设计.md, api/tests/]
+    depends_on: [FIX-04]
+    estimate: M
+    status: todo
+    deliverables:
+      - 计划启用锚点、时区、执行进度、跳过/改期语义与字段
+      - 「今日训练」唯一规则，客户端与后台不再各自推算
+    acceptance:
+      - 周中开始、休息日、漏练、切换计划、时区变化各产生唯一结果
+      - 历史记录不被重新归日
+
+  - id: FIX-06
+    title: 陌生获客的联系与后续安排路径（决策记录）
+    wave: 0
+    kind: parallel
+    role: product
+    scopes: [docs/adr/]
+    depends_on: []
+    estimate: S
+    status: todo
+    deliverables:
+      - 一份 ADR：平台允许的联系方式、双方操作、异常与拒绝通知授权
+      - 提审前的官方核实清单与替选方案
+    acceptance:
+      - 两名此前无联系方式的测试者可走通「选择→咨询→后续安排→确认」
+      - 不包含绕过平台规则的做法
+
+  - id: FIX-07
+    title: 成本模型与 AI 配额基线
+    wave: 0
+    kind: parallel
+    role: product
+    scopes: [docs/成本模型与配额.md]
+    depends_on: []
+    estimate: S
+    status: todo
+    deliverables:
+      - 试点/正常/高使用三档用量与费用表，统一下列假设
+      - token 上限、历史截断、缓存、熔断与降级规则
+    acceptance:
+      - 每个场景能复算出月成本，且标注已知与假设
+      - 现有「0.5 元/月」目标被明确修正或给出达成条件
+
+  - id: FIX-08
+    title: 资质与成本执行清单同步
+    wave: 0
+    kind: parallel
+    role: product
+    scopes: [docs/小程序上线成本与资质.md]
+    depends_on: []
+    estimate: S
+    status: todo
+    deliverables:
+      - 删除未经核定的「需要/不需要」绝对结论
+      - 每项标注适用业务、责任人、核验材料与状态
+    acceptance:
+      - 同一事项不再同时出现「未核定」与「无需办理」
+      - 与 PRD 的待核定清单口径一致
+
+  # ---------- W1：骨架并行 ----------
+  - id: SETUP-01
+    title: Git 初始化与仓库治理
+    wave: 0
+    kind: parallel
+    role: platform
+    scopes: [.gitignore, .editorconfig]
+    depends_on: []
+    estimate: S
+    status: todo
+    deliverables:
+      - git init 与首个基线提交
+      - 忽略 .review/、.pnpm-store/、虚拟环境、生成物与密钥文件
+    acceptance:
+      - git status 干净，大目录未进入版本库
+      - docs/adr/ 有模板与命名规则
+
+  - id: SETUP-02
+    title: Go 服务骨架
+    wave: 1
+    kind: parallel
+    role: backend
+    scopes: [apps/api/cmd/, apps/api/internal/server/, apps/api/internal/config/, apps/api/internal/httpx/, apps/api/go.mod, apps/api/go.sum]
+    depends_on: [SETUP-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - Gin 启动、/healthz、统一 Error 响应与 requestId、结构化日志、优雅退出
+      - worker 入口空壳与模块注册约定
+    acceptance:
+      - go build ./... 与 go vet 通过
+      - 未知路由与参数错误返回统一错误体且含 requestId
+
+  - id: SETUP-03
+    title: 设计 tokens 包与生成脚本
+    wave: 1
+    kind: parallel
+    role: design
+    scopes: [packages/design-tokens/]
+    depends_on: []
+    estimate: S
+    status: todo
+    deliverables:
+      - tokens.json（色彩/间距/圆角/字体/阴影/动效/层级/语义状态，唯一源）
+      - 生成 dist/_tokens.scss、dist/tokens.css、dist/tokens.ts 的脚本，可重复运行
+    acceptance:
+      - tokens JSON 可解析，别名全部可解析
+      - 重新生成两次结果字节一致
+      - 命名与设计系统 §10.4 契约一致
+
+  - id: SETUP-04
+    title: 契约代码生成与 CI
+    wave: 1
+    kind: tail
+    role: platform
+    scopes: [packages/api-types/, .github/workflows/, Makefile, api/oapi-codegen.yaml]
+    depends_on: [SETUP-02]
+    estimate: M
+    status: todo
+    deliverables:
+      - make contract/lint/gen-ts/gen-go/test 目标
+      - CI 执行契约 lint、契约回归、go build、前端类型检查
+    acceptance:
+      - 新克隆后一条命令完成校验与生成
+      - CI 在契约变更未重新生成时失败
+
+  # ---------- W2：基础设施与两端骨架 ----------
+  - id: SETUP-05
+    title: 本地基础设施与迁移基线
+    wave: 2
+    kind: parallel
+    role: backend
+    scopes: [infra/dev/, apps/api/migrations/]
+    depends_on: [SETUP-02]
+    estimate: M
+    status: todo
+    deliverables:
+      - docker-compose：MySQL 8 + Redis 7 + 管理工具
+      - 0001 基线迁移（用户/档案/教练/套餐/关系核心表）
+    acceptance:
+      - make db-up 后本机可连库
+      - 迁移 up/down 可重入且不破坏已有数据
+
+  - id: SETUP-06
+    title: 小程序骨架与基础组件
+    wave: 2
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/]
+    depends_on: [SETUP-03, SETUP-04]
+    estimate: M
+    status: todo
+    deliverables:
+      - uni-app 工程、路由与分包、请求封装、platform 适配层
+      - Button/Card/List/Empty/Skeleton/ActionBar 基础组件与主题变量
+    acceptance:
+      - 微信开发者工具可编译预览
+      - 页面不直接调用 uni.*，全部经 platform 适配层
+
+  - id: SETUP-07
+    title: 运营后台骨架
+    wave: 2
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/]
+    depends_on: [SETUP-04]
+    estimate: M
+    status: todo
+    deliverables:
+      - 登录壳、布局、表格与筛选模式、错误处理、权限路由占位
+      - 基础组件：表格页、详情页、确认弹窗
+    acceptance:
+      - build 与类型检查通过
+      - 未登录访问自动跳转登录，加载/空/错误三态一致
+
+  # ---------- W3：身份与档案 ----------
+  - id: AUTH-01
+    title: 后端微信登录与会话
+    wave: 3
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/auth/]
+    depends_on: [SETUP-05]
+    estimate: M
+    status: todo
+    deliverables:
+      - wx.login code 换 openid、签发 JWT、token_version 失效
+      - 角色选择只影响界面，不授予教练认证
+    acceptance:
+      - 过期或旧 token 被拒绝且返回统一错误
+      - 同一 openid 重复登录不产生重复用户
+
+  - id: AUTH-02
+    title: 后端学员档案、年龄与同意
+    wave: 3
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/profile/]
+    depends_on: [SETUP-05]
+    estimate: M
+    status: todo
+    deliverables:
+      - 档案读写（敏感伤病只写不回显、null 清除）
+      - 18 岁自我声明、过敏资料单独同意与撤回
+    acceptance:
+      - 未满 18 岁无法完成需要年龄门槛的操作
+      - 撤回同意后业务读取与模型输入立即停止
+
+  - id: AUTH-03
+    title: 后端管理员身份与 RBAC
+    wave: 3
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/adminauth/, apps/api/internal/middleware/]
+    depends_on: [SETUP-05]
+    estimate: M
+    status: todo
+    deliverables:
+      - 独立管理员表、密码哈希、token_version、登录限流
+      - 独立 audience 与角色到权限映射
+    acceptance:
+      - 普通用户 JWT 不能调用管理接口
+      - 停用账号后现有 token 立即失效
+
+  - id: AUTH-04
+    title: 小程序登录与建档
+    wave: 3
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/auth/, apps/mini/src/stores/auth/]
+    depends_on: [SETUP-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 登录页、角色选择、建档表单、失败与重试态
+      - 表单校验与必填提示使用统一组件
+    acceptance:
+      - 弱网下重试不重复提交
+      - 未登录访问写操作时登录后回到原页面
+
+  - id: AUTH-05
+    title: 后台登录与会话
+    wave: 3
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/src/views/auth/, apps/admin/src/stores/session/]
+    depends_on: [SETUP-07]
+    estimate: S
+    status: todo
+    deliverables:
+      - 登录页、会话保持、过期跳转、权限路由守卫
+    acceptance:
+      - 直接访问受保护路由被重定向
+      - 令牌过期时提示并保留原目标路径
+
+  - id: INT-01
+    title: W3 路由接线与鉴权冒烟
+    wave: 3
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/server/]
+    depends_on: [AUTH-01, AUTH-02, AUTH-03]
+    estimate: S
+    status: todo
+    deliverables:
+      - 注册 W3 模块路由
+      - 冒烟脚本：登录→建档→读档案→管理端登录
+    acceptance:
+      - make smoke-w3 通过且覆盖未授权与越权用例
+
+  # ---------- W4：教练与服务包 + 广场 ----------
+  - id: COACH-01
+    title: 后端教练入驻与资料
+    wave: 4
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/coach/]
+    depends_on: [AUTH-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 教练申请、资质上传引用、审核状态机；主页读写与认证标识只读
+      - 服务包 CRUD、不可变版本与上下架，版本号与 content_hash 供关系冻结
+    acceptance:
+      - 未审核教练不能出现在广场
+      - 客户端无法自行写入认证或来源标签
+
+  - id: PLAZA-01
+    title: 后端教练广场读模型
+    wave: 4
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/plaza/coach/]
+    depends_on: []
+    estimate: M
+    status: todo
+    deliverables:
+      - 列表筛选排序、详情、评价摘要、未登录可读
+      - 缓存与分页游标
+    acceptance:
+      - 未登录可读且不返回任何私有字段
+      - 空筛选结果返回引导而非报错
+
+  - id: PLAZA-02
+    title: 后端计划广场读模型
+    wave: 4
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/plaza/plan/]
+    depends_on: [FIX-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - 训练/饮食列表与详情，动作快照随版本返回
+      - 热门排序缓存与来源筛选
+    acceptance:
+      - 动作库改名后历史模板展示不变
+      - 未发布草稿不可通过广场或猜 ID 读取
+
+  - id: MINI-01
+    title: 小程序教练广场与详情
+    wave: 4
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/coach-plaza/]
+    depends_on: [SETUP-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 列表、筛选、排序、详情、预约入口
+      - 加载/空/错误/骨架四态与设计 tokens
+    acceptance:
+      - 与设计系统走查清单一致
+      - 未登录可浏览，提交预约前登录
+
+  - id: MINI-02
+    title: 小程序计划广场与详情
+    wave: 4
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/plan-plaza/]
+    depends_on: [SETUP-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 训练/饮食切换、筛选、详情、来源标签
+      - 动作列表含名称与要点，饮食含餐次与份量
+    acceptance:
+      - 来源标签不可伪造且展示清晰
+      - 长内容滚动性能无明显掉帧
+      - 首次路径（登录/年龄/另存）与重复路径分开记录动作数（R08）
+
+  - id: ADMIN-01
+    title: 后台教练审核
+    wave: 4
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/src/views/coach-review/]
+    depends_on: [SETUP-07]
+    estimate: M
+    status: todo
+    deliverables:
+      - 待审列表、资质查看、通过/拒绝与备注
+      - 审核操作写审计
+    acceptance:
+      - 拒绝必须填写原因
+      - 审核结果立即影响广场可见性
+
+  - id: INT-02
+    title: W4 路由接线与广场冒烟
+    wave: 4
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/server/]
+    depends_on: [PLAZA-01, PLAZA-02]
+    estimate: S
+    status: todo
+    deliverables:
+      - 注册教练、套餐、广场路由
+      - 冒烟：未登录读广场→教练审核→套餐上架→广场可见
+    acceptance:
+      - make smoke-w4 通过
+
+  # ---------- W5：关系、交付、记录 ----------
+  - id: REL-01
+    title: 后端服务关系发起、确认与授权
+    wave: 5
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/relation/]
+    depends_on: [FIX-03, COACH-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 发起冻结 terms、学员确认、结束/解除原子撤权
+      - grants expectedVersion CAS、空 scopes 撤回
+    acceptance:
+      - 旧版本写入返回 412，终态后不能重新授权
+      - 并发撤权与保存只有一笔成功
+
+  - id: REL-02
+    title: 后端咨询单与消息
+    wave: 5
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/appointment/]
+    depends_on: [FIX-03]
+    estimate: M
+    status: todo
+    deliverables:
+      - 咨询单状态流转、成交自报（不验证支付）
+      - 按咨询单/关系隔离的消息读写
+    acceptance:
+      - 成交自报不改变关系状态
+      - 无关用户读取消息返回不存在
+
+  - id: DELIV-01
+    title: 后端教练计划草稿与发布
+    wave: 5
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/delivery/plan/]
+    depends_on: [FIX-02]
+    estimate: L
+    status: todo
+    deliverables:
+      - 草稿创建/编辑/回读、确认发布、学员读已发布版
+      - 版本号与 publishedVersion 投影；教练点评与关系结束后的只读规则
+    acceptance:
+      - 未确认草稿对学员不可见，编辑后必须重新确认才能发布
+      - 教练不能点评非本人关系学员，未授权记录不能作为点评依据
+
+  - id: REC-01
+    title: 后端训练会话与组记录
+    wave: 6
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/record/]
+    depends_on: [FIX-05, PLAN-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 按计划版本开始训练、组记录批量保存、结束
+      - user_id 域 clientEventId 唯一与会话版本
+    acceptance:
+      - 两个账号可用相同 clientEventId 且互不冲突
+      - 旧版本写入返回 412
+
+  - id: PLAN-01
+    title: 后端个人计划与版本
+    wave: 5
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/plan/]
+    depends_on: [FIX-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 训练/饮食个人计划 CRUD、模板另存、版本追加与回滚
+      - 内容快照与 content_hash，源模板变更不影响副本
+      - 「直接开始训练」自动创建私人副本并防重复（R08）
+    acceptance:
+      - 另存后修改不影响原模板，回滚产生新版本
+      - 饮食份量可编辑且不混入训练结构
+
+  - id: MINI-03
+    title: 小程序预约、关系与授权页
+    wave: 5
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/relation/]
+    depends_on: [SETUP-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 预约表单、预约状态、关系确认、数据授权开关
+      - 授权撤回二次确认与结果反馈
+    acceptance:
+      - 授权范围逐项可选，不可默认全选
+      - 撤回后页面立即反映失效状态
+
+  - id: MINI-04
+    title: 小程序教练工作台与计划编辑器
+    wave: 5
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/coach-workbench/]
+    depends_on: [SETUP-06]
+    estimate: L
+    status: todo
+    deliverables:
+      - 待办列表、学员列表、计划编辑器、发布确认
+      - 草稿/已发布状态与版本冲突提示
+    acceptance:
+      - 412 冲突时提示重新加载并保留本地改动说明
+      - 常规待办操作 ≤30 秒可完成
+
+  - id: INT-03
+    title: W5 路由接线与首个交付闭环冒烟
+    wave: 5
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/server/]
+    depends_on: [REL-01, REL-02, DELIV-01, PLAN-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - 串联：预约→发起关系→学员确认→授权→发布计划→开始训练→点评
+      - 负向：未确认关系、越权、过期版本
+    acceptance:
+      - make smoke-w5 全部通过且负向用例返回预期错误码
+
+  # ---------- W6：免费层与 AI ----------
+  - id: PUB-01
+    title: 后端发布草稿、确认与提交
+    wave: 6
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/publish/]
+    depends_on: [FIX-04, PLAN-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 草稿创建/编辑/回读、AI 预填落库、确认与提交
+      - contentHash 覆盖内容与可见性，旧确认失效
+    acceptance:
+      - 改动内容后旧确认不能提交
+      - 未确认估算字段被拒绝并指出字段路径
+
+  - id: AI-01
+    title: 后端 AI 网关与成本计量
+    wave: 6
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/ai/]
+    depends_on: [SETUP-02, FIX-04]
+    estimate: L
+    status: todo
+    deliverables:
+      - 供应商适配（MiMo 主、降级备）、prompt 版本、结构化校验
+      - 额度、熔断、token 与费用计量、敏感输入最小化
+    acceptance:
+      - 上游失败有明确降级且不自动升档收费模型
+      - 每次调用可追溯到模型、prompt 版本与费用
+
+  - id: SHARE-01
+    title: 后端收藏与分享
+    wave: 6
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/share/]
+    depends_on: [PLAN-01]
+    estimate: S
+    status: todo
+    deliverables:
+      - 收藏/取消、链接分享令牌、下架即失效
+    acceptance:
+      - 猜测数字 ID 不能读取私密内容
+      - 下架后旧分享链接返回不可用
+
+  - id: MINI-05
+    title: 小程序我的计划与编辑器
+    wave: 6
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/my-plans/]
+    depends_on: [SETUP-06]
+    estimate: L
+    status: todo
+    deliverables:
+      - 我的计划列表、训练/饮食编辑、版本历史与回滚
+      - 未保存离开提示与冲突提示
+    acceptance:
+      - 饮食份量编辑与训练编辑互不串结构
+      - 回滚后历史记录不被改写
+
+  - id: MINI-06
+    title: 小程序发布流程与 AI 预填
+    wave: 6
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/publish/]
+    depends_on: [SETUP-06]
+    estimate: L
+    status: todo
+    deliverables:
+      - 自然语言预填、字段逐项确认、可见性选择、提交审核
+      - AI 估算标记与信息不足状态
+    acceptance:
+      - 未确认估算字段无法提交
+      - 信息不足时不显示伪造的热量或份量
+
+  - id: INT-04
+    title: W6 路由接线与免费层冒烟
+    wave: 6
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/server/]
+    depends_on: [REC-01, PLAN-01, PUB-01, AI-01, SHARE-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - 串联：模板另存→编辑→预填→确认→审核→训练记录→收藏分享
+    acceptance:
+      - make smoke-w6 通过，含信息不足与旧确认负向用例
+
+  # ---------- W7：饮食与异常 ----------
+  - id: DIET-01
+    title: 后端饮食打卡与观察证据
+    wave: 7
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/diet/]
+    depends_on: [PLAN-01, REL-01]
+    estimate: L
+    status: todo
+    deliverables:
+      - 打卡版本、planVersion/dayIndex 绑定、餐次状态
+      - 可选观察（自述/AI 提取）与证据状态
+    acceptance:
+      - 只填自评不产生实际摄入估算
+      - 计划更新后旧打卡仍绑定旧版本
+
+  - id: DIET-02
+    title: 后端异常规则 v0 与复核队列（W7 收尾）
+    wave: 7
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/modules/anomaly/, apps/api/internal/server/]
+    depends_on: [DIET-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - 规则版本、证据引用、三种 assessment
+      - 教练待办与运营复核的状态流转
+    acceptance:
+      - 缺证据返回 insufficient_data 而非“正常”
+      - 未授权教练看不到原因正文
+
+  - id: MINI-07
+    title: 小程序饮食计划与打卡
+    wave: 7
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/diet/]
+    depends_on: [SETUP-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 餐单查看、份量替换、每日打卡、连续天数
+    acceptance:
+      - 打卡不要求必填观察，且明确标注“自评”
+      - 过敏原未知状态不被显示为“安全”
+
+  - id: COACH-03
+    title: 小程序教练饮食异常待办
+    wave: 7
+    kind: parallel
+    role: mini
+    scopes: [apps/mini/src/pages/coach-anomaly/]
+    depends_on: [SETUP-06]
+    estimate: S
+    status: todo
+    deliverables:
+      - 待办卡片、证据摘要、处理与误报操作
+    acceptance:
+      - 学员端不出现“异常”标签
+      - 处理动作留痕且可撤销误报
+
+  # ---------- W8：审核与运营后台 ----------
+  - id: MOD-01
+    title: 后端审核、举报与申诉
+    wave: 8
+    kind: parallel
+    role: backend
+    scopes: [apps/api/internal/modules/moderation/]
+    depends_on: [PUB-01, REL-02]
+    estimate: L
+    status: todo
+    deliverables:
+      - 审核任务、举报、评价申诉状态机与审计
+      - 首次饮食发布人工审核与抽检队列
+    acceptance:
+      - 审核动作不可改写正文，只追加决定
+      - 举报未结案内容降权或下架
+
+  - id: ADMIN-02
+    title: 后台内容审核
+    wave: 8
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/src/views/moderation/]
+    depends_on: [SETUP-07]
+    estimate: M
+    status: todo
+    deliverables:
+      - 审核队列、详情对比、通过/拒绝/升级
+    acceptance:
+      - 拒绝需原因且回写审计
+      - 队列分页与筛选可用
+
+  - id: ADMIN-03
+    title: 后台举报与异常复核
+    wave: 8
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/src/views/anomaly/]
+    depends_on: [SETUP-07]
+    estimate: M
+    status: todo
+    deliverables:
+      - 举报处理、异常复核、证据与授权提示
+    acceptance:
+      - 敏感健康证据需要额外权限提示
+      - 处理结果可追溯
+
+  - id: ADMIN-04
+    title: 后台指标与审计
+    wave: 8
+    kind: parallel
+    role: admin
+    scopes: [apps/admin/src/views/dashboard/]
+    depends_on: [SETUP-07]
+    estimate: M
+    status: todo
+    deliverables:
+      - 核心指标卡、漏斗、AI 成本、审计日志查询
+    acceptance:
+      - 指标口径与 PRD 一致且标注来源
+      - 自报与已确认数据分开显示
+
+  - id: INT-06
+    title: W8 路由接线与后台冒烟
+    wave: 8
+    kind: tail
+    role: backend
+    scopes: [apps/api/internal/server/]
+    depends_on: [MOD-01]
+    estimate: S
+    status: todo
+    deliverables:
+      - 注册审核路由，冒烟：发布→审核→下架→申诉
+    acceptance:
+      - make smoke-w8 通过
+
+  # ---------- W9：质量门 ----------
+  - id: QA-01
+    title: 契约回归扩展
+    wave: 9
+    kind: parallel
+    role: qa
+    scopes: [api/tests/]
+    depends_on: [FIX-05, INT-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 覆盖 FIX-01..05 新场景的正反例
+      - 保持 53 项既有回归全绿
+    acceptance:
+      - 新增用例先对旧稿失败、对新稿通过
+      - 不通过放宽断言使测试变绿
+
+  - id: QA-02
+    title: 后端集成测试
+    wave: 9
+    kind: parallel
+    role: qa
+    scopes: [apps/api/test/]
+    depends_on: [INT-03, INT-04]
+    estimate: L
+    status: todo
+    deliverables:
+      - 鉴权、CAS、幂等、事务、撤权即时的集成用例
+      - 使用真实 MySQL/Redis 的测试编排
+    acceptance:
+      - 并发撤权与旧版本写入用例可复现
+      - 幂等重放不产生重复副作用
+
+  - id: QA-03
+    title: E2E 与性能基线
+    wave: 9
+    kind: parallel
+    role: qa
+    scopes: [tools/e2e/, tools/perf/]
+    depends_on: [INT-04]
+    estimate: M
+    status: todo
+    deliverables:
+      - API 级端到端脚本覆盖两条闭环
+      - k6 基线：普通接口 P95 与 AI 异步接口分开
+    acceptance:
+      - 空数据、失败、恢复路径均有断言
+      - 不以 500ms 目标套 AI 生成接口
+
+  - id: QA-04
+    title: 视觉走查与无障碍
+    wave: 9
+    kind: parallel
+    role: design
+    scopes: [docs/qa/, .review/visual/]
+    depends_on: [MINI-07, ADMIN-04]
+    estimate: M
+    status: todo
+    deliverables:
+      - 按设计系统清单逐页走查并截图留档
+      - 对比度、点击区域、空态、错误态记录
+    acceptance:
+      - 每页有通过/问题/负责人三列
+      - 阻塞项为零才可进入试点
+
+  - id: SEC-01
+    title: 授权矩阵与越权用例
+    wave: 9
+    kind: parallel
+    role: qa
+    scopes: [docs/security/]
+    depends_on: [INT-06]
+    estimate: M
+    status: todo
+    deliverables:
+      - 角色×资源×操作矩阵
+      - 越权、撤权、跨教练、猜 ID 的用例清单
+    acceptance:
+      - 每条用例有预期状态码与数据不可见断言
+      - 交由 QA-01/QA-02 实现并可复跑
+
+  # ---------- W10：试点准备 ----------
+  - id: OPS-01
+    title: 部署与运行手册
+    wave: 10
+    kind: parallel
+    role: ops
+    scopes: [infra/prod/]
+    depends_on: [QA-02, QA-03]
+    estimate: M
+    status: todo
+    deliverables:
+      - 腾讯云单机 Docker Compose、备份恢复、回滚步骤
+      - 环境变量与密钥清单（不入库）
+    acceptance:
+      - 按手册可从零部署到预发
+      - 备份恢复演练有记录
+
+  - id: OPS-02
+    title: 种子内容与内容基线
+    wave: 10
+    kind: parallel
+    role: ops
+    scopes: [content/seed/]
+    depends_on: [QA-01]
+    estimate: M
+    status: todo
+    deliverables:
+      - 动作库、食物库、官方模板（增肌/减脂，训练+饮食）
+      - 过敏原与适用提示字段完整
+    acceptance:
+      - 种子数据通过契约校验与内容审核清单
+      - 不含真实用户健康信息
+
+  - id: OPS-03
+    title: 指标、告警与合规检查表
+    wave: 10
+    kind: parallel
+    role: ops
+    scopes: [docs/ops/]
+    depends_on: [QA-03]
+    estimate: M
+    status: todo
+    deliverables:
+      - 核心指标与告警阈值、日志脱敏检查
+      - 数据删除/注销/留存核对表
+    acceptance:
+      - 告警可在预发触发并有处置步骤
+      - 删除流程可演练且不残留可读健康数据

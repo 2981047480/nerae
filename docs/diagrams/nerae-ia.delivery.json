@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "210d394a-d659-4a4d-942c-01d2e4ba0564",
+  "status": "current",
+  "command": "deliver",
+  "type": "tree",
+  "input": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-ia.json",
+  "output": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-ia.html",
+  "specification": {
+    "sha256": "30f822e158d3c0603c30c3133a2adf4bd56911ae4d2cc3e03e399a0b32188a24",
+    "bytes": 6450
+  },
+  "artifact": {
+    "sha256": "7a59710278168d17578d630fa705dfb8ef5bd94de17a20296073b63efbd3878d",
+    "bytes": 865821
+  }
+}

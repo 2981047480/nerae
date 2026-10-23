@@ -1,0 +1,17 @@
+{
+  "stage": "design-handoff",
+  "ui_accepted": false,
+  "mutable_status_excluded": true,
+  "trace_definition_sha256": "17fa79056316bb0030f9266dff27f0e8521c8cd20f5baf3112c3842dc5121fba",
+  "files": {
+    "docs/design/round-03/00_CONTEXT_AND_SCOPE.md": "c6ba2deefbf30517bd63b713fb0f50037e14bcc4aa445872864ec9442b9e8a82",
+    "docs/design/round-03/01_INTENT_TO_EXPERIENCE.md": "be2c0326b69a691f3b3fd044720114771921673fc2bf947212c512d453a852b4",
+    "docs/design/round-03/02_SCENARIOS_AND_INTERACTIONS.md": "4a2eef188c66a3f6192285dd1a6a47c977ff695979ae36c2e7e3144c728987ff",
+    "docs/design/round-03/03_VISUAL_AND_MOTION.md": "faf16cf1a1e199f32e3f49e17015b56c9d9f60f49db75131797edf30613bc480",
+    "docs/design/round-03/04_TRADEOFFS_AND_VALIDATION.md": "e0db6f210ab144d97c0dfaa31769473a91b3915cdd68a21c7bd23e73dbce7083",
+    "docs/design/round-03/05_UI_BUILD_SPEC.md": "a39f2c31559b257c3c677a428340cce71884100a87ee5106750f26686019e93d",
+    "docs/design/round-03/06_EXECUTION_PACKET.md": "1c3c70d92e05ffe5400e9d97db6735976c901b54d2969b21e90fc07dcb89023c",
+    "docs/design/round-03/07_ACCEPTANCE.md": "1687e7d843f7c6b19c1715391e59ac77f37f1a0e23b9228cef2c3692ffbdb5ea",
+    "docs/design/DESIGN_FOUNDATION.md": "030265f63a1e6144d1646e46ad2fcdc57935485a07161166ed8623db7d6484f6"
+  }
+}

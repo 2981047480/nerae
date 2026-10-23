@@ -1,0 +1,1436 @@
+{
+  "version": 1,
+  "scope": "third-round intent-to-UI trace; not a second task DAG",
+  "source": "../DESIGN_FOUNDATION.md",
+  "source_item_count": 55,
+  "screen_families": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "items": [
+    {
+      "id": "G01",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G02",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S10",
+        "S12"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G03",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G04",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G05",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S10",
+        "S11",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G06",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "G07",
+      "group": "产品基因",
+      "source": "DESIGN_FOUNDATION §2",
+      "parents": [],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S09",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "N01",
+      "group": "心理需要",
+      "source": "DESIGN_FOUNDATION §3",
+      "parents": [
+        "G01",
+        "G02",
+        "G03",
+        "G06"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "N02",
+      "group": "心理需要",
+      "source": "DESIGN_FOUNDATION §3",
+      "parents": [
+        "G01",
+        "G02",
+        "G07"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S04",
+        "S05",
+        "S11",
+        "S12"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "N03",
+      "group": "心理需要",
+      "source": "DESIGN_FOUNDATION §3",
+      "parents": [
+        "G03",
+        "G04",
+        "G05"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L01",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "N01",
+        "N02",
+        "N03"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L02",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L01"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S08",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L03",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L01",
+        "N01",
+        "N03"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L04",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L01",
+        "L02",
+        "L03"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L05",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L04"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L06",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L05",
+        "N01"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S03",
+        "S04",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L07",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L05",
+        "L06"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L08",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "L09",
+      "group": "体验层级",
+      "source": "DESIGN_FOUNDATION §4",
+      "parents": [
+        "L02",
+        "L06",
+        "L08"
+      ],
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "screens": [
+        "S01",
+        "S03",
+        "S04",
+        "S05",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C01",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C02",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S01",
+        "S04"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C03",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S04"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C04",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S05",
+        "S08"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C05",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C06",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C07",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "C08",
+      "group": "使用情境",
+      "source": "DESIGN_FOUNDATION §5",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "screens": [
+        "S01",
+        "S04",
+        "S08"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "B01",
+      "group": "品牌体验",
+      "source": "DESIGN_FOUNDATION §6",
+      "parents": [
+        "G03",
+        "G06",
+        "L03",
+        "L08"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S03",
+        "S07",
+        "S09",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "B02",
+      "group": "品牌体验",
+      "source": "DESIGN_FOUNDATION §6",
+      "parents": [
+        "G01",
+        "L02",
+        "L09"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S04"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "B03",
+      "group": "品牌体验",
+      "source": "DESIGN_FOUNDATION §6",
+      "parents": [
+        "G04",
+        "N03",
+        "L07"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S07",
+        "S08",
+        "S14"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "B04",
+      "group": "品牌体验",
+      "source": "DESIGN_FOUNDATION §6",
+      "parents": [
+        "G07",
+        "N02",
+        "L09"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S04",
+        "S05",
+        "S12"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "B05",
+      "group": "品牌体验",
+      "source": "DESIGN_FOUNDATION §6",
+      "parents": [
+        "L01",
+        "L08"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V01",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L05",
+        "B01"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V02",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L02",
+        "L05",
+        "B05"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V03",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L05",
+        "B01"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V04",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L03",
+        "B02",
+        "B05"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V05",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L06",
+        "B01"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V06",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "G03",
+        "B02",
+        "B03"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S06",
+        "S07"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V07",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L06",
+        "B05"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "V08",
+      "group": "视觉子系统",
+      "source": "DESIGN_FOUNDATION §6.1",
+      "parents": [
+        "L09",
+        "B02"
+      ],
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T01",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "G02",
+        "G03"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "S07"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T02",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "G07",
+        "L02"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S05"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T03",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "G04",
+        "G05"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S13",
+        "S14",
+        "S15"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T04",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "N01",
+        "L06"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S03",
+        "S08",
+        "S09",
+        "S11",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T05",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "N02",
+        "N03"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08",
+        "S12"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "T06",
+      "group": "核心矛盾",
+      "source": "DESIGN_FOUNDATION §7",
+      "parents": [
+        "L02",
+        "L08"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": ""
+    },
+    {
+      "id": "H01",
+      "group": "待验证假设",
+      "source": "DESIGN_FOUNDATION §8",
+      "parents": [
+        "G01",
+        "C01"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "H02",
+      "group": "待验证假设",
+      "source": "DESIGN_FOUNDATION §8",
+      "parents": [
+        "G07",
+        "C02"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S04",
+        "S05"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "H03",
+      "group": "待验证假设",
+      "source": "DESIGN_FOUNDATION §8",
+      "parents": [
+        "G03",
+        "C05"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S06",
+        "S07",
+        "S08"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "H04",
+      "group": "待验证假设",
+      "source": "DESIGN_FOUNDATION §8",
+      "parents": [
+        "N01",
+        "N02",
+        "N03",
+        "C08"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "H05",
+      "group": "待验证假设",
+      "source": "DESIGN_FOUNDATION §8",
+      "parents": [
+        "L02",
+        "B05"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "Q01",
+      "group": "验证原则",
+      "source": "DESIGN_FOUNDATION §9",
+      "parents": [
+        "H01",
+        "H02",
+        "H03",
+        "H04"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "Q02",
+      "group": "验证原则",
+      "source": "DESIGN_FOUNDATION §9",
+      "parents": [
+        "L04",
+        "L06"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "Q03",
+      "group": "验证原则",
+      "source": "DESIGN_FOUNDATION §9",
+      "parents": [
+        "H05",
+        "L08",
+        "T06"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    },
+    {
+      "id": "Q04",
+      "group": "验证原则",
+      "source": "DESIGN_FOUNDATION §9",
+      "parents": [
+        "G07",
+        "L09"
+      ],
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "build_spec": "05_UI_BUILD_SPEC.md",
+      "acceptance": "07_ACCEPTANCE.md",
+      "status": "documented",
+      "evidence": [],
+      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+    }
+  ]
+}

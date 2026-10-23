@@ -1,0 +1,3895 @@
+{
+  "version": 2,
+  "as_of": "2026-10-24",
+  "status_semantics": "工作包与可派发执行卡在同一DAG；ready只列未暂缓、依赖已accepted的task/integration。planned不代表实施。",
+  "model_policies": {
+    "judgment": {
+      "preferred": "gpt-5.6-sol",
+      "reasoning": "high",
+      "reason": "架构/产品/安全/视觉与最终判断",
+      "escalate": "关键发布或xhigh仍不足时由Lead决定更高推理；不自动换模型"
+    },
+    "implementation": {
+      "preferred": "gpt-5.6-terra",
+      "reasoning": "medium",
+      "reason": "普通模块实施；运行时必须核对模型可用性",
+      "unavailable_fallback": "保持当前原生默认模型或由Lead显式选择可用Sol；任务报告记录实际值，不创建外部路由"
+    },
+    "verification": {
+      "preferred": "gpt-5.6-luna",
+      "reasoning": "medium",
+      "reason": "有固定命令与客观输出的确定性验证；不独立作最终安全/视觉接受决定",
+      "escalate": "非确定失败或安全/视觉判断交给Sol/Lead"
+    },
+    "harness_ui": {
+      "preferred": "opencode-go/deepseek-v4.1-flash",
+      "reasoning": "Max",
+      "reason": "用户明确指定现有 DeepSeek Harness / OpenCode Go 实现 UI；最终产品与视觉判断由 Lead 负责",
+      "unavailable_fallback": "不自动切换；记录真实阻塞并等待恢复指定执行链"
+    }
+  },
+  "tasks": [
+    {
+      "id": "F01",
+      "title": "可复现工程与隔离环境",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-01",
+        "F01-02",
+        "F01-03",
+        "F01-04",
+        "F01-05",
+        "F01-I"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        ".gitignore",
+        ".node-version",
+        ".github/workflows/",
+        "Makefile",
+        "apps/api/go.mod",
+        "apps/api/go.sum",
+        "apps/api/cmd/",
+        "apps/api/internal/config/",
+        "apps/client/package.json",
+        "apps/client/vite.config.ts",
+        "apps/client/tsconfig.json",
+        "apps/admin/package.json",
+        "apps/admin/vite.config.ts",
+        "apps/admin/tsconfig.json",
+        "scripts/dev/",
+        "infra/compose/",
+        "docs/evidence/F01/",
+        ".go-version",
+        "eslint.config.mjs",
+        "apps/api/.golangci.yml",
+        "apps/api/README.md",
+        "apps/client/README.md",
+        "apps/client/src/main.ts",
+        "apps/client/src/App.vue",
+        "apps/client/src/pages.json",
+        "apps/client/src/manifest.json",
+        "apps/admin/README.md",
+        "apps/admin/index.html",
+        "apps/admin/src/main.ts",
+        "docs/engineering/",
+        "tests/foundation/",
+        "scripts/integration/foundation/",
+        "docs/engineering/toolchain.md",
+        "docs/evidence/F01/F01-01/",
+        "docs/evidence/F01/F01-02/",
+        "docs/evidence/F01/F01-03/",
+        "docs/engineering/environments.md",
+        "docs/evidence/F01/F01-04/",
+        "docs/engineering/ci-gates.md",
+        "docs/evidence/F01/F01-05/",
+        "docs/evidence/F01/F01-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "建立 Go/uni-app/admin 骨架和依赖锁；Git 初始化基线后才建 worktree；开发启动显式工作区、端口与独立测试库；文档列环境变量名称但无密钥。",
+      "acceptance": [
+        "干净检出可安装并启动健康检查；小程序/H5均能构建",
+        "启动脚本不重置数据；两个 worktree 不共用端口/数据库；没有 .env/真实数据进 Git",
+        "脚本列出的 lint/typecheck/test/build 是真实命令，缺模块不会假绿"
+      ],
+      "verification_commands": [
+        "make bootstrap",
+        "make check-foundation",
+        "make build-client"
+      ],
+      "risks": [
+        "实际 uni-app 与 Node/Vite 兼容组合未知，需实测锁定；外网依赖可能受限"
+      ],
+      "effort_days": [
+        5.0,
+        10
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "F02",
+      "title": "生成契约和统一 transport 边界",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01",
+        "F02-01",
+        "F02-02",
+        "F02-03",
+        "F02-I"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "packages/contracts/",
+        "apps/api/internal/gen/",
+        "apps/api/internal/server/",
+        "apps/api/internal/middleware/",
+        "scripts/codegen/",
+        "api/tests/",
+        "docs/evidence/F02/",
+        "apps/api/migrations/transport/",
+        "tests/integration/transport/",
+        "scripts/integration/transport/",
+        "docs/evidence/F02/F02-01/",
+        "docs/evidence/F02/F02-02/",
+        "docs/evidence/F02/F02-03/",
+        "docs/evidence/F02/F02-I/",
+        "apps/api/go.mod",
+        "apps/api/go.sum",
+        "pnpm-lock.yaml"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "从唯一 OpenAPI 生成 TS/Go，统一错误、认证上下文、请求校验、幂等适配器和 schema 漂移 CI；登记共享接口变更窗口。",
+      "acceptance": [
+        "生成两次无差异；现有静态反例仍过",
+        "错误 code/requestId 可关联；生成物不实现授权，独立 middleware 测试验证其职责",
+        "在隔离 MySQL 中证明幂等并发一次提交及失败恢复"
+      ],
+      "verification_commands": [
+        "make contract-check",
+        "make codegen-check",
+        "make test-integration MODULE=middleware"
+      ],
+      "risks": [
+        "生成器兼容与旧依赖安全检查；授权不能只靠 schema"
+      ],
+      "effort_days": [
+        3.5,
+        8.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "D01",
+      "title": "视觉基线与主路径可用性评审",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D01-01",
+        "D01-02",
+        "D01-03",
+        "D01-I"
+      ],
+      "role": "product-designer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "design/reviews/",
+        "docs/UI_SPEC.md",
+        "design/tokens.json",
+        "docs/evidence/D01/",
+        "design/prototype/",
+        "docs/design/round-03/",
+        "scripts/design/",
+        "AGENTS.md",
+        "README.md",
+        "RETRO.md",
+        "docs/CURRENT_STATE.md",
+        "docs/DECISION_LOG.md",
+        "docs/HANDOFF_SUMMARY.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "docs/UI_SPEC.md",
+        "docs/PRD.md",
+        "docs/design/DESIGN_FOUNDATION.md",
+        "docs/design/round-03/00_CONTEXT_AND_SCOPE.md",
+        "docs/design/round-03/06_EXECUTION_PACKET.md",
+        "docs/design/round-03/07_ACCEPTANCE.md"
+      ],
+      "deliverables": "55项设计意图逐项落实为产品/交互/视觉/动效文稿；指定DeepSeek实现四种代表情境与全量16界面族，由Lead独立验收；UI样机不等于正式业务或真机接受。",
+      "acceptance": [
+        "3秒可辨默认动作；无重复资料输入",
+        "390/320宽度、文字放大、长标题和错误状态可读",
+        "记录六类动作预算及认知/执行负担分数，超过6须先改设计；不得伪称真实用户研究"
+      ],
+      "verification_commands": [
+        "python3 scripts/plan.py check",
+        "人工任务走查与截图记录，命令/设备写入报告"
+      ],
+      "risks": [
+        "指定订阅执行可用性、素材来源、真实视觉与动效质量；本轮不是微信真机或真实后端，不能冒称用户研究或业务验收"
+      ],
+      "effort_days": [
+        3.5,
+        7
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "L01",
+      "title": "取得上线、联络及数据处理依据",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "L01-01",
+        "L01-02",
+        "L01-03",
+        "L01-I"
+      ],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/external/",
+        "docs/release-config/",
+        "docs/evidence/L01/",
+        "docs/evidence/external/index/",
+        "docs/evidence/L01/L01-01/",
+        "docs/evidence/external/platform/",
+        "docs/evidence/L01/L01-02/",
+        "docs/evidence/external/data/",
+        "docs/evidence/L01/L01-03/",
+        "docs/evidence/L01/L01-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RELEASE_GATES.md",
+        "docs/小程序上线成本与资质.md",
+        "docs/APP_FLOW.md"
+      ],
+      "deliverables": "取得实际主体/类目/允许联系渠道、资质、消息与健康数据留存、AI条款的真实证据；形成可配置放行记录；材料受限时明确未决。",
+      "acceptance": [
+        "各结论对应实际主体/业务形态和官方答复/适当专业核定",
+        "陌生双方联络脚本可执行且无绕行；通知拒绝/窗口过期有返回路径",
+        "未核定项保持关闭，禁止凭历史文档把状态改 approved"
+      ],
+      "verification_commands": [
+        "按 RELEASE_GATES 的 L01 逐条人工核验并登记证据"
+      ],
+      "risks": [
+        "依赖主体材料、账号、平台答复；不估外部等待；本任务可能 blocked"
+      ],
+      "effort_days": [
+        3.0,
+        6
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "A01",
+      "title": "身份、年龄与最小档案",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "F02"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/auth/",
+        "apps/api/internal/modules/user/",
+        "apps/api/migrations/auth/",
+        "apps/api/migrations/user/",
+        "docs/evidence/A01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现微信登录、会话失效、独立管理身份边界、18+声明、本人最小资料与可选采集同意。",
+      "acceptance": [
+        "角色切换不提升教练/后台权限",
+        "登录回跳保留原意图；取消登录不产生资源",
+        "敏感资料省略/清除/撤回语义不同，日志不含正文"
+      ],
+      "verification_commands": [
+        "make test MODULE=auth,user",
+        "make test-integration MODULE=auth,user"
+      ],
+      "risks": [
+        "真实微信账号和 secret 只走受控配置；测试伪造主体不能代替真实登录联调"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A02",
+      "title": "服务关系与即时撤权",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/relation/",
+        "apps/api/migrations/relation/",
+        "docs/evidence/A02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现关系提议、同版双方确认、grant范围、结束/解除/到期、访问审计和事件；暴露窄授权查询接口。",
+      "acceptance": [
+        "旧 termsHash/版本拒绝；不同教练与学员越权负例覆盖",
+        "结束/撤权同事务生效，排队AI/通知提交前复验",
+        "跨账号同幂等键隔离；过期确认不得重新激活"
+      ],
+      "verification_commands": [
+        "make test MODULE=relation",
+        "make test-integration MODULE=relation"
+      ],
+      "risks": [
+        "数据访问核心，reviewer 必须复核；Redis不能成为最终授权真源"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A03",
+      "title": "动作库、私人计划与教练发布",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "I-A01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/catalog/",
+        "apps/api/internal/modules/plan/",
+        "apps/api/internal/modules/delivery/",
+        "apps/api/migrations/catalog/",
+        "apps/api/migrations/plan/",
+        "docs/evidence/A03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "提供版本化动作、私人训练/饮食内容、草稿创建编辑回读、教练发布与学员投影；内容种类严格区分。",
+      "acceptance": [
+        "清缓存可读动作说明；改名/退休不改历史",
+        "退出/重进/另一设备恢复同草稿；412保留差异",
+        "未发布版对学员404；修改后学员仍看到旧发布版；关联资源同主体"
+      ],
+      "verification_commands": [
+        "make test MODULE=catalog,plan,delivery",
+        "make test-integration MODULE=plan,delivery"
+      ],
+      "risks": [
+        "动作内容须有来源与使用权；格式合法不是专业安全认证"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A04",
+      "title": "日历、开始训练与可靠组记录",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A03"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/schedule/",
+        "apps/api/internal/modules/workout/",
+        "apps/api/migrations/schedule/",
+        "apps/api/migrations/workout/",
+        "docs/evidence/A04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现固定日期领域服务、选择CAS、事项状态、原子start、版本会话/组记录、补录与完成率。",
+      "acceptance": [
+        "周中、休息、漏练、暂停、恢复、改期、切计划/时区和离线补录表驱动测试",
+        "并发首次start只有一副本/安排/会话；失败回滚；幂等缓存过期也防重",
+        "定时提醒与首页同一计算；历史版不被新发布覆写"
+      ],
+      "verification_commands": [
+        "make test MODULE=schedule,workout",
+        "make test-integration MODULE=schedule,workout"
+      ],
+      "risks": [
+        "MySQL并发、日界线与跨设备冲突是高风险，需专门review"
+      ],
+      "effort_days": [
+        5,
+        8
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A05",
+      "title": "固定 MiMo 配置与教练 AI 草稿",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A03"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/ai/",
+        "apps/api/internal/rules/",
+        "apps/api/migrations/ai/",
+        "apps/api/prompts/",
+        "docs/evidence/A05/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现供应商适配、schema/安全校验、费用预留结算、技术失败、真实AI运行追踪；只ready创建草稿，手工发布。",
+      "acceptance": [
+        "ready缺正文拒绝；needs_input/block不造计划；503可恢复",
+        "安全/信息不足不换模型重试；超时晚到回调幂等计费",
+        "取得真实供应商响应/用量/延迟及专业安全评测记录后才能标联调通过；此前注明仅单测"
+      ],
+      "verification_commands": [
+        "make test MODULE=ai,rules",
+        "make test-integration MODULE=ai",
+        "make eval-ai CONFIG=mimo-v2.6-flash"
+      ],
+      "risks": [
+        "真实调用需已批准数据条款/费用范围，未有材料则该子验收 blocked；可先用明确测试替身完成适配单测"
+      ],
+      "effort_days": [
+        5,
+        8
+      ],
+      "flow_ids": [
+        "F03",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "真实调用前须L01核定供应商数据条款并有授权费用范围"
+      ],
+      "acceptance_requires": [
+        "L01"
+      ]
+    },
+    {
+      "id": "A06",
+      "title": "关系会话、咨询消息与站内未读",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "I-A01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/conversation/",
+        "apps/api/internal/modules/notify/",
+        "apps/api/migrations/conversation/",
+        "apps/api/migrations/notify/",
+        "docs/evidence/A06/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现分线程文字消息、健康分类/权限、只读历史、已读游标、outbox与站内通知；微信订阅为受控可选适配。",
+      "acceptance": [
+        "无appointment/plan的active关系能双方交流",
+        "撤权时旧分页/摘要/通知/缓存都不泄漏；客服工单隔离",
+        "重复发送只一条，已读不倒退；外部推送失败仍站内可见；留存配置缺失阻止生产开关"
+      ],
+      "verification_commands": [
+        "make test MODULE=conversation,notify",
+        "make test-integration MODULE=conversation,notify"
+      ],
+      "risks": [
+        "消息正文可能含敏感信息，不能完全信任客户端ordinary分类；具体留存依赖L01"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A07",
+      "title": "教练待办与按授权的学员读模型",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A04",
+        "A06"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/coachwork/",
+        "apps/api/migrations/coachwork/",
+        "docs/evidence/A07/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现待办、草稿恢复入口、授权分区、身体/训练/伤病必要读取投影；新增读契约先交Lead审查再由共享owner落盘。",
+      "acceptance": [
+        "无权统一withheld，不泄漏资料是否存在",
+        "连续两个应练日语义来自schedule；无安排/暂停不误提醒",
+        "待办点击定位真实可处理对象，空数据/已处理/状态变化可恢复"
+      ],
+      "verification_commands": [
+        "make test MODULE=coachwork",
+        "make test-integration MODULE=coachwork"
+      ],
+      "risks": [
+        "列表聚合最容易绕过授权；不得复制全量健康数据到缓存"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F02",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "A08",
+      "title": "教练供给、咨询与来源记录",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "I-A01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/coach/",
+        "apps/api/internal/modules/plazacoach/",
+        "apps/api/internal/modules/appointment/",
+        "apps/api/migrations/coach/",
+        "apps/api/migrations/appointment/",
+        "docs/evidence/A08/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现主页/服务包快照、认证状态、公开教练列表、预填咨询和成交自报；联络入口受L01配置控制。",
+      "acceptance": [
+        "非认证教练不能冒充已审身份；套餐改价不改服务快照",
+        "预填使用本人最新资料，用户可修改；重复提交不新建多单",
+        "自报不变支付事实；关闭后重新联系有新上下文；来源分组可追溯"
+      ],
+      "verification_commands": [
+        "make test MODULE=coach,plazacoach,appointment",
+        "make test-integration MODULE=appointment"
+      ],
+      "risks": [
+        "公开陌生获客放行需L01/V02；私域测试不替代"
+      ],
+      "effort_days": [
+        4,
+        6
+      ],
+      "flow_ids": [
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "O01",
+      "title": "私有文件、认证审核与最小运营台",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/assets/",
+        "apps/api/internal/modules/admin/",
+        "apps/api/internal/modules/moderation/",
+        "apps/api/migrations/assets/",
+        "apps/api/migrations/admin/",
+        "apps/admin/src/",
+        "docs/evidence/O01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现最小私有上传凭证、文件类型/大小/归属校验、教练证书审核、后台审计；投诉与评价申诉受控人工SOP入口。",
+      "acceptance": [
+        "跨账号上传/读取拒绝；签名过期失效，私有证书不可公网访问",
+        "后台身份/权限独立；只有获批证书信息可公开",
+        "SOP有负责人替补、时限、受控证据；真实COS与审核联调单列",
+        "最小运营能力逐项验收：认证证据、审核队列、受限文件访问、操作审计；缺任一项不得以后台壳层已构建代替。"
+      ],
+      "verification_commands": [
+        "make test MODULE=assets,admin,moderation",
+        "make test-integration MODULE=assets,admin",
+        "make check-admin"
+      ],
+      "risks": [
+        "P0上传仅证书必要链路；训练照片/公开UGC媒体P1；不得用公共桶简化"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "真实COS/微信审核调用须提供批准的测试账号和配置"
+      ],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U01",
+      "title": "设计系统与多端壳层",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "F02",
+        "D01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "packages/ui/",
+        "apps/client/src/app/",
+        "apps/client/src/platform/",
+        "apps/client/src/api/",
+        "apps/client/src/navigation/",
+        "apps/client/src/styles/",
+        "apps/client/src/stores/",
+        "docs/evidence/U01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "把token/版式/组件转为uni-app实现；统一平台登录/存储/导航、错误中文映射与账号隔离；非页面业务不散落uni调用。",
+      "acceptance": [
+        "按钮/状态/表单/底部动作条全状态可视化",
+        "320/390/430宽、桌面、200%文字及Reduce Motion等价",
+        "页面仅一主操作，底部安全区/键盘不遮控件；H5与微信真实构建"
+      ],
+      "verification_commands": [
+        "make typecheck-client",
+        "make test-client FEATURE=shell",
+        "make build-client",
+        "make visual-ui"
+      ],
+      "risks": [
+        "H5截图不能替代微信真机；微信新旧版本能力差异需适配"
+      ],
+      "effort_days": [
+        4,
+        6
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U02",
+      "title": "学员今天与训练记录界面",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A04",
+        "U01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/training/",
+        "apps/client/src/features/today/",
+        "docs/evidence/U02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现今天/休息/暂停/未安排、自动开始、组记录、离线队列、恢复和完成反馈；采用冻结动作说明。",
+      "acceptance": [
+        "已有计划≤2点击进入；登录回跳、双击、弱网、重启后不丢状态",
+        "冲突显示差异，换账号隔离缓存/待同步队列",
+        "无数据不用假图表；完成与待同步文案不同"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=training,today",
+        "make e2e FLOW=F01,F02",
+        "make visual-ui FLOW=F01"
+      ],
+      "risks": [
+        "离线未确认输入不是完成事实；平台存储容量与生命周期"
+      ],
+      "effort_days": [
+        5,
+        8
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U03",
+      "title": "教练继续草稿、发布与待办",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A05",
+        "A07",
+        "U01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/coachwork/",
+        "apps/client/src/features/delivery/",
+        "docs/evidence/U03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现草稿恢复、AI差异/缺项/阻断、手动编辑和发布确认，授权分区与待办顺序。",
+      "acceptance": [
+        "另一设备可恢复；旧版冲突不静默覆盖",
+        "AI ready/needs_input/block/503/额度耗尽界面齐全",
+        "发布前能看具体内容，学员新版本需主动采用"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=coachwork,delivery",
+        "make e2e FLOW=F03",
+        "make visual-ui FLOW=F03"
+      ],
+      "risks": [
+        "计划编辑信息量大，分区渐进展开而非表单墙"
+      ],
+      "effort_days": [
+        5,
+        8
+      ],
+      "flow_ids": [
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U04",
+      "title": "关系消息与通知界面",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A06",
+        "U01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/conversation/",
+        "apps/client/src/features/notifications/",
+        "docs/evidence/U04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现咨询/关系独立线程、发送重试、未读、敏感不可见和结束只读；授权范围提示不泄漏内容。",
+      "acceptance": [
+        "消息不需计划即可回复；发送失败保留编辑内容",
+        "撤权打开中的屏幕、历史分页和通知预览更新",
+        "拒绝订阅后站内流程仍完整；消息长文/键盘布局合格"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=conversation,notifications",
+        "make e2e FLOW=F04",
+        "make visual-ui FLOW=F04"
+      ],
+      "risks": [
+        "前端清缓存只是补充，服务端仍必须鉴权"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U05",
+      "title": "教练发现、咨询预填与关系确认界面",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A08",
+        "O01",
+        "U01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/coaches/",
+        "apps/client/src/features/consultations/",
+        "apps/client/src/features/relations/",
+        "docs/evidence/U05/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现发现与服务说明、咨询预填、条件联络入口、同条款确认与逐范围授权。",
+      "acceptance": [
+        "已有档案重复输入0；单个默认下一步",
+        "渠道未核定/拒绝/失效明确可恢复；不伪显示成交",
+        "授权不默认勾选；退出/过期/被对方结束不会错误生效"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=coaches,consultations,relations",
+        "make e2e FLOW=F05",
+        "make visual-ui FLOW=F05"
+      ],
+      "risks": [
+        "联络能力无证据保持关闭，页面可完成受限状态联调"
+      ],
+      "effort_days": [
+        4,
+        6
+      ],
+      "flow_ids": [
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "I01",
+      "title": "集成首个可运行交付闭环",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "U02",
+        "U03",
+        "U04",
+        "U05",
+        "I-A01",
+        "I-A02",
+        "I-A03"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "apps/client/src/navigation/",
+        "scripts/integration/",
+        "docs/evidence/integration-a/",
+        "docs/evidence/I01/",
+        "tests/integration/batches/",
+        "scripts/integration/identity-relation/",
+        "tests/integration/batches/identity-relation/",
+        "docs/evidence/I01/I-A01/",
+        "scripts/integration/delivery-training/",
+        "tests/integration/batches/delivery-training/",
+        "docs/evidence/I01/I-A02/",
+        "scripts/integration/conversation-operations/",
+        "tests/integration/batches/conversation-operations/",
+        "docs/evidence/I01/I-A03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "串行合并所有业务模块路由、迁移顺序与前端入口；从空测试库启动真实闭环，移除仅用于开发的演示入口。",
+      "acceptance": [
+        "完整F01-F05内部交付可复跑；允许L01尚未开公开渠道但必须显示受限状态",
+        "记录输入分支/提交、迁移、环境与依赖版本；集成后重跑权限/版本/幂等",
+        "任何模块不满足验收退回原owner，不在集成中大范围重写"
+      ],
+      "verification_commands": [
+        "make migrate-test",
+        "make check",
+        "make e2e BATCH=P0-A"
+      ],
+      "risks": [
+        "跨模块接缝与共享路由；集成不能只拼截图"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "partial"
+    },
+    {
+      "id": "V01",
+      "title": "P0-A 运行时、视觉与恢复验收",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "I01",
+        "S01-A"
+      ],
+      "role": "qa-verifier",
+      "model_policy": "verification",
+      "owner": null,
+      "write_allowlist": [
+        "tests/e2e/p0a/",
+        "tests/visual/p0a/",
+        "docs/evidence/qa-a/",
+        "docs/evidence/V01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "以真实HTTP/DB和微信体验版验证核心正常/空/错误/重复/边界路径，给基线截图、动作预算、可恢复故障清单。",
+      "acceptance": [
+        "微信iOS/Android与H5范围明确；真机缺失标partial",
+        "未授权/撤权/旧版/双击/离线/重启/时区反例有真实断言",
+        "至少一轮恢复数据库和失败重试；无P1未解决回归才能内部交付"
+      ],
+      "verification_commands": [
+        "make e2e BATCH=P0-A",
+        "make visual-diff BATCH=P0-A",
+        "make security-negative BATCH=P0-A"
+      ],
+      "risks": [
+        "不把单测或H5截图称为微信真机通过"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "V02",
+      "title": "陌生获客渠道双端验收",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "V01",
+        "L01"
+      ],
+      "role": "qa-verifier",
+      "model_policy": "verification",
+      "owner": null,
+      "write_allowlist": [
+        "tests/e2e/contact/",
+        "docs/evidence/contact/",
+        "docs/evidence/V02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "在允许的实际通道完成两名此前陌生参与者的咨询到外部约定再回站确认；记录拒绝与失效路径。",
+      "acceptance": [
+        "双方此前无联系方式，来源/身份与同条款确认可追溯",
+        "拒绝订阅、联络取消、未达成服务及重新联系分别通过",
+        "没有真实渠道/测试人则blocked，绝不用私域代替"
+      ],
+      "verification_commands": [
+        "按 APP_FLOW F05 与 RELEASE_GATES G3 执行真实双端验收"
+      ],
+      "risks": [
+        "依赖外部批准和测试参与者；不能用自动化模拟完成证明"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "L01证据齐全及两名陌生测试参与者"
+      ],
+      "acceptance_requires": []
+    },
+    {
+      "id": "B01",
+      "title": "训练饮食模板广场与独立副本",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "A03"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/plazaplan/",
+        "apps/api/migrations/plazaplan/",
+        "docs/evidence/B01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现公开/链接可见性、固定模板版本、来源标签、训练/饮食筛选、另存独立副本。",
+      "acceptance": [
+        "匿名仅可读已发布public；link用不可猜令牌",
+        "下架与分享失效一致；另存后改源不改私有历史",
+        "列表空数据/分页重复/长字段/无适用内容有可解释结果"
+      ],
+      "verification_commands": [
+        "make test MODULE=plazaplan",
+        "make test-integration MODULE=plazaplan"
+      ],
+      "risks": [
+        "初始模板与动作/饮食内容需要真实来源和审核"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "B02",
+      "title": "发布助手与审核链",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B01",
+        "A05",
+        "O01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/publish/",
+        "apps/api/migrations/publish/",
+        "docs/evidence/B02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现AI预填、手工草稿恢复、字段来源、hash确认、提交审核、来源标签、下架恢复；复用moderation接口。",
+      "acceptance": [
+        "改内容/来源/可见性使旧确认失效",
+        "缺项不造完整内容；估算须确认；首次发布人工审核前不可公开",
+        "重复提交一次公开版；恢复不能用新正文替换旧审核版"
+      ],
+      "verification_commands": [
+        "make test MODULE=publish",
+        "make test-integration MODULE=publish"
+      ],
+      "risks": [
+        "安全审核与作者确认不是同一证据；专业规则待核定不得写死"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "B03",
+      "title": "饮食自评、观察与证据不足分析",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "A05",
+        "A07"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/diet/",
+        "apps/api/internal/modules/anomaly/",
+        "apps/api/migrations/diet/",
+        "apps/api/migrations/anomaly/",
+        "docs/evidence/B03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现餐次自评、独立自述观察、确认来源、过敏原单独授权、证据引用与教练复核。",
+      "acceptance": [
+        "自评绝不推出摄入量；未知/拒绝/未报告过敏分开",
+        "不足证据返回insufficient_data；不自动诊断或公开风险标签",
+        "历史checkin引用原版，撤权后异步评估/教练读取不可继续"
+      ],
+      "verification_commands": [
+        "make test MODULE=diet,anomaly",
+        "make test-integration MODULE=diet,anomaly",
+        "make eval-ai SUITE=diet-evidence"
+      ],
+      "risks": [
+        "专业审核规则与供应商数据条款是上线门槛；不把静态阈值当医学结论"
+      ],
+      "effort_days": [
+        5,
+        8
+      ],
+      "flow_ids": [
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "B04",
+      "title": "模板内建议及显式应用",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B01",
+        "A05"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/plan/adjustment/",
+        "apps/api/migrations/adjustment/",
+        "docs/evidence/B04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现建议资源、版本/hash/过期状态、确认应用的新版本和业务幂等；建议不能写当前日历。",
+      "acceptance": [
+        "仅本人self/template；不能直接编辑coach来源",
+        "同时手工编辑返回412；过期409；重复确认不产生两版",
+        "基于旧内容提示重新提议，不自动合并或扩大为从零处方"
+      ],
+      "verification_commands": [
+        "make test MODULE=plan/adjustment",
+        "make test-integration MODULE=plan/adjustment"
+      ],
+      "risks": [
+        "复用plan窄接口；变动其根服务需Lead串行回交A03owner"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F06"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "B05",
+      "title": "收藏分享热门与可见性失效",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/engagement/",
+        "apps/api/migrations/engagement/",
+        "docs/evidence/B05/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现收藏/分享令牌/热门读模型，定义去重与反滥用；分享保留来源和举报入口。",
+      "acceptance": [
+        "匿名/链接/下架边界一致，计数不是权限",
+        "重复收藏与重放幂等；热门无数据时不造榜单",
+        "缓存失效可测，统计能重建不影响内容真源"
+      ],
+      "verification_commands": [
+        "make test MODULE=engagement",
+        "make test-integration MODULE=engagement"
+      ],
+      "risks": [
+        "排名不从健康数据构造；不为了视觉漂亮伪造热度"
+      ],
+      "effort_days": [
+        2,
+        4
+      ],
+      "flow_ids": [
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U06",
+      "title": "计划广场与发布编辑界面",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B02",
+        "B05",
+        "U02"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/plaza/",
+        "apps/client/src/features/publish/",
+        "docs/evidence/U06/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现训练/饮食发现、内容详情、单一开始动作、来源说明、另存/分享、AI预填编辑与审核结果。",
+      "acceptance": [
+        "新手默认官方/教练，学员分享需明确选择",
+        "缺项/估算集中核对，公开范围清楚，草稿退出恢复",
+        "空/下架/分享失效/审核拒绝文案可行动，不给假内容"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=plaza,publish",
+        "make e2e FLOW=F07-publish",
+        "make visual-ui FLOW=F07-publish"
+      ],
+      "risks": [
+        "不要把多种内容堆成同等卡片导致决策负担"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F01",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "U07",
+      "title": "饮食打卡与建议确认界面",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B03",
+        "B04",
+        "U02"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/diet/",
+        "apps/client/src/features/adjustments/",
+        "docs/evidence/U07/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现轻量自评、可选观察、信息不足状态、建议前后差异/确认/过期/采用新版提示。",
+      "acceptance": [
+        "不强填份量，未知不显示0摄入",
+        "重要估算/授权确认不能默认勾选",
+        "改动被其他设备覆盖前给版本差异，已有安排不暗改"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=diet,adjustments",
+        "make e2e FLOW=F06,F07-diet",
+        "make visual-ui FLOW=F06"
+      ],
+      "risks": [
+        "避免把“按计划吃”显示为已验证营养达标"
+      ],
+      "effort_days": [
+        4,
+        6
+      ],
+      "flow_ids": [
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "O02",
+      "title": "评价、举报与可审计申诉",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "A08",
+        "O01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/review/",
+        "apps/api/migrations/review/",
+        "apps/admin/src/features/review/",
+        "docs/ops/review/",
+        "docs/evidence/O02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "实现基于历史服务证据的评价、举报及工单入口；最小申诉SOP/审计/恢复，完整高级后台可后置。",
+      "acceptance": [
+        "关系结束不剥夺历史评价资格；自报支付不作已验证成交",
+        "3工作日申诉与72h投诉响应有负责人/超时升级演练",
+        "撤权证据不可随工单永久扩散；更正下架同步公共读模型",
+        "内容审核、举报、评价申诉各有入口/负责人/权限/超时/恢复证据；界面交付另按后续设计执行。"
+      ],
+      "verification_commands": [
+        "make test MODULE=review",
+        "make test-integration MODULE=review",
+        "make e2e FLOW=appeal"
+      ],
+      "risks": [
+        "只有人工表模板不算运营就绪；真实负责人需认领"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "O03",
+      "title": "可观测性、备份恢复与隐私运维",
+      "batch": "operations",
+      "status": "planned",
+      "depends_on": [
+        "A06",
+        "O01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "infra/deploy/",
+        "infra/monitoring/",
+        "scripts/ops/",
+        "apps/api/internal/modules/privacy/",
+        "apps/api/internal/modules/analytics/",
+        "apps/api/migrations/privacy/",
+        "docs/ops/runbooks/",
+        "docs/evidence/O03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "交付结构化脱敏日志、SLO/费用/队列监控、备份恢复、删除导出、事件来源统计、配置开关与回滚手册。",
+      "acceptance": [
+        "密钥/健康正文不进日志或通用埋点",
+        "真实测试备份恢复到独立库并核对记录/授权；回滚兼容迁移",
+        "删除与撤权在缓存/任务/备份恢复后仍有效；队列死信可定位并人工处置",
+        "指标、审计检索、导出权限与留存/删除演练分别登记责任和证据。"
+      ],
+      "verification_commands": [
+        "make test MODULE=privacy,analytics",
+        "make test-integration MODULE=privacy",
+        "make restore-drill ENV=isolated-test",
+        "make redact-check"
+      ],
+      "risks": [
+        "生产部署与外部告警发送需用户明确授权；本任务先交付可演练制品"
+      ],
+      "effort_days": [
+        4,
+        7
+      ],
+      "flow_ids": [
+        "F01",
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [
+        "L01"
+      ]
+    },
+    {
+      "id": "I02",
+      "title": "集成完整 P0-B 与运营依赖",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "V01",
+        "U06",
+        "U07",
+        "O02",
+        "O03",
+        "I-B01",
+        "I-B02"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "apps/client/src/navigation/",
+        "scripts/integration/",
+        "docs/evidence/integration-b/",
+        "docs/evidence/I02/",
+        "tests/integration/batches/",
+        "scripts/integration/publish-engagement/",
+        "tests/integration/batches/publish-engagement/",
+        "docs/evidence/I02/I-B01/",
+        "scripts/integration/diet-adjustment/",
+        "tests/integration/batches/diet-adjustment/",
+        "docs/evidence/I02/I-B02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "串行集成第二批契约扩展、迁移、UI入口和运营，形成一套从内容到持续使用的可运行版本。",
+      "acceptance": [
+        "所有本批能力都有正常/空/失败/恢复证据",
+        "不遗留开发假数据/临时admin绕过入口",
+        "公开开关遵守L01/V02；无条件时仅内部集成，不宣称公开发布"
+      ],
+      "verification_commands": [
+        "make migrate-test",
+        "make check",
+        "make e2e BATCH=P0-B"
+      ],
+      "risks": [
+        "不同分支的共享契约/锁文件不得盲选一方"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "partial"
+    },
+    {
+      "id": "V03",
+      "title": "P0-B 功能视觉与安全验收",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "I02",
+        "S01-B"
+      ],
+      "role": "qa-verifier",
+      "model_policy": "verification",
+      "owner": null,
+      "write_allowlist": [
+        "tests/e2e/p0b/",
+        "tests/visual/p0b/",
+        "docs/evidence/qa-b/",
+        "docs/evidence/V03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "覆盖公开内容/分享/发布/饮食/建议及对P0-A回归，保存实际微信和H5截图、结构化断言、失败恢复。",
+      "acceptance": [
+        "来源/授权/旧版/内容hash/证据不足矩阵通过",
+        "与UI规范比较并人工看长文、键盘、减少动态效果，不只算像素差",
+        "上批回归无P1；缺真机/供应商/内容专业证据明确partial"
+      ],
+      "verification_commands": [
+        "make e2e BATCH=P0-B",
+        "make visual-diff BATCH=P0-B",
+        "make security-negative BATCH=all"
+      ],
+      "risks": [
+        "测试替身可用于错误注入，不能代替真实外部联调"
+      ],
+      "effort_days": [
+        3,
+        5
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "V04",
+      "title": "分来源试点与成熟窗口判断",
+      "batch": "pilot",
+      "status": "planned",
+      "depends_on": [
+        "V02",
+        "V03",
+        "O03"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/pilot/",
+        "docs/ops/pilot/",
+        "docs/evidence/V04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "启动获准试点，预登记成功阈值与续期观察窗，报告真实样本/成本/教练人工分钟及用户障碍。",
+      "acceptance": [
+        "自然广场/免费转化/教练自带分组，unknown单列",
+        "D7/D30只用成熟窗口，统计样本与分母可重算",
+        "停止/继续/调整建议基于证据，不以报名人数或自报GMV当效果"
+      ],
+      "verification_commands": [
+        "make analytics-reconcile ENV=pilot-readonly",
+        "人工回访与成熟窗口核对，记录样本与访问许可"
+      ],
+      "risks": [
+        "外部用户招募/联系需明确授权；观察日历时间不计入agent开发估工"
+      ],
+      "effort_days": [
+        3,
+        6
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "获得招募/联系用户授权并等待观察窗成熟"
+      ],
+      "acceptance_requires": []
+    },
+    {
+      "id": "P01",
+      "title": "周报、邀请与必要媒体扩展",
+      "batch": "P1",
+      "status": "planned",
+      "depends_on": [
+        "V03"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/reports/",
+        "apps/api/internal/modules/invite/",
+        "apps/api/migrations/reports/",
+        "apps/client/src/features/reports/",
+        "docs/plans/p1-media/",
+        "docs/evidence/P01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "根据试点优先级实现周报确认发送、来源邀请和图片记录专项合同；每项先验隐私/审核与真实收益。",
+      "acceptance": [
+        "AI周报必须教练确认；邀请不自动绑定关系/授权",
+        "媒体签名、删除、审核和跨账号反例完整后才开放",
+        "无需求证据不把整组功能强塞首批"
+      ],
+      "verification_commands": [
+        "make test MODULE=reports,invite",
+        "make e2e FLOW=weekly-report"
+      ],
+      "risks": [
+        "范围需由试点结论细分任务；媒体上传不沿用公开证书假设"
+      ],
+      "effort_days": [
+        5,
+        10
+      ],
+      "flow_ids": [
+        "F03",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "P02",
+      "title": "App 打包与跨端体验验证",
+      "batch": "P1",
+      "status": "planned",
+      "depends_on": [
+        "V03"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/plans/app/",
+        "apps/client/src/platform/app/",
+        "infra/app/",
+        "docs/evidence/P02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "在实际需要App时验证打包、登录/推送/深链/隐私清单/商店要求，评估真实复用比例。",
+      "acceptance": [
+        "从锁定工程打出可安装制品并真机运行主路径",
+        "商店手续与版本差异有证据；不承诺一套代码自动覆盖",
+        "不因App扩展引入A阶段支付"
+      ],
+      "verification_commands": [
+        "make build-app",
+        "make e2e PLATFORM=app"
+      ],
+      "risks": [
+        "商店/付费SDK/签名证书与外部发布需另行批准"
+      ],
+      "effort_days": [
+        5,
+        10
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "M01",
+      "title": "维护节奏、依赖升级与恢复演练",
+      "batch": "maintenance",
+      "status": "planned",
+      "depends_on": [
+        "V03"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/ops/maintenance/",
+        "scripts/maintenance/",
+        "docs/evidence/M01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "建立按月依赖/漏洞/成本复核、季度恢复演练、每版合同/视觉/隐私回归与退役策略。",
+      "acceptance": [
+        "升级在独立分支验证锁文件/生成器/多端构建；安全修复给影响与回滚",
+        "每次发布更新CURRENT_STATE/证据，不让文档与实际实现漂移",
+        "记录故障修复时间和反复问题，符合条件才写RETRO"
+      ],
+      "verification_commands": [
+        "make check",
+        "make dependency-audit",
+        "make restore-drill ENV=isolated-test"
+      ],
+      "risks": [
+        "常规维护不能自动调用真实客户数据或升级供应商模型"
+      ],
+      "effort_days": [
+        2,
+        4
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": []
+    },
+    {
+      "id": "S01",
+      "title": "可交付种子内容与来源审核",
+      "batch": "content",
+      "status": "planned",
+      "depends_on": [
+        "S01-A",
+        "S01-B"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "content/seed/",
+        "content/manifests/",
+        "scripts/content/",
+        "docs/evidence/S01/",
+        "content/seed/training/",
+        "content/manifests/training/",
+        "scripts/content/training/",
+        "docs/evidence/S01/S01-A/",
+        "content/seed/plaza-diet/",
+        "content/manifests/plaza-diet/",
+        "scripts/content/plaza-diet/",
+        "docs/evidence/S01/S01-B/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "分别建立训练交付与公开训练/饮食内容的来源、授权、版本、专业复核和幂等导入；测试fixture与交付内容分开。",
+      "acceptance": [
+        "来源/使用权/审核人与适用范围齐全",
+        "重复导入不重复创建，升级不改历史快照；缺内容不得以AI随机生成填满",
+        "P0-A与P0-B各有可用内容清单；缺审核材料保持未通过"
+      ],
+      "verification_commands": [
+        "make seed-check SET=training",
+        "make seed-check SET=plaza-diet"
+      ],
+      "risks": [
+        "初始模板与动作/饮食内容需要真实来源和审核"
+      ],
+      "effort_days": [
+        2,
+        6
+      ],
+      "flow_ids": [
+        "F01",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "业务负责人提供可用内容与适当审核/使用权证据。"
+      ],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "F01-01",
+      "title": "Git基线、缓存忽略与工具链兼容锁定",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        ".gitignore",
+        ".node-version",
+        ".go-version",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "docs/engineering/toolchain.md",
+        "docs/evidence/F01/F01-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/CURRENT_STATE.md"
+      ],
+      "deliverables": "由Lead本地建立真实Git基线，盘点并忽略缓存/密钥；实际验证Node/pnpm/Go/uni-app兼容组合后锁版本，记录干净检出命令。此卡完成前不启动并行worktree。",
+      "acceptance": [
+        "先记录受保护文件与输入快照；git status中不含缓存、虚拟环境、环境密钥",
+        "实际依赖解析与工具版本可复现；未验证组合不得写为兼容",
+        "形成首次提交与可供后续worktree使用的基线，保留原始审核证据"
+      ],
+      "verification_commands": [
+        "git status --short",
+        "git check-ignore .review/ api/tests/.venv-py311/",
+        "记录锁定工具版本及依赖解析退出码"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task"
+    },
+    {
+      "id": "F01-02",
+      "title": "Go进程、配置与可验证健康检查骨架",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/go.mod",
+        "apps/api/go.sum",
+        "apps/api/cmd/",
+        "apps/api/internal/config/",
+        "apps/api/README.md",
+        "docs/evidence/F01/F01-02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/系统架构与技术选型.md"
+      ],
+      "deliverables": "建立api/worker入口、显式配置与关闭流程；健康检查只报告真实进程/依赖状态；业务模块尚不存在时不得返回演示业务结果。",
+      "acceptance": [
+        "缺必要配置明确失败；配置值和凭据不打印",
+        "api/worker能启动并正常关闭；依赖不可用时readiness失败",
+        "Go构建与入口/配置负例通过，README可供干净检出使用"
+      ],
+      "verification_commands": [
+        "go build ./...（apps/api）",
+        "go test ./internal/config/...（apps/api）",
+        "进程启动、依赖失败及SIGTERM冒烟"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task"
+    },
+    {
+      "id": "F01-03",
+      "title": "客户端和后台构建骨架",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/package.json",
+        "apps/client/vite.config.ts",
+        "apps/client/tsconfig.json",
+        "apps/client/src/main.ts",
+        "apps/client/src/App.vue",
+        "apps/client/src/pages.json",
+        "apps/client/src/manifest.json",
+        "apps/client/README.md",
+        "apps/admin/package.json",
+        "apps/admin/vite.config.ts",
+        "apps/admin/tsconfig.json",
+        "apps/admin/index.html",
+        "apps/admin/src/main.ts",
+        "apps/admin/README.md",
+        "docs/evidence/F01/F01-03/",
+        "pnpm-lock.yaml"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "建立uni-app与后台的安装/类型检查/构建入口，只做工程壳；页面、组件、颜色和视觉继续暂缓；当前只推导设计逻辑，用户明确恢复 UI 设计并选定基线后另行处理。依赖修改如需根锁文件，由Lead单owner协调。",
+      "acceptance": [
+        "干净检出可构建小程序/H5与后台；不引入业务演示或伪登录",
+        "TypeScript严格检查真实运行，空脚本/跳过不算通过",
+        "本卡不触碰现有design与UI_SPEC；不决定视觉取值"
+      ],
+      "verification_commands": [
+        "记录client小程序/H5实际构建命令与退出码",
+        "记录admin实际typecheck/build命令与退出码"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task"
+    },
+    {
+      "id": "F01-04",
+      "title": "双工作区数据隔离与迁移执行器",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-02"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "scripts/dev/",
+        "infra/compose/",
+        "docs/engineering/environments.md",
+        "docs/evidence/F01/F01-04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/数据模型与ER设计.md"
+      ],
+      "deliverables": "建立独立端口、测试MySQL库、Redis命名空间和对象前缀；迁移从指定模块目录读取并由集成清单全局排序。启动不重置数据库。",
+      "acceptance": [
+        "同时启动两个工作区并证明库/端口/Redis键互不影响",
+        "迁移清单缺号、冲突或重复必须非零退出；禁止GORM自动建库替代迁移",
+        "清理命令限制显式测试命名空间，不影响另一工作区与业务库"
+      ],
+      "verification_commands": [
+        "双工作区启动/独立写读冒烟",
+        "迁移执行器空库与重复执行负例"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task"
+    },
+    {
+      "id": "F01-05",
+      "title": "统一Make入口、分层检查和CI失败语义",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-02",
+        "F01-03",
+        "F01-04"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "Makefile",
+        ".github/workflows/",
+        "eslint.config.mjs",
+        "apps/api/.golangci.yml",
+        "docs/engineering/ci-gates.md",
+        "docs/evidence/F01/F01-05/",
+        "package.json"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "将工程标准EG01-EG08映射到命令与CI；落实格式/类型/构建/依赖边界及当前静态检查。F02尚未建立的生成和数据库门禁标未就绪，不伪装成功。",
+      "acceptance": [
+        "CI只调用同一Make入口，工具版本与本地一致",
+        "依赖方向检查按Go/TS模块或解析器执行；用真实违规样例证明检查会失败",
+        "空测试集/缺目标/缺集成环境不能以echo、skip或exit 0通过；保留失败注入记录"
+      ],
+      "verification_commands": [
+        "make check-foundation",
+        "make check-planning",
+        "make boundary-check",
+        "检查命令缺失/违规import/类型错误的负向运行"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task"
+    },
+    {
+      "id": "F01-I",
+      "title": "基础工程小批集成与干净检出验收",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-05"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "tests/foundation/",
+        "scripts/integration/foundation/",
+        "docs/evidence/F01/F01-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "在合并后的同一提交复跑构建、隔离环境与CI入口；检查器不能覆盖缺项。只收口与验证，新增业务退回单独卡。",
+      "acceptance": [
+        "从干净检出执行安装→双环境启动→构建→关闭；没有依赖本机临时文件",
+        "记录接受提交、所有入口退出码与失败恢复；验证可由另一角色复跑",
+        "EG01-EG05按当前实施范围落地；F02范围明确待完成"
+      ],
+      "verification_commands": [
+        "make bootstrap",
+        "make check-foundation",
+        "make check-planning",
+        "make check-isolation"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F03"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "integration"
+    },
+    {
+      "id": "F02-01",
+      "title": "固定契约生成与陌生agent上手验证",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "packages/contracts/",
+        "apps/api/internal/gen/",
+        "scripts/codegen/",
+        "docs/evidence/F02/F02-01/",
+        "apps/api/go.mod",
+        "apps/api/go.sum",
+        "pnpm-lock.yaml"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "api/oapi-codegen.yaml"
+      ],
+      "deliverables": "从唯一OpenAPI生成TS/Go且可重现；此卡由未参与本方案的执行者做首次上手试验，只读取任务包必读及相关生成配置，不预加载聊天历史。",
+      "acceptance": [
+        "生成两次无漂移；现有契约测试保持，生成物能编译",
+        "记录实际额外上下文请求、澄清、返工、越界、复跑结果；问题未解决不得接受",
+        "需要改共享契约或生成配置时提交Lead变更请求，不私自扩大写域"
+      ],
+      "verification_commands": [
+        "make contract-check",
+        "make codegen-check",
+        "按DEFINITION_OF_DONE上手记录核验"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F02",
+      "kind": "task",
+      "onboarding_probe": true
+    },
+    {
+      "id": "F02-02",
+      "title": "统一错误、请求校验与身份上下文边界",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F02-01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/middleware/",
+        "docs/evidence/F02/F02-02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "按生成接口适配请求/响应校验和Error；认证上下文只承载已验证身份，实际JWT/微信登录归A01；客户端role/sourceTag不授予权限。",
+      "acceptance": [
+        "400/401/403/404/409/412/422/429/503采用约定错误映射，保留requestId而不泄漏上游原文",
+        "错误参数、额外字段和伪造身份有负例；schema有效不被当作对象授权完成",
+        "实现不依赖虚构业务端点或把占位JWT当真认证"
+      ],
+      "verification_commands": [
+        "make test MODULE=middleware",
+        "make contract-check"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F02",
+      "kind": "task"
+    },
+    {
+      "id": "F02-03",
+      "title": "持久化幂等、并发与失败恢复适配器",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F02-02"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/middleware/",
+        "apps/api/migrations/transport/",
+        "tests/integration/transport/",
+        "docs/evidence/F02/F02-03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md"
+      ],
+      "deliverables": "在真实隔离MySQL/Redis实现主体+方法+路径+摘要的幂等适配与结果恢复；业务唯一键仍由各模块实现，不依赖24h缓存保护永久事实。",
+      "acceptance": [
+        "两连接同键同摘要只提交一次；同键异摘要409；不同主体/操作互不读到结果",
+        "提交后响应超时、进程重启、缓存过期仍符合已声明边界；无事务悬挂",
+        "迁移空库/升级/回退或补偿可演练；真实库不可用时报告未验证"
+      ],
+      "verification_commands": [
+        "make test-integration MODULE=transport",
+        "make migration-check MODULE=transport"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F02",
+      "kind": "task"
+    },
+    {
+      "id": "F02-I",
+      "title": "transport接线与CI门禁小批集成",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F02-03"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "scripts/integration/transport/",
+        "docs/evidence/F02/F02-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "在同一合并提交验证真实路由+中间件+数据库/Redis，确认生成、错误、幂等门禁真正接入CI；不提前实现业务。",
+      "acceptance": [
+        "真实HTTP请求经过注册中间件，错误/重放断言可复跑",
+        "EG06生成漂移与EG07数据库检查激活且失败能阻断CI",
+        "上手试验结论已review；不存在仅worker各自通过而未集成的缺口"
+      ],
+      "verification_commands": [
+        "make contract-check",
+        "make codegen-check",
+        "make test-integration MODULE=transport",
+        "make check"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "F02",
+      "kind": "integration"
+    },
+    {
+      "id": "L01-01",
+      "title": "外部材料缺口与责任清单",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/external/index/",
+        "docs/evidence/L01/L01-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/RELEASE_GATES.md",
+        "docs/小程序上线成本与资质.md"
+      ],
+      "deliverables": "盘点主体/账号/类目/联络/数据条款/留存证据；登记真实材料位置、缺口、角色与复核触发。此卡可完成缺口盘点，不代表取得许可。",
+      "acceptance": [
+        "覆盖RELEASE_GATES要求，未注册/未核定清楚可见",
+        "缺证据项不填approved、不臆造主体或负责人姓名",
+        "每项有下一步、责任角色与对应放行点，外部等待不计有效人日"
+      ],
+      "verification_commands": [
+        "逐项人工核对RELEASE_GATES证据字段与材料缺口"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "L01",
+      "kind": "task"
+    },
+    {
+      "id": "L01-02",
+      "title": "主体、类目、手续和允许联系渠道取证",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "L01-01"
+      ],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/external/platform/",
+        "docs/evidence/L01/L01-02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/RELEASE_GATES.md",
+        "docs/APP_FLOW.md"
+      ],
+      "deliverables": "依据实际主体/业务取得平台与必要专业核定证据；明确允许渠道和失败路径，实际双人应用验收另由V02完成。",
+      "acceptance": [
+        "来源对应实际账号/主体/类目，有原文、访问日、适用条件与限制",
+        "不得用通用网页替代个案核定或把站内咨询存在当成获准导流",
+        "资料或答复缺失保持partial/blocked，公开入口仍关闭"
+      ],
+      "verification_commands": [
+        "按L01证据格式人工复核来源与适用性"
+      ],
+      "risks": [
+        "实际主体/账号/提审材料与必要答复；本轮尚未具备。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "实际主体/账号/提审材料与必要答复；本轮尚未具备。"
+      ],
+      "acceptance_requires": [],
+      "parent": "L01",
+      "kind": "task"
+    },
+    {
+      "id": "L01-03",
+      "title": "AI数据条款与分类留存依据",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "L01-01"
+      ],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/external/data/",
+        "docs/evidence/L01/L01-03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/RELEASE_GATES.md",
+        "docs/小程序上线成本与资质.md"
+      ],
+      "deliverables": "核定模型数据处理、地域/训练使用/日志，以及普通与健康消息、私有文件、备份的保留/删除/撤权边界；不默认永久保存。",
+      "acceptance": [
+        "每类数据有用途、访问、期限/例外和恢复备份后的隔离规则",
+        "供应商条款覆盖实际账户/服务形态；未知项不得声称已安全",
+        "未获准发送的真实健康正文不用于供应商试验；签约/提交由用户决定"
+      ],
+      "verification_commands": [
+        "按分类留存/供应商检查表人工核对证据"
+      ],
+      "risks": [
+        "实际供应商条款与适当隐私/专业复核记录。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "实际供应商条款与适当隐私/专业复核记录。"
+      ],
+      "acceptance_requires": [],
+      "parent": "L01",
+      "kind": "task"
+    },
+    {
+      "id": "L01-I",
+      "title": "外部证据合并复核与受控放行配置",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "L01-02",
+        "L01-03"
+      ],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/release-config/",
+        "docs/evidence/L01/L01-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/RELEASE_GATES.md"
+      ],
+      "deliverables": "复核证据适用范围并形成配置记录；仅建立放行依据，不打开生产入口。G3仍需V02、运营与运维通过。",
+      "acceptance": [
+        "核定记录引用准确证据版本，所有未决项保持关闭",
+        "L01通过不会自动等于G3通过；外部条件失效有复核与撤销触发",
+        "独立/顺序角色复核方式真实登记，禁止只有空模板"
+      ],
+      "verification_commands": [
+        "人工比对批准记录、来源与RELEASE_GATES；关闭状态负例"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "L01",
+      "kind": "integration"
+    },
+    {
+      "id": "S01-A",
+      "title": "训练交付最小内容集与幂等导入",
+      "batch": "content",
+      "status": "planned",
+      "depends_on": [
+        "A03"
+      ],
+      "role": "content-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "content/seed/training/",
+        "content/manifests/training/",
+        "scripts/content/training/",
+        "docs/evidence/S01/S01-A/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "为训练闭环提供有来源、适用范围和复核记录的最小动作/计划内容；数量按试点覆盖确认，不伪造教练、交易或健康事实。",
+      "acceptance": [
+        "每项有稳定ID/版本/使用权/审核人；缺专业复核不标通过",
+        "dry-run列差异，重复导入不增加行；旧计划动作快照不改",
+        "测试fixture不得进入公开内容；真实个人数据不作为种子"
+      ],
+      "verification_commands": [
+        "make seed-check SET=training",
+        "make seed-dry-run SET=training"
+      ],
+      "risks": [
+        "需真实内容来源及适当专业/使用权审核。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "需真实内容来源及适当专业/使用权审核。"
+      ],
+      "acceptance_requires": [],
+      "parent": "S01",
+      "kind": "task"
+    },
+    {
+      "id": "S01-B",
+      "title": "广场与饮食内容基线及升级验证",
+      "batch": "content",
+      "status": "planned",
+      "depends_on": [
+        "B01",
+        "B03",
+        "S01-A"
+      ],
+      "role": "content-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "content/seed/plaza-diet/",
+        "content/manifests/plaza-diet/",
+        "scripts/content/plaza-diet/",
+        "docs/evidence/S01/S01-B/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "建立训练/饮食模板、食物来源与未知值的版本化内容集；导入与公开审核分离，来源标签不可由脚本伪造。",
+      "acceptance": [
+        "份量/营养/过敏信息有来源与未知状态；适用范围和复核记录明确",
+        "导入不会绕过公开审核或把模板量当实际摄入",
+        "更新/重复运行/失败恢复可验证，旧副本和引用版本保持"
+      ],
+      "verification_commands": [
+        "make seed-check SET=plaza-diet",
+        "make seed-dry-run SET=plaza-diet"
+      ],
+      "risks": [
+        "需内容使用权、饮食适用性复核与来源材料。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "需内容使用权、饮食适用性复核与来源材料。"
+      ],
+      "acceptance_requires": [],
+      "parent": "S01",
+      "kind": "task"
+    },
+    {
+      "id": "I-A01",
+      "title": "身份与服务关系小批HTTP集成",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A01",
+        "A02"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "scripts/integration/identity-relation/",
+        "tests/integration/batches/identity-relation/",
+        "docs/evidence/I01/I-A01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "接线身份与服务关系，真实HTTP验证登录主体→发起→确认→授权/撤回；不新增业务，不实现UI。",
+      "acceptance": [
+        "真实JWT/微信测试凭据边界注明；对象越权、旧条款/版本和撤回均有断言",
+        "共享路由只由本卡owner改；迁移顺序与回滚/补偿验证",
+        "上一个接受提交到本次集成提交的接缝证据完整"
+      ],
+      "verification_commands": [
+        "make e2e-api FLOW=identity-relation",
+        "make migration-check MODULE=auth,user,relation"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        0.5,
+        1.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "I01",
+      "kind": "integration"
+    },
+    {
+      "id": "I-A02",
+      "title": "计划与日程训练小批HTTP集成",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A03",
+        "A04",
+        "S01-A",
+        "I-A01"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "scripts/integration/delivery-training/",
+        "tests/integration/batches/delivery-training/",
+        "docs/evidence/I01/I-A02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "接线草稿/发布/当前日历/一步开始/组记录；验证固定快照和记录恢复，使用已审核种子内容。",
+      "acceptance": [
+        "同一提交从空库走草稿恢复→发布→安排→开始→组记录→完成",
+        "重试/暂停改期/并发与过期幂等不重复事实；历史不重算",
+        "只收口已有模块；接口缺口退回共享合同变更任务"
+      ],
+      "verification_commands": [
+        "make e2e-api FLOW=delivery-training",
+        "make test-integration MODULE=schedule,workout"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "I01",
+      "kind": "integration"
+    },
+    {
+      "id": "I-A03",
+      "title": "咨询会话与运营权限小批HTTP集成",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A06",
+        "A08",
+        "O01",
+        "I-A02"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "scripts/integration/conversation-operations/",
+        "tests/integration/batches/conversation-operations/",
+        "docs/evidence/I01/I-A03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "接线咨询/关系消息/站内通知/必要审核操作，验证跨主体与管理员权限；UI另由后续阶段完成。",
+      "acceptance": [
+        "无计划关系可交流，结束只读，撤权不泄漏正文/预览/通知",
+        "教练认证、私有证据访问与审核操作具备真实权限和审计",
+        "通知拒绝/失败可站内恢复；平台外联系仍受L01/V02控制"
+      ],
+      "verification_commands": [
+        "make e2e-api FLOW=conversation-operations",
+        "make test-integration MODULE=conversation,notify,admin"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "I01",
+      "kind": "integration"
+    },
+    {
+      "id": "I-B01",
+      "title": "发布分享与申诉小批HTTP集成",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "V01",
+        "B01",
+        "B02",
+        "B05",
+        "O02"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "scripts/integration/publish-engagement/",
+        "tests/integration/batches/publish-engagement/",
+        "docs/evidence/I02/I-B01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "接线公开内容与审核/分享/投诉，先验证hash确认与可见性，再进入完整P0-B验收。",
+      "acceptance": [
+        "编辑使旧确认失效，未审不公开，下架后旧分享失效",
+        "申诉超时升级、恢复与权限审计有真实记录",
+        "P0-A关键API回归且共享路由按单owner串行"
+      ],
+      "verification_commands": [
+        "make e2e-api FLOW=publish-engagement"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "I02",
+      "kind": "integration"
+    },
+    {
+      "id": "I-B02",
+      "title": "饮食证据与建议应用小批HTTP集成",
+      "batch": "P0-B",
+      "status": "planned",
+      "depends_on": [
+        "B03",
+        "B04",
+        "S01-B",
+        "I-B01"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/server/",
+        "apps/api/cmd/",
+        "scripts/integration/diet-adjustment/",
+        "tests/integration/batches/diet-adjustment/",
+        "docs/evidence/I02/I-B02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "api/openapi.yaml",
+        "docs/VALIDATION_PLAN.md"
+      ],
+      "deliverables": "接线饮食自评/观察/不足证据与建议确认应用，验证授权、版本和重复确认。",
+      "acceptance": [
+        "只有自评不推断实际摄入；未知过敏与无过敏不同",
+        "旧hash/过期/并发手改被拒，同建议只产生一次新版本",
+        "旧日程不因应用建议自动替换，P0-A/P0-B关键API回归"
+      ],
+      "verification_commands": [
+        "make e2e-api FLOW=diet-adjustment",
+        "make test-integration MODULE=diet,anomaly,adjustment"
+      ],
+      "risks": [
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "I02",
+      "kind": "integration"
+    },
+    {
+      "id": "D01-01",
+      "title": "设计逻辑逐项推导与开发文稿",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [],
+      "role": "product-designer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/design/round-03/",
+        "scripts/design/",
+        "docs/UI_SPEC.md",
+        "docs/DECISION_LOG.md",
+        "docs/CURRENT_STATE.md",
+        "AGENTS.md",
+        "README.md",
+        "RETRO.md",
+        "docs/HANDOFF_SUMMARY.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/evidence/D01/round-03/reasoning/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/design/round-03/00_CONTEXT_AND_SCOPE.md",
+        "docs/design/round-03/01_INTENT_TO_EXPERIENCE.md",
+        "docs/design/round-03/02_SCENARIOS_AND_INTERACTIONS.md",
+        "docs/design/round-03/03_VISUAL_AND_MOTION.md",
+        "docs/design/round-03/04_TRADEOFFS_AND_VALIDATION.md",
+        "docs/design/round-03/05_UI_BUILD_SPEC.md",
+        "docs/design/round-03/06_EXECUTION_PACKET.md",
+        "docs/design/round-03/07_ACCEPTANCE.md"
+      ],
+      "deliverables": "55项来源、层级关系、动机、具体表现与验收；可执行规格、禁止推理上屏、指定模型与委派协议。",
+      "acceptance": [
+        "按round-03/07_ACCEPTANCE完成本卡范围，源/模型/命令/证据真实",
+        "本卡不等于用户研究、正式业务、真机或生产接受"
+      ],
+      "verification_commands": [
+        "api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff",
+        "实际执行本卡范围检查并保留命令/渲染/报告"
+      ],
+      "risks": [
+        "只在指定写域执行；错误如实返回；旧UI不可作为基线"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成",
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D01",
+      "kind": "task"
+    },
+    {
+      "id": "D01-02",
+      "title": "指定DeepSeek完成四种代表情境",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D01-01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "harness_ui",
+      "owner": null,
+      "write_allowlist": [
+        "design/prototype/",
+        "docs/evidence/D01/round-03/worker/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/design/round-03/00_CONTEXT_AND_SCOPE.md",
+        "docs/design/round-03/01_INTENT_TO_EXPERIENCE.md",
+        "docs/design/round-03/02_SCENARIOS_AND_INTERACTIONS.md",
+        "docs/design/round-03/03_VISUAL_AND_MOTION.md",
+        "docs/design/round-03/04_TRADEOFFS_AND_VALIDATION.md",
+        "docs/design/round-03/05_UI_BUILD_SPEC.md",
+        "docs/design/round-03/06_EXECUTION_PACKET.md",
+        "docs/design/round-03/07_ACCEPTANCE.md"
+      ],
+      "deliverables": "在隔离工作树实现今天、探索、专注训练、完整教练审阅及配套动效；首批视觉接受后才能扩展。",
+      "acceptance": [
+        "按round-03/07_ACCEPTANCE完成本卡范围，源/模型/命令/证据真实",
+        "本卡不等于用户研究、正式业务、真机或生产接受"
+      ],
+      "verification_commands": [
+        "api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff",
+        "实际执行本卡范围检查并保留命令/渲染/报告"
+      ],
+      "risks": [
+        "只在指定写域执行；错误如实返回；旧UI不可作为基线"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成",
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D01",
+      "kind": "task"
+    },
+    {
+      "id": "D01-03",
+      "title": "指定DeepSeek扩展全量情境与状态",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D01-02"
+      ],
+      "role": "ui-builder",
+      "model_policy": "harness_ui",
+      "owner": null,
+      "write_allowlist": [
+        "design/prototype/",
+        "docs/evidence/D01/round-03/worker/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/design/round-03/00_CONTEXT_AND_SCOPE.md",
+        "docs/design/round-03/01_INTENT_TO_EXPERIENCE.md",
+        "docs/design/round-03/02_SCENARIOS_AND_INTERACTIONS.md",
+        "docs/design/round-03/03_VISUAL_AND_MOTION.md",
+        "docs/design/round-03/04_TRADEOFFS_AND_VALIDATION.md",
+        "docs/design/round-03/05_UI_BUILD_SPEC.md",
+        "docs/design/round-03/06_EXECUTION_PACKET.md",
+        "docs/design/round-03/07_ACCEPTANCE.md"
+      ],
+      "deliverables": "沿同一系统完成S01–S16与F01–F07状态、持续数据与恢复；核心控件真实操作本地状态，无设计解释上屏。",
+      "acceptance": [
+        "按round-03/07_ACCEPTANCE完成本卡范围，源/模型/命令/证据真实",
+        "本卡不等于用户研究、正式业务、真机或生产接受"
+      ],
+      "verification_commands": [
+        "api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff",
+        "实际执行本卡范围检查并保留命令/渲染/报告"
+      ],
+      "risks": [
+        "只在指定写域执行；错误如实返回；旧UI不可作为基线"
+      ],
+      "effort_days": [
+        1.5,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成",
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D01",
+      "kind": "task"
+    },
+    {
+      "id": "D01-I",
+      "title": "第三轮UI独立验收与集成",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D01-03"
+      ],
+      "role": "qa-verifier",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "design/prototype/",
+        "docs/design/round-03/",
+        "docs/evidence/D01/round-03/",
+        "docs/UI_SPEC.md",
+        "docs/CURRENT_STATE.md",
+        "docs/HANDOFF_SUMMARY.md",
+        "README.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/design/round-03/00_CONTEXT_AND_SCOPE.md",
+        "docs/design/round-03/01_INTENT_TO_EXPERIENCE.md",
+        "docs/design/round-03/02_SCENARIOS_AND_INTERACTIONS.md",
+        "docs/design/round-03/03_VISUAL_AND_MOTION.md",
+        "docs/design/round-03/04_TRADEOFFS_AND_VALIDATION.md",
+        "docs/design/round-03/05_UI_BUILD_SPEC.md",
+        "docs/design/round-03/06_EXECUTION_PACKET.md",
+        "docs/design/round-03/07_ACCEPTANCE.md"
+      ],
+      "deliverables": "同一版本核对55项来源、渲染、390/320等宽度、产品文案、完整交互、M01–M12与减少动态效果；源码与截图可追溯，不将UI样机当正式业务。",
+      "acceptance": [
+        "按round-03/07_ACCEPTANCE完成本卡范围，源/模型/命令/证据真实",
+        "本卡不等于用户研究、正式业务、真机或生产接受"
+      ],
+      "verification_commands": [
+        "api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff",
+        "实际执行本卡范围检查并保留命令/渲染/报告"
+      ],
+      "risks": [
+        "只在指定写域执行；错误如实返回；旧UI不可作为基线"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成",
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D01",
+      "kind": "integration"
+    }
+  ],
+  "deferred_packages": {
+    "U01": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U02": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U03": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U04": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U05": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U06": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
+    "U07": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。"
+  },
+  "done_checks": {
+    "scope": {
+      "description": "只改白名单，基线/接受提交和实际角色清楚",
+      "allow_na": false
+    },
+    "verification": {
+      "description": "按影响执行真实检查，包含适用正反例；记录命令、退出码和验证提交",
+      "allow_na": false
+    },
+    "contract": {
+      "description": "契约/生成物/消费者保持一致，接口变更有明确批准",
+      "allow_na": true
+    },
+    "privacy": {
+      "description": "对象权限、撤权、日志与数据最小化的适用负例已验证",
+      "allow_na": true
+    },
+    "recovery": {
+      "description": "版本/幂等/迁移/备份/失败恢复的适用路径已验证",
+      "allow_na": true
+    },
+    "docs": {
+      "description": "必要文档、配置名、错误码、运行与限制同步",
+      "allow_na": false
+    },
+    "review": {
+      "description": "明确review模式、reviewer、风险与接受理由",
+      "allow_na": false
+    }
+  }
+}

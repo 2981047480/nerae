@@ -1,0 +1,78 @@
+{
+  "protected_core_unchanged": {
+    "docs/PRD.md": true,
+    "api/openapi.yaml": true,
+    "docs/数据模型与ER设计.md": true
+  },
+  "design_structure": {
+    "items": 55,
+    "screen_families": 16,
+    "handoff_pass": true,
+    "ui_completion_proven": false
+  },
+  "contrast_candidate_pairs": [
+    {
+      "foreground": "ink",
+      "background": "canvas",
+      "ratio": 12.439,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "muted",
+      "background": "canvas",
+      "ratio": 4.916,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "white",
+      "background": "ink",
+      "ratio": 13.935,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "onAccent",
+      "background": "accent",
+      "ratio": 5.275,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "white",
+      "background": "focus",
+      "ratio": 14.861,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "white",
+      "background": "focusSurface",
+      "ratio": 11.649,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "positive",
+      "background": "canvas",
+      "ratio": 5.379,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "warning",
+      "background": "canvas",
+      "ratio": 5.4,
+      "normal_text_pass": true
+    },
+    {
+      "foreground": "error",
+      "background": "canvas",
+      "ratio": 5.656,
+      "normal_text_pass": true
+    }
+  ],
+  "planner_tests": {
+    "passed": 29,
+    "exit_code": 0
+  },
+  "limitations": [
+    "candidate contrast only, not rendered UI contrast",
+    "no user research or UI rendering accepted yet",
+    "Lead exact native model/effort ids not exposed; no false model selection claim"
+  ]
+}

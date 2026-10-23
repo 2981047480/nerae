@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "70ddffcc-40ac-4db6-aded-cf6f659ba776",
+  "status": "current",
+  "command": "deliver",
+  "type": "tree",
+  "input": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/archify-features.json",
+  "output": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/archify-features.html",
+  "specification": {
+    "sha256": "7bcba42c399416c9a3e653d94a250a93f0bfdd56bbd1bae63a600091064bdf1b",
+    "bytes": 6467
+  },
+  "artifact": {
+    "sha256": "46443ec6330a30487531b42b3382a864bf0b6dc54dd02426179671bff3162e22",
+    "bytes": 860375
+  }
+}

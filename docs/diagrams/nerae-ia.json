@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Nerae 信息架构",
+    "subtitle": "学员端 / 教练端 / 运营后台，按 PRD §8.1 与 §8.2 页面清单整理；树是包含关系，不是调用关系。",
+    "locale": "zh-CN",
+    "output": "docs/diagrams/nerae-ia.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "free_loop",
+        "label": "免费自助层",
+        "focus": [
+          "student",
+          "home",
+          "plan_plaza",
+          "plan_list",
+          "plan_detail",
+          "training",
+          "workout",
+          "history"
+        ],
+        "note": "浏览计划广场 → 另存/新建 → 训练记录 → AI 解读。"
+      },
+      {
+        "id": "paid_loop",
+        "label": "付费闭环",
+        "focus": [
+          "student",
+          "coach_plaza",
+          "coach_detail",
+          "booking",
+          "relation",
+          "appointment",
+          "mine"
+        ],
+        "note": "教练广场 → 详情 → 预约 → 平台外成交 → 回平台建关系 → 交付。"
+      },
+      {
+        "id": "coach_ops",
+        "label": "教练与运营",
+        "focus": [
+          "coach",
+          "workbench",
+          "students",
+          "plan_edit",
+          "pricing",
+          "deal",
+          "admin",
+          "coach_audit",
+          "content_audit",
+          "ai_monitor"
+        ],
+        "note": "教练工作台与定价；后台审核、内容、预约与 AI 监控。"
+      }
+    ]
+  },
+  "layout": {
+    "direction": "down"
+  },
+  "nodes": [
+    {
+      "id": "app",
+      "label": "Nerae 小程序",
+      "sublabel": "教练广场 + 计划广场 + AI 辅助"
+    },
+    {
+      "id": "student",
+      "label": "学员端",
+      "parent": "app",
+      "sublabel": "免费层 + 付费学员"
+    },
+    {
+      "id": "home",
+      "label": "首页 / 今日",
+      "parent": "student"
+    },
+    {
+      "id": "coach_plaza",
+      "label": "教练广场",
+      "parent": "student",
+      "sublabel": "按目标/预算/时间选教练"
+    },
+    {
+      "id": "plaza_list",
+      "label": "列表 / 筛选",
+      "parent": "coach_plaza"
+    },
+    {
+      "id": "coach_detail",
+      "label": "教练详情",
+      "parent": "coach_plaza"
+    },
+    {
+      "id": "booking",
+      "label": "预约咨询",
+      "parent": "coach_plaza"
+    },
+    {
+      "id": "plan_plaza",
+      "label": "计划广场",
+      "parent": "student",
+      "sublabel": "训练 + 饮食，未登录可浏览"
+    },
+    {
+      "id": "plan_list",
+      "label": "列表 / 热门",
+      "parent": "plan_plaza"
+    },
+    {
+      "id": "plan_detail",
+      "label": "计划详情",
+      "parent": "plan_plaza"
+    },
+    {
+      "id": "plan_fork",
+      "label": "另存 / 新建",
+      "parent": "plan_plaza"
+    },
+    {
+      "id": "plan_share",
+      "label": "分享预览",
+      "parent": "plan_plaza"
+    },
+    {
+      "id": "plan_publish",
+      "label": "发布计划",
+      "parent": "plan_plaza",
+      "sublabel": "AI 预填 + 确认"
+    },
+    {
+      "id": "training",
+      "label": "训练 / 记录",
+      "parent": "student"
+    },
+    {
+      "id": "workout",
+      "label": "训练执行",
+      "parent": "training"
+    },
+    {
+      "id": "history",
+      "label": "记录历史",
+      "parent": "training"
+    },
+    {
+      "id": "body",
+      "label": "身体数据",
+      "parent": "training"
+    },
+    {
+      "id": "ai",
+      "label": "AI 助手",
+      "parent": "student",
+      "sublabel": "只读解读 + 确认后写入"
+    },
+    {
+      "id": "ai_chat",
+      "label": "AI 对话",
+      "parent": "ai"
+    },
+    {
+      "id": "ai_read",
+      "label": "计划解读",
+      "parent": "ai"
+    },
+    {
+      "id": "mine",
+      "label": "我的",
+      "parent": "student"
+    },
+    {
+      "id": "diet_checkin",
+      "label": "饮食打卡",
+      "parent": "mine"
+    },
+    {
+      "id": "relation",
+      "label": "我的教练",
+      "parent": "mine",
+      "sublabel": "服务关系与授权"
+    },
+    {
+      "id": "appointment",
+      "label": "我的预约",
+      "parent": "mine"
+    },
+    {
+      "id": "coach",
+      "label": "教练端",
+      "parent": "app",
+      "sublabel": "自主定价 + 交付"
+    },
+    {
+      "id": "workbench",
+      "label": "工作台",
+      "parent": "coach"
+    },
+    {
+      "id": "students",
+      "label": "学员管理",
+      "parent": "coach"
+    },
+    {
+      "id": "plan_edit",
+      "label": "计划编辑器",
+      "parent": "coach"
+    },
+    {
+      "id": "ai_plan",
+      "label": "AI 计划生成",
+      "parent": "coach",
+      "sublabel": "草稿 + diff"
+    },
+    {
+      "id": "pricing",
+      "label": "服务包 / 定价",
+      "parent": "coach"
+    },
+    {
+      "id": "deal",
+      "label": "预约 / 成交回填",
+      "parent": "coach"
+    },
+    {
+      "id": "profile",
+      "label": "主页 / 邀请",
+      "parent": "coach"
+    },
+    {
+      "id": "admin",
+      "label": "运营后台",
+      "parent": "app",
+      "sublabel": "审核与风控"
+    },
+    {
+      "id": "coach_audit",
+      "label": "教练审核",
+      "parent": "admin"
+    },
+    {
+      "id": "content_audit",
+      "label": "内容审核",
+      "parent": "admin"
+    },
+    {
+      "id": "appointment_admin",
+      "label": "预约 / 关系",
+      "parent": "admin"
+    },
+    {
+      "id": "ai_monitor",
+      "label": "AI 监控",
+      "parent": "admin"
+    },
+    {
+      "id": "review_appeal",
+      "label": "评价申诉",
+      "parent": "admin"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "三条主循环",
+      "items": [
+        "免费自助：计划广场 → 另存/新建 → 训练记录 → AI 解读。",
+        "付费学员：教练广场 → 详情/评价 → 预约 → 平台外成交 → 回平台建关系。",
+        "教练：入驻 → 定价/服务包 → 曝光 → 工作台 → 草稿确认 → 交付 → 回填/续费。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "阅读说明",
+      "items": [
+        "树表达包含关系：父节点是模块，子节点是页面，不代表页面跳转。",
+        "P0-A 核心闭环在学员端教练广场 + 我的教练；计划广场为 P0-B 第二批。",
+        "运营后台只列审核/风控相关页，完整 44 页清单见 PRD §8.2。"
+      ]
+    }
+  ]
+}

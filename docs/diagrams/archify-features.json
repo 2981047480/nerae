@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Archify 功能地图",
+    "subtitle": "v3.2.0：10 类图 + 一页答案，agent-native 的生成/校验/查看/交付能力；树表示包含分类，不是调用。",
+    "locale": "zh-CN",
+    "output": "docs/diagrams/archify-features.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "author",
+        "label": "生成与校验",
+        "focus": [
+          "gen",
+          "verify",
+          "gen_types",
+          "explainer",
+          "schema_layout",
+          "artifact_check"
+        ],
+        "note": "模型写 IR，工具链负责确定性校验与修复回执。"
+      },
+      {
+        "id": "consume",
+        "label": "查看与导出",
+        "focus": [
+          "view",
+          "deliver",
+          "focus_search",
+          "route_reach",
+          "export"
+        ],
+        "note": "产物里的探索能力与导出格式。"
+      }
+    ]
+  },
+  "layout": {
+    "direction": "down"
+  },
+  "nodes": [
+    {
+      "id": "root",
+      "label": "Archify",
+      "sublabel": "Agent Skill · MIT · v3.2.0"
+    },
+    {
+      "id": "gen",
+      "label": "生成",
+      "parent": "root",
+      "sublabel": "10 类图 + 一页答案"
+    },
+    {
+      "id": "gen_types",
+      "label": "技术图 10 类",
+      "parent": "gen",
+      "sublabel": "architecture · workflow · sequence · dataflow · lifecycle · erd · class · tree · timeline · waterfall"
+    },
+    {
+      "id": "explainer",
+      "label": "一页答案",
+      "parent": "gen",
+      "sublabel": "Markdown 草稿 → 结论先行页面"
+    },
+    {
+      "id": "mermaid",
+      "label": "Mermaid 输入",
+      "parent": "gen",
+      "sublabel": "方言，不解析"
+    },
+    {
+      "id": "evidence",
+      "label": "仓库证据",
+      "parent": "gen",
+      "sublabel": "钉 commit / 文件 / 行号"
+    },
+    {
+      "id": "brands",
+      "label": "品牌图标",
+      "parent": "gen",
+      "sublabel": "内置矢量 · digest pin"
+    },
+    {
+      "id": "verify",
+      "label": "校验与修复",
+      "parent": "root",
+      "sublabel": "6 层门禁 + 可执行回执"
+    },
+    {
+      "id": "schema_layout",
+      "label": "Schema + 布局",
+      "parent": "verify",
+      "sublabel": "ajv strict · 重叠/溢出/路由"
+    },
+    {
+      "id": "artifact_check",
+      "label": "产物检查",
+      "parent": "verify",
+      "sublabel": "HTML/SVG 11 项"
+    },
+    {
+      "id": "browser",
+      "label": "浏览器门禁",
+      "parent": "verify",
+      "sublabel": "4 视口 × 双主题 · CDP"
+    },
+    {
+      "id": "diagnostics",
+      "label": "诊断回执",
+      "parent": "verify",
+      "sublabel": "172 码 · subject · supportedFixes"
+    },
+    {
+      "id": "view",
+      "label": "查看与探索",
+      "parent": "root",
+      "sublabel": "产物内交互"
+    },
+    {
+      "id": "focus_search",
+      "label": "聚焦 / 搜索",
+      "parent": "view",
+      "sublabel": "/ 搜索 · ? 指南"
+    },
+    {
+      "id": "route_reach",
+      "label": "路径 / 上下游",
+      "parent": "view",
+      "sublabel": "R 路径 · 作者关系"
+    },
+    {
+      "id": "lens_map",
+      "label": "Lens / 雷达 / 演示",
+      "parent": "view",
+      "sublabel": "L · M · F"
+    },
+    {
+      "id": "export",
+      "label": "导出与分享",
+      "parent": "view",
+      "sublabel": "PNG/SVG/WebM/分享卡"
+    },
+    {
+      "id": "deliver",
+      "label": "交付与证据",
+      "parent": "root",
+      "sublabel": "可恢复发布"
+    },
+    {
+      "id": "finalize",
+      "label": "finalize 门禁",
+      "parent": "deliver",
+      "sublabel": "失败即停"
+    },
+    {
+      "id": "receipt",
+      "label": "回执 / provenance",
+      "parent": "deliver",
+      "sublabel": "sha256 · gates"
+    },
+    {
+      "id": "recovery",
+      "label": "last-good / 恢复",
+      "parent": "deliver",
+      "sublabel": "recover-output"
+    },
+    {
+      "id": "delta",
+      "label": "架构对比",
+      "parent": "deliver",
+      "sublabel": "Before / Delta / After"
+    },
+    {
+      "id": "integrate",
+      "label": "集成与分发",
+      "parent": "root",
+      "sublabel": "agent-native"
+    },
+    {
+      "id": "hosts",
+      "label": "四种宿主",
+      "parent": "integrate",
+      "sublabel": "Claude · Codex · Cursor · OpenCode"
+    },
+    {
+      "id": "dsh",
+      "label": "DSH 插件",
+      "parent": "integrate",
+      "sublabel": "npm · 社区集成"
+    },
+    {
+      "id": "install",
+      "label": "npx / zip",
+      "parent": "integrate",
+      "sublabel": "skills.sh · Release"
+    },
+    {
+      "id": "community",
+      "label": "社区包目录",
+      "parent": "integrate",
+      "sublabel": "第三方适配"
+    },
+    {
+      "id": "engineering",
+      "label": "工程保障",
+      "parent": "root",
+      "sublabel": "可复核"
+    },
+    {
+      "id": "tests",
+      "label": "测试 · CI",
+      "parent": "engineering",
+      "sublabel": "314 文件 · 14 job"
+    },
+    {
+      "id": "bench",
+      "label": "Benchmark",
+      "parent": "engineering",
+      "sublabel": "3 套件 · 公开结果"
+    },
+    {
+      "id": "i18n",
+      "label": "i18n · 零依赖",
+      "parent": "engineering",
+      "sublabel": "6 语言 · 无运行时依赖"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "典型用法",
+      "items": [
+        "一句话描述系统/流程 → 可交互 HTML 图。",
+        "让 Agent 读仓库 → 带源码证据的运行时架构图。",
+        "把一次回答做成一页：结论先行 + 面板 + 原生图 + 引用。",
+        "不满意就继续对话改 JSON，结构未动的部分保持稳定。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "明确不做",
+      "items": [
+        "通用自动布局（手放坐标即产品，实验 FAILED）。",
+        "Mermaid 解析器 / WYSIWYG 编辑 / 托管分享 / 移动端 / 专用 PDF 按钮。",
+        "不承诺图等于线上真实运行状态。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "质量主张",
+      "items": [
+        "showcase = 零 warning；校验通过 ≠ 视觉正确，回执区分两者。",
+        "benchmark 公开“普通模型首稿可用 10/15”，不吹 uplift。",
+        "失败给 subject + evidence + supportedFixes，而不是重试。"
+      ]
+    }
+  ]
+}

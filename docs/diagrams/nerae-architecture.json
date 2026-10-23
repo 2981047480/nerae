@@ -1,0 +1,400 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Nerae 组件架构（MVP · A 方案）",
+    "subtitle": "uni-app 小程序 + Go 模块化单体 + 腾讯云托管数据；按逻辑组件绘制，不含部署拓扑与网络细节。",
+    "locale": "zh-CN",
+    "output": "docs/diagrams/nerae-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "core",
+        "label": "核心闭环",
+        "focus": [
+          "mp",
+          "nginx",
+          "api",
+          "modules",
+          "mysql",
+          "redis"
+        ],
+        "note": "登录 → 角色分流 → 计划/关系/记录读写；A 方案不含支付与订单模块。"
+      },
+      {
+        "id": "ai",
+        "label": "AI 链路",
+        "focus": [
+          "modules",
+          "aigw",
+          "rules",
+          "llm",
+          "safety",
+          "worker",
+          "wechat"
+        ],
+        "note": "AI 网关统一供应商/prompt/schema/成本；规则引擎纯函数表驱动，输出必须过校验与人工确认。"
+      },
+      {
+        "id": "data",
+        "label": "数据与合规",
+        "focus": [
+          "api",
+          "mysql",
+          "redis",
+          "cos",
+          "safety"
+        ],
+        "note": "MySQL 业务数据 + Redis 缓存/队列/额度 + COS 私有桶；健康数据加密、授权与审计。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "mp",
+      "type": "external",
+      "label": "小程序（uni-app）",
+      "sublabel": "学员/教练同端 · 微信登录",
+      "pos": [
+        60,
+        120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "external",
+      "label": "运营后台",
+      "sublabel": "Vue3 + Element Plus",
+      "pos": [
+        320,
+        120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "nginx",
+      "type": "frontend",
+      "label": "Nginx / Caddy",
+      "sublabel": "HTTPS · 限流 · 静态",
+      "pos": [
+        60,
+        250
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Go API（Gin）",
+      "sublabel": "鉴权 · 路由 · 限流 · 审计",
+      "pos": [
+        60,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "modules",
+      "type": "backend",
+      "label": "业务模块群",
+      "sublabel": "auth/user/coach/plan/relation/appointment…",
+      "pos": [
+        280,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "aigw",
+      "type": "security",
+      "label": "AI 网关",
+      "sublabel": "provider · prompt · schema · 成本 · 熔断",
+      "pos": [
+        500,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "rules",
+      "type": "security",
+      "label": "规则引擎 rules",
+      "sublabel": "白名单 · 频次 · 负荷 · 禁忌 · 版本",
+      "pos": [
+        720,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "safety",
+      "type": "security",
+      "label": "内容安全 + 审核",
+      "sublabel": "msgSecCheck · 自建词库 · 人工抽检",
+      "pos": [
+        940,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Go Worker（asynq）",
+      "sublabel": "订阅消息 · 审核回调 · 周报 · 热度重算",
+      "pos": [
+        1180,
+        390
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL 8",
+      "sublabel": "业务数据 · ai_run · audit_log",
+      "pos": [
+        60,
+        600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis 7",
+      "sublabel": "缓存 · 队列 · AI 额度 · 限流",
+      "pos": [
+        280,
+        600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "cos",
+      "type": "cloud",
+      "label": "COS + CDN",
+      "sublabel": "图片/分享图 · 私有桶签名 URL",
+      "pos": [
+        500,
+        600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "wechat",
+      "type": "external",
+      "label": "微信接口",
+      "sublabel": "登录 · 内容安全 · 订阅消息",
+      "pos": [
+        1100,
+        600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "llm",
+      "type": "external",
+      "label": "大模型 API",
+      "sublabel": "MiMo-V2.6 Flash 主 · 混元/千问 备",
+      "pos": [
+        1290,
+        600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "客户端（一套代码多端）",
+      "wraps": [
+        "mp",
+        "admin"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "接入层",
+      "wraps": [
+        "nginx"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "应用层（Go 模块化单体）",
+      "wraps": [
+        "api",
+        "modules",
+        "aigw",
+        "rules",
+        "safety",
+        "worker"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "数据层（腾讯云托管）",
+      "wraps": [
+        "mysql",
+        "redis",
+        "cos"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "第三方（境内 · 服务端调用）",
+      "wraps": [
+        "wechat",
+        "llm"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "mp",
+      "to": "nginx",
+      "variant": "emphasis"
+    },
+    {
+      "from": "admin",
+      "to": "nginx"
+    },
+    {
+      "from": "nginx",
+      "to": "api",
+      "variant": "emphasis"
+    },
+    {
+      "from": "api",
+      "to": "modules"
+    },
+    {
+      "from": "modules",
+      "to": "aigw",
+      "label": "AI 调用"
+    },
+    {
+      "from": "aigw",
+      "to": "rules",
+      "label": "JSON + 规则校验"
+    },
+    {
+      "from": "aigw",
+      "to": "llm",
+      "label": "主/备降级"
+    },
+    {
+      "from": "safety",
+      "to": "wechat",
+      "label": "内容安全"
+    },
+    {
+      "from": "worker",
+      "to": "wechat",
+      "label": "订阅消息"
+    },
+    {
+      "from": "api",
+      "to": "mysql",
+      "label": "读写"
+    },
+    {
+      "from": "modules",
+      "to": "redis",
+      "label": "缓存/队列"
+    },
+    {
+      "from": "modules",
+      "to": "cos",
+      "label": "图片"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "分层原则",
+      "items": [
+        "客户端：uni-app 一套代码出小程序/H5，App 阶段复用；运营后台独立 Web。",
+        "应用层：Go 模块化单体，模块间只走 service 接口，不跨模块写表。",
+        "数据层：云 MySQL + 云 Redis + COS 私有桶；应用机不自建数据库。",
+        "第三方：微信与服务端模型 API 只由后端调用，密钥不下发。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "A 方案带来的结构约束",
+      "items": [
+        "没有订单、支付回调、对账、分账模块——平台内不收款。",
+        "service_relation 是交付开关：平台外成交后回到平台双方确认。",
+        "appointment 只记录咨询意向与成交自报状态。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "AI 与规则",
+      "items": [
+        "统一 AI 网关：供应商适配、prompt 注册表、JSON Schema 校验、PII 脱敏、成本与熔断。",
+        "规则引擎 internal/rules：纯函数 + 表驱动 + 版本号，可解释、可单测、可审计。",
+        "分层：教练侧草稿必须确认；学员侧只读/建议，写入需确认；安全阻断不得降级绕过。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "数据与合规",
+      "items": [
+        "L3 健康数据单独同意 + 应用层 AES-GCM + KMS 密钥 + 关系授权。",
+        "COS 私有桶签名 URL；分享图公开读走 CDN。",
+        "审计：登录、授权/撤回、教练访问敏感数据、导出、后台操作；日志脱敏。"
+      ]
+    }
+  ]
+}

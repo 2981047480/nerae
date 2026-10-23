@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-22",
+  "timeZone": "Asia/Shanghai",
+  "scope": "Static OpenAPI and JSON Schema regressions only; no HTTP/runtime/concurrency/authorization verification",
+  "python": "3.11.15",
+  "dependencies": "api/test-requirements.txt",
+  "initialBaseline": {
+    "contract": ".review/contract-fix-20261022/baseline-openapi.yaml",
+    "sha256": "809edbe3d63a8956a01f14ae8f80f9abe2ab5b5650850add75563f2cfbafce42",
+    "testsRun": 25,
+    "failedTestMethods": 23,
+    "failureEventsIncludingSubtests": 188,
+    "errorEventsIncludingSubtests": 0,
+    "skipped": 0,
+    "exitCode": 1,
+    "expectedFailure": true
+  },
+  "finalSuiteOnBaseline": {
+    "contract": ".review/contract-fix-20261022/baseline-openapi.yaml",
+    "sha256": "809edbe3d63a8956a01f14ae8f80f9abe2ab5b5650850add75563f2cfbafce42",
+    "testsRun": 53,
+    "failedTestMethods": 43,
+    "failureEventsIncludingSubtests": 330,
+    "errorEventsIncludingSubtests": 0,
+    "skipped": 0,
+    "exitCode": 1,
+    "expectedFailure": true
+  },
+  "finalSuiteOnRevisedContract": {
+    "contract": "api/openapi.yaml",
+    "sha256": "fd2c2a193684326de740d8aa40719980f3cd0727e261eec9409bc1e71f8a8481",
+    "testsRun": 53,
+    "contractTestMethods": 45,
+    "validatorSupportTestMethods": 8,
+    "failedTestMethods": 0,
+    "failureEventsIncludingSubtests": 0,
+    "errorEventsIncludingSubtests": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "successful": true
+  }
+}

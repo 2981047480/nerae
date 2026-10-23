@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "91821f8f-0b26-4097-9bf5-6cc1ec7abe49",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/archify-architecture.json",
+  "output": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/archify-architecture.html",
+  "specification": {
+    "sha256": "c2e1f535e286e400d19d75d16edd2d11d00132536d9b9c3b8a75ad8561f50c0b",
+    "bytes": 8162
+  },
+  "artifact": {
+    "sha256": "fb95860f186ee8fd76b818d86ae02ee6c36cdb36e46cfe281d242da456bc7493",
+    "bytes": 834515
+  }
+}

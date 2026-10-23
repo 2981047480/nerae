@@ -1,0 +1,400 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Archify 组件架构（v3.2.0）",
+    "subtitle": "Agent Skill 契约 → typed JSON IR → 确定性渲染/校验 → 单文件 HTML；按组件粒度绘制。",
+    "locale": "zh-CN",
+    "output": "docs/diagrams/archify-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "authoring",
+        "label": "生成链路",
+        "focus": [
+          "input",
+          "host",
+          "skill",
+          "ir",
+          "schema",
+          "renderers",
+          "template",
+          "html"
+        ],
+        "note": "Agent 读契约、写 IR；确定性工具链负责渲染与校验。"
+      },
+      {
+        "id": "gates",
+        "label": "门禁与交付",
+        "focus": [
+          "cli",
+          "finalize",
+          "checker",
+          "browser",
+          "deliver",
+          "html"
+        ],
+        "note": "finalize 编排四道门禁；全过才原子发布产物。"
+      },
+      {
+        "id": "toolchain",
+        "label": "确定性工具链",
+        "focus": [
+          "ir",
+          "schema",
+          "renderers",
+          "template",
+          "cli",
+          "finalize"
+        ],
+        "note": "零运行时依赖：schema/渲染器/校验器/模板全部随包分发。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "input",
+      "type": "external",
+      "label": "输入",
+      "sublabel": "描述 · 仓库 · Mermaid",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "host",
+      "type": "frontend",
+      "label": "Agent 宿主",
+      "sublabel": "Claude Code · Codex · Cursor · DSH",
+      "pos": [
+        220,
+        300
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "skill",
+      "type": "frontend",
+      "label": "SKILL.md 契约",
+      "sublabel": "类型路由 + 参考文档 + 示例",
+      "pos": [
+        220,
+        120
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "tag": "prompt 契约"
+    },
+    {
+      "id": "ir",
+      "type": "messagebus",
+      "label": "Typed JSON IR",
+      "sublabel": "11 类 schema · candidate.json",
+      "pos": [
+        430,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "schema",
+      "type": "security",
+      "label": "严格 Schema 校验",
+      "sublabel": "12 schemas · ajv strict",
+      "pos": [
+        630,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "renderers",
+      "type": "backend",
+      "label": "布局渲染器",
+      "sublabel": "11 渲染器 · 27 共享模块",
+      "pos": [
+        830,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "template",
+      "type": "frontend",
+      "label": "Viewer 模板",
+      "sublabel": "787 KB · 主题/导出",
+      "pos": [
+        1030,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "checker",
+      "type": "security",
+      "label": "产物检查",
+      "sublabel": "HTML/SVG 11 项",
+      "pos": [
+        1230,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "html",
+      "type": "cloud",
+      "label": "自包含 HTML",
+      "sublabel": "单文件 ≈ 0.8 MB",
+      "pos": [
+        1430,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "browser",
+      "type": "security",
+      "label": "浏览器门禁",
+      "sublabel": "Chrome CDP · 4 视口×2",
+      "pos": [
+        1230,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "CLI 17 子命令",
+      "sublabel": "archify.mjs · 7,289 行",
+      "pos": [
+        430,
+        470
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "finalize",
+      "type": "security",
+      "label": "finalize 门禁",
+      "sublabel": "首个失败即停",
+      "pos": [
+        630,
+        470
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "deliver",
+      "type": "backend",
+      "label": "原子交付 + 回执",
+      "sublabel": "lock · journal · sha256",
+      "pos": [
+        1430,
+        470
+      ],
+      "size": [
+        150,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Agent 侧（无状态）",
+      "wraps": [
+        "input",
+        "host",
+        "skill"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "校验门禁",
+      "wraps": [
+        "checker",
+        "browser"
+      ],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "from": "input",
+      "to": "host",
+      "variant": "emphasis"
+    },
+    {
+      "from": "host",
+      "to": "skill",
+      "label": "读取契约",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "host",
+      "to": "ir",
+      "label": "写入",
+      "variant": "emphasis"
+    },
+    {
+      "from": "ir",
+      "to": "schema"
+    },
+    {
+      "from": "schema",
+      "to": "renderers"
+    },
+    {
+      "from": "renderers",
+      "to": "template"
+    },
+    {
+      "from": "template",
+      "to": "checker"
+    },
+    {
+      "from": "checker",
+      "to": "html"
+    },
+    {
+      "from": "browser",
+      "to": "checker",
+      "label": "浏览器证据",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "cli",
+      "to": "finalize",
+      "label": "编排"
+    },
+    {
+      "from": "finalize",
+      "to": "schema",
+      "label": "validate",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "from": "finalize",
+      "to": "checker",
+      "label": "编排",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          1200,
+          502
+        ],
+        [
+          1200,
+          332
+        ]
+      ]
+    },
+    {
+      "from": "finalize",
+      "to": "deliver",
+      "label": "交付",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          710,
+          560
+        ],
+        [
+          1505,
+          560
+        ]
+      ]
+    },
+    {
+      "from": "deliver",
+      "to": "html",
+      "label": "发布",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三层结构",
+      "items": [
+        "Agent 契约：SKILL.md + 9 篇参考文档教模型选类型、读 schema、写 IR。",
+        "零依赖 CLI：17 个子命令，运行时无 npm 依赖；校验器/模板/字体全部预生成。",
+        "自包含产物：单个 HTML 内嵌样式、脚本、字体、图片，离线可看、可转发。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "生成链路",
+      "items": [
+        "10 类技术图（架构/工作流/时序/数据流/生命周期/ERD/类/树/时间线/瀑布）+ explainer 一页答案。",
+        "Mermaid 只当输入方言：不解析，由 Agent 改写成 typed JSON。",
+        "仓库证据可选：节点可钉到某个 commit 的文件与行号。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "门禁顺序",
+      "items": [
+        "validate（内嵌在 deliver 里）→ check → browser-check，首个非 pass 即停。",
+        "showcase 档 = 零 warning：交叉、走廊、标签贴线、画布越界都是硬错误。",
+        "浏览器门禁：4 个视口 × 深浅主题，检查容纳、可读性、viewer chrome。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "交付与恢复",
+      "items": [
+        "目录锁 + pending journal + provenance sidecar + artifact sha256。",
+        "失败绝不覆盖旧产物：保留 last-known-good，可显式恢复。",
+        "文档自认这是“可恢复发布”，不是 crash-atomic 替换。"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b13f7ae8-44c8-4c07-8cfe-b9b441872f50",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-architecture.json",
+  "output": "/Users/zephyr/Documents/项目/nerae/docs/diagrams/nerae-architecture.html",
+  "specification": {
+    "sha256": "53171ac6350b4d41f8f1ee8aa7d31ebf176977acaccc08170b933eed15461fc0",
+    "bytes": 8489
+  },
+  "artifact": {
+    "sha256": "4bdd0c55c1bf48d659169afece6ed66c4418c6a0ac24ab5b82580fec719a51e9",
+    "bytes": 839163
+  }
+}
