@@ -17,9 +17,20 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "running",
+  "status": "first-batch report present; changes requested; fix prompt not yet sent because Mac locked",
   "reasoning_history": [
     "Max: initial request stopped at 38 steps without main source/progress",
     "Medium: continue same session for bounded implementation"
-  ]
+  ],
+  "ui_checkpoint": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "fix_prompt": "D01-02-fix-01-prompt.md",
+  "fix_prompt_sent": false,
+  "lead_native_completion_observed": false,
+  "review_input_revision": "3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e",
+  "goal_blocked_audit": {
+    "condition": "Mac locked, cannot operate native Harness or continue screen QA",
+    "consecutive_goal_turns": 1,
+    "goal_status": "active",
+    "human_unlock_question_pending": true
+  }
 }

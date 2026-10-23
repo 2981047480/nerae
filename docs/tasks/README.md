@@ -63,6 +63,6 @@
 | I-B01 | 发布分享与申诉小批HTTP集成 | integration / I02 | V01, B01, B02, B05, O02 | — | 1–2 | planned |
 | I-B02 | 饮食证据与建议应用小批HTTP集成 | integration / I02 | B03, B04, S01-B, I-B01 | — | 1–2 | planned |
 | D01-01 | 设计逻辑逐项推导与开发文稿 | task / D01 | — | — | 0.5–1 | accepted |
-| D01-02 | 指定DeepSeek完成四种代表情境 | task / D01 | D01-01 | — | 1–2 | active |
+| D01-02 | 指定DeepSeek完成四种代表情境 | task / D01 | D01-01 | — | 1–2 | review |
 | D01-03 | 指定DeepSeek扩展全量情境与状态 | task / D01 | D01-02 | — | 1.5–3 | planned |
 | D01-I | 第三轮UI独立验收与集成 | integration / D01 | D01-03 | — | 0.5–1 | planned |

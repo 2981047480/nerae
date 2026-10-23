@@ -3716,7 +3716,7 @@
       "id": "D01-02",
       "title": "指定DeepSeek完成四种代表情境",
       "batch": "foundation",
-      "status": "active",
+      "status": "review",
       "depends_on": [
         "D01-01"
       ],
@@ -3782,7 +3782,11 @@
       "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
       "workspace": "/private/tmp/nerae-ui-round-three",
       "branch": "ui/round-three",
-      "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance."
+      "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
+      "implementation_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+      "review_status": "changes_requested",
+      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_01.md",
+      "waiting_on": "Manual macOS unlock to send fixes to same Harness session and finish actual screen QA."
     },
     {
       "id": "D01-03",

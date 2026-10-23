@@ -1,0 +1,167 @@
+{
+  "ui_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "accepted": false,
+  "files": [
+    {
+      "path": "design/prototype/ASSETS.md",
+      "sha256": "3b03e06a9a9015e6e6a9e3e5cece62255326ff5535c78b62b5736606a5e13508"
+    },
+    {
+      "path": "design/prototype/README.md",
+      "sha256": "db8dbf24914b517d6afc2aefb1ee68d25b532523dee2d74f0d3ceaab29b95b8f"
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "sha256": "a4419c98f12e206d5098ee9eb3c2a7d2a00ae96cfedcab07c97acc320c1b67e8"
+    },
+    {
+      "path": "design/prototype/index.html",
+      "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2"
+    },
+    {
+      "path": "design/prototype/package.json",
+      "sha256": "e6d72b1825262be7b94d5149be960fe5fe8d31401cc1ae68d3c2cdf5fdccee01"
+    },
+    {
+      "path": "design/prototype/pnpm-lock.yaml",
+      "sha256": "c3a45909ec75c29e783455009b0281a94af64f58ab72edd48233d8af8a569e26"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-breakfast.webp",
+      "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-featured.webp",
+      "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-mealprep.webp",
+      "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-dumbbell.webp",
+      "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-featured.webp",
+      "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-plank.webp",
+      "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-stretch.webp",
+      "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc"
+    },
+    {
+      "path": "design/prototype/public/assets/gym-interior.webp",
+      "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15"
+    },
+    {
+      "path": "design/prototype/public/assets/hero-today.webp",
+      "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96"
+    },
+    {
+      "path": "design/prototype/public/assets/training-dumbbells.webp",
+      "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7"
+    },
+    {
+      "path": "design/prototype/src/App.vue",
+      "sha256": "9ab1ab628dda101ec39e31e31fb19fa493c08af6686e6f7023149abb17252c10"
+    },
+    {
+      "path": "design/prototype/src/components/AppHeader.vue",
+      "sha256": "3d8670e403d6686d07dc60b3e9c2a87692e45bcc176729ff1114e750f2f3159b"
+    },
+    {
+      "path": "design/prototype/src/components/BaseSheet.vue",
+      "sha256": "eee7e40783502db590215c1f07465c1fc8004788d76cc57f42300a865ed43eb5"
+    },
+    {
+      "path": "design/prototype/src/components/PhotoFrame.vue",
+      "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0"
+    },
+    {
+      "path": "design/prototype/src/components/PreviewControl.vue",
+      "sha256": "c9b4d385e3cdd45f966f06de9f515e0d9fdd227ea47dca1d367a1848cf57311d"
+    },
+    {
+      "path": "design/prototype/src/components/TabBar.vue",
+      "sha256": "22881d346774b40b4c41cd067743cf325cdf5127b15c119e042fd4f30f8ddf93"
+    },
+    {
+      "path": "design/prototype/src/components/Wordmark.vue",
+      "sha256": "f843dd7a4f45e650434421f04e78754f2f099d557785ce8166627965f254a81b"
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "sha256": "c1a107d66416193b478a8d6d70690d983e7fcda93310a1e006d666175ebf2083"
+    },
+    {
+      "path": "design/prototype/src/main.ts",
+      "sha256": "bc6f04df2e565f98f4b543a0d03ff85cc45b86536f4aa3a9abc6fe5acc62224a"
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "sha256": "94e90beb834ff07333eabd718e181fa1b6ca87b6ddbdc4c4817c1c9fc24e3fb7"
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "sha256": "3bdc12221a283c12bb1739e543c86470e7647b5cd73fcb69413e41f236314d4f"
+    },
+    {
+      "path": "design/prototype/src/styles/tokens.css",
+      "sha256": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a"
+    },
+    {
+      "path": "design/prototype/src/tests/logic.test.ts",
+      "sha256": "8b4010fa759e163b0f24d8c2a108df0e5ec2855455e918607b690cf5e481221a"
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "sha256": "f035cfa8378380ed397f8b7d24d044d01ff353ed5d606b6487fad64813b445c5"
+    },
+    {
+      "path": "design/prototype/src/utils/format.ts",
+      "sha256": "84670d1934441f616873a47cbe61e3ec9c13f48c7c363610b0735b45d7e58a8a"
+    },
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "sha256": "6317dd13f922895c9f35f56ac9137f9876d3af9dd63877bd0dd5a93905cd5ed0"
+    },
+    {
+      "path": "design/prototype/src/utils/training.ts",
+      "sha256": "31d753e26025045978fee562179fd812ed54c3be85e10d15fd183b41f4d8d1c0"
+    },
+    {
+      "path": "design/prototype/src/views/CoachReviewView.vue",
+      "sha256": "cacef8a72b3af87bea7f11207d3fddffb54099c6383822a61950ed112d23b892"
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "sha256": "dedd0736ee957908708b458619484bebd7067bd31e3b0a408df47168e268e470"
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "sha256": "313e8bf2c9e49e1cbe55f4d7219d926c73f97142a4d3b05f9f9bafaac95fc2e3"
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "sha256": "830dadff350cf8a68df526ab5815321964ac49aeccdc40a0d0929df24ca52f22"
+    },
+    {
+      "path": "design/prototype/src/vite-env.d.ts",
+      "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a"
+    },
+    {
+      "path": "design/prototype/tsconfig.json",
+      "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db"
+    },
+    {
+      "path": "design/prototype/vite.config.ts",
+      "sha256": "1e60c90abf496f97ab685bb6aab27479af2324ac69f3a0dc7bf1899fb88a0166"
+    }
+  ],
+  "screenshots": "captured during first-batch implementation; must recapture/retest after fixes on one frozen revision"
+}

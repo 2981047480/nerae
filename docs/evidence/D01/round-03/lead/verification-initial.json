@@ -1,0 +1,49 @@
+{
+  "source_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "runtime": "/opt/homebrew/bin/node v26.0.0",
+  "lead_commands": [
+    {
+      "command": "node node_modules/vue-tsc/bin/vue-tsc.js --noEmit",
+      "exit_code": 0
+    },
+    {
+      "command": "node node_modules/vite/bin/vite.js build",
+      "exit_code": 0,
+      "log": "build-initial.log"
+    },
+    {
+      "command": "node node_modules/vitest/vitest.mjs run",
+      "exit_code": 0,
+      "passed": 14,
+      "log": "tests-initial.log"
+    },
+    {
+      "command": "node check_persist_loop.mjs --contracts",
+      "exit_code": 0,
+      "scope": "Node harness importing actual store with fake browser storage/timers",
+      "application_expectations_passed": false,
+      "log": "initial-source-diagnostics.json"
+    }
+  ],
+  "ui_review": "changes_requested",
+  "completed_ui_observations": [
+    "390x844 today/discover/training/review",
+    "1440x900 coach review",
+    "decimal input failure",
+    "record 3 to 4 sets and reload persistence",
+    "real rest countdown",
+    "search no-results and clear recovery"
+  ],
+  "pending_ui_checks": [
+    "320/430/768",
+    "200% text",
+    "keyboard/focus",
+    "complete publish/repeat path",
+    "motion and reduced-motion equivalence",
+    "same-revision screenshot retest"
+  ],
+  "blocked_ui": "Mac locked; manual unlock requested via asynchronous user question",
+  "model": "opencode-go/deepseek-v4.1-flash",
+  "session_id": "2b3c2fb7-0ddf-4462-be74-885272454974",
+  "remaining_full_goal": "R01-R09 fixes then D01-02 remaining QA, D01-03 all sixteen screen families, D01-I integration/55-item verification"
+}

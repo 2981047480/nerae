@@ -1,0 +1,70 @@
+{
+  "scope": "actual store module; fake browser storage/timers; not an actual-browser result",
+  "action": "one navigation then no user actions for 700ms",
+  "writes": 5,
+  "updatedAtValues": [
+    "2026-10-23T18:36:46.397Z",
+    "2026-10-23T18:36:46.519Z",
+    "2026-10-23T18:36:46.643Z",
+    "2026-10-23T18:36:46.767Z",
+    "2026-10-23T18:36:46.891Z"
+  ],
+  "expectedIdleBehavior": "one initial debounced write, then no periodic self-triggered writes",
+  "selfTriggerObserved": true,
+  "contracts": {
+    "decimalInputs": [
+      {
+        "weight": 1.1,
+        "errors": {
+          "weightKg": "重量最多保留两位小数"
+        }
+      },
+      {
+        "weight": 2.3,
+        "errors": {
+          "weightKg": "重量最多保留两位小数"
+        }
+      },
+      {
+        "weight": 8.2,
+        "errors": {
+          "weightKg": "重量最多保留两位小数"
+        }
+      },
+      {
+        "weight": 12.5,
+        "errors": {}
+      }
+    ],
+    "saveVersion": {
+      "initialVersion": 7,
+      "changedSave": true,
+      "changedVersion": 7,
+      "unchangedSave": false,
+      "unchangedVersion": 7,
+      "changedContentCreatedNewVersion": false,
+      "unchangedContentAvoidedNewVersion": true
+    },
+    "afterDeliveryAndFurtherSave": {
+      "deliveredVersion": 7,
+      "currentStudentVersion": 6,
+      "publishedVersion": 6,
+      "publishedFirstExerciseSets": "4",
+      "draftVersion": 8,
+      "draftFirstExerciseSets": "6",
+      "savedFirstExerciseSets": "6",
+      "coachStateKeys": [
+        "published",
+        "publishedVersion",
+        "activeStudentVersion",
+        "draft",
+        "draftVersion",
+        "savedContent",
+        "savedAt",
+        "deliveredVersion",
+        "deliveredAt"
+      ],
+      "expected": "The delivered content with first exercise = 5 sets remains recoverable as its own immutable version."
+    }
+  }
+}

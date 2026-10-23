@@ -1,0 +1,14 @@
+{
+  "scope": "actual store module; fake browser storage/timers; not an actual-browser result",
+  "action": "one navigation then no user actions for 700ms",
+  "writes": 5,
+  "updatedAtValues": [
+    "2026-10-23T18:21:04.590Z",
+    "2026-10-23T18:21:04.711Z",
+    "2026-10-23T18:21:04.834Z",
+    "2026-10-23T18:21:04.957Z",
+    "2026-10-23T18:21:05.083Z"
+  ],
+  "expectedIdleBehavior": "one initial debounced write, then no periodic self-triggered writes",
+  "selfTriggerObserved": true
+}
