@@ -1,0 +1,21 @@
+{
+  "runtime": "DeepSeek Harness.app",
+  "provider": "opencode-go",
+  "model": "deepseek-v4.1-flash",
+  "reasoning": "Max",
+  "session_id": "2b3c2fb7-0ddf-4462-be74-885272454974",
+  "session_title": "Nerae 第三轮 UI 首批实现",
+  "workspace": "/private/tmp/nerae-ui-round-three",
+  "branch": "ui/round-three",
+  "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
+  "observed": "native UI selected model + active execution + local session directory",
+  "submitted_at_local": "2026-10-24 01:32 Asia/Shanghai",
+  "scope": [
+    "S01",
+    "S02",
+    "S04",
+    "S15"
+  ],
+  "preview_port": 4186,
+  "status": "running"
+}

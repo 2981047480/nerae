@@ -3716,13 +3716,13 @@
       "id": "D01-02",
       "title": "指定DeepSeek完成四种代表情境",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "D01-01"
       ],
       "role": "ui-builder",
       "model_policy": "harness_ui",
-      "owner": null,
+      "owner": "DeepSeek Harness / Nerae 第三轮 UI 首批实现",
       "write_allowlist": [
         "design/prototype/",
         "docs/evidence/D01/round-03/worker/"
@@ -3776,7 +3776,12 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "D01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "opencode-go/deepseek-v4.1-flash",
+      "actual_reasoning": "Max",
+      "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
+      "workspace": "/private/tmp/nerae-ui-round-three",
+      "branch": "ui/round-three"
     },
     {
       "id": "D01-03",
