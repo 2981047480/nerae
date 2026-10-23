@@ -37,3 +37,7 @@
 ### 同一模型请求收敛
 
 继续观察后，步骤停在37，session文件最后更新距现场约2.5分钟，且无主要源码或progress。Lead停止该长请求（界面最终38步），将同一会话的推理等级Max改为Medium，按已经确定的文稿做有界实施。模型仍DeepSeek V4.1 Flash，未更换provider。新一轮已显示进行中和停止生成，精确继续指令见dispatch/D01-02-steer-02.md。不是把停止记录写成完成。
+
+### 首批结论与人工解锁等待
+
+源码检查点1ad6398，Lead输入/证据3d05cbf；独立typecheck/build/14测试exit0，但额外诊断与真实浏览器操作确认R01–R09问题，当前changes_requested。原生工具报告Mac锁定且无法自动解锁，已向用户异步请求手动解锁；返工提示词已保存但未发出。IAB标签4已markHandoff，临时视口reset已成功。只作元数据保留，没有继续锁屏后的原生UI操作。CLI快速核对未发现受支持的Harness同会话入口，不静默改为独立OpenCode。

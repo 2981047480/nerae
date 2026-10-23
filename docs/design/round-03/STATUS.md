@@ -58,3 +58,7 @@
 - 解锁后：先读取本状态/REVIEW_01，核实同一会话与模型Medium，派发R01–R09；不用重建、重读全部文稿或询问是否继续用指定模型。完成第一批后再继续D01-03与D01-I。
 
 - 工作树Lead输入与证据已提交 `3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e`。UI代码仍为1ad6398检查点，Lead没有代写UI。解锁后待发消息已持久化在dispatch/D01-02-fix-01-prompt.md。
+
+### 锁屏期间的收尾
+
+已保留IAB待验标签4（markHandoff），并清除临时视口覆盖；没有在锁屏后继续原生Harness操作。PATH及Harness运行时候选目录未找到可恢复同会话的已提供CLI入口，未用独立OpenCode CLI替换指定执行环境。待人工解锁。
