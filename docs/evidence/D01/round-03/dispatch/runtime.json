@@ -2,7 +2,7 @@
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
-  "reasoning": "Max",
+  "reasoning": "Medium",
   "session_id": "2b3c2fb7-0ddf-4462-be74-885272454974",
   "session_title": "Nerae 第三轮 UI 首批实现",
   "workspace": "/private/tmp/nerae-ui-round-three",
@@ -17,5 +17,9 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "running"
+  "status": "running",
+  "reasoning_history": [
+    "Max: initial request stopped at 38 steps without main source/progress",
+    "Medium: continue same session for bounded implementation"
+  ]
 }

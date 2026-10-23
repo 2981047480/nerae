@@ -23,8 +23,8 @@
     },
     "harness_ui": {
       "preferred": "opencode-go/deepseek-v4.1-flash",
-      "reasoning": "Max",
-      "reason": "用户明确指定现有 DeepSeek Harness / OpenCode Go 实现 UI；最终产品与视觉判断由 Lead 负责",
+      "reasoning": "Medium",
+      "reason": "用户指定现有DeepSeek Harness / OpenCode Go的该精确模型；初始Max长时间不落盘，Lead改为Medium实施既定规范，视觉最终判断仍由Lead负责。不是替换模型。",
       "unavailable_fallback": "不自动切换；记录真实阻塞并等待恢复指定执行链"
     }
   },
@@ -3778,10 +3778,11 @@
       "parent": "D01",
       "kind": "task",
       "actual_model": "opencode-go/deepseek-v4.1-flash",
-      "actual_reasoning": "Max",
+      "actual_reasoning": "Medium (initial Max stopped after prolonged no-source planning)",
       "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
       "workspace": "/private/tmp/nerae-ui-round-three",
-      "branch": "ui/round-three"
+      "branch": "ui/round-three",
+      "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance."
     },
     {
       "id": "D01-03",
