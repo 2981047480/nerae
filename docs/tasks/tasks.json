@@ -3580,11 +3580,11 @@
       "id": "D01-01",
       "title": "设计逻辑逐项推导与开发文稿",
       "batch": "foundation",
-      "status": "planned",
+      "status": "accepted",
       "depends_on": [],
       "role": "product-designer",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "docs/design/round-03/",
         "scripts/design/",
@@ -3641,13 +3641,76 @@
         "不得把测试替身、示例界面或生成接口当作真实联调完成",
         "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D01/round-03/reasoning/REPORT.md",
+          "sha256": "3cb0f0da05bec04ef14516e797f5df528c48f71104a9b16b54565bd550c46193",
+          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/reasoning/checks.json",
+          "sha256": "483edfd1252682f899a2d7bc6bcea01c7c876e0b305c9e286606a166cefe3037",
+          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/reasoning/design-manifest.json",
+          "sha256": "366f88c573acc18f63e235c14cf54b6181fc7b0c6d2e70cbc839624c018a038e",
+          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "D01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "native Codex session; precise model id not exposed",
+      "actual_reasoning": "session default; precise effort not exposed",
+      "base_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
+      "accepted_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
+      "reviewed_by": "/root (Codex Lead)",
+      "review_mode": "sequential_role_review",
+      "review_reason": "同一Lead依次承担产品/交互/视觉规范与批判复核；没有独立子代理意见或用户研究；只接受文稿，执行指定DeepSeek后另作视觉验收",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/reasoning/REPORT.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/reasoning/REPORT.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "仅设计与开发文稿，PRD/API/ER hash保持不变，没有wire变更"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "没有真实学员数据或密钥；仅预览人物与状态规范，不声称权限运行验收"
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/reasoning/REPORT.md"
+          ]
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/reasoning/REPORT.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/reasoning/REPORT.md"
+          ]
+        }
+      }
     },
     {
       "id": "D01-02",
