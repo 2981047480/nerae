@@ -1,0 +1,8 @@
+{
+  "command": "/opt/homebrew/bin/node node_modules/vitest/vitest.mjs run",
+  "chunk_id": "c5b3e8",
+  "wall_time_seconds": 1.001095292,
+  "session_id": 82394,
+  "original_token_count": 17,
+  "output": "\n RUN  v5.0.5 /private/tmp/nerae-ui-round-three/design/prototype\n\n"
+}

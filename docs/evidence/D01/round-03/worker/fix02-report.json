@@ -1,0 +1,462 @@
+{
+  "task": "D01-02 fix02（含 REVIEW_03 放大模式补充）",
+  "status": "partial",
+  "status_reason": "R08剩余、R10e、文字放大预览及 R15a/R15b/R16 已修复并完成本地回归；Lead 尚未实际复测 320/390 的 200% 边界，未接受。",
+  "head": "19a2aeb",
+  "source_parent": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "note_bec98f3": "旧 bec98f3 不是当前源码父提交；本轮元数据使用实际 HEAD 19a2aeb 与源 9b16be0。",
+  "branch": "ui/round-three",
+  "workspace": "/private/tmp/nerae-ui-round-three",
+  "committed": false,
+  "execution": {
+    "session_id": "session-2b3c2fb7-0ddf-4462-be74-885272454974",
+    "provider": "opencode-go",
+    "model": "deepseek-v4.1-flash",
+    "reasoning": "Medium（Lead 实施调整，非人类用户指定）",
+    "node": "/opt/homebrew/bin/node v26.0.0"
+  },
+  "attempted_scope": [
+    "R08 剩余进度/CTA 文案与单位不拆行",
+    "R10e 弹层跨断点焦点恢复",
+    "预览 100%/200% 文字放大",
+    "R15a 收藏按钮 200% 命中区",
+    "R15b skip 链接按自身高度隐藏",
+    "R16 200% 教练编辑器 min-content/字段可见与 390 发布词组",
+    "普通字号 tab/nav 最小 44 宽命中区",
+    "普通 100% 320 教练编辑器 min-content 边界"
+  ],
+  "remaining_scope": [
+    "Lead 实际复测 200% 320/390 截图与几何、发布弹层、焦点边界",
+    "系统动态字体/真机/专业审核（不属于本样机已验证事实）",
+    "其余 12 界面族（不属于本批）"
+  ],
+  "commands": [
+    {
+      "command": "vue-tsc --noEmit",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/typecheck-fix02-final.log"
+    },
+    {
+      "command": "vite build",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/build-fix02-final.log",
+      "result": "CSS 61.51 kB / JS 179.07 kB"
+    },
+    {
+      "command": "vitest run",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/test-fix02-final.log",
+      "result": "36 tests passed (3 files)"
+    },
+    {
+      "command": "curl http://127.0.0.1:4186/",
+      "exit_code": 0,
+      "result": "HTTP 200；复用 PID 74496"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "service": {
+    "url": "http://127.0.0.1:4186/",
+    "host": "127.0.0.1",
+    "port": 4186,
+    "pid": 74496,
+    "status": "running（复用既有服务）"
+  },
+  "items": [
+    {
+      "id": "R08",
+      "status": "fixed_pending_visual",
+      "detail": "进度只显示已完成3/12组；CTA 唯一表达“继续 哑铃卧推 · 第4组”，组数 nowrap；短屏 CTA/M03 保持",
+      "test": "ui.test 精确断言进度文本与 CTA/nowrap"
+    },
+    {
+      "id": "R10e",
+      "status": "fixed_pending_browser",
+      "detail": "实际可见/可聚焦检查（checkVisibility/几何/aria/disabled）；跨断点回退同任务可见发布触发，成功回状态区，取消/Escape/成功不再落 BODY",
+      "test": "ui.test 1440→390 模拟取消焦点回移动触发；成功焦点测试继续通过"
+    },
+    {
+      "id": "text-200",
+      "status": "fixed_pending_visual",
+      "detail": "预览 100%/200%，根字号 200% + rem token，无整体 transform；Teleport 覆盖；持久化、重置回100%，与 Reduce Motion 独立",
+      "test": "store.test 持久化/独立性；ui.test 属性与重置、词组"
+    },
+    {
+      "id": "R15a",
+      "status": "fixed_pending_browser",
+      "detail": ".bookmark-btn flex:0 0 44px + min 44px，标签可换行、按钮不收缩",
+      "test": "源码规则；收藏状态测试保留；实际 320/390 几何待 Lead"
+    },
+    {
+      "id": "R15b",
+      "status": "fixed_pending_browser",
+      "detail": "skip 链接 top:0 + translateY(-100%) 按自身高度隐藏，focus translateY(12px) 完整显示；#main 不变",
+      "test": "#main 唯一/跳转测试保留；黑条实拍待 Lead"
+    },
+    {
+      "id": "R16",
+      "status": "fixed_pending_visual",
+      "detail": "200% 单列改 minmax(0,1fr)，coach-grid/plan/field/input/review 链补 min-width:0；字段单列换行；发布“版本 N”nowrap + 按钮 200% 流式堆叠；不隐藏/缩小/关闭 200%",
+      "test": "ui.test 发布词组完整；实际字段边界待 Lead"
+    },
+    {
+      "id": "R15a-normal",
+      "status": "fixed_pending_browser",
+      "detail": "发现训练/饮食 tab 与桌面今天/发现导航 min-width:44px，字号不变",
+      "test": "保留现有回归；实际几何待 Lead"
+    },
+    {
+      "id": "R16-normal",
+      "status": "fixed_pending_browser",
+      "detail": "常态 min-width 链与 minmax(0,…)；≤380 字段单列；plan 面板 width/max-width:100%；不靠 clip",
+      "test": "保留 36 项回归；实际 320 字段/移除/备注边界待 Lead"
+    }
+  ],
+  "tests": {
+    "passed": 36,
+    "files": 3,
+    "prior": 35,
+    "new": [
+      "R08 进度/CTA 文案",
+      "R10e 跨断点焦点",
+      "文字放大预览与重置",
+      "文字放大持久化/独立性",
+      "200% 发布版本词组"
+    ]
+  },
+  "not_verified": [
+    "真实浏览器普通 100% 320/390 的 tab/nav 命中与教练编辑器字段/移除/备注边界",
+    "真实浏览器 200% 320/390 截图与几何（R15a 收藏、R15b skip、R16 编辑器/发布弹层）",
+    "真实浏览器 1440→390 取消/Escape/成功焦点与断点变化",
+    "200% 是预览文字放大，不是系统动态字体/微信字体设置/真机",
+    "系统 Reduce Motion、软键盘、真实存储注入、专业审核"
+  ],
+  "payment_scope": "payment 不在剩余范围；A 阶段不收款、不代收、不分账，本样机不实现支付。",
+  "historical_reports": "report.md / report.json / FIX_01.md 保留为 fix01 历史；本文件与 fix02-report.json 为 latest。",
+  "files": [
+    {
+      "path": "design/prototype/ASSETS.md",
+      "bytes": 4450,
+      "sha256": "3b03e06a9a9015e6e6a9e3e5cece62255326ff5535c78b62b5736606a5e13508"
+    },
+    {
+      "path": "design/prototype/README.md",
+      "bytes": 5952,
+      "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5"
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "bytes": 6393,
+      "sha256": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013"
+    },
+    {
+      "path": "design/prototype/index.html",
+      "bytes": 755,
+      "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2"
+    },
+    {
+      "path": "design/prototype/package.json",
+      "bytes": 655,
+      "sha256": "1b1ff783c2dd406f0a71416b74b4b68a70aa202940f1d882e13169bcebf98926"
+    },
+    {
+      "path": "design/prototype/pnpm-lock.yaml",
+      "bytes": 55938,
+      "sha256": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-breakfast.webp",
+      "bytes": 137740,
+      "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-featured.webp",
+      "bytes": 220540,
+      "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-mealprep.webp",
+      "bytes": 115400,
+      "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-dumbbell.webp",
+      "bytes": 25026,
+      "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-featured.webp",
+      "bytes": 105426,
+      "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-plank.webp",
+      "bytes": 44474,
+      "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-stretch.webp",
+      "bytes": 68816,
+      "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc"
+    },
+    {
+      "path": "design/prototype/public/assets/gym-interior.webp",
+      "bytes": 105720,
+      "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15"
+    },
+    {
+      "path": "design/prototype/public/assets/hero-today.webp",
+      "bytes": 181446,
+      "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96"
+    },
+    {
+      "path": "design/prototype/public/assets/training-dumbbells.webp",
+      "bytes": 96658,
+      "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7"
+    },
+    {
+      "path": "design/prototype/src/App.vue",
+      "bytes": 8279,
+      "sha256": "ce9729434e80efaad7babe22cdd2de8bd9aadc8b113daf1bdd67eccf5f5212f3"
+    },
+    {
+      "path": "design/prototype/src/components/AppHeader.vue",
+      "bytes": 2985,
+      "sha256": "462c0b66c1fcda6679fbf92402e71449acfc4740919df710a97ced9b7ed8e8df"
+    },
+    {
+      "path": "design/prototype/src/components/BaseSheet.vue",
+      "bytes": 5250,
+      "sha256": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086"
+    },
+    {
+      "path": "design/prototype/src/components/PhotoFrame.vue",
+      "bytes": 1436,
+      "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0"
+    },
+    {
+      "path": "design/prototype/src/components/PreviewControl.vue",
+      "bytes": 11482,
+      "sha256": "e01c03796bbb24667f5fdc47ce8ed5871279f62f5cd6731a67d61d9382b6fe7e"
+    },
+    {
+      "path": "design/prototype/src/components/TabBar.vue",
+      "bytes": 1607,
+      "sha256": "22881d346774b40b4c41cd067743cf325cdf5127b15c119e042fd4f30f8ddf93"
+    },
+    {
+      "path": "design/prototype/src/components/Wordmark.vue",
+      "bytes": 533,
+      "sha256": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36"
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "bytes": 17284,
+      "sha256": "6550501cfe3e7a1adfcece69e764e519a789debe2df90c90804315cbef2c3258"
+    },
+    {
+      "path": "design/prototype/src/main.ts",
+      "bytes": 146,
+      "sha256": "bc6f04df2e565f98f4b543a0d03ff85cc45b86536f4aa3a9abc6fe5acc62224a"
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "bytes": 29845,
+      "sha256": "509245a2d3679c1637159041297502d1c1f406bc28eb87a9b70b8580849b7a4e"
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "bytes": 12407,
+      "sha256": "149c2f969dae10a6a80cbe244c5e42a00537a248203cf17b5c15b3339d5cc117"
+    },
+    {
+      "path": "design/prototype/src/styles/tokens.css",
+      "bytes": 1894,
+      "sha256": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a"
+    },
+    {
+      "path": "design/prototype/src/tests/logic.test.ts",
+      "bytes": 7907,
+      "sha256": "bdeb59186cca20f0165ee126b17e05d99bb0d117048925b2d5c4e9663eaaeef6"
+    },
+    {
+      "path": "design/prototype/src/tests/store.test.ts",
+      "bytes": 7526,
+      "sha256": "03ae9978cc288847f11f552b9f9b32b027b8293865a04bed49b565233daaba92"
+    },
+    {
+      "path": "design/prototype/src/tests/ui.test.ts",
+      "bytes": 13384,
+      "sha256": "741a84bcd10df822b5749fe33edd8f029031094609b69ea8b5f2d15927d1ba67"
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "bytes": 4607,
+      "sha256": "3a966695616fb39d74e7daeacdfa93fa96cdef099addac9bd08200d5a1cdeab1"
+    },
+    {
+      "path": "design/prototype/src/utils/dom.ts",
+      "bytes": 999,
+      "sha256": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba"
+    },
+    {
+      "path": "design/prototype/src/utils/format.ts",
+      "bytes": 2170,
+      "sha256": "84670d1934441f616873a47cbe61e3ec9c13f48c7c363610b0735b45d7e58a8a"
+    },
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "bytes": 9240,
+      "sha256": "98be06cedc1cc7c01c2d9331ac71888624e2db072b86432557169f4c8c7ddaa7"
+    },
+    {
+      "path": "design/prototype/src/utils/training.ts",
+      "bytes": 6570,
+      "sha256": "7e882a1cec598242493de446683ca5213f82b0a11872075143ab8563e2833712"
+    },
+    {
+      "path": "design/prototype/src/views/CoachReviewView.vue",
+      "bytes": 37869,
+      "sha256": "fb41e70e6ac5a62c2bb339608d076330e1e21c873b793eb7f4eb8e6b49be1d5a"
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "bytes": 24018,
+      "sha256": "4d6b82ac34bdd11b0b70e96957f607e3100abf3a0e6c801163948e262ba02d3f"
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "bytes": 16547,
+      "sha256": "c402fae042b76ca8874c3d98602ab5c398ddb54daf6b35971cf75f67c68f32a0"
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "bytes": 27105,
+      "sha256": "fed64d9ef603e6ebd9dfaa3e18ba30046b137d58d7e8800eab95d779403f9a17"
+    },
+    {
+      "path": "design/prototype/src/vite-env.d.ts",
+      "bytes": 232,
+      "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a"
+    },
+    {
+      "path": "design/prototype/tsconfig.json",
+      "bytes": 528,
+      "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db"
+    },
+    {
+      "path": "design/prototype/vite.config.ts",
+      "bytes": 284,
+      "sha256": "1e60c90abf496f97ab685bb6aab27479af2324ac69f3a0dc7bf1899fb88a0166"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/FIX_01.md",
+      "bytes": 6979,
+      "sha256": "f81f5bceb047aae4faf1b5260090bb79e1da2434f41f1cfbace38656a3a50c3a"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/FIX_02.md",
+      "bytes": 6225,
+      "sha256": "3a8830577cb03fb81c8765a0b98b895ed919591a6d3834f49cc4975b45ee6c59"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/coverage-map.md",
+      "bytes": 6653,
+      "sha256": "842eabe8f755f315826743bb70a385fb2f65ecbf4b7eae18ce27bdb1189d0233"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/dev-server.pid",
+      "bytes": 6,
+      "sha256": "62352cfba5d1c730b97aabeb184e9fb21126d2ee7d35af03e8fd2951b03e7c1e"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-1.log",
+      "bytes": 5102,
+      "sha256": "66c4ff8c705087d8b8eff828cd1fdc7558a4998601d25ce9cdf851ba90a9b4cf"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-2.log",
+      "bytes": 2426,
+      "sha256": "c040160c3feef6f8b05cbd7ad2d8cfaca814ddbd0823e0ce5d4f8e3123b204b0"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-final.log",
+      "bytes": 349,
+      "sha256": "d03e5216cb15c5e98c26c98313608209b384e711ade4d2d7ab503eb0ae3faea7"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-fix-final.log",
+      "bytes": 349,
+      "sha256": "984182c9cb059ce298c2bbf3b6e9dd59518088fdfb03f76327bbacc8df374e4e"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-fix02-final.log",
+      "bytes": 349,
+      "sha256": "5dc04854b15698b1615c3c2f6ee220a99f7a932db744a24f5a2ea09ca3984231"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/dev-server.log",
+      "bytes": 7762,
+      "sha256": "b08dc622cce1ce9a1b579e8243a8b4c77565a5cafa9e62152f0e377dcbcacfd9"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-1.log",
+      "bytes": 256,
+      "sha256": "fc9bf873fb47c8935a907e47680faa52fa75d86866fdc4880397eb3e96bebe30"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-final.log",
+      "bytes": 256,
+      "sha256": "eff8745621fb49628c966eb2802c2820530a6a93d531b59beffdaa3939b2cab7"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-fix-final.log",
+      "bytes": 1690,
+      "sha256": "606e1b60ce94e25955a8427c28adca4c214ef80789acd5583f5e8174cc742014"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-fix02-final.log",
+      "bytes": 1693,
+      "sha256": "7f5bb349ce776475f247dcff0500823ce5c7bb94ba1c5aeb91f7e8bd7c5f7ea9"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-1.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-fix-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-fix02-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/progress.md",
+      "bytes": 2879,
+      "sha256": "111dc45b8d33443c024d54c3cd62259305a35640394623d542f248181adbc294"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/report.json",
+      "bytes": 16122,
+      "sha256": "f08e3d434967571c49ac50c6bb97ab2385c2a1783985830fae43f697b0d7ad43"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/report.md",
+      "bytes": 3815,
+      "sha256": "943a3131e0d0a5b2b03a39dc695208be4105ffa236f72b89c2666cfe10949b7c"
+    }
+  ],
+  "generated_at": "2026-10-24T12:51:14+08:00"
+}

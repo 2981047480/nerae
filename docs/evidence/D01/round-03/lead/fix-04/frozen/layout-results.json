@@ -1,0 +1,1873 @@
+{
+  "revision": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
+  "normal": [
+    {
+      "width": 320,
+      "clipped": [],
+      "small": [],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 390,
+      "clipped": [],
+      "small": [],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 430,
+      "clipped": [],
+      "small": [],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 768,
+      "clipped": [],
+      "small": [],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 1440,
+      "clipped": [],
+      "small": [],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 320,
+      "clipped": [],
+      "small": [],
+      "fields": [
+        {
+          "box": {
+            "bottom": 426.2356872558594,
+            "height": 44,
+            "left": 37,
+            "right": 283,
+            "top": 382.2356872558594,
+            "width": 246
+          },
+          "name": "day-title-day-a",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 528.6810302734375,
+            "height": 44.000030517578125,
+            "left": 69,
+            "right": 227,
+            "top": 484.6809997558594,
+            "width": 158
+          },
+          "name": "exercise-name-a1",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 587.4779052734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 558.4779052734375,
+            "width": 198.7421875
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 647.2747802734375,
+            "height": 29,
+            "left": 69,
+            "right": 283,
+            "top": 618.2747802734375,
+            "width": 214
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 707.0716552734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 678.0716552734375,
+            "width": 198.7421875
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 791.2591552734375,
+            "height": 52.390625,
+            "left": 69,
+            "right": 283,
+            "top": 738.8685302734375,
+            "width": 214
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 868.2591552734375,
+            "height": 44,
+            "left": 69,
+            "right": 227,
+            "top": 824.2591552734375,
+            "width": 158
+          },
+          "name": "exercise-name-a2",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 927.0560302734376,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 898.0560302734375,
+            "width": 198.7421875
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 986.8529052734376,
+            "height": 29,
+            "left": 69,
+            "right": 283,
+            "top": 957.8529052734376,
+            "width": 214
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1046.6497802734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 1017.6497802734376,
+            "width": 198.7421875
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1130.8372802734375,
+            "height": 52.390625,
+            "left": 69,
+            "right": 283,
+            "top": 1078.4466552734375,
+            "width": 214
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1207.8372802734375,
+            "height": 44,
+            "left": 69,
+            "right": 227,
+            "top": 1163.8372802734375,
+            "width": 158
+          },
+          "name": "exercise-name-a3",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1266.6341552734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 1237.6341552734375,
+            "width": 198.7421875
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1326.4310302734375,
+            "height": 29,
+            "left": 69,
+            "right": 283,
+            "top": 1297.4310302734375,
+            "width": 214
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1386.2279052734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 1357.2279052734375,
+            "width": 198.7421875
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1470.4154052734375,
+            "height": 52.390625,
+            "left": 69,
+            "right": 283,
+            "top": 1418.0247802734375,
+            "width": 214
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1547.4154052734375,
+            "height": 44,
+            "left": 69,
+            "right": 227,
+            "top": 1503.4154052734375,
+            "width": 158
+          },
+          "name": "exercise-name-a4",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1606.2122802734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 1577.2122802734375,
+            "width": 198.7421875
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1666.0091552734375,
+            "height": 29,
+            "left": 69,
+            "right": 283,
+            "top": 1637.0091552734375,
+            "width": 214
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1725.8060302734375,
+            "height": 29,
+            "left": 69,
+            "right": 267.7421875,
+            "top": 1696.8060302734375,
+            "width": 198.7421875
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1809.9935302734375,
+            "height": 52.390625,
+            "left": 69,
+            "right": 283,
+            "top": 1757.6029052734375,
+            "width": 214
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        }
+      ],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 390,
+      "clipped": [],
+      "small": [],
+      "fields": [
+        {
+          "box": {
+            "bottom": 426.015625,
+            "height": 44,
+            "left": 41,
+            "right": 349,
+            "top": 382.015625,
+            "width": 308
+          },
+          "name": "day-title-day-a",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 528.4609375,
+            "height": 44,
+            "left": 73,
+            "right": 293,
+            "top": 484.4609375,
+            "width": 220
+          },
+          "name": "exercise-name-a1",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 587.2578125,
+            "height": 29,
+            "left": 73,
+            "right": 119.453125,
+            "top": 558.2578125,
+            "width": 46.453125
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 587.2578125,
+            "height": 29,
+            "left": 146.7109375,
+            "right": 259.8515625,
+            "top": 558.2578125,
+            "width": 113.140625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 587.2578125,
+            "height": 29,
+            "left": 271.8515625,
+            "right": 333.734375,
+            "top": 558.2578125,
+            "width": 61.8828125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 671.4453125,
+            "height": 52.390625,
+            "left": 73,
+            "right": 349,
+            "top": 619.0546875,
+            "width": 276
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 748.4453125,
+            "height": 44,
+            "left": 73,
+            "right": 293,
+            "top": 704.4453125,
+            "width": 220
+          },
+          "name": "exercise-name-a2",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 807.2421875,
+            "height": 29,
+            "left": 73,
+            "right": 119.453125,
+            "top": 778.2421875,
+            "width": 46.453125
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 807.2421875,
+            "height": 29,
+            "left": 146.7109375,
+            "right": 259.8515625,
+            "top": 778.2421875,
+            "width": 113.140625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 807.2421875,
+            "height": 29,
+            "left": 271.8515625,
+            "right": 333.734375,
+            "top": 778.2421875,
+            "width": 61.8828125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 891.4296875,
+            "height": 52.390625,
+            "left": 73,
+            "right": 349,
+            "top": 839.0390625,
+            "width": 276
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 968.4296875,
+            "height": 44,
+            "left": 73,
+            "right": 293,
+            "top": 924.4296875,
+            "width": 220
+          },
+          "name": "exercise-name-a3",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1027.2265625,
+            "height": 29,
+            "left": 73,
+            "right": 119.453125,
+            "top": 998.2265625,
+            "width": 46.453125
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1027.2265625,
+            "height": 29,
+            "left": 146.7109375,
+            "right": 259.8515625,
+            "top": 998.2265625,
+            "width": 113.140625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1027.2265625,
+            "height": 29,
+            "left": 271.8515625,
+            "right": 333.734375,
+            "top": 998.2265625,
+            "width": 61.8828125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1111.4140625,
+            "height": 52.390625,
+            "left": 73,
+            "right": 349,
+            "top": 1059.0234375,
+            "width": 276
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1188.4140625,
+            "height": 44,
+            "left": 73,
+            "right": 293,
+            "top": 1144.4140625,
+            "width": 220
+          },
+          "name": "exercise-name-a4",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1247.2109375,
+            "height": 29,
+            "left": 73,
+            "right": 119.453125,
+            "top": 1218.2109375,
+            "width": 46.453125
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1247.2109375,
+            "height": 29,
+            "left": 146.7109375,
+            "right": 259.8515625,
+            "top": 1218.2109375,
+            "width": 113.140625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1247.2109375,
+            "height": 29,
+            "left": 271.8515625,
+            "right": 333.734375,
+            "top": 1218.2109375,
+            "width": 61.8828125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1331.3984375,
+            "height": 52.390625,
+            "left": 73,
+            "right": 349,
+            "top": 1279.0078125,
+            "width": 276
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        }
+      ],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 430,
+      "clipped": [],
+      "small": [],
+      "fields": [
+        {
+          "box": {
+            "bottom": 371.875,
+            "height": 44,
+            "left": 41,
+            "right": 389,
+            "top": 327.875,
+            "width": 348
+          },
+          "name": "day-title-day-a",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 474.3203125,
+            "height": 44,
+            "left": 73,
+            "right": 333,
+            "top": 430.3203125,
+            "width": 260
+          },
+          "name": "exercise-name-a1",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 533.1171875,
+            "height": 29,
+            "left": 73,
+            "right": 129.25,
+            "top": 504.1171875,
+            "width": 56.25
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 533.1171875,
+            "height": 29,
+            "left": 156.5078125,
+            "right": 287.609375,
+            "top": 504.1171875,
+            "width": 131.1015625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 533.1171875,
+            "height": 29,
+            "left": 299.609375,
+            "right": 373.7421875,
+            "top": 504.1171875,
+            "width": 74.1328125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 617.3046875,
+            "height": 52.390625,
+            "left": 73,
+            "right": 389,
+            "top": 564.9140625,
+            "width": 316
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 694.3046875,
+            "height": 44,
+            "left": 73,
+            "right": 333,
+            "top": 650.3046875,
+            "width": 260
+          },
+          "name": "exercise-name-a2",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 753.1015625,
+            "height": 29,
+            "left": 73,
+            "right": 129.25,
+            "top": 724.1015625,
+            "width": 56.25
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 753.1015625,
+            "height": 29,
+            "left": 156.5078125,
+            "right": 287.609375,
+            "top": 724.1015625,
+            "width": 131.1015625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 753.1015625,
+            "height": 29,
+            "left": 299.609375,
+            "right": 373.7421875,
+            "top": 724.1015625,
+            "width": 74.1328125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 837.2890625,
+            "height": 52.390625,
+            "left": 73,
+            "right": 389,
+            "top": 784.8984375,
+            "width": 316
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 914.2890625,
+            "height": 44,
+            "left": 73,
+            "right": 333,
+            "top": 870.2890625,
+            "width": 260
+          },
+          "name": "exercise-name-a3",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 973.0859375,
+            "height": 29,
+            "left": 73,
+            "right": 129.25,
+            "top": 944.0859375,
+            "width": 56.25
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 973.0859375,
+            "height": 29,
+            "left": 156.5078125,
+            "right": 287.609375,
+            "top": 944.0859375,
+            "width": 131.1015625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 973.0859375,
+            "height": 29,
+            "left": 299.609375,
+            "right": 373.7421875,
+            "top": 944.0859375,
+            "width": 74.1328125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1057.2734375,
+            "height": 52.390625,
+            "left": 73,
+            "right": 389,
+            "top": 1004.8828125,
+            "width": 316
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1134.2734375,
+            "height": 44,
+            "left": 73,
+            "right": 333,
+            "top": 1090.2734375,
+            "width": 260
+          },
+          "name": "exercise-name-a4",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1193.0703125,
+            "height": 29,
+            "left": 73,
+            "right": 129.25,
+            "top": 1164.0703125,
+            "width": 56.25
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1193.0703125,
+            "height": 29,
+            "left": 156.5078125,
+            "right": 287.609375,
+            "top": 1164.0703125,
+            "width": 131.1015625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1193.0703125,
+            "height": 29,
+            "left": 299.609375,
+            "right": 373.7421875,
+            "top": 1164.0703125,
+            "width": 74.1328125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1277.2578125,
+            "height": 52.390625,
+            "left": 73,
+            "right": 389,
+            "top": 1224.8671875,
+            "width": 316
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        }
+      ],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 768,
+      "clipped": [],
+      "small": [],
+      "fields": [
+        {
+          "box": {
+            "bottom": 389.3359375,
+            "height": 44,
+            "left": 53,
+            "right": 715,
+            "top": 345.3359375,
+            "width": 662
+          },
+          "name": "day-title-day-a",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 491.78125,
+            "height": 44,
+            "left": 85,
+            "right": 659,
+            "top": 447.78125,
+            "width": 574
+          },
+          "name": "exercise-name-a1",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 550.578125,
+            "height": 29,
+            "left": 85,
+            "right": 218.1484375,
+            "top": 521.578125,
+            "width": 133.1484375
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 550.578125,
+            "height": 29,
+            "left": 245.40625,
+            "right": 517.484375,
+            "top": 521.578125,
+            "width": 272.078125
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 550.578125,
+            "height": 29,
+            "left": 529.484375,
+            "right": 699.7421875,
+            "top": 521.578125,
+            "width": 170.2578125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 634.765625,
+            "height": 52.390625,
+            "left": 85,
+            "right": 715,
+            "top": 582.375,
+            "width": 630
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 711.765625,
+            "height": 44,
+            "left": 85,
+            "right": 659,
+            "top": 667.765625,
+            "width": 574
+          },
+          "name": "exercise-name-a2",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 770.5625,
+            "height": 29,
+            "left": 85,
+            "right": 218.1484375,
+            "top": 741.5625,
+            "width": 133.1484375
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 770.5625,
+            "height": 29,
+            "left": 245.40625,
+            "right": 517.484375,
+            "top": 741.5625,
+            "width": 272.078125
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 770.5625,
+            "height": 29,
+            "left": 529.484375,
+            "right": 699.7421875,
+            "top": 741.5625,
+            "width": 170.2578125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 854.75,
+            "height": 52.390625,
+            "left": 85,
+            "right": 715,
+            "top": 802.359375,
+            "width": 630
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 931.75,
+            "height": 44,
+            "left": 85,
+            "right": 659,
+            "top": 887.75,
+            "width": 574
+          },
+          "name": "exercise-name-a3",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 990.546875,
+            "height": 29,
+            "left": 85,
+            "right": 218.1484375,
+            "top": 961.546875,
+            "width": 133.1484375
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 990.546875,
+            "height": 29,
+            "left": 245.40625,
+            "right": 517.484375,
+            "top": 961.546875,
+            "width": 272.078125
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 990.546875,
+            "height": 29,
+            "left": 529.484375,
+            "right": 699.7421875,
+            "top": 961.546875,
+            "width": 170.2578125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1074.734375,
+            "height": 52.390625,
+            "left": 85,
+            "right": 715,
+            "top": 1022.34375,
+            "width": 630
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1151.734375,
+            "height": 44,
+            "left": 85,
+            "right": 659,
+            "top": 1107.734375,
+            "width": 574
+          },
+          "name": "exercise-name-a4",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1210.53125,
+            "height": 29,
+            "left": 85,
+            "right": 218.1484375,
+            "top": 1181.53125,
+            "width": 133.1484375
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1210.53125,
+            "height": 29,
+            "left": 245.40625,
+            "right": 517.484375,
+            "top": 1181.53125,
+            "width": 272.078125
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1210.53125,
+            "height": 29,
+            "left": 529.484375,
+            "right": 699.7421875,
+            "top": 1181.53125,
+            "width": 170.2578125
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1294.71875,
+            "height": 52.390625,
+            "left": 85,
+            "right": 715,
+            "top": 1242.328125,
+            "width": 630
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        }
+      ],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "width": 1440,
+      "clipped": [],
+      "small": [],
+      "fields": [
+        {
+          "box": {
+            "bottom": 393.3359375,
+            "height": 44,
+            "left": 65,
+            "right": 939,
+            "top": 349.3359375,
+            "width": 874
+          },
+          "name": "day-title-day-a",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 499.78125,
+            "height": 44,
+            "left": 97,
+            "right": 883,
+            "top": 455.78125,
+            "width": 786
+          },
+          "name": "exercise-name-a1",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 558.578125,
+            "height": 29,
+            "left": 97,
+            "right": 282.0625,
+            "top": 529.578125,
+            "width": 185.0625
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 558.578125,
+            "height": 29,
+            "left": 309.3203125,
+            "right": 676.5859375,
+            "top": 529.578125,
+            "width": 367.265625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 558.578125,
+            "height": 29,
+            "left": 688.5859375,
+            "right": 923.734375,
+            "top": 529.578125,
+            "width": 235.1484375
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 642.765625,
+            "height": 52.390625,
+            "left": 97,
+            "right": 939,
+            "top": 590.375,
+            "width": 842
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 719.765625,
+            "height": 44,
+            "left": 97,
+            "right": 883,
+            "top": 675.765625,
+            "width": 786
+          },
+          "name": "exercise-name-a2",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 778.5625,
+            "height": 29,
+            "left": 97,
+            "right": 282.0625,
+            "top": 749.5625,
+            "width": 185.0625
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 778.5625,
+            "height": 29,
+            "left": 309.3203125,
+            "right": 676.5859375,
+            "top": 749.5625,
+            "width": 367.265625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 778.5625,
+            "height": 29,
+            "left": 688.5859375,
+            "right": 923.734375,
+            "top": 749.5625,
+            "width": 235.1484375
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 862.75,
+            "height": 52.390625,
+            "left": 97,
+            "right": 939,
+            "top": 810.359375,
+            "width": 842
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 939.75,
+            "height": 44,
+            "left": 97,
+            "right": 883,
+            "top": 895.75,
+            "width": 786
+          },
+          "name": "exercise-name-a3",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 998.546875,
+            "height": 29,
+            "left": 97,
+            "right": 282.0625,
+            "top": 969.546875,
+            "width": 185.0625
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 998.546875,
+            "height": 29,
+            "left": 309.3203125,
+            "right": 676.5859375,
+            "top": 969.546875,
+            "width": 367.265625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 998.546875,
+            "height": 29,
+            "left": 688.5859375,
+            "right": 923.734375,
+            "top": 969.546875,
+            "width": 235.1484375
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1082.734375,
+            "height": 52.390625,
+            "left": 97,
+            "right": 939,
+            "top": 1030.34375,
+            "width": 842
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        },
+        {
+          "box": {
+            "bottom": 1159.734375,
+            "height": 44,
+            "left": 97,
+            "right": 883,
+            "top": 1115.734375,
+            "width": 786
+          },
+          "name": "exercise-name-a4",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1218.53125,
+            "height": 29,
+            "left": 97,
+            "right": 282.0625,
+            "top": 1189.53125,
+            "width": 185.0625
+          },
+          "name": "组数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1218.53125,
+            "height": 29,
+            "left": 309.3203125,
+            "right": 676.5859375,
+            "top": 1189.53125,
+            "width": 367.265625
+          },
+          "name": "目标次数或时长",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1218.53125,
+            "height": 29,
+            "left": 688.5859375,
+            "right": 923.734375,
+            "top": 1189.53125,
+            "width": 235.1484375
+          },
+          "name": "组间休息秒数",
+          "tag": "INPUT"
+        },
+        {
+          "box": {
+            "bottom": 1302.71875,
+            "height": 52.390625,
+            "left": 97,
+            "right": 939,
+            "top": 1250.328125,
+            "width": 842
+          },
+          "name": "动作备注",
+          "tag": "TEXTAREA"
+        }
+      ],
+      "duplicateIds": [],
+      "main": 1
+    },
+    {
+      "scene": "today",
+      "width": 320,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 390,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 430,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 768,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 1440,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 320,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 390,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 430,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 768,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 1440,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "coach-review",
+      "width": 320,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "coach-review",
+      "width": 390,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "coach-review",
+      "width": 430,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "coach-review",
+      "width": 768,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "coach-review",
+      "width": 1440,
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    }
+  ],
+  "large": [
+    {
+      "scene": "coach-review",
+      "width": 320,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-review",
+      "width": 390,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-review",
+      "width": 430,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-review",
+      "width": 768,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-review",
+      "width": 1440,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-editor",
+      "width": 320,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-editor",
+      "width": 390,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-editor",
+      "width": 430,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-editor",
+      "width": 768,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "coach-editor",
+      "width": 1440,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "discover",
+      "width": 320,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "discover",
+      "width": 390,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "discover",
+      "width": 430,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "discover",
+      "width": 768,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "discover",
+      "width": 1440,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": [],
+      "skip": {
+        "box": {
+          "bottom": 0,
+          "height": 62.8984375,
+          "left": 12,
+          "right": 198.03125,
+          "top": -62.8984375,
+          "width": 186.03125
+        },
+        "focused": false,
+        "transform": "matrix(1, 0, 0, 1, 0, -62.8984)"
+      }
+    },
+    {
+      "scene": "today",
+      "width": 320,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 390,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 430,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 768,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "today",
+      "width": 1440,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 320,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 390,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 430,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 768,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    },
+    {
+      "scene": "training",
+      "width": 1440,
+      "scale": "200",
+      "clipped": [],
+      "small": [],
+      "main": 1,
+      "duplicateIds": []
+    }
+  ],
+  "buttonTolerance": "<43.8px is real small target; 43.999px rounding is44"
+}

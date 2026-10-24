@@ -1,0 +1,61 @@
+{
+  "revision": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
+  "focus": [
+    {
+      "case": "initial Shift+Tab",
+      "value": {
+        "insideDialog": true,
+        "tag": "BUTTON",
+        "text": "发布版本 7"
+      }
+    },
+    {
+      "case": "1440→390 cancel",
+      "value": {
+        "display": "flex",
+        "height": 48,
+        "tag": "BUTTON",
+        "text": "发布给林澈",
+        "visible": true,
+        "width": 171
+      }
+    },
+    {
+      "case": "390→1440 Escape",
+      "value": {
+        "display": "flex",
+        "height": 48,
+        "tag": "BUTTON",
+        "text": "发布给林澈",
+        "visible": true,
+        "width": 118.5078125
+      }
+    },
+    {
+      "case": "skip Enter",
+      "value": {
+        "id": "main",
+        "tag": "MAIN"
+      }
+    }
+  ],
+  "skip": {
+    "box": {
+      "bottom": 74.8984375,
+      "height": 62.8984375,
+      "left": 12,
+      "right": 198.03125,
+      "top": 12,
+      "width": 186.03125
+    },
+    "focused": true,
+    "transform": "matrix(1, 0, 0, 1, 0, 12)"
+  },
+  "persist": {
+    "motion": "reduced",
+    "paragraphFont": "26px",
+    "rootFont": "32px",
+    "scale": "200",
+    "transform": "none"
+  }
+}

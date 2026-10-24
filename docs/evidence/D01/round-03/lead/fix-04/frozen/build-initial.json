@@ -1,0 +1,8 @@
+{
+  "command": "/opt/homebrew/bin/node node_modules/vite/bin/vite.js build",
+  "chunk_id": "595736",
+  "wall_time_seconds": 1.001330208,
+  "session_id": 52405,
+  "original_token_count": 19,
+  "output": "vite v7.3.7 building client environment for production...\ntransforming...\n"
+}

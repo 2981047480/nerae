@@ -1,0 +1,7 @@
+{
+  "chunk_id": "056347",
+  "wall_time_seconds": 0.000007542,
+  "exit_code": 0,
+  "original_token_count": 41,
+  "output": "\n Test Files  3 passed (3)\n      Tests  36 passed (36)\n   Start at  12:53:16\n   Duration  3.47s (environment 56%, tests 28%, import 12%, transform 3%, worker 1%)\n\n"
+}

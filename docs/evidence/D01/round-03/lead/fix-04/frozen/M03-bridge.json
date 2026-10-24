@@ -1,0 +1,17 @@
+{
+  "revision": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
+  "source": "src/App.vue runFocusBridge,260ms; observed ghost after real Today CTA",
+  "observed": {
+    "ghosts": [
+      {
+        "hidden": "true",
+        "left": "42px",
+        "text": "上肢力量",
+        "top": "298.562px"
+      }
+    ],
+    "heading": "上肢力量",
+    "motion": "full"
+  },
+  "fpsMeasured": false
+}

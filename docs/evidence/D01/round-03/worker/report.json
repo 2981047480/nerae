@@ -1,0 +1,435 @@
+{
+  "task": "D01-02 第一批修复：R01–R13（含 R10a–d）",
+  "status": "partial",
+  "status_reason": "修复与本地自动化验证已完成并交回；真实浏览器视觉/动效/短屏与 200% 等仍待 Lead 同版本复测，未进入 D01-03。",
+  "attempted_scope": [
+    "R01 合法小数",
+    "R02 事件时间与休息反馈",
+    "R03 持久化自触发",
+    "R04 版本与不可变交付快照",
+    "R05 存储失败与重试",
+    "R06 关键阅读字号/去重复",
+    "R07 目标语义",
+    "R08 短屏主操作/具体位置/重复事实/休息强调",
+    "R09 搜索清除重复",
+    "R10a 名称与训练日触达/label",
+    "R10b 唯一 main 与跳转目标",
+    "R10c 弹层初始 Shift+Tab",
+    "R10d 交付后焦点",
+    "R11 Teleport/滚动减少动态效果",
+    "R12 分模式筛选",
+    "R13 单根节点与 M03 衔接"
+  ],
+  "remaining_scope": [
+    "Lead 实际复测：R08 515×629、R11 实际过渡/滚动、R06 字号、R10a 触达、R13/M03 动画、200% 文本、系统 Reduce Motion、真实浏览器存储失败注入",
+    "S03/S05–S14/S16 与剩余状态（本批不扩展）",
+    "学员采用、健康授权、支付、消息、AI、服务器同步/冲突、真机与专业审核"
+  ],
+  "execution": {
+    "runtime": "DeepSeek Harness desktop（Web UI 127.0.0.1:60406）",
+    "session_id": "session-2b3c2fb7-0ddf-4462-be74-885272454974",
+    "provider": "opencode-go",
+    "model": "deepseek-v4.1-flash",
+    "reasoning": "Medium（Lead 为推进设置的执行参数，非人类用户指定；工具未额外暴露思考预算字段）",
+    "toolchain_node": "/opt/homebrew/bin/node v26.0.0（规避 Harness 自带 Node 的 macOS Team ID 加载限制）"
+  },
+  "workspace": "/private/tmp/nerae-ui-round-three",
+  "base_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "head": "bec98f3",
+  "branch": "ui/round-three",
+  "committed": false,
+  "commit_note": "修复仍在工作树，未提交；文件散列见 files。",
+  "generated_at": "2026-10-24T11:35:51+08:00",
+  "commands": [
+    {
+      "command": "vue-tsc --noEmit",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/typecheck-fix-final.log"
+    },
+    {
+      "command": "vite build",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/build-fix-final.log",
+      "result": "CSS 55.70 kB / JS 177.07 kB"
+    },
+    {
+      "command": "vitest run",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/test-fix-final.log",
+      "result": "31 tests passed (3 files)"
+    },
+    {
+      "command": "curl http://127.0.0.1:4186/",
+      "exit_code": 0,
+      "result": "HTTP 200；Vite 模块入口 200（非浏览器运行验证）"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "result": "无空白错误"
+    }
+  ],
+  "service": {
+    "url": "http://127.0.0.1:4186/",
+    "host": "127.0.0.1",
+    "port": 4186,
+    "pid": 74496,
+    "status": "reused existing server; running",
+    "log": "docs/evidence/D01/round-03/worker/logs/dev-server.log"
+  },
+  "tests": {
+    "files": 3,
+    "passed": 31,
+    "framework": "vitest 5.0.5",
+    "new_coverage": [
+      "小数合法/非法正反例",
+      "样例时间线与休息反馈 DOM",
+      "fetch/防抖空闲仅 1 次写",
+      "重置不写回旧场景",
+      "存储失败提示与恢复重试",
+      "版本递增/无改动不增版/不可变交付快照/学员现用 6",
+      "训练/饮食分模式筛选",
+      "名称与训练日 label 关联",
+      "弹层初始反向焦点与关闭恢复",
+      "交付后焦点状态区",
+      "四情境唯一 main 与跳转目标",
+      "Transition 非元素根警告",
+      "减少动态效果同步到 documentElement 与 Teleport",
+      "搜索仅一套清除、摘要不重复",
+      "正常/减少动态效果标题接续分支"
+    ],
+    "evidence_lines": [
+      "idle-persist {\"writesAfterDebounce\":1,\"writesAfterIdle\":1}",
+      "storage-failure 首次 false、失败提示、恢复后 true",
+      "versions delivered 8 / draft 9 / student 6；现用 4、交付 5、草稿 6 组",
+      "rest-feedback 哑铃卧推第4组 12.5 kg × 10 次；completedAt 19:14:15 +08",
+      "modal-focus 初始焦点在 dialog 内"
+    ]
+  },
+  "fix_table": "docs/evidence/D01/round-03/worker/FIX_01.md",
+  "verified_by_worker": [
+    "合法小数与输入边界",
+    "样例时间线与休息反馈 DOM",
+    "持久化空闲不自触发",
+    "存储失败提示/恢复与版本回滚",
+    "草稿版本与交付快照状态",
+    "分模式筛选",
+    "唯一 main/跳转目标",
+    "弹层初始 Shift+Tab/关闭焦点恢复",
+    "交付后焦点状态区",
+    "Transition 单根警告（jsdom）",
+    "减少动态效果 documentElement/Teleport 属性",
+    "搜索重复减少",
+    "M03 正常/reduced 分支（jsdom 与 WAAPI stub）"
+  ],
+  "not_verified": [
+    "真实浏览器 515×629 CTA 与固定导航命中（R08）",
+    "真实浏览器过渡/滚动减少动态效果（R11）",
+    "真实浏览器字号/触达几何（R06/R10a）",
+    "真实浏览器 Transition/M03 观感（R13/M03）",
+    "200% 文本、系统 Reduce Motion、真实软键盘",
+    "真实浏览器存储失败注入",
+    "真机、专业审核、用户研究"
+  ],
+  "known_issues": [
+    "存储失败在真实浏览器未注入验证；状态测试使用 stub",
+    "休息事件时间采用固定样例时间线，与真实墙钟分离；真实计时使用 Date.now",
+    "交付只写本机预览状态，学员采用流程未实现",
+    "未提交 Git，等待 Lead 复测与集成"
+  ],
+  "decisions_needed": [
+    "Lead 同版本实际复测并判定 R01–R13 是否全部通过；未通过项按缺陷单继续修"
+  ],
+  "files": [
+    {
+      "path": "design/prototype/ASSETS.md",
+      "bytes": 4450,
+      "sha256": "3b03e06a9a9015e6e6a9e3e5cece62255326ff5535c78b62b5736606a5e13508"
+    },
+    {
+      "path": "design/prototype/README.md",
+      "bytes": 5599,
+      "sha256": "74fa1956f6be8d2efd2d1ad7a7efb22ba8403e12a2e082e449173f2fb9a49921"
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "bytes": 5493,
+      "sha256": "586dc8147f90315d97b9680308326979e05342ff54ce888867449018852cd2f4"
+    },
+    {
+      "path": "design/prototype/index.html",
+      "bytes": 755,
+      "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2"
+    },
+    {
+      "path": "design/prototype/package.json",
+      "bytes": 655,
+      "sha256": "1b1ff783c2dd406f0a71416b74b4b68a70aa202940f1d882e13169bcebf98926"
+    },
+    {
+      "path": "design/prototype/pnpm-lock.yaml",
+      "bytes": 55938,
+      "sha256": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-breakfast.webp",
+      "bytes": 137740,
+      "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-featured.webp",
+      "bytes": 220540,
+      "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198"
+    },
+    {
+      "path": "design/prototype/public/assets/diet-mealprep.webp",
+      "bytes": 115400,
+      "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-dumbbell.webp",
+      "bytes": 25026,
+      "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-featured.webp",
+      "bytes": 105426,
+      "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-plank.webp",
+      "bytes": 44474,
+      "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05"
+    },
+    {
+      "path": "design/prototype/public/assets/explore-stretch.webp",
+      "bytes": 68816,
+      "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc"
+    },
+    {
+      "path": "design/prototype/public/assets/gym-interior.webp",
+      "bytes": 105720,
+      "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15"
+    },
+    {
+      "path": "design/prototype/public/assets/hero-today.webp",
+      "bytes": 181446,
+      "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96"
+    },
+    {
+      "path": "design/prototype/public/assets/training-dumbbells.webp",
+      "bytes": 96658,
+      "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7"
+    },
+    {
+      "path": "design/prototype/src/App.vue",
+      "bytes": 7884,
+      "sha256": "85d9b480e8d5d697d4abfe9b3ec9c4114fb34c5899ebf66a1100398e50034503"
+    },
+    {
+      "path": "design/prototype/src/components/AppHeader.vue",
+      "bytes": 2892,
+      "sha256": "3d8670e403d6686d07dc60b3e9c2a87692e45bcc176729ff1114e750f2f3159b"
+    },
+    {
+      "path": "design/prototype/src/components/BaseSheet.vue",
+      "bytes": 5026,
+      "sha256": "a28fb5a0280fb409bb78b2049db5feff24502a440f12c6b0343fae25af67274c"
+    },
+    {
+      "path": "design/prototype/src/components/PhotoFrame.vue",
+      "bytes": 1436,
+      "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0"
+    },
+    {
+      "path": "design/prototype/src/components/PreviewControl.vue",
+      "bytes": 9984,
+      "sha256": "c9b4d385e3cdd45f966f06de9f515e0d9fdd227ea47dca1d367a1848cf57311d"
+    },
+    {
+      "path": "design/prototype/src/components/TabBar.vue",
+      "bytes": 1607,
+      "sha256": "22881d346774b40b4c41cd067743cf325cdf5127b15c119e042fd4f30f8ddf93"
+    },
+    {
+      "path": "design/prototype/src/components/Wordmark.vue",
+      "bytes": 523,
+      "sha256": "f843dd7a4f45e650434421f04e78754f2f099d557785ce8166627965f254a81b"
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "bytes": 17284,
+      "sha256": "6550501cfe3e7a1adfcece69e764e519a789debe2df90c90804315cbef2c3258"
+    },
+    {
+      "path": "design/prototype/src/main.ts",
+      "bytes": 146,
+      "sha256": "bc6f04df2e565f98f4b543a0d03ff85cc45b86536f4aa3a9abc6fe5acc62224a"
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "bytes": 29698,
+      "sha256": "1bcca97b5550061e590906fe309a6b2898b565e963cafca29001646ca58fd9b4"
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "bytes": 7477,
+      "sha256": "4d98fb48d2360b4b29a03c9e481af2909d5811b1516566d502a0e59b09a6568e"
+    },
+    {
+      "path": "design/prototype/src/styles/tokens.css",
+      "bytes": 1894,
+      "sha256": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a"
+    },
+    {
+      "path": "design/prototype/src/tests/logic.test.ts",
+      "bytes": 7907,
+      "sha256": "bdeb59186cca20f0165ee126b17e05d99bb0d117048925b2d5c4e9663eaaeef6"
+    },
+    {
+      "path": "design/prototype/src/tests/store.test.ts",
+      "bytes": 6663,
+      "sha256": "731e31a300c8fe92df4abfbe434bd1ae0ebfcaa3cc87200ee1e7355515c5d4ee"
+    },
+    {
+      "path": "design/prototype/src/tests/ui.test.ts",
+      "bytes": 9941,
+      "sha256": "b52a91a920e2eee2702d78bfb740989891c018afd69d29e5b9302353cda03450"
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "bytes": 4553,
+      "sha256": "9accf30cecdf78066e8f5f77a04ee339c922055d331feb3645d969b34cfe1725"
+    },
+    {
+      "path": "design/prototype/src/utils/format.ts",
+      "bytes": 2170,
+      "sha256": "84670d1934441f616873a47cbe61e3ec9c13f48c7c363610b0735b45d7e58a8a"
+    },
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "bytes": 9240,
+      "sha256": "98be06cedc1cc7c01c2d9331ac71888624e2db072b86432557169f4c8c7ddaa7"
+    },
+    {
+      "path": "design/prototype/src/utils/training.ts",
+      "bytes": 6570,
+      "sha256": "7e882a1cec598242493de446683ca5213f82b0a11872075143ab8563e2833712"
+    },
+    {
+      "path": "design/prototype/src/views/CoachReviewView.vue",
+      "bytes": 36904,
+      "sha256": "295c3a48b800580defcfba4c808df07e38471d2670ebeedbe896779685d54a5c"
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "bytes": 23903,
+      "sha256": "c2c124fbf28874aa40a10b67347327bbcf6e5bcf0bd11e8df89405171b51e89e"
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "bytes": 16305,
+      "sha256": "9086fa2a8412c44f5adcb6205815dbbd555bcd87ee705c13c3551c7c04ad6847"
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "bytes": 27079,
+      "sha256": "1f217ab1b0ffc108a4aacdee93c9175aa51c32063100214af47bc7f8472b8ab3"
+    },
+    {
+      "path": "design/prototype/src/vite-env.d.ts",
+      "bytes": 232,
+      "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a"
+    },
+    {
+      "path": "design/prototype/tsconfig.json",
+      "bytes": 528,
+      "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db"
+    },
+    {
+      "path": "design/prototype/vite.config.ts",
+      "bytes": 284,
+      "sha256": "1e60c90abf496f97ab685bb6aab27479af2324ac69f3a0dc7bf1899fb88a0166"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/FIX_01.md",
+      "bytes": 6979,
+      "sha256": "f81f5bceb047aae4faf1b5260090bb79e1da2434f41f1cfbace38656a3a50c3a"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/coverage-map.md",
+      "bytes": 6653,
+      "sha256": "842eabe8f755f315826743bb70a385fb2f65ecbf4b7eae18ce27bdb1189d0233"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/dev-server.pid",
+      "bytes": 6,
+      "sha256": "62352cfba5d1c730b97aabeb184e9fb21126d2ee7d35af03e8fd2951b03e7c1e"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-1.log",
+      "bytes": 5102,
+      "sha256": "66c4ff8c705087d8b8eff828cd1fdc7558a4998601d25ce9cdf851ba90a9b4cf"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-2.log",
+      "bytes": 2426,
+      "sha256": "c040160c3feef6f8b05cbd7ad2d8cfaca814ddbd0823e0ce5d4f8e3123b204b0"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-final.log",
+      "bytes": 349,
+      "sha256": "d03e5216cb15c5e98c26c98313608209b384e711ade4d2d7ab503eb0ae3faea7"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/build-fix-final.log",
+      "bytes": 349,
+      "sha256": "984182c9cb059ce298c2bbf3b6e9dd59518088fdfb03f76327bbacc8df374e4e"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/dev-server.log",
+      "bytes": 4219,
+      "sha256": "7df83f41cbc7e5e1830725386a8cf391f9c3318ba0a073ea725e18ff7c143aae"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-1.log",
+      "bytes": 256,
+      "sha256": "fc9bf873fb47c8935a907e47680faa52fa75d86866fdc4880397eb3e96bebe30"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-final.log",
+      "bytes": 256,
+      "sha256": "eff8745621fb49628c966eb2802c2820530a6a93d531b59beffdaa3939b2cab7"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/test-fix-final.log",
+      "bytes": 1690,
+      "sha256": "606e1b60ce94e25955a8427c28adca4c214ef80789acd5583f5e8174cc742014"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-1.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/typecheck-fix-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/progress.md",
+      "bytes": 2867,
+      "sha256": "0427c1abb5621ad136f8aa3dec58fd027d1ba601ada832650bd0d149417e5480"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/report.md",
+      "bytes": 3815,
+      "sha256": "943a3131e0d0a5b2b03a39dc695208be4105ffa236f72b89c2666cfe10949b7c"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "command": "/opt/homebrew/bin/node node_modules/vue-tsc/bin/vue-tsc.js --noEmit",
+  "chunk_id": "a2e5c3",
+  "wall_time_seconds": 1.007784458,
+  "session_id": 51102,
+  "original_token_count": 0,
+  "output": ""
+}

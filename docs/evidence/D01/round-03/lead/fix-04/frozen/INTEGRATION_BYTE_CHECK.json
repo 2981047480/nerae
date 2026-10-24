@@ -1,0 +1,7 @@
+{
+  "source_revision": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
+  "destination": "main working tree",
+  "files_checked": 43,
+  "mismatches": [],
+  "method": "git restore scoped exact source and worker paths; no Lead UI edits"
+}
