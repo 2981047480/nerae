@@ -1,0 +1,1 @@
+首份map-candidate-check-01把所有引用都按prototype根和字面文件检查，不能解释docs根引用及源码glob；不要据此报告缺源码。check-02按docs/worktree与src/prototype分别解析并展开glob。55项ID、16族、7流、12动效结构齐全；D01-03报告当时还在生成，未存在的报告引用属于待交回，不是最终验收失败。两份均未accepted，最终交回后需再核对。

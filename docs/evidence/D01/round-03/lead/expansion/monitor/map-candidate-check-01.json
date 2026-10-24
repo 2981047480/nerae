@@ -1,0 +1,232 @@
+{
+  "scope": "candidate implementation mapping structural check only; not UI acceptance",
+  "observedUtc": "2026-10-24T06:59:08.553356+00:00",
+  "mapSha256": "8a6097fa44335e5f218f45928365579a37b1c86e91c70c8bd11c567e9f9b7ba0",
+  "itemCount": 55,
+  "duplicateIds": [],
+  "missingIds": [],
+  "unexpectedIds": [],
+  "familyCount": 16,
+  "familyIds": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16"
+  ],
+  "flowCount": 7,
+  "motionCount": 12,
+  "coverageStatuses": {
+    "implemented_not_accepted": 55
+  },
+  "leadStatuses": {
+    "pending_final_frozen_recheck": 55
+  },
+  "referenceChecks": [
+    {
+      "path": "ASSETS.md",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "README.md",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-report.json",
+      "withinPrototype": true,
+      "exists": false
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-report.md",
+      "withinPrototype": true,
+      "exists": false
+    },
+    {
+      "path": "src/App.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/components/*.vue",
+      "withinPrototype": true,
+      "exists": false
+    },
+    {
+      "path": "src/components/AppHeader.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/components/PhotoFrame.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/components/PreviewControl.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/components/TabBar.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/data/extended.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/state/store.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/styles/base.css",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/styles/screens.css",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/styles/tokens.css",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/tests/expansion.test.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/tests/logic.test.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/tests/store.test.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/tests/ui.test.ts",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/*.vue",
+      "withinPrototype": true,
+      "exists": false
+    },
+    {
+      "path": "src/views/AiAssistView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachDetailView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachReviewView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachServicesView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachStudentDetailView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachStudentsView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/CoachTodoView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/DietView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/ExploreView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/IncomingPlanView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/MessagesView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/MyPlanView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/PlanDetailView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/RecordsView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/StudentPlanView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/TodayView.vue",
+      "withinPrototype": true,
+      "exists": true
+    },
+    {
+      "path": "src/views/TrainingView.vue",
+      "withinPrototype": true,
+      "exists": true
+    }
+  ],
+  "unverified": [
+    "正式 uni-app/Go/API/DB/OpenAPI",
+    "真实登录/短信/健康授权/服务端权限",
+    "真实 AI 供应商与消息/支付",
+    "微信真机/软键盘/safe-area/系统字体",
+    "真实用户研究与专业审核",
+    "Lead 冻结版五宽度/200%文字/动效最终复验"
+  ],
+  "accepted": false
+}

@@ -94,6 +94,18 @@ try {
    assert.equal(e.screen,'messages','Active Zhou reply did not open a conversation')
    assert.ok(e.conversationId&&e.conversationId!=='conv-gu-yan','Zhou reply used Lin conversation')
  })
+ await check('revocation reaches coach evidence while ordinary replies remain available',async e=>{
+   s.confirmHealthRevoke()
+   s.goToCoachStudentDetail('lin-che')
+   e.visibleEvidence=plain(s.selectedStudentEvidence.value)
+   assert.ok(e.visibleEvidence.every(x=>x.kind==='plan'),'Revoked training/feedback/diet evidence remained in coach selector')
+   s.replyToStudent('lin-che')
+   assert.equal(s.state.screen,'messages')
+   assert.equal(s.ui.activeConversationId,'conv-gu-yan')
+   s.setMessageDraft('conv-gu-yan','周六的安排可以晚半小时吗')
+   e.ordinarySent=s.sendMessage('conv-gu-yan')
+   assert.equal(e.ordinarySent,true,'Health revocation incorrectly blocked ordinary arrangement reply')
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {

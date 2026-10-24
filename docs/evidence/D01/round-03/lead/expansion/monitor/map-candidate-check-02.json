@@ -1,0 +1,369 @@
+{
+  "scope": "candidate mapping structural check; worker handback still in progress, not UI acceptance",
+  "observedUtc": "2026-10-24T06:59:38.681501+00:00",
+  "mapSha256": "8a6097fa44335e5f218f45928365579a37b1c86e91c70c8bd11c567e9f9b7ba0",
+  "itemCount": 55,
+  "duplicateIds": [],
+  "missingIds": [],
+  "unexpectedIds": [],
+  "familyCount": 16,
+  "flowCount": 7,
+  "motionCount": 12,
+  "referenceChecks": [
+    {
+      "path": "ASSETS.md",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "ASSETS.md"
+      ]
+    },
+    {
+      "path": "README.md",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "README.md"
+      ]
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-report.json",
+      "root": "worktree",
+      "safe": true,
+      "matchCount": 0,
+      "matches": []
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-report.md",
+      "root": "worktree",
+      "safe": true,
+      "matchCount": 0,
+      "matches": []
+    },
+    {
+      "path": "src/App.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/App.vue"
+      ]
+    },
+    {
+      "path": "src/components/*.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 6,
+      "matches": [
+        "src/components/Wordmark.vue",
+        "src/components/PreviewControl.vue",
+        "src/components/AppHeader.vue",
+        "src/components/PhotoFrame.vue",
+        "src/components/BaseSheet.vue",
+        "src/components/TabBar.vue"
+      ]
+    },
+    {
+      "path": "src/components/AppHeader.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/components/AppHeader.vue"
+      ]
+    },
+    {
+      "path": "src/components/PhotoFrame.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/components/PhotoFrame.vue"
+      ]
+    },
+    {
+      "path": "src/components/PreviewControl.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/components/PreviewControl.vue"
+      ]
+    },
+    {
+      "path": "src/components/TabBar.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/components/TabBar.vue"
+      ]
+    },
+    {
+      "path": "src/data/extended.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/data/extended.ts"
+      ]
+    },
+    {
+      "path": "src/state/store.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/state/store.ts"
+      ]
+    },
+    {
+      "path": "src/styles/base.css",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/styles/base.css"
+      ]
+    },
+    {
+      "path": "src/styles/screens.css",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/styles/screens.css"
+      ]
+    },
+    {
+      "path": "src/styles/tokens.css",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/styles/tokens.css"
+      ]
+    },
+    {
+      "path": "src/tests/expansion.test.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/tests/expansion.test.ts"
+      ]
+    },
+    {
+      "path": "src/tests/logic.test.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/tests/logic.test.ts"
+      ]
+    },
+    {
+      "path": "src/tests/store.test.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/tests/store.test.ts"
+      ]
+    },
+    {
+      "path": "src/tests/ui.test.ts",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/tests/ui.test.ts"
+      ]
+    },
+    {
+      "path": "src/views/*.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 17,
+      "matches": [
+        "src/views/MessagesView.vue",
+        "src/views/IncomingPlanView.vue",
+        "src/views/StudentPlanView.vue",
+        "src/views/CoachServicesView.vue",
+        "src/views/CoachStudentDetailView.vue",
+        "src/views/ExploreView.vue",
+        "src/views/CoachDetailView.vue",
+        "src/views/DietView.vue",
+        "src/views/PlanDetailView.vue",
+        "src/views/MyPlanView.vue",
+        "src/views/CoachTodoView.vue",
+        "src/views/TodayView.vue",
+        "src/views/CoachReviewView.vue",
+        "src/views/TrainingView.vue",
+        "src/views/CoachStudentsView.vue",
+        "src/views/RecordsView.vue",
+        "src/views/AiAssistView.vue"
+      ]
+    },
+    {
+      "path": "src/views/AiAssistView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/AiAssistView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachDetailView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachDetailView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachReviewView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachReviewView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachServicesView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachServicesView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachStudentDetailView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachStudentDetailView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachStudentsView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachStudentsView.vue"
+      ]
+    },
+    {
+      "path": "src/views/CoachTodoView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/CoachTodoView.vue"
+      ]
+    },
+    {
+      "path": "src/views/DietView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/DietView.vue"
+      ]
+    },
+    {
+      "path": "src/views/ExploreView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/ExploreView.vue"
+      ]
+    },
+    {
+      "path": "src/views/IncomingPlanView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/IncomingPlanView.vue"
+      ]
+    },
+    {
+      "path": "src/views/MessagesView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/MessagesView.vue"
+      ]
+    },
+    {
+      "path": "src/views/MyPlanView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/MyPlanView.vue"
+      ]
+    },
+    {
+      "path": "src/views/PlanDetailView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/PlanDetailView.vue"
+      ]
+    },
+    {
+      "path": "src/views/RecordsView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/RecordsView.vue"
+      ]
+    },
+    {
+      "path": "src/views/StudentPlanView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/StudentPlanView.vue"
+      ]
+    },
+    {
+      "path": "src/views/TodayView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/TodayView.vue"
+      ]
+    },
+    {
+      "path": "src/views/TrainingView.vue",
+      "root": "prototype",
+      "safe": true,
+      "matchCount": 1,
+      "matches": [
+        "src/views/TrainingView.vue"
+      ]
+    }
+  ],
+  "pendingReferences": [
+    "docs/evidence/D01/round-03/worker/D01-03-report.json",
+    "docs/evidence/D01/round-03/worker/D01-03-report.md"
+  ],
+  "accepted": false
+}

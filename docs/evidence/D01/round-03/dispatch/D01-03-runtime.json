@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "same original native round1 at1h41m/270steps, Flash/Medium; read-only24-issue checkpoint sent; awaiting complete source/report/map handback",
+  "progress": "same original native round1 at2h4m/315steps, Flash/Medium; final own audit ongoing, no stop/restart; complete report not yet handed back",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -199,5 +199,15 @@
     "feedback": "D01-03-review-checkpoint.md",
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
+  },
+  "last_native_progress": "../lead/expansion/monitor/harness-round1-step315.txt",
+  "mapping_structural_check": {
+    "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
+    "items": 55,
+    "families": 16,
+    "flows": 7,
+    "motions": 12,
+    "missing_ids": [],
+    "status": "candidate structure complete; source globs resolve; D01-03 reports still pending, not UI acceptance"
   }
 }
