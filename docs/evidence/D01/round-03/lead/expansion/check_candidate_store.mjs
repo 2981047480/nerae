@@ -36,6 +36,26 @@ try{
  const newState=JSON.parse(JSON.stringify(s.state))
  const persistedSets=[...newState.records.flatMap(r=>r.sets),...newState.session.exercises.flatMap(e=>e.sets)]
  report.checks.replacementHistory={oldSessionId,newSessionId:s.state.session.id,request,oldConfirmedSetCount:oldDone.length,retainedIds:oldDone.filter(old=>persistedSets.some(n=>n.id===old.id)).map(x=>x.id),lostIds:oldDone.filter(old=>!persistedSets.some(n=>n.id===old.id)).map(x=>x.id),allRetained:oldDone.every(old=>persistedSets.some(n=>n.id===old.id))}
+ s.resetPreview()
+ const legacy=JSON.parse(JSON.stringify(s.state))
+ legacy.actor='coach';legacy.screen='coachServices'
+ for(const collection of [legacy.services.drafts,legacy.services.saved]) {
+   for(const draft of Object.values(collection)) {delete draft.priceInput;delete draft.priceUnit}
+   collection['pkg-strength'].priceYuan=759
+   collection['pkg-strength'].cycle='8 周'
+   collection['pkg-strength'].scope='每周 2 次训练安排；每次训练后的文字反馈'
+   collection['pkg-strength'].response='工作日 12 小时内回复'
+ }
+ for(const id of timers)clearTimeout(id);timers.clear()
+ data.set(s.storageKey,JSON.stringify(legacy))
+ try {
+   const cold=await server.ssrLoadModule('/src/state/store.ts?lead-legacy-services=1')
+   const draft=cold.state.services.drafts['pkg-strength']
+   const issues=cold.servicePriceIssues.value
+   report.checks.legacyServiceRecovery={screen:cold.state.screen,priceInput:draft.priceInput,priceYuan:draft.priceYuan,cycle:draft.cycle,scope:draft.scope,response:draft.response,issues,confirmedSets:cold.state.session.exercises.flatMap(e=>e.sets).filter(x=>x.status==='done').length,savedValuesRetained:draft.priceYuan===759&&draft.cycle==='8 周'&&draft.response==='工作日 12 小时内回复'}
+ } catch(error) {
+   report.checks.legacyServiceRecovery={error:String(error?.stack??error),savedValuesRetained:false}
+ }
  report.status='diagnostic_completed'
 }catch(error){report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally{

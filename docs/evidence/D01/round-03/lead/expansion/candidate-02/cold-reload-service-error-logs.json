@@ -1,0 +1,50 @@
+[
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of render function \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:31:26.599Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of undefined (reading 'trim')\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/state/store.ts?t=1792823337048:2597:34)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823337048:51:46)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at unref (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1874:30)\n    at Object.get (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1880:64)\n    at Proxy._sfc_render (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823337048:399:48)\n    at renderComponentRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:7025:17)",
+    "timestamp": "2026-10-24T06:31:26.604Z",
+    "url": "http://127.0.0.1:4187/src/state/store.ts?t=1792823337048"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of render function \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:31:45.275Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of undefined (reading 'trim')\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/state/store.ts?t=1792823505051:2598:34)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823505051:51:46)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at unref (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1874:30)\n    at Object.get (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1880:64)\n    at Proxy._sfc_render (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823505051:399:48)\n    at renderComponentRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:7025:17)",
+    "timestamp": "2026-10-24T06:31:45.277Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[HMR] Something went wrong during Vue component hot-reload. Full reload required.",
+    "timestamp": "2026-10-24T06:31:45.277Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of render function \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:31:45.278Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of scheduler flush \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:31:45.278Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of undefined (reading 'pkg-strength')\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823505051:51:51)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at unref (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1874:30)\n    at Object.get (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1880:64)\n    at Proxy._sfc_render (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823505051:399:48)\n    at renderComponentRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:7025:17)\n    at ReactiveEffect.componentUpdateFn [as fn] (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8619:46)\n    at ReactiveEffect.run (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:584:19)\n    at setupRenderEffect (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8754:5)",
+    "timestamp": "2026-10-24T06:31:45.279Z",
+    "url": "http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823505051"
+  }
+]

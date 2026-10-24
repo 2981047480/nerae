@@ -28,6 +28,8 @@ export async function captureCurrentViewMatrix(ctx, {
       await ctx.fs.writeFile(`${ctx.evidenceDir}/dom-text/${name}.txt`, snapshot, { flag: 'wx' })
       const dom = await auditDom(ctx, name)
       const bounds = await auditBounds(ctx, name)
+      if (dom.mainCount !== 1 || !dom.skipTargetExists) throw Error(`Rendered main/skip target unavailable: ${name}`)
+      if (bounds.scale !== String(scale / 100)) throw Error(`Text scale was not applied: ${name}, observed ${bounds.scale}`)
       let capture
       try { capture = await captureViewport(ctx, name, width, height) }
       catch (error) {
@@ -47,6 +49,9 @@ export async function captureCurrentViewMatrix(ctx, {
         overflow: dom.scrollWidth > width,
         clippedControls: bounds.clippedControls,
         smallButtons: bounds.smallButtons.filter(x => x.box.width < 43.8 || x.box.height < 43.8),
+        smallFields: dom.fields.filter(x =>
+          (x.element.width < 43.8 && x.hit.width < 43.8) ||
+          (x.element.height < 43.8 && x.hit.height < 43.8)),
       })
     }
   }

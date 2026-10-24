@@ -92,7 +92,8 @@
       "subject": "服务保存全部公开字段同步",
       "feedback": "../../dispatch/D01-03-services-review.md",
       "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual scope/goals/response stayed stale in student detail"
+      "latest_observation": "new save source improved; actual cold-loaded public projection still old scope/goals/24h despite saved2times/12h; follow-up dispatched",
+      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md"
     },
     {
       "id": "EA14",
@@ -148,7 +149,8 @@
       "subject": "逐段清理直接布局解释与重复免责声明",
       "feedback": "../../dispatch/D01-03-ui-review-02.md",
       "status": "pending_final_frozen_recheck",
-      "latest_observation": "partial copy improvement; services still had layout explanation"
+      "latest_observation": "partial copy improvement; services still had layout explanation",
+      "followup_feedback": "../../dispatch/D01-03-action-bar-review.md"
     },
     {
       "id": "VR07",
@@ -156,6 +158,21 @@
       "feedback": "../../dispatch/D01-03-services-review.md",
       "status": "pending_final_frozen_recheck",
       "latest_observation": "actual preview unit missing,UTC displayed as local,switch inverted name"
+    },
+    {
+      "id": "EA16",
+      "subject": "旧合法服务快照补新增字段并能冷启动",
+      "feedback": "../../dispatch/D01-03-persisted-state-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual cold start restored759/8weeks/version4 and0newerrors; old-agreement new fields remained blank and public projection stale; follow-up dispatched, final recheck pending",
+      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md"
+    },
+    {
+      "id": "VR08",
+      "subject": "采用动作条不能在无导航页遮住正文并留底部透出",
+      "feedback": "../../dispatch/D01-03-action-bar-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual390x900 scroll0 bar704..828 covers first content row749..805,nav0,bottom72; sent original round1"
     }
   ]
 }

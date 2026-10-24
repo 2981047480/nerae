@@ -1,0 +1,242 @@
+[
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/TodayView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/MyPlanView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/RecordsView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/MessagesView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachStudentsView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/AiAssistView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachDetailView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/DietView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachTodoView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/TrainingView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/IncomingPlanView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachStudentDetailView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachServicesView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/CoachReviewView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/views/StudentPlanView.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.302Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] ReferenceError: createSeedZhouCoachState is not defined\n    at createSeedState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:128:19)\n    at loadState (http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:208:12)\n    at http://127.0.0.1:4187/src/state/store.ts?t=1792822660998:247:31",
+    "timestamp": "2026-10-24T06:17:41.321Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "error",
+    "message": "[vite] Failed to reload /src/App.vue. This could be due to syntax errors or importing non-existent modules. (see errors above)",
+    "timestamp": "2026-10-24T06:17:41.321Z",
+    "url": "http://127.0.0.1:4187/@vite/client"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of render function \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:27:21.062Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of undefined (reading 'trim')\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/state/store.ts?t=1792823187578:2595:34)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at ComputedRefImpl.fn (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823240794:51:46)\n    at refreshComputed (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:738:29)\n    at get value (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2019:5)\n    at unref (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1874:30)\n    at Object.get (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:1880:64)\n    at Proxy._sfc_render (http://127.0.0.1:4187/src/views/CoachServicesView.vue?t=1792823240794:399:48)\n    at renderComponentRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:7025:17)",
+    "timestamp": "2026-10-24T06:27:21.086Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of scheduler flush \n  at <CoachServicesView key=\"coachServices\" > \n  at <BaseTransition mode=\"out-in\" appear=true persisted=false  ... > \n  at <Transition name=\"view\" mode=\"out-in\" appear=\"\" > \n  at <App>",
+    "timestamp": "2026-10-24T06:27:40.221Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of null (reading 'component')\n    at locateNonHydratedAsyncRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9435:41)\n    at locateNonHydratedAsyncRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9440:14)\n    at ReactiveEffect.componentUpdateFn [as fn] (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8661:40)\n    at ReactiveEffect.run (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:584:19)\n    at http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2828:27\n    at callWithErrorHandling (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2459:33)\n    at flushJobs (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:2698:9)",
+    "timestamp": "2026-10-24T06:27:40.227Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot destructure property 'type' of 'vnode' as it is null.\n    at unmount (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9128:7)\n    at unmountComponent (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9272:7)\n    at unmount (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9161:7)\n    at unmountComponent (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9272:7)\n    at unmount (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9161:7)\n    at unmountComponent (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9272:7)\n    at unmount (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9161:7)\n    at unmountChildren (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9289:7)\n    at unmount (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9185:9)\n    at unmountChildren (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9289:7)",
+    "timestamp": "2026-10-24T06:28:57.220Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[HMR] Something went wrong during Vue component hot-reload. Full reload required.",
+    "timestamp": "2026-10-24T06:28:57.221Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "warn",
+    "message": "[Vue warn]: Unhandled error during execution of scheduler flush \n  at <App>",
+    "timestamp": "2026-10-24T06:28:57.223Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  },
+  {
+    "level": "error",
+    "message": "TypeError: Cannot read properties of null (reading 'component')\n    at locateNonHydratedAsyncRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9435:41)\n    at locateNonHydratedAsyncRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9440:14)\n    at locateNonHydratedAsyncRoot (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:9440:14)\n    at ReactiveEffect.componentUpdateFn [as fn] (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8661:40)\n    at ReactiveEffect.run (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:574:19)\n    at updateComponent (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8554:18)\n    at processComponent (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8481:7)\n    at patch (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:7961:11)\n    at patchKeyedChildren (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8897:9)\n    at patchChildren (http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816:8811:11)",
+    "timestamp": "2026-10-24T06:28:57.226Z",
+    "url": "http://127.0.0.1:4187/node_modules/.vite/deps/chunk-DBHN7FE3.js?v=c0e1f816"
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "bar": {
+    "background": "rgba(0, 0, 0, 0) linear-gradient(rgba(243, 242, 238, 0) 0%, rgb(243, 242, 238) 30%) repeat scroll 0% 0% / auto padding-box border-box",
+    "bottom": "72px",
+    "position": "sticky",
+    "rect": {
+      "bottom": 828,
+      "height": 124,
+      "left": 20,
+      "right": 370,
+      "top": 704,
+      "width": 350
+    }
+  },
+  "firstRows": [
+    {
+      "rect": {
+        "bottom": 740.9609375,
+        "height": 55.6875,
+        "left": 20,
+        "right": 370,
+        "top": 685.2734375,
+        "width": 350
+      },
+      "text": "哑铃卧推4 组 × 10 次 · 休息 90 秒重量以能完成 10 次、保留 2 次余力为准"
+    },
+    {
+      "rect": {
+        "bottom": 796.6484375,
+        "height": 55.6875,
+        "left": 20,
+        "right": 370,
+        "top": 740.9609375,
+        "width": 350
+      },
+      "text": "高位下拉3 组 × 10 次 · 休息 75 秒上一周期末两组完成吃紧，本周保持 10 次，动作更稳"
+    },
+    {
+      "rect": {
+        "bottom": 852.3359375,
+        "height": 55.6875,
+        "left": 20,
+        "right": 370,
+        "top": 796.6484375,
+        "width": 350
+      },
+      "text": "单臂哑铃划船4 组 × 12 次/侧 · 休息 60 秒髋部保持稳定，肘部贴近身体"
+    }
+  ],
+  "navCount": 0,
+  "viewport": {
+    "dpr": 1,
+    "height": 900,
+    "scrollY": 64,
+    "width": 390
+  }
+}

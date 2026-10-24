@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "same original native round1 at1h17m/218steps, Flash/Medium; implementing accumulated source/UI seam feedback; no full acceptance",
+  "progress": "same original native round1 at1h41m/270steps, Flash/Medium; read-only24-issue checkpoint sent; awaiting complete source/report/map handback",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -168,5 +168,36 @@
     "direct_vite_exit": 0,
     "status": "interim changed source; not package build and not accepted; later source edits already observed"
   },
-  "issue_index": "../lead/expansion/ISSUES.json"
+  "issue_index": "../lead/expansion/ISSUES.json",
+  "persisted_state_review": {
+    "feedback": "D01-03-persisted-state-review.md",
+    "proof": "D01-03-persisted-state-review-inserted.txt",
+    "issue": "EA16 cold start crashed after legal old services lacked new priceInput",
+    "latest_observation": "normalization added; actual browser cold reload kept759/8weeks/scope/12h/version4,old699/version2 agreement;0newwarn/error",
+    "module_recheck": "../lead/expansion/monitor/store-candidate-diagnostic-04.log",
+    "final_accepted": false
+  },
+  "action_bar_review": {
+    "feedback": "D01-03-action-bar-review.md",
+    "proof": "D01-03-action-bar-review-inserted.txt",
+    "issues": [
+      "VR08 sticky action overlaps content and reserves absent nav",
+      "VR06 residual future-error inventory and repeated diet disclaimers"
+    ],
+    "status": "inserted original round1 at1h34m/258steps; final freeze pending"
+  },
+  "recovery_projection_review": {
+    "feedback": "D01-03-recovery-projection-review.md",
+    "proof": "D01-03-recovery-projection-review-inserted.txt",
+    "issues": [
+      "EA13 loaded public cache still stale despite saved service fields",
+      "EA16 new old-agreement fields blank; must preserve original terms rather than new quote"
+    ],
+    "status": "actual migrated student detail captured and inserted original running round1; final recheck pending"
+  },
+  "review_checkpoint": {
+    "feedback": "D01-03-review-checkpoint.md",
+    "proof": "D01-03-review-checkpoint-inserted.txt",
+    "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
+  }
 }
