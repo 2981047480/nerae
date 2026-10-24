@@ -49,5 +49,17 @@
       "diagnostic": "../lead/expansion/monitor/store-candidate-diagnostic-02.log",
       "status": "actual module reproduced detail reload mismatch and lost3 confirmed sets; fake window/storage, final browser pending"
     }
-  ]
+  ],
+  "accepted_preview": {
+    "url": "http://127.0.0.1:4186/",
+    "tab": "8",
+    "visible": true,
+    "observed_viewport_css": [
+      515,
+      629
+    ],
+    "observed_dpr": 2.4000000953674316,
+    "scope": "accepted first batch only",
+    "old_tab": "7 no longer in inventory; created8 after verifying empty IAB tabs; old QA contexts must not be reused"
+  }
 }
