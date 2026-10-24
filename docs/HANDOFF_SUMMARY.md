@@ -13,3 +13,5 @@ fix01仍同轮3，最新432步/57分15秒，Flash/Medium/Stop可见；曾4of5请
 后续：正常交回fix01报告→冻结新commit→run_frozen_code_checks.py独立类型/构建/测试/9接缝→16族全状态、五宽100/200与M01–M12，再原样main集成与55证据/D01-I。新context不可复用旧fullFrozenContext；流程captureCurrentViewport保留滚动，矩阵captureViewport会重设scroll0。cua_full_matrix仅语法检查，尚未执行全矩阵。Mac已解锁无待答许可。
 
 main局部依赖已安装121包：首次网络中断，重试exit0，源码/lock散列不变、prototype干净；Vite/esbuild原生变换烟测exit0。此前离线探针因政策元数据不可得失败，联网lockfile-only保留供应链策略校验181条exit0，三清单散列不变。全部日志在monitor，不能冒充完整UI集成构建。真实业务/权限/AI、系统字体/真机、用户研究及生产未验。
+
+EA20静态复核又发现旧draft按parsed.actor推断owner，新测试把“切换到教练前旧草稿”恢复给coach；已同轮插话明确无可信作者的旧文本单独未归属保留、不进入任何一方composer，已推断标记也不可当确认。无需新增归属UI；边界如实报告。证明dispatch/legacy-draft-owner-inserted，最新3轮447步1h14分11秒，仍运行。活9项尚未覆盖这项冷迁移，最终必须补独立验证。

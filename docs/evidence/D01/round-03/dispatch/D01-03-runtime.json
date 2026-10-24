@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-legacy-followup-inserted.txt",
+  "last_native_progress": "D01-03-fix01-legacy-draft-owner-inserted.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -274,6 +274,12 @@
       "proof": "D01-03-fix01-legacy-followup-inserted.txt",
       "issue": "EA17 still fails existing legal saved state",
       "last_native": "round3/432steps57m15"
+    },
+    "legacy_draft_owner_decision": {
+      "request": "D01-03-fix01-legacy-draft-owner-decision.md",
+      "proof": "D01-03-fix01-legacy-draft-owner-inserted.txt",
+      "issue": "EA20 unknown owner cannot be assigned from last navigation actor",
+      "last_native": "round3/447steps1h14m11"
     }
   }
 }

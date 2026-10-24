@@ -219,9 +219,10 @@
       "subject": "草稿按会话及参与者隔离，接收方不能看到发送方未发草稿",
       "feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
       "status": "fix01_interim_failed_peer_draft",
-      "latest_observation": "Actual CUA student typed private unsent draft; only role/nav switched; exact draft appears in coach composer. Source60files unchanged during observation.",
+      "latest_observation": "Actual CUA student typed private unsent draft; only role/nav switched; exact draft appears in coach composer. Source60files unchanged during observation. Followup static review: parsed.actor is last navigation identity, not trustworthy authorship; owner decision requires retaining unknown legacy text unassigned and not in either composer.",
       "evidence": "fix01-interim/failed-coach-thread-and-shared-draft.txt",
-      "source_aggregate_sha256": "7ddb6ff6a04fa0decc68bf82e5eee7262e0b652502917e161cd25b905e5f85aa"
+      "source_aggregate_sha256": "7ddb6ff6a04fa0decc68bf82e5eee7262e0b652502917e161cd25b905e5f85aa",
+      "owner_boundary_decision": "../../dispatch/D01-03-fix01-legacy-draft-owner-decision.md"
     }
   ],
   "latest_review": "../REVIEW_05.md",
