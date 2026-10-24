@@ -3819,9 +3819,14 @@
           "revision": "b10c799295a091d2238f5d75995b66b154725442"
         },
         {
-          "path": "design/prototype/README.md",
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/README_ACCEPTED.md",
           "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "b10c799295a091d2238f5d75995b66b154725442",
+          "archived_from": {
+            "revision": "b10c799295a091d2238f5d75995b66b154725442",
+            "path": "design/prototype/README.md",
+            "method": "git show; byte-identical immutable archive before full UI import"
+          }
         },
         {
           "path": "docs/evidence/D01/round-03/worker/fix02-report.json",
@@ -3896,7 +3901,7 @@
         "docs": {
           "status": "pass",
           "evidence": [
-            "design/prototype/README.md",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/README_ACCEPTED.md",
             "docs/evidence/D01/round-03/worker/fix02-report.json"
           ]
         },
