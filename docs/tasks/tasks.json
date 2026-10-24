@@ -3792,7 +3792,7 @@
       "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
       "review_status": "changes_requested",
       "review_document": "docs/evidence/D01/round-03/lead/REVIEW_03.md",
-      "waiting_on": "fix02 report64 hashes match, UI still unaccepted. Normal-size R15a/R16 addendum prepared; dispatch blocked by fresh native Mac lock, unlock question pending. Need final targeted fixes and frozen independent checks.",
+      "waiting_on": "fix02 normally completed34m39s; report64 hashes matched. Ordinary-font R15a/R16 addendum sent once12:49; same native session round5 running. Await targeted handback and frozen independent QA. UI not accepted.",
       "fix_prompt_sent": true,
       "fix02_prompt_sent": true,
       "write_ownership": {
@@ -3805,7 +3805,7 @@
         ]
       },
       "fix03_feedback_sent": true,
-      "fix03_normal_feedback_sent": false
+      "fix03_normal_feedback_sent": true
     },
     {
       "id": "D01-03",
