@@ -332,7 +332,11 @@
       "same_session": true,
       "goal_active": true,
       "accepted": false,
-      "latest_observed": "5round593steps7m56, same Flash/Medium, source repairs ongoing"
+      "latest_observed": "5round656steps41m11; source/test/browser work ongoing; no normal report yet",
+      "last_followups": [
+        "D01-03-fix02-state-consistency-followup.md",
+        "D01-03-fix02-text200-followup.md"
+      ]
     }
   }
 }

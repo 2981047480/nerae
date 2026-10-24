@@ -51,6 +51,11 @@ export async function captureCurrentViewMatrix(ctx, {
       await ctx.fs.writeFile(`${ctx.evidenceDir}/dom-text/${name}.txt`, snapshot, { flag: 'wx' })
       const dom = await auditDom(ctx, name)
       const bounds = await auditBounds(ctx, name)
+      const squeezedHeadings = await ctx.tab.playwright.evaluate(() =>
+        [...document.querySelectorAll('main h1,main h2,main h3')].map(element => {
+          const box = element.getBoundingClientRect()
+          return { text: element.textContent.trim(), width: box.width, height: box.height, fontSize: Number.parseFloat(getComputedStyle(element).fontSize) }
+        }).filter(row => row.width > 0 && (row.text.match(/[\u4e00-\u9fff]/g) ?? []).length >= 5 && row.width < row.fontSize * 2.05))
       if (dom.mainCount !== 1 || !dom.skipTargetExists) throw Error(`Rendered main/skip target unavailable: ${name}`)
       if (bounds.scale !== String(scale)) throw Error(`Text scale was not applied: ${name}, observed ${bounds.scale}`)
       let capture
@@ -71,6 +76,7 @@ export async function captureCurrentViewMatrix(ctx, {
         duplicateIds: dom.duplicateIds,
         overflow: dom.scrollWidth > width,
         clippedControls: bounds.clippedControls,
+        squeezedHeadings,
         smallButtons: bounds.smallButtons.filter(x => x.box.width < 43.8 || x.box.height < 43.8),
         smallFields: dom.fields.filter(x =>
           (x.element.width < 43.8 && x.hit.width < 43.8) ||

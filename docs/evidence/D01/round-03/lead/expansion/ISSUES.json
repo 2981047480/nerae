@@ -257,7 +257,8 @@
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/states-s05-01.txt"
+      "evidence": "frozen-02/states-s05-01.txt",
+      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md"
     },
     {
       "id": "EA24",
@@ -291,7 +292,8 @@
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/fresh-revocation-student-list-and-zhou-delivery.txt"
+      "evidence": "frozen-02/fresh-revocation-student-list-and-zhou-delivery.txt",
+      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md"
     },
     {
       "id": "VR10",
@@ -307,7 +309,8 @@
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/matrix-summary.jsonl"
+      "evidence": "frozen-02/matrix-summary.jsonl",
+      "recovery_followup": "../../dispatch/D01-03-fix02-text200-followup.md"
     },
     {
       "id": "VR12",

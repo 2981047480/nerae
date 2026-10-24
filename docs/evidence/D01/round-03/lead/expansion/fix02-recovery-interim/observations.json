@@ -1,0 +1,29 @@
+{
+  "scope": "Worker-produced candidate images reviewed by Lead; not Lead CUA or frozen-source acceptance",
+  "source_revision_confirmed": false,
+  "observations": [
+    "320/200 action names were squeezed to one-character vertical runs; original VR11 followup sent",
+    "390 missing-image label now top-left and separate from date; worker wrapper-overlap metric is not label overlap"
+  ],
+  "files": [
+    {
+      "worker_path": "screenshots/fix02-320-plan-text200.png",
+      "snapshot": "fix02-320-plan-text200.png",
+      "sha256": "cfef48d398901e16f5ed1104a79c96e6dc0ae968adc61eda4a9a4a75e723539e",
+      "worker_mtime_local": "2026-10-24T20:01:05.039876"
+    },
+    {
+      "worker_path": "screenshots/fix02-390-missing-image.png",
+      "snapshot": "fix02-390-missing-image.png",
+      "sha256": "7a90a9dcf789825c3b4a825c558563e79dea49010d43fbee441a95b188bc7f1a",
+      "worker_mtime_local": "2026-10-24T20:01:06.552241"
+    },
+    {
+      "worker_path": "logs/fix02-browser.json",
+      "snapshot": "fix02-browser.json",
+      "sha256": "54dfe525f0ae1d417a342f8bc9d96f4581a975dac63a775447eaf23ca53f3ca2",
+      "worker_mtime_local": "2026-10-24T20:01:07.059254"
+    }
+  ],
+  "accepted": false
+}

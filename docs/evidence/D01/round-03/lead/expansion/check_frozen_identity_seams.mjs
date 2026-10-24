@@ -93,6 +93,82 @@ try {
    s.goToCoachPlanForStudent('lin-che')
    assert.deepEqual(plain(s.state.coach),linCoach,'Zhou publication changed Lin coach plan')
  })
+ await check('historical Lin reference survives last coach context being Zhou',async e=>{
+   const original=plain(s.state.student.incoming)
+   const conversation=s.state.conversations.find(x=>x.id==='conv-gu-yan')
+   const oldRef=plain(conversation.messages.flatMap(x=>x.refs??[]).find(x=>x.kind==='plan'))
+   assert.ok(oldRef,'Seed plan message reference missing')
+   s.goToCoachPlanForStudent('lin-che')
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   s.updatePlanField(day.id,exercise.id,'note','新版本专用备注，不能出现在旧引用中')
+   assert.equal(await s.saveDraft(),true)
+   s.requestPublish();assert.equal(s.ui.sheet,'publish')
+   assert.equal(s.confirmPublish(),true)
+   assert.ok(s.state.student.incoming.version>original.version)
+   e.latestVersion=s.state.student.incoming.version
+   s.goToCoachPlanForStudent('zhou-lan')
+   const zhouBefore=plain(s.state.coach)
+   s.jumpToScenario('today');s.goToConversation('conv-gu-yan');s.openMessageRef(oldRef)
+   const shown=s.incomingDelivery.value
+   e.referenceId=oldRef.id;e.shownVersion=shown?.version
+   assert.equal(shown?.version,original.version,'Old Lin reference fell back to latest or another student')
+   assert.deepEqual(plain(shown.content),original.content,'Historical delivery content was rewritten')
+   assert.equal(s.incomingAvailable.value,false,'Replaced historical version was offered for adoption')
+   s.openAdoptSheet()
+   assert.notEqual(s.ui.sheet,'adopt','Old reference opened adoption of a different latest version')
+   s.goToCoachPlanForStudent('zhou-lan')
+   assert.deepEqual(plain(s.state.coach),zhouBefore,'Reading Lin history changed Zhou plan state')
+ })
+ await check('coach plan reference preserves Zhou participant and read-only role',async e=>{
+   const linBefore=plain(s.state.student)
+   s.goToCoachPlanForStudent('zhou-lan')
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   s.updatePlanField(day.id,exercise.id,'note',exercise.note+'；本次交付给周岚')
+   assert.equal(await s.saveDraft(),true)
+   s.requestPublish();assert.equal(s.confirmPublish(),true)
+   const conversation=s.state.conversations.find(x=>x.studentId==='zhou-lan')
+   const ref=plain([...conversation.messages].reverse().flatMap(x=>x.refs??[]).find(x=>x.kind==='plan'))
+   assert.ok(ref,'Zhou publication did not produce a reference')
+   s.replyToStudent('zhou-lan');s.openMessageRef(ref)
+   e.actor=s.state.actor;e.screen=s.state.screen;e.selectedStudent=s.ui.selectedStudentId
+   assert.equal(s.state.actor,'coach','Coach reference changed into student Lin identity')
+   assert.equal(s.ui.selectedStudentId,'zhou-lan','Coach reference selected a different student')
+   if(s.state.screen==='incomingPlan'){
+     assert.equal(s.incomingDelivery.value?.content.title,s.state.coach.draft.title,'Zhou reference displayed Lin content')
+     assert.equal(s.incomingAvailable.value,false,'Coach reference offered student adoption')
+   }
+   assert.deepEqual(plain(s.state.student),linBefore,'Reading Zhou reference changed Lin student state')
+ })
+ await check('missing plan reference never silently displays latest delivery',async e=>{
+   s.jumpToScenario('today');s.goToConversation('conv-gu-yan')
+   const latest=s.state.student.incoming.version
+   s.openMessageRef({kind:'plan',id:'delivery-999999',title:'不存在的交付',detail:'QA negative reference'})
+   e.screen=s.state.screen;e.shownVersion=s.incomingDelivery.value?.version??null;e.note=s.ui.saveNote
+   assert.ok(!(e.screen==='incomingPlan'&&e.shownVersion===latest),'Missing reference was silently replaced with latest content')
+   assert.equal(s.state.student.incoming.version,latest,'Missing reference changed current incoming data')
+ })
+ await check('published draft work follows add remove and undo without false pending work',async e=>{
+   s.goToCoachPlanForStudent('zhou-lan')
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   s.updatePlanField(day.id,exercise.id,'note',exercise.note+'；工作项生命周期检查')
+   assert.equal(await s.saveDraft(),true)
+   s.requestPublish();assert.equal(s.confirmPublish(),true)
+   const todo=s.state.todoItems.find(x=>x.studentId==='zhou-lan'&&x.reason==='draft')
+   assert.ok(todo,'Zhou draft work item missing')
+   assert.equal(todo.done,true,'Published draft remained pending')
+   s.removeExercise(day.id,exercise.id)
+   assert.equal(todo.done,false,'Removing an exercise did not reopen draft work')
+   s.undoRemoveExercise()
+   assert.equal(todo.done,true,'Undo back to published content left a false unsaved task')
+   const beforeIds=new Set(s.state.coach.draft.days[0].exercises.map(x=>x.id))
+   s.addExercise(day.id)
+   assert.equal(todo.done,false,'Adding an exercise did not reopen draft work')
+   const added=s.state.coach.draft.days[0].exercises.find(x=>!beforeIds.has(x.id))
+   assert.ok(added,'Add exercise setup did not create an exercise')
+   s.removeExercise(day.id,added.id)
+   assert.equal(todo.done,true,'Removing the just-added row did not restore completed draft work')
+   e.currentDraftMatchesDelivered=true;e.finalDraftTodoDone=todo.done
+ })
  await check('active Zhou reply opens Zhou rather than Lin',async e=>{
    s.goToCoachStudentDetail('zhou-lan')
    s.replyToStudent('zhou-lan')
