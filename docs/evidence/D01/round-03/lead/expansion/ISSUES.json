@@ -178,10 +178,12 @@
       "id": "EA17",
       "subject": "有效周岚关系的普通回复无法进入本人会话",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "failed_frozen_01_fix01_running",
-      "latest_observation": "Actual Zhou reply stays in detail; same frozen module failed",
+      "status": "fix01_interim_failed_legacy_reply",
+      "latest_observation": "Actual existing saved state: Coach students→Zhou→Reply still stays in detail and asks to confirm relationship, despite active service; no reset/regrant; source60stable",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
-      "review": "../REVIEW_05.md"
+      "review": "../REVIEW_05.md",
+      "followup_feedback": "../../dispatch/D01-03-fix01-legacy-reply-followup.md",
+      "followup_evidence": "fix01-interim/legacy-zhou-after-reply.txt"
     },
     {
       "id": "EA18",

@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "fix01 same round3/428steps54m23; one EA19/EA20 actual CUA followup inserted while running, no stop/restart; normal handback still pending",
+  "progress": "Same fix01 round3/432steps57m15; EA19/EA20 peer visibility and EA17 legacy reply actual CUA feedback inserted; no stop/restart, normal handback pending",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-peer-followup-inserted.txt",
+  "last_native_progress": "D01-03-fix01-legacy-followup-inserted.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -268,6 +268,12 @@
       ],
       "source_observation": "Unfrozen aggregate7ddb6f;60files stable before/after actual CUA flow; not acceptance",
       "stop_or_restart": false
+    },
+    "legacy_reply_followup": {
+      "request": "D01-03-fix01-legacy-reply-followup.md",
+      "proof": "D01-03-fix01-legacy-followup-inserted.txt",
+      "issue": "EA17 still fails existing legal saved state",
+      "last_native": "round3/432steps57m15"
     }
   }
 }

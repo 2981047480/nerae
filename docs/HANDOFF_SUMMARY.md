@@ -1,17 +1,15 @@
-# 交接摘要 · 2026-10-24 16:13
+# 交接摘要 · 2026-10-24
 
-D19 active：55项/16族/F01–F07/M01–M12。D01-01文稿、D01-02四族accepted；D01-03全量active、D01-I未开始。Lead仅文稿/QA/原样集成，不写UI、不派Codex子代理。指定Harness/OpenCode Go/deepseek-v4.1-flash/Medium（Lead调整）不变。
+D19目标active：55项/16族/F01–F07/M01–M12。D01-01文稿、D01-02四族accepted；D01-03 active、D01-I未开始。Lead只文稿/QA/原样集成，不写UI、不启Codex子代理。指定Harness/OpenCode Go/opencode-go/deepseek-v4.1-flash/Medium（Lead调整）。
 
-首批源9a8c135、main接受集成b10c799；43源/64worker散列一致，类型/构建/36测试/54捕获见REVIEW_04与fix-04/frozen。完整12组循环仅fix01历史。树/private/tmp/nerae-ui-round-three，4186，tab8 Deliverable；旧tab7及上下文失效。
+首批S01/S02/S04/S15源9a8c135、main接受b10c799，43源/64worker散列一致，独立类型/构建/36测试/54捕获见REVIEW_04与fix-04/frozen；完整12组循环仅旧fix01历史。树/private/tmp/nerae-ui-round-three、4186/PID74496、tab8 Deliverable。旧tab7及其QA上下文失效。
 
-全量树/private/tmp/nerae-ui-complete、ui/full-round-three、初始b3949bf。Harness session-15de3174-0b22-47b7-9574-29dd3b032a8c，标题“# D01-03 全量扩展正式派发 D01-02”。第1轮336步TRANSPORT Connection error、5/5失败，非正常完成；Lead原样冻结6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d。第2轮仅补报告正常结束，报告md/json与55/16/7/12映射齐全，60源manifest与冻结提交一致。4187监听PID64273已核对（旧50258过时）；tab9后台/Handoff、390×900/DPR1。
+全量树/private/tmp/nerae-ui-complete、ui/full-round-three、原基线b3949bf。Harness session-15de3174-0b22-47b7-9574-29dd3b032a8c，标题“# D01-03 全量扩展正式派发 D01-02”。首轮336步TRANSPORT/5of5失败，Lead原样冻结6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d，非接受。第2轮仅补报告正常结束，原报告/进度/清单快照已保存在frozen-01/worker-doc-recovery；60源及69证据散列核对。4187实际PID64273（旧50258过时）、tab9后台/Handoff。
 
-REVIEW_05不接受6dba：独立类型/Vite构建/75测试通过、60源前后稳定；实际store+替身window/storage六项3过3败。周岚备注保存/切换隔离、林澈采用、周岚发布不改林澈通过；EA17周岚普通回复不通、EA18撤权后教练健康暴露且本人原文被清空、EA19未读双方共用失败，真实CUA也复现。VR09 UTC切片显示07:38而当地15:38。首次脚本两处编辑参数误用已更正并实断言，v2重跑仍3/3，旧日志保留。执行v2快照及SHA在frozen-01；活helper扩到9项（含明确私有、结束关系、失败同ID重试），只用于下一冻结，已语法检查未运行。
+REVIEW_05拒绝6dba：独立类型/Vite构建/75测试通过，60源前后稳定；实际store+替身window/storage六项3过3败，真实CUA也复现EA17回复、EA18撤权/本人消息、EA19未读及VR09时间问题。两处编辑参数误用已纠正、v2重跑仍3/3，原脚本快照/SHA保留。活helper现9项，按新界面conversationUnread及正文/引用读取投影验收，不要求共享原始存储抹除；仅语法检查，尚未在新冻结跑。
 
-fix01包15:45在同会话第3轮运行；最新原生390步/26分59秒，4/5内部请求重试后正在运行Fix ref kinds；Flash/Medium/Stop可见，无新失败终态，未停重启。写域prototype与worker，不改Lead/根任务/API。等正常交回新fix01报告，再冻结新commit、独立复验，然后全16族五宽100/200、状态/恢复/M01–M12，按源散列原样集成。28项ISSUES待新冻结复验；禁止在已拒源扩大矩阵或把候选截图认接受。
+fix01仍同轮3，最新432步/57分15秒，Flash/Medium/Stop可见；曾4of5请求重试后继续，未停重启。新增真实CUA补查：EA19失败正文到接收方列表/线程且可重试删除；EA20学员未发送草稿到教练输入框；EA17既有保存状态周岚回复仍提示先确认关系。两份followup已插话入同轮，见dispatch/runtime及inserted证明。fix01-interim的60源观察前后稳定聚合7ddb6f，非冻结接受；学生首图滚动变化excluded，retry/教练帧稳定。ISSUES共29。当前IAB停周岚详情，保留撤权/失败/草稿；没有reset或再授权。等集中交回后再复查，不继续零散插入。
 
-frozen-01保留旧服务759/月8周/范围2次/12h、原699/月4周约定恢复证据；保存后UI重置可丢弃样例。当前浏览器教练林澈会话已撤权，普通消息仍在，别再reset掩盖。流程图用captureCurrentViewport保留滚动；captureViewport重设尺寸会回scroll0。cua_full_matrix已修root text scale为100/200，尚未执行。Mac已解锁，无待答许可。真实业务/权限/AI、真机、系统字体、用户研究与生产未验。
+后续：正常交回fix01报告→冻结新commit→run_frozen_code_checks.py独立类型/构建/测试/9接缝→16族全状态、五宽100/200与M01–M12，再原样main集成与55证据/D01-I。新context不可复用旧fullFrozenContext；流程captureCurrentViewport保留滚动，矩阵captureViewport会重设scroll0。cua_full_matrix仅语法检查，尚未执行全矩阵。Mac已解锁无待答许可。
 
-独立pnpm离线lockfile-only临时副本探针40秒超时，日志未捕获，不算安装通过；配置中的set this to true or false来自已安装pnpm自身对未决定build的生成逻辑，不据此报UI缺陷。详见monitor/frozen-01-pnpm-config.json。后续联网lockfile-only保留策略校验181条exit0，三个复制清单散列不变。main局部依赖首次下载120/121时连接中断，重试缓存复用120并补1，121包安装exit0；package/lock散列不变、prototype status干净。忽略包脚本，尚未在完整集成源上构建；详见monitor/main-dependency-setup-retry01。
-
-fix01同轮3/428步54分23仍运行，新增真实CUA EA19后续（未发送正文到对方列表/线程且可重试删除）与EA20（student草稿到coach输入框）已插话回原轮，未停重启。证据fix01-interim，60源观察前后稳定聚合7ddb6f，不是冻结接受。学生首截图滚动变化excluded、retry及coach帧稳定。当前IAB教练消息列表保留失败与草稿；未reset/再授权。9项helper入口已对齐新UI的conversationUnread与正文/引用读取投影，新增对方不能重试/删除，仍仅语法检查。ISSUES共29。
+main局部依赖已安装121包：首次网络中断，重试exit0，源码/lock散列不变、prototype干净；Vite/esbuild原生变换烟测exit0。此前离线探针因政策元数据不可得失败，联网lockfile-only保留供应链策略校验181条exit0，三清单散列不变。全部日志在monitor，不能冒充完整UI集成构建。真实业务/权限/AI、系统字体/真机、用户研究及生产未验。
