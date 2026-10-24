@@ -17,12 +17,12 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "fix02 normally completed; ordinary-font R15a/R16 addendum sent once at12:49, original session round5 running; UI not accepted",
+  "status": "D01-02 first four families accepted by Lead; D01-03 planned, not yet dispatched",
   "reasoning_history": [
     "Max: initial request stopped at 38 steps without main source/progress",
     "Medium: continue same session for bounded implementation"
   ],
-  "ui_checkpoint": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "ui_checkpoint": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
   "fix_prompt": "D01-02-fix-01-prompt.md",
   "fix_prompt_sent": true,
   "lead_native_completion_observed": true,
@@ -64,7 +64,7 @@
   "previous_native_terminal_observed_at_resume": "Prior implementation request was terminal: 处理失败 / Connection error. TRANSPORT. Source/report checkpoint retained; this is first fix prompt, not a restart on timeout.",
   "fix01_completed_local": "2026-10-24 11:36 Asia/Shanghai",
   "fix01_native_duration": "29m15s / 160 steps",
-  "lead_review_document": "docs/evidence/D01/round-03/lead/REVIEW_03.md",
+  "lead_review_document": "docs/evidence/D01/round-03/lead/REVIEW_04.md",
   "next_fix_prompt": "D01-02-fix-02-prompt.md",
   "fix02_prompt_sent": true,
   "goal_tool_status_latest": "active",
@@ -100,5 +100,8 @@
   "fix02_native_completed_local": "2026-10-24 12:42 Asia/Shanghai",
   "fix03_normal_submitted_local": "2026-10-24 12:49 Asia/Shanghai",
   "fix03_normal_submission_proof": "docs/evidence/D01/round-03/dispatch/fix03-normal-delivery.txt",
-  "fix03_normal_running_proof": "docs/evidence/D01/round-03/dispatch/fix03-normal-running.txt"
+  "fix03_normal_running_proof": "docs/evidence/D01/round-03/dispatch/fix03-normal-running.txt",
+  "first_batch_accepted_revision": "b10c799295a091d2238f5d75995b66b154725442",
+  "fix03_normal_native_terminal_observed": true,
+  "fix03_normal_native_duration": "2m36s / round5 /212steps"
 }

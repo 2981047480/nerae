@@ -3716,7 +3716,7 @@
       "id": "D01-02",
       "title": "指定DeepSeek完成四种代表情境",
       "batch": "foundation",
-      "status": "review",
+      "status": "accepted",
       "depends_on": [
         "D01-01"
       ],
@@ -3773,9 +3773,61 @@
         "Lead证据域仅Lead可写，不扩大指定Harness执行者的源码/worker写域"
       ],
       "evidence": [
-        "docs/evidence/D01/round-03/lead/REVIEW_02.md",
-        "docs/evidence/D01/round-03/lead/fix-01/frozen/checks.json",
-        "docs/evidence/D01/round-03/lead/fix-01/frozen/POST_QA_SOURCE_CHECK.json"
+        {
+          "path": "docs/evidence/D01/round-03/lead/REVIEW_04.md",
+          "sha256": "f14b7892e6bd0964e527ee85e64243363342a2582002f17b2065624fe3609687",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/checks.json",
+          "sha256": "496a0cffef3e204b0afd0053bcf3f539cb295c35412ba6b961361869b16c3361",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/SOURCE_MANIFEST.json",
+          "sha256": "d0cc8217a1dbd45c10f143dea6b81b30260685f77e012dc6f5083a3ed3e2ff18",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/POST_QA_SOURCE_CHECK.json",
+          "sha256": "11c11de78f26d45cf1f55bf52e859c361e241b7cb4767b5e6aac7f9d38a7a2d8",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/INTEGRATION_BYTE_CHECK.json",
+          "sha256": "3bfa131556d9d1916e50a182cb5015226f329e734afe0a892b94ad5d1415f889",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/focus-and-scale.json",
+          "sha256": "293179fa27b8c86a331b8c96fbadd2d685e6b69b1e8a94266e66087773b4c2ef",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/publish-result.json",
+          "sha256": "bc848a8a61b68d6d05ddd41893170ef66ad19cb441b39b4caf3e11a434f71fa3",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/rest-recovery.json",
+          "sha256": "fdb86ba70dc427ff9cacd356ab9d19f3409add60f2477f189f8bd2e54f37072f",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/store-final.json",
+          "sha256": "d19cc0e5f6966f1bc24d762e031cc663153a1b4ef084fbabbdc72235f6586db6",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "design/prototype/README.md",
+          "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/worker/fix02-report.json",
+          "sha256": "72c418b0eb24f74e5fbeb6258e224dc8d8abb9333d1fcac3c307e61ee4949aa4",
+          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+        }
       ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
@@ -3789,10 +3841,10 @@
       "workspace": "/private/tmp/nerae-ui-round-three",
       "branch": "ui/round-three",
       "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
-      "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
-      "review_status": "changes_requested",
-      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_03.md",
-      "waiting_on": "fix02 normally completed34m39s; report64 hashes matched. Ordinary-font R15a/R16 addendum sent once12:49; same native session round5 running. Await targeted handback and frozen independent QA. UI not accepted.",
+      "implementation_revision": "9a8c135e7de4661aafda3dc222626bf57fec99c4",
+      "review_status": "accepted_first_batch_only",
+      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_04.md",
+      "waiting_on": null,
       "fix_prompt_sent": true,
       "fix02_prompt_sent": true,
       "write_ownership": {
@@ -3805,7 +3857,56 @@
         ]
       },
       "fix03_feedback_sent": true,
-      "fix03_normal_feedback_sent": true
+      "fix03_normal_feedback_sent": true,
+      "accepted_revision": "b10c799295a091d2238f5d75995b66b154725442",
+      "reviewed_by": "/root (Codex Lead)",
+      "review_mode": "independent",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/REVIEW_04.md",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/INTEGRATION_BYTE_CHECK.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/checks.json",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/POST_QA_SOURCE_CHECK.json"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "独立UI样机；PRD/APP_FLOW/API/ER/生成契约无改动，不宣称HTTP/DB联调。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "首批仅本机固定样例，无真实健康/客户数据或服务端授权实现；正式权限留待工程与全量相应UI检查。"
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/store-final.json",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/rest-recovery.json",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/focus-and-scale.json",
+            "docs/evidence/D01/round-03/lead/fix-04/frozen/publish-result.json"
+          ]
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "design/prototype/README.md",
+            "docs/evidence/D01/round-03/worker/fix02-report.json"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/REVIEW_04.md"
+          ]
+        }
+      }
     },
     {
       "id": "D01-03",

@@ -1,33 +1,15 @@
 # 第三轮设计与 UI 交付状态
 
-## 当前目标与判断
+D19完整目标仍active：55项意图、16界面族、F01–F07、M01–M12。D01-01文稿与D01-02首批UI已accepted；D01-03全量扩展planned，D01-I待后续。不能在四屏结束。
 
-D19：55项底层意图逐项落实产品/交互/视觉/动效，覆盖16界面族、F01–F07。指定DeepSeek Harness内OpenCode Go的deepseek-v4.1-flash实施，Lead只作文稿、验收、集成；设计推理不进入产品。D01-01文稿accepted；D01-02 review/changes_requested，UI接受0；D01-03与D01-I未开始，整体active且未完成。
+## 已接受的首批
 
-## 当前冻结版本与验收
+S01今天、S02发现、S04专注训练、S15教练编辑/审阅。指定Harness原会话2b3c2fb7-0ddf-4462-be74-885272454974，OpenCode Go/opencode-go/deepseek-v4.1-flash/Medium；Medium为Lead调整。fix01正常29分15秒，fix02正常34分39秒，普通字号补充12:49发、正常2分36秒结束。人类解锁已核实，无待答解锁问题。
 
-隔离工作树`/private/tmp/nerae-ui-round-three`，ui/round-three；fix01未接受源码`9b16be064e3da9d11b271b0e00769faa1d9d2079`，未合main。原Harness正常完成29分15秒/160步，Lead未停止。QA后42文件散列一致。同版本独立typecheck/build/31测试/store诊断exit0；四种节奏及教练编辑的五档CSS宽度、版本快照、筛选收藏恢复、两种动效完整12组结果等价已实际复测。
+最终worker源码9a8c135e7de4661aafda3dc222626bf57fec99c4在/private/tmp/nerae-ui-round-three；Lead原样导入main并保存证据，接受提交见tasks.json D01-02。43文件QA后及集成后散列一致，worker64文件散列一致。Lead独立类型/构建/36测试/store诊断exit0；五构图×五宽度×100/200文字及发布/skip/短屏共54捕获，尺寸前后一致。关键边界、焦点、恢复及M03已复验，详见[REVIEW_04](../../evidence/D01/round-03/lead/REVIEW_04.md)。旧fix02/fix03候选不当作冻结接受证据。
 
-首批仍changes_requested：[REVIEW_02](../../evidence/D01/round-03/lead/REVIEW_02.md)剩余R08今天320重复进度/单位断行、R10e跨尺寸取消焦点，以及独立预览文字放大入口与实际检查。fix02已于12:08发送至原会话，实际显示运行中。证据在lead/fix-01/frozen；早期preliminary与冻结前30测试不支持本版本接受。storage失败仅store替身诊断，未伪称浏览器配额故障。
+实际预览127.0.0.1:4186，PID74496，cwd为首批隔离prototype；IAB tab7，已复位100%/full/3组。服务继续保留；后续新任务用独立树/端口。UI尚非正式uni-app/Go，系统字体、微信软键盘/真机、真实服务和用户研究未验。
 
-预览<http://127.0.0.1:4186/>，Homebrew Node，先核实并复用服务。IAB标签7已通过可见重置为3/12、正常动效；只用当前句柄和v2 helper，默认viewport截图，记录CSS尺寸/DPR/scroll前后一致。系统动态字体、真机、用户研究、生产未验证。
+## 下一步
 
-## 指定执行链与历史证据
-
-原会话`2b3c2fb7-0ddf-4462-be74-885272454974`，标题“Nerae 第三轮 UI 首批实现”。用户回复解锁后原生模型菜单核实opencode-go组下DeepSeek V4.1 Flash、Medium。Medium是Lead实施调整，模型未换。11:07向原会话发送fix01，11:36正常完成；模型与派发证据在dispatch。旧锁屏/TRANSPORT为历史，最新get_goal已active；不因观察慢重起任务，不绕认证/改profile/换独立OpenCode。
-
-初始未接受UI检查点1ad6398、[REVIEW_01](../../evidence/D01/round-03/lead/REVIEW_01.md)与[AUDIT_02](../../evidence/D01/round-03/lead/AUDIT_02.md)保留。旧UI/旧token按清单清理，.review/缓存/PRD/API/ER保留；正式uni-app+Go业务与F01-01工具链没有被本样机代替。
-
-## 下一步与边界
-
-等待原会话fix02交回，Lead同版本验收首批通过后再D01-03其余12界面族与状态，最终D01-I核对全55项与M01–M12。不能以文稿/四屏/构建完成结束整体目标，不能把样例当真实学员、AI建议、健康效果或正式发布。
-
-任务卡已明确Lead独立评审证据写域，以便接受时登记真实QA散列；Harness仍只能写prototype与worker，未扩大执行者权限。D01-03实施提示词与Lead验收索引已准备，首批未接受前不派发。
-
-## fix02过程实测接续（最新）
-
-fix02候选43文件复核仅README/STATES文档改变，渲染文件在实测期间不变。R08窄屏/短屏及R10e跨尺寸取消/Escape/成功已实际改善；100/200文字、Reduce Motion独立且刷新/重置正确。但200%发现收藏命中区被挤窄、skip隐藏链接露黑条、教练编辑min-content超宽被clip掩盖，详见REVIEW_03。该反馈已先排队再通过原生“插话发送”交入原运行轮次，未另建或换模型，未点击停止生成。fix02已正常完成34分39秒，worker最终36项测试；这仍不是Lead接受。用户解锁后已核实原生恢复。
-
-## 普通字号回归（最新，未接受）
-
-REVIEW_03的200%修正已实测改善；普通字号五档补查发现训练/饮食tab和桌面导航宽30.6，普通320编辑右边323.5仍裁切，已补入同一R15a/R16。fix02报告已落盘，64文件散列无不符；原生正常终态已核实。第三次人类回复解锁后，普通字号补充已于12:49通过发送消息发到原会话一次，原生显示第5轮运行中、同模型Medium；未停止、重建或重复发送。证据在dispatch/fix03-normal-delivery及fix03-normal-running。Lead已如实纠正此前点击区域检查覆盖不足，所有候选证据未接受。
+创建D01-03独立工作树，登记真实基线/会话/模型/端口后，经指定Harness完成其余12族及全部状态。派发文稿D01-03-prompt和EXPANSION_QA_PLAN已备，尚未发送。Lead只文稿、验收、集成，不写UI或启动Codex子代理。最后D01-I集成后核对全55项及动效。
