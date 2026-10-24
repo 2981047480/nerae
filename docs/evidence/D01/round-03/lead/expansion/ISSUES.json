@@ -1,0 +1,161 @@
+{
+  "scope": "Lead defect/recheck index only, not a second product spec or task DAG",
+  "source": "existing round03/02,05,07 and APP_FLOW; feedback evidence linked in each document",
+  "accepted_full_ui": false,
+  "items": [
+    {
+      "id": "EA01",
+      "subject": "内容不应按动作数量猜分训练日",
+      "feedback": "../../dispatch/D01-03-data-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "source improvement observed"
+    },
+    {
+      "id": "EA02",
+      "subject": "教练交付与学员收到事实统一",
+      "feedback": "../../dispatch/D01-03-data-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "source improvement and candidate delivery state observed"
+    },
+    {
+      "id": "EA03",
+      "subject": "刷新保留非默认当前对象",
+      "feedback": "../../dispatch/D01-03-data-review-02.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "module cold reload corrected; browser final pending"
+    },
+    {
+      "id": "EA04",
+      "subject": "替换保留已确认组",
+      "feedback": "../../dispatch/D01-03-data-review-02.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "module old3 facts retained; browser final pending"
+    },
+    {
+      "id": "EA05",
+      "subject": "非默认消息人物和收件人同源",
+      "feedback": "../../dispatch/D01-03-copy-and-context-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "candidate titles corrected; final all recipients pending"
+    },
+    {
+      "id": "EA06",
+      "subject": "产品不出现实现与验收解释",
+      "feedback": "../../dispatch/D01-03-copy-and-context-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "partial copy improvement; more residual instances reported"
+    },
+    {
+      "id": "EA07",
+      "subject": "所选训练日与开始会话同源",
+      "feedback": "../../dispatch/D01-03-start-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "module dayB startsB corrected"
+    },
+    {
+      "id": "EA08",
+      "subject": "重复开始与新一次会话身份分开",
+      "feedback": "../../dispatch/D01-03-start-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "module unique sessions retain12x8 and17x9 corrected"
+    },
+    {
+      "id": "EA09",
+      "subject": "不同学员草稿证据和交付对象隔离",
+      "feedback": "../../dispatch/D01-03-student-context-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual Zhou todo opened Lin plan; pending recheck"
+    },
+    {
+      "id": "EA10",
+      "subject": "未授权或结束关系不露健康事实",
+      "feedback": "../../dispatch/D01-03-student-context-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual unauthorized Zhou training facts exposed; pending recheck"
+    },
+    {
+      "id": "EA11",
+      "subject": "公开审阅包含全部公开字段",
+      "feedback": "../../dispatch/D01-03-share-and-first-use-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual public notes/rest absent; pending recheck"
+    },
+    {
+      "id": "EA12",
+      "subject": "匿名取消登录与未成年服务边界",
+      "feedback": "../../dispatch/D01-03-share-and-first-use-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "local first-use states absent; pending recheck"
+    },
+    {
+      "id": "EA13",
+      "subject": "服务保存全部公开字段同步",
+      "feedback": "../../dispatch/D01-03-services-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual scope/goals/response stayed stale in student detail"
+    },
+    {
+      "id": "EA14",
+      "subject": "无效价格不静默改成免费",
+      "feedback": "../../dispatch/D01-03-services-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual -12 became0;0 not saved,759 restored"
+    },
+    {
+      "id": "EA15",
+      "subject": "完成今日训练后更换未来安排须确认",
+      "feedback": "../../dispatch/D01-03-completed-plan-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "module confirmed12 sets then replacement changed future before confirmation"
+    },
+    {
+      "id": "VR01",
+      "subject": "真实触达尺寸最低44",
+      "feedback": "../../dispatch/D01-03-ui-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual36/32/34px targets; partial improvements observed"
+    },
+    {
+      "id": "VR02",
+      "subject": "今天现用计划与自有内容对象不串",
+      "feedback": "../../dispatch/D01-03-ui-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "source StudentPlan added; final actual route pending"
+    },
+    {
+      "id": "VR03",
+      "subject": "消息先支持交流再按需看上下文",
+      "feedback": "../../dispatch/D01-03-ui-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual disclosure improvement observed; final review pending"
+    },
+    {
+      "id": "VR04",
+      "subject": "记录动作选项与图表时间单位有意义",
+      "feedback": "../../dispatch/D01-03-ui-review-01.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "duplicate options and unequal date gaps equidistant reported"
+    },
+    {
+      "id": "VR05",
+      "subject": "当前咨询包与既有约定区分并保留包选择",
+      "feedback": "../../dispatch/D01-03-ui-review-02.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual single199 conflated with monthly699; pending recheck"
+    },
+    {
+      "id": "VR06",
+      "subject": "逐段清理直接布局解释与重复免责声明",
+      "feedback": "../../dispatch/D01-03-ui-review-02.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "partial copy improvement; services still had layout explanation"
+    },
+    {
+      "id": "VR07",
+      "subject": "服务计价单位时区和开关语义一致",
+      "feedback": "../../dispatch/D01-03-services-review.md",
+      "status": "pending_final_frozen_recheck",
+      "latest_observation": "actual preview unit missing,UTC displayed as local,switch inverted name"
+    }
+  ]
+}

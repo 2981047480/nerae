@@ -151,5 +151,22 @@
       "VR07 pricing unit/timezone/switch semantics"
     ],
     "status": "inserted once into original running round1; negative0 was not saved; local sample price restored759"
-  }
+  },
+  "completed_plan_review": {
+    "feedback": "D01-03-completed-plan-review.md",
+    "proof": "D01-03-completed-plan-review-inserted.txt",
+    "evidence": "../lead/expansion/monitor/start-candidate-diagnostic-03.log",
+    "status": "EA15 inserted original round1 at1h20m/224steps; source-stable module reproduced future replacement without confirmation after12 valid sets"
+  },
+  "interim_check": {
+    "evidence": "../lead/expansion/monitor/interim-check-01/report.json",
+    "sourceFiles": 60,
+    "changedDuringCheck": [],
+    "typecheck_exit": 2,
+    "vitest_exit": 1,
+    "vitest": "66/67 passed",
+    "direct_vite_exit": 0,
+    "status": "interim changed source; not package build and not accepted; later source edits already observed"
+  },
+  "issue_index": "../lead/expansion/ISSUES.json"
 }

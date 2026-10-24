@@ -60,6 +60,27 @@ try {
   const archived=s.state.records.filter(r=>r.id===`archived-${firstSession}` || r.id===`archived-${secondSession}`)
   const stored=archived.flatMap(r=>r.sets).filter(x=>x.id===firstFact.id || x.id===secondFact.id)
   report.checks.repeatStart={firstSession,secondSession,sameSessionId:firstSession===secondSession,secondInitialStatus,firstConfirmed,secondConfirmed,firstFact,secondFact,archivedRows:archived.length,storedFacts:stored,firstRetained:stored.some(x=>x.id===firstFact.id&&x.weightKg===12&&x.reps===8),secondRetained:stored.some(x=>x.id===secondFact.id&&x.weightKg===17&&x.reps===9)}
+  s.resetPreview()
+  start('plan-dumbbell')
+  let confirmed=0
+  while(!s.isComplete.value && confirmed<100) {
+    s.skipRest()
+    const entry=s.currentEntry.value
+    if(!entry)throw Error('no current entry before completion')
+    if(entry.exercise.kind==='duration')s.setInputValue(entry.set.id,'seconds','30')
+    else {
+      s.setInputValue(entry.set.id,'weightKg','10')
+      s.setInputValue(entry.set.id,'reps','8')
+    }
+    if(!s.completeCurrentSet())throw Error('valid explicit inputs did not confirm: '+JSON.stringify(s.ui.trainingErrors))
+    confirmed++
+  }
+  const completeSessionId=s.state.session.id
+  const priorPlanVersion=s.state.student.planVersion
+  const priorFutureSchedule=JSON.stringify(s.state.student.schedule)
+  s.goToPlanDetail('plan-core')
+  const afterCompleteRequest=s.requestStartPlan('plan-core')
+  report.checks.replaceAfterComplete={confirmed,oldSession:completeSessionId,hadFutureSchedule:JSON.parse(priorFutureSchedule).length>0,request:afterCompleteRequest,sheet:s.ui.sheet,planVersionChangedBeforeConfirmation:s.state.student.planVersion!==priorPlanVersion,futureScheduleChangedBeforeConfirmation:JSON.stringify(s.state.student.schedule)!==priorFutureSchedule,currentSessionId:s.state.session.id}
   report.status='diagnostic_completed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {
