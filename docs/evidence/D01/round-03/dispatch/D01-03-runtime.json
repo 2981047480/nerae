@@ -19,5 +19,12 @@
   "identity_source": "native session export save dialog; export canceled, no ZIP claim",
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
-  "model_proof": "D01-03-model-menu.txt"
+  "model_proof": "D01-03-model-menu.txt",
+  "progress": "stage A in progress; new types and D01-03-progress.md saved",
+  "persistence_reminder": {
+    "sent_once": true,
+    "mechanism": "排队发送 then 插话发送 into same round1",
+    "proof": "D01-03-progress-inserted.txt",
+    "stop_or_restart": false
+  }
 }

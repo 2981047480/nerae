@@ -1,0 +1,12 @@
+{
+  "scope": "active implementation progress snapshot, not QA acceptance",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "progress_sha256": "1083b8c63c3598fa1a5dd97145abc0c60c814fd236f98b3412558807fa8197a1",
+  "progress_source": "/private/tmp/nerae-ui-complete/docs/evidence/D01/round-03/worker/D01-03-progress.md",
+  "observed_local": "2026-10-24 13:10 Asia/Shanghai",
+  "observed_changes": [
+    "design/prototype/src/types.ts",
+    "docs/evidence/D01/round-03/worker/D01-03-progress.md"
+  ],
+  "native_nudge": "queued once then 插话发送 into same running round1; did not click stop/restart"
+}
