@@ -1,0 +1,64 @@
+{
+  "input": {
+    "bottom": 794,
+    "height": 67,
+    "position": "static",
+    "top": 727
+  },
+  "mainText": "与教练的对话消息普通交流不依赖计划或健康授权；计划与引用可随时打开。对话列表江江遥10:12耐力基础 · 咨询想了解一下耐力训练计划。我每周能练三次，主要想让跑步不那么容易累。顾顾言21:40力量基础 · 月度计划新版计划发给你了：高位下拉从 12 次改成 10 次，划船加到 4 …何何岸17:00活动度与恢复 · 已结束这周的活动度安排还是放在训练后，幅度以不引起刺痛为准。下次见面我们再…顾言力量基础 · 月度计划 查看服务 服务进行中服务约定已确认  · ¥699 / 月 健康内容已授权查看健康内容 撤回授权  服务确认与健康授权是两件事。撤回健康授权不会中断普通安排沟通。 顾言21:10今天卧推最后一组比上次稳，落杠速度控制住了。核心那组如果腰酸，缩短到 30 秒也算完成。训练10月22日 · 上肢力量12 组已记录林澈09:02右肩这两天有点紧，推举时不太舒服，需要停一下吗？顾言12:10这周先不做过头推举，卧推保持现在的重量；如果疼到影响日常活动，先找专业人员看一下。下周我再看你的反馈。顾言21:40新版计划发给你了：高位下拉从 12 次改成 10 次，划船加到 4 组，平板支撑 50 秒。主要让这周完成质量更稳，你看完整内容后再决定是否采用。计划版本 7 · 力量基础3 处调整 · 尚未采用写消息 发送失败会保留原文，重试不会新增一条消息。  站内消息为本地样例；未显示个人微信、支付或二维码。 ",
+  "parents": [
+    {
+      "bottom": 832,
+      "className": "composer",
+      "height": 117,
+      "overflowY": "visible",
+      "position": "sticky",
+      "top": 715
+    },
+    {
+      "bottom": 1151.609375,
+      "className": "thread",
+      "height": 993.3359375,
+      "overflowY": "visible",
+      "position": "static",
+      "top": 158.2734375
+    },
+    {
+      "bottom": 1151.609375,
+      "className": "messages-layout messages-layout--thread",
+      "height": 993.3359375,
+      "overflowY": "visible",
+      "position": "static",
+      "top": 158.2734375
+    },
+    {
+      "bottom": 1291.5078125,
+      "className": "screen screen--wide messages-page",
+      "height": 1227.5078125,
+      "overflowY": "visible",
+      "position": "static",
+      "top": 64
+    },
+    {
+      "bottom": 1367.5078125,
+      "className": "student-main",
+      "height": 1303.5078125,
+      "overflowY": "visible",
+      "position": "static",
+      "top": 64
+    },
+    {
+      "bottom": 1367.5078125,
+      "className": "app-root",
+      "height": 1367.5078125,
+      "overflowY": "visible",
+      "position": "static",
+      "top": 0
+    }
+  ],
+  "viewport": {
+    "height": 900,
+    "scrollY": 0,
+    "width": 390
+  }
+}

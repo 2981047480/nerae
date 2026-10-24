@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "16 view files saved; whole preview/build handback still pending; same native round1",
+  "progress": "4187 live PID50258; active native round1 at53m/155steps; full UI not accepted",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -74,5 +74,26 @@
     "detail_object_retained": true,
     "three_confirmed_sets_retained": true,
     "scope": "module with fake window/storage; final browser and repeated-start/resume still pending"
+  },
+  "full_preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 50258,
+    "workspace": "/private/tmp/nerae-ui-complete/design/prototype",
+    "tab": "9",
+    "visibility": "background",
+    "mark": "handoff",
+    "candidate_source_id": "cc642b3570c877813a5e36879093ae27f6afa58c2168b2f4b958a19a85437d06",
+    "viewport_control": "fresh browser viewport capability for tab9; actual390x900 DPR1 verified; never reuse tab7 capability"
+  },
+  "first_live_ui_review": {
+    "feedback": "D01-03-ui-review-01.md",
+    "proof": "D01-03-ui-review-01-inserted.txt",
+    "issues": [
+      "VR01 actual small targets",
+      "VR02 current-plan v6 entry opens own-plan v3",
+      "VR03 message hierarchy and implementation copy",
+      "VR04 duplicate action options and chart time/axis meaning"
+    ],
+    "status": "sent once into same running round1; candidate screenshots unaccepted"
   }
 }

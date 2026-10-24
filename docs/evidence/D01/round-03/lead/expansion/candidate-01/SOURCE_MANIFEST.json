@@ -1,0 +1,304 @@
+{
+  "scope": "active candidate; not accepted",
+  "source_id": "cc642b3570c877813a5e36879093ae27f6afa58c2168b2f4b958a19a85437d06",
+  "parent_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "observed_at_utc": "2026-10-24T05:50:40.028235+00:00",
+  "files": [
+    {
+      "path": "design/prototype/ASSETS.md",
+      "sha256": "3b03e06a9a9015e6e6a9e3e5cece62255326ff5535c78b62b5736606a5e13508",
+      "bytes": 4450
+    },
+    {
+      "path": "design/prototype/README.md",
+      "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5",
+      "bytes": 5952
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "sha256": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013",
+      "bytes": 6393
+    },
+    {
+      "path": "design/prototype/index.html",
+      "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2",
+      "bytes": 755
+    },
+    {
+      "path": "design/prototype/package.json",
+      "sha256": "9410f4bf82f7708abf265ca4869cb743fe2afbc5dcdfd25c3e5c35f70a96f84f",
+      "bytes": 655
+    },
+    {
+      "path": "design/prototype/pnpm-lock.yaml",
+      "sha256": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0",
+      "bytes": 55938
+    },
+    {
+      "path": "design/prototype/pnpm-workspace.yaml",
+      "sha256": "d6d0c24446d91ef762d37c6ba801bb516e65d7055aa9f8027fcd457409a97ce1",
+      "bytes": 50
+    },
+    {
+      "path": "design/prototype/public/assets/diet-breakfast.webp",
+      "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+      "bytes": 137740
+    },
+    {
+      "path": "design/prototype/public/assets/diet-featured.webp",
+      "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+      "bytes": 220540
+    },
+    {
+      "path": "design/prototype/public/assets/diet-mealprep.webp",
+      "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+      "bytes": 115400
+    },
+    {
+      "path": "design/prototype/public/assets/explore-dumbbell.webp",
+      "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+      "bytes": 25026
+    },
+    {
+      "path": "design/prototype/public/assets/explore-featured.webp",
+      "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+      "bytes": 105426
+    },
+    {
+      "path": "design/prototype/public/assets/explore-plank.webp",
+      "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+      "bytes": 44474
+    },
+    {
+      "path": "design/prototype/public/assets/explore-stretch.webp",
+      "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+      "bytes": 68816
+    },
+    {
+      "path": "design/prototype/public/assets/gym-interior.webp",
+      "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+      "bytes": 105720
+    },
+    {
+      "path": "design/prototype/public/assets/hero-today.webp",
+      "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+      "bytes": 181446
+    },
+    {
+      "path": "design/prototype/public/assets/training-dumbbells.webp",
+      "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+      "bytes": 96658
+    },
+    {
+      "path": "design/prototype/src/App.vue",
+      "sha256": "679042a3950cdb7645ea61eaf7a2f435200b4b9f993465ce539a5faebf7efe33",
+      "bytes": 10377
+    },
+    {
+      "path": "design/prototype/src/components/AppHeader.vue",
+      "sha256": "74ec25ce8484e3c45c0748ed6088e6618c17a3dfd39147742f5b8b5ea2dea3ed",
+      "bytes": 6319
+    },
+    {
+      "path": "design/prototype/src/components/BaseSheet.vue",
+      "sha256": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086",
+      "bytes": 5250
+    },
+    {
+      "path": "design/prototype/src/components/PhotoFrame.vue",
+      "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0",
+      "bytes": 1436
+    },
+    {
+      "path": "design/prototype/src/components/PreviewControl.vue",
+      "sha256": "8ef1936548217b81e471752450a00f55c5c6ca34f1ac2996681e3f0687173cb9",
+      "bytes": 11771
+    },
+    {
+      "path": "design/prototype/src/components/TabBar.vue",
+      "sha256": "2400f025070e4497bdc36bc568d6760a3fdc4bfc1fdedee0bd9533665175af64",
+      "bytes": 4430
+    },
+    {
+      "path": "design/prototype/src/components/Wordmark.vue",
+      "sha256": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36",
+      "bytes": 533
+    },
+    {
+      "path": "design/prototype/src/data/extended.ts",
+      "sha256": "d7c9553c906c1c6b29f8d998cf0acf452d53ea2cbb2fafd429e4fa8fb058e273",
+      "bytes": 34774
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "sha256": "64733e9314a51c23497df34fe503fd09d1fdf8af899d342b93ee0f500705b584",
+      "bytes": 20850
+    },
+    {
+      "path": "design/prototype/src/main.ts",
+      "sha256": "2ea478ae66a5af2daec2fe13179e51609d0a3f5a7b0404301078ec23ecd63035",
+      "bytes": 176
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "sha256": "81daa824f65b228a3da6441e3bd43d87b67e44adf16522c1855c312005d5b0c5",
+      "bytes": 114531
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "sha256": "149c2f969dae10a6a80cbe244c5e42a00537a248203cf17b5c15b3339d5cc117",
+      "bytes": 12407
+    },
+    {
+      "path": "design/prototype/src/styles/screens.css",
+      "sha256": "796008b9cc3e98d1041210d784f34d3c65fd04c3e6943d82dcd4236dcd70b06b",
+      "bytes": 9844
+    },
+    {
+      "path": "design/prototype/src/styles/tokens.css",
+      "sha256": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a",
+      "bytes": 1894
+    },
+    {
+      "path": "design/prototype/src/tests/expansion.test.ts",
+      "sha256": "3d56f78aeb112e66babec9fadf8e916de61a07f6b8764d57d2a5b1ac7227b0c3",
+      "bytes": 18036
+    },
+    {
+      "path": "design/prototype/src/tests/logic.test.ts",
+      "sha256": "f8c8b214ce60b96ea99d0443a3b3ba8e752dbfd58d987b58318c1ca244344f35",
+      "bytes": 7998
+    },
+    {
+      "path": "design/prototype/src/tests/store.test.ts",
+      "sha256": "9f18609d0af18b44d0ff6b772ffe28270190d60edaf8ea1eaca737db10d86331",
+      "bytes": 7596
+    },
+    {
+      "path": "design/prototype/src/tests/ui.test.ts",
+      "sha256": "86c158ec479fcbc643337d6c8c505b80a681dff39f02f7e3f0dfb0a30a6b05e1",
+      "bytes": 13588
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "sha256": "b4e4dc116fe0a429602637636d5e233df79e9e15cbc43d073d9db6c44adee4e1",
+      "bytes": 13633
+    },
+    {
+      "path": "design/prototype/src/utils/dom.ts",
+      "sha256": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba",
+      "bytes": 999
+    },
+    {
+      "path": "design/prototype/src/utils/format.ts",
+      "sha256": "84670d1934441f616873a47cbe61e3ec9c13f48c7c363610b0735b45d7e58a8a",
+      "bytes": 2170
+    },
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "sha256": "b039569ea5e800828d13844420b08742975d183fa10d42f3d3a1b13e212d845f",
+      "bytes": 10962
+    },
+    {
+      "path": "design/prototype/src/utils/training.ts",
+      "sha256": "7e882a1cec598242493de446683ca5213f82b0a11872075143ab8563e2833712",
+      "bytes": 6570
+    },
+    {
+      "path": "design/prototype/src/views/AiAssistView.vue",
+      "sha256": "fdefe7495b54dc771758e432d0de4255453ffe6d2b54754db1f5d5d000262eaa",
+      "bytes": 13762
+    },
+    {
+      "path": "design/prototype/src/views/CoachDetailView.vue",
+      "sha256": "4c341e9644d5075b1ff7fef882d8532fb2aef801f9da69774c17445987f43e89",
+      "bytes": 13510
+    },
+    {
+      "path": "design/prototype/src/views/CoachReviewView.vue",
+      "sha256": "b825ed4ba174699e9728b8544c1b92d8db9090dfa38f666136548e1daf0958d7",
+      "bytes": 41493
+    },
+    {
+      "path": "design/prototype/src/views/CoachServicesView.vue",
+      "sha256": "f346a20b54287c1887055882ea912cd54225f2b31252df33257836c2e787b6ce",
+      "bytes": 15170
+    },
+    {
+      "path": "design/prototype/src/views/CoachStudentDetailView.vue",
+      "sha256": "37732ee9f91afdb2b283b47d6bc54db18a92b532531decb11b8519634d048ce5",
+      "bytes": 11860
+    },
+    {
+      "path": "design/prototype/src/views/CoachStudentsView.vue",
+      "sha256": "8d57084a4e50a925e2890f0a4411966e27ca8b0b822eefda22c71b116845d63a",
+      "bytes": 5110
+    },
+    {
+      "path": "design/prototype/src/views/CoachTodoView.vue",
+      "sha256": "f0b1b7201597e81b05903e4528258ec01147d45238dff0873d94bb4ae2c65e9b",
+      "bytes": 9426
+    },
+    {
+      "path": "design/prototype/src/views/DietView.vue",
+      "sha256": "53daebd9ad50decbe69df228fe1808c2bd4f003afcde42e15e90d2827b1a227b",
+      "bytes": 10502
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "sha256": "0351730350052abfe85415043d2bb2c4d5003705adc71c7bae890b0955f76c8b",
+      "bytes": 33341
+    },
+    {
+      "path": "design/prototype/src/views/IncomingPlanView.vue",
+      "sha256": "7059d2170367185834fbac07a05af9ee7b3c1e709ea91b44ea44d86cd48dcbf9",
+      "bytes": 13352
+    },
+    {
+      "path": "design/prototype/src/views/MessagesView.vue",
+      "sha256": "de3f94d5ae20be01280add3f1eb3fc33b127fa9f904ac2a049ee52c9dec98573",
+      "bytes": 22148
+    },
+    {
+      "path": "design/prototype/src/views/MyPlanView.vue",
+      "sha256": "fd50a31c7fc56ab2120e57cfdb702eecf7e9fb688f4d0126e4a94094b9494de1",
+      "bytes": 23406
+    },
+    {
+      "path": "design/prototype/src/views/PlanDetailView.vue",
+      "sha256": "de0a8a1e0efe879ea68d765e7d5bfcf19000648a9a4a90ebc53f6834f38eebda",
+      "bytes": 16275
+    },
+    {
+      "path": "design/prototype/src/views/RecordsView.vue",
+      "sha256": "5f621c9704e61f2d95353f67ec20a0e177c3d02e020bf82daf47b205d56e4523",
+      "bytes": 18425
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "sha256": "2fe634d7f0db229a8a30d25439f40d4ecb0e652f9ea776f6e85fe8ab849d8846",
+      "bytes": 24682
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "sha256": "e28e7a6e120f991350274fe48c2940570e369cc4d5a4c3866c9920b4b9fe6cda",
+      "bytes": 30661
+    },
+    {
+      "path": "design/prototype/src/vite-env.d.ts",
+      "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a",
+      "bytes": 232
+    },
+    {
+      "path": "design/prototype/tsconfig.json",
+      "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db",
+      "bytes": 528
+    },
+    {
+      "path": "design/prototype/vite.config.ts",
+      "sha256": "d0912127795858800c90821e885c6ad3117e0b75098552fc9442150c8eed759c",
+      "bytes": 284
+    }
+  ]
+}

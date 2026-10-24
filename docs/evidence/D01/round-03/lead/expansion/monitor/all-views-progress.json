@@ -1,0 +1,24 @@
+{
+  "observed_utc": "2026-10-24T05:43:44.347578+00:00",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "view_files": [
+    "design/prototype/src/views/AiAssistView.vue",
+    "design/prototype/src/views/CoachDetailView.vue",
+    "design/prototype/src/views/CoachReviewView.vue",
+    "design/prototype/src/views/CoachServicesView.vue",
+    "design/prototype/src/views/CoachStudentDetailView.vue",
+    "design/prototype/src/views/CoachStudentsView.vue",
+    "design/prototype/src/views/CoachTodoView.vue",
+    "design/prototype/src/views/DietView.vue",
+    "design/prototype/src/views/ExploreView.vue",
+    "design/prototype/src/views/IncomingPlanView.vue",
+    "design/prototype/src/views/MessagesView.vue",
+    "design/prototype/src/views/MyPlanView.vue",
+    "design/prototype/src/views/PlanDetailView.vue",
+    "design/prototype/src/views/RecordsView.vue",
+    "design/prototype/src/views/TodayView.vue",
+    "design/prototype/src/views/TrainingView.vue"
+  ],
+  "progress_sha256": "940dd2f420906338ffe054a3a0fa2368e254ceb4bcc718d0657c3c218e51805b",
+  "scope": "implementation source saved; no full UI acceptance; tests/service handback pending"
+}

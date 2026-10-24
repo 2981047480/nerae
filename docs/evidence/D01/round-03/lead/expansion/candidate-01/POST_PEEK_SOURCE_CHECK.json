@@ -1,0 +1,67 @@
+{
+  "scope": "active candidate, not acceptance",
+  "checked_at_utc": "2026-10-24T05:59:06.447521+00:00",
+  "files_checked": 59,
+  "changed": [
+    {
+      "path": "design/prototype/src/App.vue",
+      "after": "9c9c42768ae002ebd1bb3cbf7ca82578f2ae17e088f8c5fbd33eb6f049c05aed",
+      "before": "679042a3950cdb7645ea61eaf7a2f435200b4b9f993465ce539a5faebf7efe33"
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "after": "0c4dfab2739aec41a9b813ba037f3bbd7f7acae9fc9e9c03bcbb40434c060819",
+      "before": "81daa824f65b228a3da6441e3bd43d87b67e44adf16522c1855c312005d5b0c5"
+    },
+    {
+      "path": "design/prototype/src/styles/screens.css",
+      "after": "6617ed67bb6ecab683376655abfc60b7e48e1439422998589c7c06f7ceedf8d0",
+      "before": "796008b9cc3e98d1041210d784f34d3c65fd04c3e6943d82dcd4236dcd70b06b"
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "after": "30fdf57dd7fa3447f4aa7d58562a062ab811b886f06764d2e31e539ff8fb299e",
+      "before": "b4e4dc116fe0a429602637636d5e233df79e9e15cbc43d073d9db6c44adee4e1"
+    },
+    {
+      "path": "design/prototype/src/views/CoachDetailView.vue",
+      "after": "8511b71737fa9d7e8dddbadec1fe4ce6f821991989ff1ac7662893512bfb9b3f",
+      "before": "4c341e9644d5075b1ff7fef882d8532fb2aef801f9da69774c17445987f43e89"
+    },
+    {
+      "path": "design/prototype/src/views/CoachStudentDetailView.vue",
+      "after": "029bf026b03a76973cf3ecf8143bc2f4bb3b2697dc8bc232a3f6b63b0e7360ec",
+      "before": "37732ee9f91afdb2b283b47d6bc54db18a92b532531decb11b8519634d048ce5"
+    },
+    {
+      "path": "design/prototype/src/views/CoachTodoView.vue",
+      "after": "3fd62c37fb373fe0d3ab40deeade0fe5bbcbe5bd44bd80edd6acddb0a7eaa60c",
+      "before": "f0b1b7201597e81b05903e4528258ec01147d45238dff0873d94bb4ae2c65e9b"
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "after": "56082e52d524364caa0fedcb4d9696989326d77989bbdd38b97d616c00317cde",
+      "before": "0351730350052abfe85415043d2bb2c4d5003705adc71c7bae890b0955f76c8b"
+    },
+    {
+      "path": "design/prototype/src/views/MessagesView.vue",
+      "after": "76a97f6190410bfb08d21fa3df982eedaf070e66c740cec8af7eb0af9001ee3a",
+      "before": "de3f94d5ae20be01280add3f1eb3fc33b127fa9f904ac2a049ee52c9dec98573"
+    },
+    {
+      "path": "design/prototype/src/views/PlanDetailView.vue",
+      "after": "85f259f4c8f528b51cb06a210d89f2f37b94e72922f097631167ac01a5c67fdf",
+      "before": "de0a8a1e0efe879ea68d765e7d5bfcf19000648a9a4a90ebc53f6834f38eebda"
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "after": "e8d93672bc48e7a48f5c63b69709cf8a953d4c73988b7e02bf20c0372ff0c87c",
+      "before": "2fe634d7f0db229a8a30d25439f40d4ecb0e652f9ea776f6e85fe8ab849d8846"
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "after": "2ffa5f92e458fff45c611f95d01ca89431700f25500bbb2dec39c04831b55c23",
+      "before": "e28e7a6e120f991350274fe48c2940570e369cc4d5a4c3866c9920b4b9fe6cda"
+    }
+  ]
+}
