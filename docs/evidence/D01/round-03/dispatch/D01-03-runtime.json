@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "Same fix01 round3/432steps57m15; EA19/EA20 peer visibility and EA17 legacy reply actual CUA feedback inserted; no stop/restart, normal handback pending",
+  "progress": "fix01 same round3/468steps1h31m49; handoff checkpoint inserted to run latest checks/save candidate reports and end source changes; no stop/restart",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-legacy-draft-owner-inserted.txt",
+  "last_native_progress": "D01-03-fix01-handoff-checkpoint-inserted.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -280,6 +280,12 @@
       "proof": "D01-03-fix01-legacy-draft-owner-inserted.txt",
       "issue": "EA20 unknown owner cannot be assigned from last navigation actor",
       "last_native": "round3/447steps1h14m11"
+    },
+    "handoff_checkpoint": {
+      "request": "D01-03-fix01-handoff-checkpoint.md",
+      "proof": "D01-03-fix01-handoff-checkpoint-inserted.txt",
+      "normal_handback_pending": true,
+      "reason": "Bound current candidate; Lead still performs complete16family/55item acceptance afterward"
     }
   }
 }

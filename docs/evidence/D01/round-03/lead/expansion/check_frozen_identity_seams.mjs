@@ -186,6 +186,42 @@ try {
    e.afterRetryUnread=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.equal(e.afterRetryUnread,1,'Same-ID retry was not received exactly once')
  })
+ await check('legacy draft authorship is not inferred from last navigation actor',async e=>{
+   const coldFrom=async(raw,tag)=>{
+     // Flush/reset the fake-store persistence timer before replacing its test
+     // storage. This is a module migration check, not browser-state injection.
+     await Promise.resolve()
+     for(const id of timers)clearTimeout(id)
+     timers.clear()
+     data.set(s.storageKey,JSON.stringify(raw))
+     return await server.ssrLoadModule(`/src/state/store.ts?lead-legacy-owner=${tag}`)
+   }
+   const raw=plain(s.state)
+   const conversation=raw.conversations.find(x=>x.id==='conv-gu-yan')
+   delete conversation.drafts
+   delete conversation.unassignedLegacyDraft
+   delete conversation.draftOwnerInferred
+   conversation.draft='作者未记录的旧安排草稿'
+   raw.actor='coach'
+   const cold=await coldFrom(raw,'missing-owner')
+   const migrated=cold.state.conversations.find(x=>x.id==='conv-gu-yan')
+   assert.equal(migrated.drafts.student,'','Unknown legacy draft appeared in student composer source')
+   assert.equal(migrated.drafts.coach,'','Last navigation actor was mistaken for draft author')
+   assert.equal(migrated.unassignedLegacyDraft,conversation.draft,'Unknown legacy text was lost')
+   e.unassignedRetained=true
+
+   const inferredRaw=plain(s.state)
+   const inferred=inferredRaw.conversations.find(x=>x.id==='conv-gu-yan')
+   inferred.drafts={student:'已知属于学员的新草稿',coach:'曾被错误推断给教练的旧草稿'}
+   inferred.draftOwnerInferred='coach'
+   inferredRaw.actor='coach'
+   const coldInferred=await coldFrom(inferredRaw,'inferred-owner')
+   const repaired=coldInferred.state.conversations.find(x=>x.id==='conv-gu-yan')
+   assert.equal(repaired.drafts.student,'已知属于学员的新草稿','Repair erased a known participant draft')
+   assert.equal(repaired.drafts.coach,'','Unconfirmed inferred owner remained authoritative')
+   assert.equal(repaired.unassignedLegacyDraft,'曾被错误推断给教练的旧草稿','Repair dropped the inferred legacy text')
+   e.knownDraftPreserved=true
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {
