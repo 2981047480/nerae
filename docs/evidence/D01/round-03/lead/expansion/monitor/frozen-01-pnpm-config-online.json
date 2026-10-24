@@ -1,0 +1,25 @@
+{
+  "scope": "Copied dependency manifests only; online registry metadata validation with existing supply-chain policy retained and no package scripts",
+  "directory": "/private/tmp/nerae-lead-pnpm-config-dz9vswvn",
+  "command": [
+    "/opt/homebrew/bin/node",
+    "/opt/homebrew/lib/node_modules/pnpm/bin/pnpm.mjs",
+    "install",
+    "--frozen-lockfile",
+    "--lockfile-only",
+    "--ignore-scripts",
+    "--reporter=append-only",
+    "--fetch-retries=0",
+    "--config.update-notifier=false"
+  ],
+  "accepted": false,
+  "status": "finished",
+  "exit_code": 0,
+  "source_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "manifests_unchanged": {
+    "package.json": true,
+    "pnpm-lock.yaml": true,
+    "pnpm-workspace.yaml": true
+  },
+  "result": "181 entries pass existing supply-chain policies; lockfile-only, not a complete dependency install"
+}

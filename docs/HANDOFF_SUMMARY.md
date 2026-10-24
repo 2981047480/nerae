@@ -12,4 +12,4 @@ fix01包15:45在同会话第3轮运行；最新原生390步/26分59秒，4/5内�
 
 frozen-01保留旧服务759/月8周/范围2次/12h、原699/月4周约定恢复证据；保存后UI重置可丢弃样例。当前浏览器教练林澈会话已撤权，普通消息仍在，别再reset掩盖。流程图用captureCurrentViewport保留滚动；captureViewport重设尺寸会回scroll0。cua_full_matrix已修root text scale为100/200，尚未执行。Mac已解锁，无待答许可。真实业务/权限/AI、真机、系统字体、用户研究与生产未验。
 
-独立pnpm离线lockfile-only临时副本探针40秒超时，日志未捕获，不算安装通过；配置中的set this to true or false来自已安装pnpm自身对未决定build的生成逻辑，不据此报UI缺陷。详见monitor/frozen-01-pnpm-config.json。后续实际main依赖安装仍须核验，当前首批main没有node_modules。
+独立pnpm离线lockfile-only临时副本探针40秒超时，日志未捕获，不算安装通过；配置中的set this to true or false来自已安装pnpm自身对未决定build的生成逻辑，不据此报UI缺陷。详见monitor/frozen-01-pnpm-config.json。后续联网lockfile-only保留策略校验181条exit0，三个复制清单散列不变。main局部依赖首次下载120/121时连接中断，重试缓存复用120并补1，121包安装exit0；package/lock散列不变、prototype status干净。忽略包脚本，尚未在完整集成源上构建；详见monitor/main-dependency-setup-retry01。

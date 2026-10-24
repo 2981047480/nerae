@@ -1,0 +1,26 @@
+{
+  "scope": "Prepare ignored local dependencies in confirmed main integration target using existing lockfile; no UI source editing or new preview service",
+  "cwd": "/Users/zephyr/Documents/项目/nerae/design/prototype",
+  "command": [
+    "/opt/homebrew/bin/node",
+    "/opt/homebrew/lib/node_modules/pnpm/bin/pnpm.mjs",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts",
+    "--reporter=append-only",
+    "--fetch-retries=0",
+    "--config.update-notifier=false"
+  ],
+  "before": {
+    "package.json": "1b1ff783c2dd406f0a71416b74b4b68a70aa202940f1d882e13169bcebf98926",
+    "pnpm-lock.yaml": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0"
+  },
+  "accepted_full_ui": false,
+  "status": "finished",
+  "exit_code": 1,
+  "after": {
+    "package.json": "1b1ff783c2dd406f0a71416b74b4b68a70aa202940f1d882e13169bcebf98926",
+    "pnpm-lock.yaml": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0"
+  },
+  "prototype_status_after": ""
+}

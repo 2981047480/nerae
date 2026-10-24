@@ -1,0 +1,19 @@
+{
+  "scope": "Second bounded dependency probe using explicit installed Node, offline copied manifests, no scripts, fetch retries0",
+  "directory": "/private/tmp/nerae-lead-pnpm-config-dz9vswvn",
+  "command": [
+    "/opt/homebrew/bin/node",
+    "/opt/homebrew/lib/node_modules/pnpm/bin/pnpm.mjs",
+    "install",
+    "--offline",
+    "--frozen-lockfile",
+    "--lockfile-only",
+    "--ignore-scripts",
+    "--reporter=append-only",
+    "--fetch-retries=0",
+    "--config.update-notifier=false"
+  ],
+  "accepted": false,
+  "status": "finished",
+  "exit_code": 1
+}

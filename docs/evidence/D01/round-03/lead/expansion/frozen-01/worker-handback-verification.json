@@ -16,5 +16,7 @@
   "accepted": false,
   "evidence_count": 69,
   "evidence_mismatches": [],
-  "evidence_check_scope": "All entries in the immutable evidence manifest matched current saved files at15:53; ongoing dev log excluded by executor"
+  "evidence_check_scope": "All entries in the immutable evidence manifest matched current saved files at15:53; ongoing dev log excluded by executor",
+  "document_snapshot_dir": "worker-doc-recovery/",
+  "snapshot_note": "Original progress/reports/manifests copied and matched before mutable fix01 progress updates"
 }

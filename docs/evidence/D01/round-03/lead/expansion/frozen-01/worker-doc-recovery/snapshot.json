@@ -1,0 +1,43 @@
+{
+  "scope": "Exact document-recovery handback before fix01 updates mutable progress; source6dba not accepted",
+  "source_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "files": [
+    {
+      "worker_path": "D01-03-progress.md",
+      "snapshot": "D01-03-progress.md",
+      "sha256": "e71a1095c04eaac1a4120a33f7d796764cd57c26126f01d89eddbf245b8d5208",
+      "matches_prior_verification": true
+    },
+    {
+      "worker_path": "D01-03-report.md",
+      "snapshot": "D01-03-report.md",
+      "sha256": "94b91bb05fff477e609268f3b18464d3677400f81707fa2aebeb7ba3b54beadd",
+      "matches_prior_verification": true
+    },
+    {
+      "worker_path": "D01-03-report.json",
+      "snapshot": "D01-03-report.json",
+      "sha256": "4c75847206ad7fb384aed20fe3a70bb7df05a1a2226cdd68f2fe7259191b94b7",
+      "matches_prior_verification": true
+    },
+    {
+      "worker_path": "logs/d01-03-source-sha256-frozen.txt",
+      "snapshot": "d01-03-source-sha256-frozen.txt",
+      "sha256": "02cc9625cdab20460c7dd054d2cadfa7a918026fe09e63eb114e039cf7ff01da",
+      "matches_prior_verification": true
+    },
+    {
+      "worker_path": "logs/d01-03-evidence-sha256-frozen.txt",
+      "snapshot": "d01-03-evidence-sha256-frozen.txt",
+      "sha256": "69bf71d02a691d27743ace7244fe200adf0eca34bc80413952038dfb81331d13",
+      "matches_prior_verification": true
+    },
+    {
+      "worker_path": "logs/d01-03-report-sha256.txt",
+      "snapshot": "d01-03-report-sha256.txt",
+      "sha256": "7a11987d85c7b2ed97844f24a9fdd09cce3d2ace173325c0d7e7975736f0eaa1",
+      "matches_prior_verification": false
+    }
+  ],
+  "accepted": false
+}
