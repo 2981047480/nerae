@@ -10,3 +10,4 @@
 - 从DeepSeek Harness运行Vite遇到native binding的Team ID签名不匹配时，先核实实际Node路径；本轮同一源码用现有`/opt/homebrew/bin/node`成功构建与启动。更换Vite主版本未解决该运行时限制；保留真实错误与显式启动命令，避免反复猜版本。
 - IAB显隐可能重新应用宿主缩放。响应式截图前后核对实际CSS视口、DPR和滚动位置，使用默认viewport截图；不要硬编码DPR1或按DPR放大clip。DPR1/2均有可复现证据，偏差截图留校准说明，不作布局结论。
 - 浏览器重建标签后，旧helper可能仍捕获旧tab/viewport句柄。先用getState核实真实标签，再显式向helper传当前上下文；不要由数字browser id下的空listTabs结果反复重建有效标签。
+- 文字放大验收不能只看根scrollWidth：overflow-x:clip会掩盖内部min-content撑宽。实际检查输入/按钮及祖先的左右边界、命中区与截图，避免把裁切当无溢出通过。

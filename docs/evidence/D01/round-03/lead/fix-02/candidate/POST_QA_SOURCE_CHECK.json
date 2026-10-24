@@ -1,0 +1,19 @@
+{
+  "source_id": "d299204b005a07ba5afa04c9dd80733e64820f06e6d6f0ae64717d77bb258179",
+  "checked_utc": "2026-10-24T04:29:25.477479+00:00",
+  "files_checked": 43,
+  "changes": [
+    {
+      "path": "design/prototype/README.md",
+      "before": "74fa1956f6be8d2efd2d1ad7a7efb22ba8403e12a2e082e449173f2fb9a49921",
+      "after": "16ccddf17031dc7dabfb3f41c6c8b99d6cb75131aa30a15cbef8faa2d84faa39"
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "before": "586dc8147f90315d97b9680308326979e05342ff54ce888867449018852cd2f4",
+      "after": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013"
+    }
+  ],
+  "accepted": false,
+  "native_job_terminal_observed": false
+}

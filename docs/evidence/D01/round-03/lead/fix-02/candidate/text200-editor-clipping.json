@@ -1,0 +1,58 @@
+{
+  "bodyOverflow": "clip",
+  "documentWidth": 390,
+  "fields": [
+    {
+      "aria": null,
+      "id": "day-title-day-a",
+      "left": 41,
+      "parentWidth": 525,
+      "right": 526,
+      "width": 485
+    },
+    {
+      "aria": null,
+      "id": "exercise-name-a1",
+      "left": 73,
+      "parentWidth": 485,
+      "right": 470,
+      "width": 397
+    },
+    {
+      "aria": "组数",
+      "id": "",
+      "left": 73,
+      "parentWidth": 453,
+      "right": 498.6875,
+      "width": 425.6875
+    },
+    {
+      "aria": "目标次数或时长",
+      "id": "",
+      "left": 73,
+      "parentWidth": 453,
+      "right": 526,
+      "width": 453
+    },
+    {
+      "aria": "组间休息秒数",
+      "id": "",
+      "left": 73,
+      "parentWidth": 453,
+      "right": 498.6875,
+      "width": 425.6875
+    },
+    {
+      "aria": "动作备注",
+      "id": "",
+      "left": 73,
+      "parentWidth": 485,
+      "right": 526,
+      "width": 453
+    }
+  ],
+  "viewport": {
+    "h": 844,
+    "w": 390
+  }
+}

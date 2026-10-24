@@ -3725,7 +3725,8 @@
       "owner": "DeepSeek Harness / Nerae 第三轮 UI 首批实现",
       "write_allowlist": [
         "design/prototype/",
-        "docs/evidence/D01/round-03/worker/"
+        "docs/evidence/D01/round-03/worker/",
+        "docs/evidence/D01/round-03/lead/"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3768,7 +3769,8 @@
         "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成",
-        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署",
+        "Lead证据域仅Lead可写，不扩大指定Harness执行者的源码/worker写域"
       ],
       "evidence": [
         "docs/evidence/D01/round-03/lead/REVIEW_02.md",
@@ -3792,7 +3794,16 @@
       "review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
       "waiting_on": "fix02 submitted once at 12:08 to original Harness session; running observed. Await repaired source/report and independent Lead acceptance.",
       "fix_prompt_sent": true,
-      "fix02_prompt_sent": true
+      "fix02_prompt_sent": true,
+      "write_ownership": {
+        "implementation_owner": [
+          "design/prototype/",
+          "docs/evidence/D01/round-03/worker/"
+        ],
+        "lead_only_review": [
+          "docs/evidence/D01/round-03/lead/"
+        ]
+      }
     },
     {
       "id": "D01-03",
@@ -3807,7 +3818,8 @@
       "owner": null,
       "write_allowlist": [
         "design/prototype/",
-        "docs/evidence/D01/round-03/worker/"
+        "docs/evidence/D01/round-03/worker/",
+        "docs/evidence/D01/round-03/lead/"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3850,7 +3862,8 @@
         "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成",
-        "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
+        "设计推理不得写进产品；不得自动换模型、发真实消息或部署",
+        "Lead证据域仅Lead可写，不扩大指定Harness执行者的源码/worker写域"
       ],
       "evidence": [],
       "decision_owner": "Project Lead",
@@ -3858,7 +3871,16 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "D01",
-      "kind": "task"
+      "kind": "task",
+      "write_ownership": {
+        "implementation_owner": [
+          "design/prototype/",
+          "docs/evidence/D01/round-03/worker/"
+        ],
+        "lead_only_review": [
+          "docs/evidence/D01/round-03/lead/"
+        ]
+      }
     },
     {
       "id": "D01-I",

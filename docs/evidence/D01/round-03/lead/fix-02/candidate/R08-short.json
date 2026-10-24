@@ -1,0 +1,15 @@
+{
+  "button": {
+    "bottom": 434.875,
+    "top": 386.875
+  },
+  "hit": true,
+  "nav": {
+    "bottom": 629,
+    "top": 568
+  },
+  "viewport": {
+    "h": 629,
+    "w": 515
+  }
+}

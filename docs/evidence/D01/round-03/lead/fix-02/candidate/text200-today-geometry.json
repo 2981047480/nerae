@@ -1,0 +1,22 @@
+{
+  "active": "<button data-v-48a13218=\"\" class=\"brand\" type=\"button\" aria-label=\"回到主要页面\"><span data-v-9a4b6596=\"\" data-v-48a13218=\"\" class=\"wordmark wordmark--ink\" aria-label=\"Nerae\">NERAE</span></button>",
+  "bodyScroll": 2686,
+  "cta": {
+    "bottom": 854.984375,
+    "left": 36,
+    "right": 348.375,
+    "top": 757.984375
+  },
+  "scrollY": 0,
+  "skip": {
+    "font": "26px",
+    "rect": {
+      "bottom": 14.8984375,
+      "left": 12,
+      "right": 198.03125,
+      "top": -48
+    },
+    "top": "-48px",
+    "transform": "none"
+  }
+}

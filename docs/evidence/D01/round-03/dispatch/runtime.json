@@ -58,7 +58,7 @@
     "human_unlock_question_pending": false,
     "human_reply": "已解锁",
     "native_unlocked_verified": true,
-    "execution_state": "running fix01 in original session; fresh blocked audit if a new blocker appears",
+    "execution_state": "fix02 running in original session; no current impasse",
     "recorded_at": "2026-10-24T11:07:58.302757+08:00"
   },
   "previous_native_terminal_observed_at_resume": "Prior implementation request was terminal: 处理失败 / Connection error. TRANSPORT. Source/report checkpoint retained; this is first fix prompt, not a restart on timeout.",
@@ -71,5 +71,11 @@
   "fix02_submitted_local": "2026-10-24 12:08 Asia/Shanghai",
   "fix02_submission_proof": "docs/evidence/D01/round-03/dispatch/fix02-submitted.txt",
   "fix02_input_revision": "19a2aeb",
-  "fix02_input_lead_revision": "7fc898c"
+  "fix02_input_lead_revision": "7fc898c",
+  "fix02_relock": {
+    "observed": "Mac locked via native CUA; async unlock requested",
+    "human_reply": "已解锁",
+    "native_after_reply": "verified unlocked; original fix02 still running at13m6s; no stop/restart/model change",
+    "evidence": "docs/evidence/D01/round-03/dispatch/fix02-after-unlock.txt"
+  }
 }
