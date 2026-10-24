@@ -1,0 +1,32 @@
+{
+  "sourceRevision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "focusSteps": [
+    {
+      "active": "<button data-v-14f60004=\"\" class=\"icon-btn sheet-close\" type=\"button\" aria-label=\"关闭\"><svg data-v-14f60004=\"\" xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button>",
+      "inside": true,
+      "step": "initial"
+    },
+    {
+      "active": " 发布版本 8",
+      "inside": true,
+      "step": "initial-shift-tab"
+    },
+    {
+      "active": "关闭",
+      "inside": true,
+      "step": "last-tab"
+    },
+    {
+      "active": "\n    跳到主要内容NERAE顾言 · 教练学员计划力量基础 · 第 4 周林澈·现用版本 6·草稿版本 8保存草稿发布给林澈草稿已保存 · 10月24日 11:59上肢力量 14 组下肢力量 12 组5 处改动 编辑  审阅  训练日 1 / 2训练日名称4 个动作 · 14 组01动作名称组数组目标次数 / 时长组间休息秒备注02动作名称组数组目标次数 / 时长组间休息秒备注03动作名称组数组目标次数 / 时长组间休息秒备注04动作名称组数组目标次数 / 时长组间休息秒备注 添加动作 判断依据10月24日哑铃卧推1 组 12.5 kg × 10 次，2 组 12.5 kg × 10 次，3 组 12.5 kg × 9 次，4 组 1.1 kg × 10 次10月22日高位下拉40 kg × 12 次 · 上次参考本周训练节奏周二、周四已完成，今天为本周第 3 次训练版本与范围现用版本 6 · 哑铃卧推 4 组草稿版本 8已交付尚未发布全案2 天 · 8 个动作 · 26 组 发布后，林澈的现用版本 6 保持不变；林澈采用新版本后，安排才会更新。 上次保存 10月24日 11:59保存发布给林澈预览\n    \n  \n\n",
+      "step": "cancel",
+      "tag": "BODY"
+    },
+    {
+      "active": "版本 8 已交付 林澈，等待采用",
+      "role": null,
+      "step": "success",
+      "tag": "DIV"
+    }
+  ],
+  "afterPub": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"回到主要页面\":\n    - generic \"Nerae\": NERAE\n  - generic: 顾言 · 教练\n- main:\n  - paragraph: 学员计划\n  - heading \"力量基础 · 第 4 周\" [level=1]\n  - paragraph:\n    - generic: 林澈\n    - generic: ·\n    - generic: 现用版本 6\n    - generic: ·\n    - generic: 草稿版本 8\n  - paragraph: 版本 8 已交付 林澈，等待采用\n  - tablist \"训练日\":\n    - tab \"上肢力量 14 组\" [selected]:\n      - text: 上肢力量\n      - generic: 14 组\n    - tab \"下肢力量 12 组\":\n      - text: 下肢力量\n      - generic: 12 组\n  - generic: 5 处改动\n  - group \"查看方式\":\n    - button \"编辑\" [pressed]\n    - button \"审阅\"\n  - region:\n    - paragraph: 训练日 1 / 2\n    - generic: 训练日名称\n    - textbox \"训练日名称\": 上肢力量\n    - paragraph: 4 个动作 · 14 组\n    - list:\n      - generic: \"01\"\n      - generic: 动作名称\n      - textbox \"动作名称\": 哑铃卧推\n      - button \"移除动作 哑铃卧推\":\n      - generic: 组数\n      - textbox \"组数\": \"5\"\n      - generic: 组\n      - generic: 目标次数 / 时长\n      - textbox \"目标次数或时长\": 10 次\n      - generic: 组间休息\n      - textbox \"组间休息秒数\": \"90\"\n      - generic: 秒\n      - generic: 备注\n      - textbox \"动作备注\": 重量以能完成 10 次、保留 2 次余力为准\n      - generic: \"02\"\n      - generic: 动作名称\n      - textbox \"动作名称\": 高位下拉\n      - button \"移除动作 高位下拉\":\n      - generic: 组数\n      - textbox \"组数\": \"3\"\n      - generic: 组\n      - generic: 目标次数 / 时长\n      - textbox \"目标次数或时长\": 10 次\n      - generic: 组间休息\n      - textbox \"组间休息秒数\": \"75\"\n      - generic: 秒\n      - generic: 备注\n      - textbox \"动作备注\": 上一周期末两组完成吃紧，本周保持 10 次，动作更稳\n      - generic: \"03\"\n      - generic: 动作名称\n      - textbox \"动作名称\": 单臂哑铃划船\n      - button \"移除动作 单臂哑铃划船\":\n      - generic: 组数\n      - textbox \"组数\": \"4\"\n      - generic: 组\n      - generic: 目标次数 / 时长\n      - textbox \"目标次数或时长\": 12 次/侧\n      - generic: 组间休息\n      - textbox \"组间休息秒数\": \"60\"\n      - generic: 秒\n      - generic: 备注\n      - textbox \"动作备注\": 髋部保持稳定，肘部贴近身体\n      - generic: \"04\"\n      - generic: 动作名称\n      - textbox \"动作名称\": 平板支撑\n      - button \"移除动作 平板支撑\":\n      - generic: 组数\n      - textbox \"组数\": \"2\"\n      - generic: 组\n      - generic: 目标次数 / 时长\n      - textbox \"目标次数或时长\": 50 秒\n      - generic: 组间休息\n      - textbox \"组间休息秒数\": \"60\"\n      - generic: 秒\n      - generic: 备注\n      - textbox \"动作备注\": 保持骨盆中立，正常呼吸\n    - button \"添加动作\":\n      - text: 添加动作\n  - complementary \"判断依据\":\n    - heading \"判断依据\" [level=2]\n    - list:\n      - paragraph: 10月24日\n      - paragraph: 哑铃卧推\n      - paragraph: 1 组 12.5 kg × 10 次，2 组 12.5 kg × 10 次，3 组 12.5 kg × 9 次，4 组 1.1 kg × 10 次\n      - paragraph: 10月22日\n      - paragraph: 高位下拉\n      - paragraph: 40 kg × 12 次 · 上次参考\n      - paragraph: 本周\n      - paragraph: 训练节奏\n      - paragraph: 周二、周四已完成，今天为本周第 3 次训练\n    - heading \"版本与范围\" [level=2]\n    - term: 现用\n    - definition: 版本 6 · 哑铃卧推 4 组\n    - term: 草稿\n    - definition: 版本 8\n    - term: 已交付\n    - definition: 版本 8 · 哑铃卧推 5 组\n    - term: 全案\n    - definition: 2 天 · 8 个动作 · 26 组\n    - paragraph: 已交付版本 8 的快照共 26 组，后续编辑不会改动它。\n    - paragraph: 发布后，林澈的现用版本 6 保持不变；林澈采用新版本后，安排才会更新。\n    - paragraph: 上次保存 10月24日 11:59\n  - button \"保存\"\n  - button \"已发布版本 8\" [disabled]\n- button \"预览\":\n  - generic: 预览"
+}

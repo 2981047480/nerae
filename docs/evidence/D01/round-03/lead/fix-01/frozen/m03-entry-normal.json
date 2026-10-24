@@ -1,0 +1,27 @@
+{
+  "sourceRevision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "before": {
+    "at": 1792813695362,
+    "dom": {
+      "dpr": 1,
+      "h": 844,
+      "title": "上肢力量",
+      "w": 390
+    }
+  },
+  "during": {
+    "at": 1792813695698,
+    "dom": {
+      "mode": "full",
+      "moving": [
+        {
+          "cls": "training focus-scope on-dark focus-enter-active focus-enter-to",
+          "duration": "0.26s, 0.26s",
+          "opacity": "0.978418",
+          "transform": "matrix(0.999871, 0, 0, 0.999871, 0, 0)"
+        }
+      ]
+    }
+  },
+  "after": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"退出\":\n    - generic: 退出\n  - generic: 力量基础\n  - generic: 上肢力量\n- main:\n  - region \"哑铃卧推\":\n    - paragraph: 动作 1 / 4 · 第 4 组\n    - heading \"哑铃卧推\" [level=1]\n    - paragraph: 上次 · 10月22日 · 12.5 kg × 10 次\n    - paragraph: 目标 10 次 · 休息 90 秒\n    - figure:\n      - img \"训练用的哑铃\"\n    - generic: 重量\n    - generic: kg\n    - textbox \"重量，千克\": \"12.5\"\n    - generic: kg\n    - button \"减少重量\":\n    - button \"增加重量\":\n    - generic: 次数\n    - generic: 次\n    - textbox \"完成次数\": \"9\"\n    - generic: 次\n    - button \"减少一次\":\n    - button \"增加一次\":\n    - button \"完成第 4 组\":\n      - text: 完成第 4 组\n    - paragraph: 记录会保存在本机，退出后可从这里继续。\n    - region \"本次记录\":\n      - heading \"本次记录\" [level=2]\n      - generic: 3 / 4 组\n      - list:\n        - generic: 第 1 组\n        - generic: 12.5 kg × 10 次\n        - generic: 19:06\n        - generic: 第 2 组\n        - generic: 12.5 kg × 10 次\n        - generic: 19:09\n        - generic: 第 3 组\n        - generic: 12.5 kg × 9 次\n        - generic: 19:12\n        - generic: 第 4 组\n        - generic: 待记录\n    - button \"动作说明 · 哑铃 · 平凳\":\n      - generic: 动作说明 · 哑铃 · 平凳\n- button \"预览\":\n  - generic: 预览\n- generic: 上肢力量"
+}

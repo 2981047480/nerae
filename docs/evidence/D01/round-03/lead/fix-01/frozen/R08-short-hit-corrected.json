@@ -1,0 +1,28 @@
+{
+  "sourceRevision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "shortVerified": {
+    "button": {
+      "bottom": 498.875,
+      "left": 42,
+      "right": 473,
+      "top": 450.875
+    },
+    "hit": true,
+    "navs": [
+      {
+        "display": "grid",
+        "name": "主导航",
+        "rect": {
+          "bottom": 629,
+          "top": 568
+        }
+      }
+    ],
+    "viewport": {
+      "dpr": 1,
+      "height": 629,
+      "width": 515
+    }
+  },
+  "priorAttemptExcluded": "R08-today.json shortHit used wrong whitespace matcher and first hidden nav; no conclusion from it"
+}

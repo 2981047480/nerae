@@ -3770,7 +3770,11 @@
         "不得把测试替身、示例界面或生成接口当作真实联调完成",
         "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/REVIEW_02.md",
+        "docs/evidence/D01/round-03/lead/fix-01/frozen/checks.json",
+        "docs/evidence/D01/round-03/lead/fix-01/frozen/POST_QA_SOURCE_CHECK.json"
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -3783,10 +3787,10 @@
       "workspace": "/private/tmp/nerae-ui-round-three",
       "branch": "ui/round-three",
       "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
-      "implementation_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+      "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
       "review_status": "changes_requested",
-      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_01.md",
-      "waiting_on": "Fix01 sent to same native Harness session after human unlock; live reading REVIEW_01 observed. Await repaired source/report then independent Lead acceptance.",
+      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
+      "waiting_on": "fix01 normally completed and frozen; independent Lead review asks R08 remaining, R10e and preview text scaling. fix02 prepared for original Harness session.",
       "fix_prompt_sent": true
     },
     {

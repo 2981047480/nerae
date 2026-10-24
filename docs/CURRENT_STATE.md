@@ -15,4 +15,4 @@
 
 当前规划工具验证看PLAN_REFINEMENT；此前契约/视觉修复的对应SHA快照保留于[修复对照](方案修复对照-v1.2.md)，不自动代表后续任意修改。
 
-首批未接受UI检查点为 `1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22`（ui/round-three，`/private/tmp/nerae-ui-round-three`），没有合并main。Lead返工单见 [REVIEW_01](evidence/D01/round-03/lead/REVIEW_01.md)；用户已回复解锁且原生核实可用，R01–R13已沿同一Harness会话发出，等待修复交回后实际复测。
+首批fix01未接受源码冻结为 `9b16be064e3da9d11b271b0e00769faa1d9d2079`（ui/round-three，`/private/tmp/nerae-ui-round-three`），没有合并main。原Harness正常完成；同版本独立类型/构建/31测试和主要浏览器路径通过。仍需今天窄屏排版、跨断点焦点恢复及文字放大补证，见 [REVIEW_02](evidence/D01/round-03/lead/REVIEW_02.md)。首批接受后再扩其余12界面族。

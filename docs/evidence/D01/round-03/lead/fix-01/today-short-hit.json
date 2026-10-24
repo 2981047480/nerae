@@ -1,0 +1,19 @@
+{
+  "centerHitText": "继续 哑铃卧推 · 第 4 组 ",
+  "centerHitsCta": true,
+  "ctaText": "继续 哑铃卧推 · 第 4 组 ",
+  "rect": {
+    "bottom": 498.875,
+    "height": 48,
+    "width": 431,
+    "x": 42,
+    "y": 450.875
+  },
+  "visibleNavs": [
+    {
+      "bottom": 629,
+      "text": "今天发现",
+      "top": 568
+    }
+  ]
+}

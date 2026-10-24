@@ -1,0 +1,30 @@
+{
+  "revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "accepted": false,
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": "/opt/homebrew/bin/node node_modules/vue-tsc/bin/vue-tsc.js --noEmit",
+      "exitCode": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "name": "build",
+      "command": "/opt/homebrew/bin/node node_modules/vite/bin/vite.js build",
+      "exitCode": 0,
+      "log": "build.log"
+    },
+    {
+      "name": "tests",
+      "command": "/opt/homebrew/bin/node node_modules/vitest/vitest.mjs run",
+      "exitCode": 0,
+      "log": "tests.log"
+    },
+    {
+      "name": "store-diagnostic",
+      "command": "/opt/homebrew/bin/node '/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/fix-01/check_store.mjs'",
+      "exitCode": 0,
+      "log": "store-diagnostic.log"
+    }
+  ]
+}

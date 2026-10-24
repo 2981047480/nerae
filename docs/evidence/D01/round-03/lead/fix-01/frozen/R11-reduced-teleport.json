@@ -1,0 +1,28 @@
+{
+  "sourceRevision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
+  "reducedPreview": {
+    "dialog": [
+      {
+        "animation": "1e-06s",
+        "cls": "sheet",
+        "tag": "SECTION",
+        "transition": "1e-06s"
+      }
+    ],
+    "htmlMotion": "reduced",
+    "scrollBehavior": "auto"
+  },
+  "reducedPublish": {
+    "active": "关闭",
+    "dialog": [
+      {
+        "animation": "1e-06s",
+        "cls": "sheet",
+        "tag": "SECTION",
+        "transition": "1e-06s"
+      }
+    ],
+    "htmlMotion": "reduced",
+    "scrollBehavior": "auto"
+  }
+}

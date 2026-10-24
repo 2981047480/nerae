@@ -1,0 +1,38 @@
+{
+  "scope": "Lead independently ran actual project commands; no UI acceptance",
+  "checks": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "typecheck",
+        "chunk_id": "2d1a0b",
+        "wall_time_seconds": 2.930108417,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "build",
+        "chunk_id": "0ec8b5",
+        "wall_time_seconds": 2.839249375,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "name": "tests",
+        "chunk_id": "cea07f",
+        "wall_time_seconds": 3.103792459,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    }
+  ]
+}

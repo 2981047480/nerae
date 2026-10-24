@@ -17,24 +17,24 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "fix01 submitted to original native Harness session; live reading REVIEW_01 observed",
+  "status": "fix01 completed normally; frozen independent Lead review changes_requested; fix02 ready, not yet sent",
   "reasoning_history": [
     "Max: initial request stopped at 38 steps without main source/progress",
     "Medium: continue same session for bounded implementation"
   ],
-  "ui_checkpoint": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
+  "ui_checkpoint": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
   "fix_prompt": "D01-02-fix-01-prompt.md",
   "fix_prompt_sent": true,
-  "lead_native_completion_observed": false,
+  "lead_native_completion_observed": true,
   "review_input_revision": "3d05cbf4a60aebbe9e6fabc77f573ec86cc7327e",
   "lead_audit_02": "docs/evidence/D01/round-03/lead/AUDIT_02.md",
   "review_issue_range": "R01-R13 including R10a-d",
   "qa_fixture_reset": {
-    "via": "visible Preview -> reset -> confirm, then browser reload",
+    "via": "visible Preview -> reset -> confirm",
     "session": "3/12",
     "motion": "full",
-    "preview_tab": "4",
-    "viewport_css": "1440x900"
+    "preview_tab": "7",
+    "viewport_css": "515x629"
   },
   "review_input_revision_note": "review_input_revision is the first Lead input checkpoint; current R01-R13 input is REVIEW_01 at this branch HEAD and synchronized without UI changes.",
   "fix_submitted_at_local": "2026-10-24T11:07:58.302757+08:00",
@@ -61,5 +61,11 @@
     "execution_state": "running fix01 in original session; fresh blocked audit if a new blocker appears",
     "recorded_at": "2026-10-24T11:07:58.302757+08:00"
   },
-  "previous_native_terminal_observed_at_resume": "Prior implementation request was terminal: 处理失败 / Connection error. TRANSPORT. Source/report checkpoint retained; this is first fix prompt, not a restart on timeout."
+  "previous_native_terminal_observed_at_resume": "Prior implementation request was terminal: 处理失败 / Connection error. TRANSPORT. Source/report checkpoint retained; this is first fix prompt, not a restart on timeout.",
+  "fix01_completed_local": "2026-10-24 11:36 Asia/Shanghai",
+  "fix01_native_duration": "29m15s / 160 steps",
+  "lead_review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
+  "next_fix_prompt": "D01-02-fix-02-prompt.md",
+  "fix02_prompt_sent": false,
+  "goal_tool_status_latest": "active"
 }

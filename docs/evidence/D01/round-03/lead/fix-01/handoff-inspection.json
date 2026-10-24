@@ -1,0 +1,15 @@
+{
+  "worker_status": "partial",
+  "worker_file_count": 58,
+  "worker_hash_mismatches": [],
+  "changed_since_early_independent_checks": [
+    "design/prototype/README.md",
+    "design/prototype/src/App.vue",
+    "design/prototype/src/tests/store.test.ts",
+    "design/prototype/src/tests/ui.test.ts",
+    "design/prototype/src/views/CoachReviewView.vue"
+  ],
+  "worker_report_head": "bec98f3",
+  "actual_head": "4fac8a292bb2bede157b553f62535884bfe2a442",
+  "native_run": "normal completion observed in native-before-freeze.txt: third request completed in 29m15s; Lead did not stop a running request"
+}
