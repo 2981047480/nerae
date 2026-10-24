@@ -3792,7 +3792,7 @@
       "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
       "review_status": "changes_requested",
       "review_document": "docs/evidence/D01/round-03/lead/REVIEW_03.md",
-      "waiting_on": "Same original Harness round handles REVIEW_03 via native 插话发送: R15a/b and R16 enlarged-text defects. R08/R10e observed improved; still unaccepted, await final report/frozen checks.",
+      "waiting_on": "fix02 report64 hashes match, UI still unaccepted. Normal-size R15a/R16 addendum prepared; dispatch blocked by fresh native Mac lock, unlock question pending. Need final targeted fixes and frozen independent checks.",
       "fix_prompt_sent": true,
       "fix02_prompt_sent": true,
       "write_ownership": {
@@ -3804,7 +3804,8 @@
           "docs/evidence/D01/round-03/lead/"
         ]
       },
-      "fix03_feedback_sent": true
+      "fix03_feedback_sent": true,
+      "fix03_normal_feedback_sent": false
     },
     {
       "id": "D01-03",

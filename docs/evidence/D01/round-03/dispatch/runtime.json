@@ -17,7 +17,7 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "fix02 original round continues; REVIEW_03 enlarged-text findings inserted through native queue/插话发送",
+  "status": "fix02 report64 file hashes matched; ordinary-font addendum prepared but native dispatch blocked by fresh Mac lock; human unlock reply pending",
   "reasoning_history": [
     "Max: initial request stopped at 38 steps without main source/progress",
     "Medium: continue same session for bounded implementation"
@@ -54,11 +54,11 @@
   },
   "goal_blocked_audit": {
     "consecutive_goal_turns": 0,
-    "condition": null,
-    "human_unlock_question_pending": false,
+    "condition": "fresh Mac lock blocks delivery of ordinary-font addendum; no new model/session",
+    "human_unlock_question_pending": true,
     "human_reply": "已解锁",
-    "native_unlocked_verified": true,
-    "execution_state": "fix02 running in original session; no current impasse",
+    "native_unlocked_verified": false,
+    "execution_state": "worker report inspected; independent progress made; wait human unlock to send remaining concrete issues",
     "recorded_at": "2026-10-24T11:07:58.302757+08:00"
   },
   "previous_native_terminal_observed_at_resume": "Prior implementation request was terminal: 处理失败 / Connection error. TRANSPORT. Source/report checkpoint retained; this is first fix prompt, not a restart on timeout.",
@@ -82,5 +82,17 @@
   "fix03_delivery": "queued once, then native 插话发送; queue cleared and new transcript text observed; same running round4 retained",
   "fix03_recorded_at": "2026-10-24T12:32:20.748380+08:00",
   "fix03_submission_proof": "docs/evidence/D01/round-03/dispatch/fix03-inserted.txt",
-  "fix02_native_terminal_observed": false
+  "fix02_native_terminal_observed": false,
+  "fix03_normal_feedback_sent": false,
+  "fix03_normal_prompt": "D01-02-fix-03-normal-addendum.md",
+  "fix03_normal_delivery_attempt": {
+    "recorded_utc": "2026-10-24T04:47:07.624064+00:00",
+    "native_observation": "The Mac is locked and automatic unlock could not unlock it.",
+    "input_pasted": false,
+    "message_sent": false,
+    "human_unlock_question_pending": true
+  },
+  "fix02_worker_report": "docs/evidence/D01/round-03/worker/fix02-report.json",
+  "fix02_worker_files_checked": 64,
+  "fix02_worker_hash_mismatches": 0
 }

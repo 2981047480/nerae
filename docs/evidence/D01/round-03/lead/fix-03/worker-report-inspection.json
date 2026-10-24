@@ -1,0 +1,9 @@
+{
+  "report": "worker/fix02-report.json",
+  "report_head": "19a2aeb",
+  "checked_files": 64,
+  "mismatches": [],
+  "accepted": false,
+  "native_terminal_verified": false,
+  "ordinary_font_addendum_delivered": false
+}

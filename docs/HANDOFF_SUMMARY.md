@@ -11,3 +11,5 @@ Lead在fix02运行中实际QA，source_id d299204b…的43文件复核仅README/
 当前IAB reviewTab7，已重置100%/full/3组；fix02Context的d299标签只适用于旧候选证据，新源码修改后必须新建来源上下文。v2 helper仍用旧“预览”名称，新控件实际accessible name“打开预览控制”。候选training-200-320捕获遇过渡scroll变化已excluded，只用stable版本；部分Today100截图非零scroll，不判顶部消失。
 
 下一步先核原会话处理REVIEW_03，最终交回后冻结并独立复测、接受首批。D01-03提示词和EXPANSION_QA_PLAN已备，先不派发；首批通过后新隔离任务完成其余12族，最后D01-I全55项。不要因耗时、候选代码、日志或四屏结束目标。
+
+最新：fix02-report.json与FIX_02已落盘、36测试日志，Lead核64文件散列一致；native终态未核实。新边界工具发现普通字号tabs/nav宽30.6及普通320编辑right323.5裁切，同属R15a/R16；已更新REVIEW_03和normal-addendum。发送该补充时初始getAX即Mac锁定，未粘贴/未发送，异步解锁问题待答。当前IAB发现100%/full/3组、768×900。fix03/candidate源码在QA中仍变动，不能作冻结接受；最终须新版本复测。

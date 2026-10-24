@@ -6,3 +6,5 @@ Lead已实际验证200%收藏/skip/编辑裁切修正方向成立。但五档普
 
 实测证据：/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/fix-03/candidate/normal-mode-followup.json
 完整最新REVIEW_03已补相同内容。仅补这两个CSS/边界问题，连同当前修改一起真实typecheck/build/必要回归、交最终文件散列；不用重新写长篇设计或另扩界面。同一Harness/opencode-go/deepseek-v4.1-flash/Medium继续，Lead仍未接受。
+
+这是CSS修正，无需新增仅镜像规则或伪造几何的测试；保留现有必要回归，真实几何由Lead在浏览器量测。
