@@ -57,9 +57,9 @@ try {
   const secondConfirmed=s.completeCurrentSet()
   const secondFact=JSON.parse(JSON.stringify(secondEntry.set))
   start('plan-core')
-  const archived=s.state.records.filter(r=>r.id===`archived-${firstSession}`)
-  const stored=archived.flatMap(r=>r.sets).filter(x=>x.id===firstFact.id)
-  report.checks.repeatStart={firstSession,secondSession,sameSessionId:firstSession===secondSession,secondInitialStatus,firstConfirmed,secondConfirmed,firstFact,secondFact,archivedRows:archived.length,storedFacts:stored,firstRetained:stored.some(x=>x.weightKg===12&&x.reps===8),secondRetained:stored.some(x=>x.weightKg===17&&x.reps===9)}
+  const archived=s.state.records.filter(r=>r.id===`archived-${firstSession}` || r.id===`archived-${secondSession}`)
+  const stored=archived.flatMap(r=>r.sets).filter(x=>x.id===firstFact.id || x.id===secondFact.id)
+  report.checks.repeatStart={firstSession,secondSession,sameSessionId:firstSession===secondSession,secondInitialStatus,firstConfirmed,secondConfirmed,firstFact,secondFact,archivedRows:archived.length,storedFacts:stored,firstRetained:stored.some(x=>x.id===firstFact.id&&x.weightKg===12&&x.reps===8),secondRetained:stored.some(x=>x.id===secondFact.id&&x.weightKg===17&&x.reps===9)}
   report.status='diagnostic_completed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {

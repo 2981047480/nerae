@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "4187 live PID50258; same original native round1 at1h7m/195steps; full UI not accepted",
+  "progress": "same original native round1 at1h17m/218steps, Flash/Medium; implementing accumulated source/UI seam feedback; no full acceptance",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -115,5 +115,41 @@
       "EA08 second real confirmed set lost after repeat start and archive ID collision"
     ],
     "status": "inserted into same original running round1 at1h7m/195steps; pending correction and browser QA"
+  },
+  "student_context_review": {
+    "feedback": "D01-03-student-context-review.md",
+    "proof": "D01-03-student-context-review-inserted.txt",
+    "evidence": "../lead/expansion/candidate-02/",
+    "issues": [
+      "EA09 Zhou draft opens Lin plan and delivery context",
+      "EA10 unauthorized Zhou training facts still visible in headings/evidence/sidebar"
+    ],
+    "status": "inserted into original round1 at1h10m/203steps; pending source freeze and independent recheck"
+  },
+  "share_first_use_review": {
+    "feedback": "D01-03-share-and-first-use-review.md",
+    "proof": "D01-03-share-and-first-use-review-inserted.txt",
+    "issues": [
+      "EA11 public review omits actual public notes/rest fields",
+      "EA12 anonymous/login-cancel/unknown/minor first-use boundary absent"
+    ],
+    "status": "inserted once into original round1; UI-only, no real authentication requested"
+  },
+  "start_module_recheck": {
+    "evidence": "../lead/expansion/monitor/start-candidate-diagnostic-02.log",
+    "source_stable": true,
+    "selectedDayMatches": true,
+    "firstAndSecondConfirmedFactsRetained": true,
+    "scope": "changed candidate module with fake window/storage; final browser pending"
+  },
+  "service_review": {
+    "feedback": "D01-03-services-review.md",
+    "proof": "D01-03-services-review-inserted.txt",
+    "issues": [
+      "EA13 scope/goals/response save not propagated to actual student detail",
+      "EA14 invalid negative price silently clamps to zero",
+      "VR07 pricing unit/timezone/switch semantics"
+    ],
+    "status": "inserted once into original running round1; negative0 was not saved; local sample price restored759"
   }
 }
