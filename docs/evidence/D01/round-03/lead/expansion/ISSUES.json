@@ -304,6 +304,15 @@
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/matrix-summary.jsonl"
+    },
+    {
+      "id": "VR12",
+      "subject": "今天缺图提示与日期叠字",
+      "feedback": "../../dispatch/D01-03-fix02-missing-image-followup.md",
+      "status": "failed_frozen_02_fix02_followup_inserted",
+      "evidence": "missing-image-probe/screenshots/today-390-missing-image.jpg",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "proof": "../../dispatch/D01-03-fix02-missing-image-inserted.txt"
     }
   ],
   "latest_review": "../REVIEW_06.md",

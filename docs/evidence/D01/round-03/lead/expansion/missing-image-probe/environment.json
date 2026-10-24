@@ -1,0 +1,11 @@
+{
+  "url": "http://127.0.0.1:64388/",
+  "build": "build-copy.json",
+  "behavior": "All raster image GET returns404; other frozen build files unchanged",
+  "source_edits": false,
+  "browser_state_injection": false,
+  "first_start_failed": "Sandbox denied socket.bind: PermissionError Errno1",
+  "approved_start": "require_escalated started loopback only, exec session73337",
+  "final_source_acceptance": false,
+  "cleanup": "temporary CUA tab10 closed; exec session73337 stopped by Ctrl-C"
+}

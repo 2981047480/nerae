@@ -304,6 +304,13 @@
     "scope": "bounded repairs only; original reports preserved; no Lead UI edits",
     "lead_code_checks": "../lead/expansion/frozen-02/code/summary.json",
     "lead_matrix_captures": 180,
-    "full_accepted": false
+    "full_accepted": false,
+    "missing_image_followup": {
+      "feedback": "D01-03-fix02-missing-image-followup.md",
+      "proof": "D01-03-fix02-missing-image-inserted.txt",
+      "same_round": true,
+      "latest_observed": "4round530steps16m32; still generating; retries1/5 recovered, no final failure",
+      "scope": "V06 fallback label overlap only"
+    }
   }
 }

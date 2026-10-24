@@ -1,0 +1,1575 @@
+{
+  "scope": "Lead semantic acceptance ledger; not implementation instructions or task DAG",
+  "source_of_truth": [
+    "01_INTENT_TO_EXPERIENCE.md",
+    "02_SCENARIOS_AND_INTERACTIONS.md",
+    "03_VISUAL_AND_MOTION.md",
+    "04_TRADEOFFS_AND_VALIDATION.md"
+  ],
+  "status": "planned_review_only",
+  "worker_map_is_evidence_not_spec": true,
+  "semantic_mismatches_in_old_worker_map": [
+    "L07",
+    "L08",
+    "L09",
+    "T02",
+    "T04",
+    "T05",
+    "T06",
+    "H04",
+    "H05"
+  ],
+  "items": [
+    {
+      "id": "G01",
+      "meaning_from_spec": "适配新手与熟练者",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "required_review_groups": [
+        "F01"
+      ],
+      "criterion": "匿名可比较内容，准入只在开始时出现",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G02",
+      "meaning_from_spec": "免费独立价值",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S10",
+        "S12"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "F07"
+      ],
+      "criterion": "免费探索到执行记录完整，不依赖选教练",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G03",
+      "meaning_from_spec": "双方自主服务",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F05",
+        "S16"
+      ],
+      "criterion": "可比较与选择服务，教练自主定价，约定不被改写",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G04",
+      "meaning_from_spec": "记录连接真实指导",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14",
+        "S15"
+      ],
+      "required_review_groups": [
+        "F03",
+        "F04",
+        "C04"
+      ],
+      "criterion": "具体记录和不可变引用对应具体反馈",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G05",
+      "meaning_from_spec": "AI减少整理负担",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S10",
+        "S11",
+        "S15"
+      ],
+      "required_review_groups": [
+        "F06"
+      ],
+      "criterion": "有来源候选可审阅，专业与重要决定留人",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G06",
+      "meaning_from_spec": "边界与可信度",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F04",
+        "F05"
+      ],
+      "criterion": "成年、咨询、服务、授权独立，未知不造事实",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "G07",
+      "meaning_from_spec": "时间版本连续性",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [],
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S09",
+        "S15"
+      ],
+      "required_review_groups": [
+        "F02",
+        "F03",
+        "C04"
+      ],
+      "criterion": "固定日历、历史快照、恢复、确认与去重",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "N01",
+      "meaning_from_spec": "自主",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "G01",
+        "G02",
+        "G03",
+        "G06"
+      ],
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F03",
+        "F05",
+        "F06"
+      ],
+      "criterion": "默认可改、重要动作可取消、无强制授权",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "N02",
+      "meaning_from_spec": "胜任",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "G01",
+        "G02",
+        "G07"
+      ],
+      "screens": [
+        "S04",
+        "S05",
+        "S11",
+        "S12"
+      ],
+      "required_review_groups": [
+        "F02",
+        "C04",
+        "F07"
+      ],
+      "criterion": "单位参考与下一步清楚，数据不足不假成绩",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "N03",
+      "meaning_from_spec": "关系",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "G03",
+        "G04",
+        "G05"
+      ],
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14"
+      ],
+      "required_review_groups": [
+        "F04",
+        "F05"
+      ],
+      "criterion": "人和AI分明，署名时间引用真实，不造关怀",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L01",
+      "meaning_from_spec": "价值与身份",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "N01",
+        "N02",
+        "N03"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "F01",
+        "F05"
+      ],
+      "criterion": "训练服务身份具体，自助指导同等成立",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L02",
+      "meaning_from_spec": "注意力情境",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L01"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S08",
+        "S15"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "MOTION"
+      ],
+      "criterion": "探索执行审阅交流回归各有密度",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L03",
+      "meaning_from_spec": "心理与信任",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L01",
+        "N01",
+        "N03"
+      ],
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F03",
+        "F05"
+      ],
+      "criterion": "适配来源边界状态靠近判断，不伪评分",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L04",
+      "meaning_from_spec": "体验结构",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L01",
+        "L02",
+        "L03"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "criterion": "活动衔接不暴露内部模块，无重复选对象抄资料",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L05",
+      "meaning_from_spec": "信息层级",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L04"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "STATES"
+      ],
+      "criterion": "主要回答在前，必要依据可读，空失败仍有下一步",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L06",
+      "meaning_from_spec": "交互责任",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L05",
+        "N01"
+      ],
+      "screens": [
+        "S03",
+        "S04",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "F03",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "criterion": "人判断、App执行、AI有据草稿，确认结果准确",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L07",
+      "meaning_from_spec": "内容表达",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "COPY",
+        "STATES"
+      ],
+      "criterion": "逐段用户相关性，理由与实现验收语言不上屏",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L08",
+      "meaning_from_spec": "视觉语法",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "RESPONSIVE"
+      ],
+      "criterion": "比例中文素材节制细节统一，不等同空白和金色",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "L09",
+      "meaning_from_spec": "时间与感官",
+      "decision_file": "01_INTENT_TO_EXPERIENCE.md",
+      "parents": [
+        "L02",
+        "L06",
+        "L08"
+      ],
+      "screens": [
+        "S01",
+        "S03",
+        "S04",
+        "S05",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "required_review_groups": [
+        "MOTION",
+        "F02",
+        "F04"
+      ],
+      "criterion": "12动效因果清楚，减少效果等价，不打断读历史",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C01",
+      "meaning_from_spec": "首次找到可开始内容",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "required_review_groups": [
+        "F01"
+      ],
+      "criterion": "筛选回退、完整详情、登录取消、成年下架替换重复",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C02",
+      "meaning_from_spec": "回来继续训练",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S01",
+        "S04"
+      ],
+      "required_review_groups": [
+        "F02",
+        "STATES"
+      ],
+      "criterion": "当前合法会话一步接续，不丢输入、不改过去",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C03",
+      "meaning_from_spec": "记录当前一组",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S04"
+      ],
+      "required_review_groups": [
+        "F02"
+      ],
+      "criterion": "各单位校验、去重、真实计时、恢复、冲突同步",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C04",
+      "meaning_from_spec": "理解个人积累",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S05",
+        "S08"
+      ],
+      "required_review_groups": [
+        "C04",
+        "F04",
+        "F07"
+      ],
+      "criterion": "图文同源范围单位，空单条补记，点评回原记录",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C05",
+      "meaning_from_spec": "选择教练与服务",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F05",
+        "S16"
+      ],
+      "criterion": "比较包样例价格，带包咨询，草稿保留，渠道边界",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C06",
+      "meaning_from_spec": "具体指导与采用",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "required_review_groups": [
+        "F03",
+        "F04"
+      ],
+      "criterion": "发送重试私稿，具体引用，采用版本明确，撤权隔离",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C07",
+      "meaning_from_spec": "教练专注判断",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F03",
+        "S16"
+      ],
+      "criterion": "队列接续完整草稿，证据差异与明确交付",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "C08",
+      "meaning_from_spec": "暂停与回归",
+      "decision_file": "02_SCENARIOS_AND_INTERACTIONS.md",
+      "parents": [
+        "L02",
+        "L04",
+        "L05",
+        "L06"
+      ],
+      "screens": [
+        "S01",
+        "S04",
+        "S08"
+      ],
+      "required_review_groups": [
+        "F02",
+        "F04",
+        "STATES"
+      ],
+      "criterion": "暂停漏练周期关系结束分开，不羞辱不补造历史",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "B01",
+      "meaning_from_spec": "可判断的专业感",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "G03",
+        "G06",
+        "L03",
+        "L08"
+      ],
+      "screens": [
+        "S03",
+        "S07",
+        "S09",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "F03",
+        "F05"
+      ],
+      "criterion": "完整内容单位和影响，不以空摘要冒充专业",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "B02",
+      "meaning_from_spec": "行动节奏的活力",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "G01",
+        "L02",
+        "L09"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S04"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "MOTION",
+        "F02"
+      ],
+      "criterion": "内容吸引、执行专注、真实短反馈",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "B03",
+      "meaning_from_spec": "具体回应的陪伴",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "G04",
+        "N03",
+        "L07"
+      ],
+      "screens": [
+        "S07",
+        "S08",
+        "S14"
+      ],
+      "required_review_groups": [
+        "F04",
+        "F05",
+        "VISUAL"
+      ],
+      "criterion": "人物署名引用可信，不造头像认证在线",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "B04",
+      "meaning_from_spec": "可理解的成长",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "G07",
+        "N02",
+        "L09"
+      ],
+      "screens": [
+        "S04",
+        "S05",
+        "S12"
+      ],
+      "required_review_groups": [
+        "C04",
+        "F07"
+      ],
+      "criterion": "范围来源单位个人积累，不假趋势身体结果",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "B05",
+      "meaning_from_spec": "持续品牌表达",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L01",
+        "L08"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "MOTION"
+      ],
+      "criterion": "同语义、材质、图像图标与不同任务节奏",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V01",
+      "meaning_from_spec": "排版字形",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L05",
+        "B01"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "RESPONSIVE",
+        "VISUAL"
+      ],
+      "criterion": "中文层级单位换行，重要字号可读与200检查",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V02",
+      "meaning_from_spec": "空间布局",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L02",
+        "L05",
+        "B05"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "RESPONSIVE",
+        "FOCUS"
+      ],
+      "criterion": "五宽与短屏、长文、固定动作不遮挡",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V03",
+      "meaning_from_spec": "分组容器",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L05",
+        "B01"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL"
+      ],
+      "criterion": "关系靠编排，主面平面说明分明，不套白卡",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V04",
+      "meaning_from_spec": "颜色明暗",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L03",
+        "B02",
+        "B05"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "CONTRAST",
+        "VISUAL"
+      ],
+      "criterion": "实测平面文字对比与状态文字，暖陶onAccent",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V05",
+      "meaning_from_spec": "形状材质",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L06",
+        "B01"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "RESPONSIVE",
+        "FOCUS",
+        "VISUAL"
+      ],
+      "criterion": "触达44、轮廓、按压焦点禁用错误完整",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V06",
+      "meaning_from_spec": "素材人像",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "G03",
+        "B02",
+        "B03"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S06",
+        "S07"
+      ],
+      "required_review_groups": [
+        "ASSETS",
+        "VISUAL"
+      ],
+      "criterion": "本地来源裁切替代文本，教练字标不造权威",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V07",
+      "meaning_from_spec": "图标细节",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L06",
+        "B05"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "FOCUS"
+      ],
+      "criterion": "同套lucide、可访问名称、重要动作文字",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "V08",
+      "meaning_from_spec": "动效触感声音",
+      "decision_file": "03_VISUAL_AND_MOTION.md",
+      "parents": [
+        "L09",
+        "B02"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "MOTION"
+      ],
+      "criterion": "M01到M12实际触发与reduced，无假系统声音震动",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T01",
+      "meaning_from_spec": "免费与真人价值取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G02",
+        "G03"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "S07"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "F05"
+      ],
+      "criterion": "自助无服务阻断，训练无促销，咨询稳定可达",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T02",
+      "meaning_from_spec": "探索与稳定取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G07",
+        "L02"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S05"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "C04"
+      ],
+      "criterion": "返回位置条件选择稳定，重复使用连续",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T03",
+      "meaning_from_spec": "效率与审阅质量取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G04",
+        "G05"
+      ],
+      "screens": [
+        "S13",
+        "S14",
+        "S15"
+      ],
+      "required_review_groups": [
+        "F03"
+      ],
+      "criterion": "两步接续而不略证据，不自动确认安全",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T04",
+      "meaning_from_spec": "少输入与掌控取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "N01",
+        "L06"
+      ],
+      "screens": [
+        "S03",
+        "S08",
+        "S09",
+        "S11",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F03",
+        "F05",
+        "F06"
+      ],
+      "criterion": "预填可见可改，重要确认可取消，取消不丢",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T05",
+      "meaning_from_spec": "激励与压力取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "N02",
+        "N03"
+      ],
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08",
+        "S12"
+      ],
+      "required_review_groups": [
+        "F02",
+        "C04",
+        "STATES"
+      ],
+      "criterion": "真实投入，休息暂停正常，无排名清零或虚假效果",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "T06",
+      "meaning_from_spec": "简洁与吸引取舍",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "L02",
+        "L08"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "RESPONSIVE"
+      ],
+      "criterion": "必要事实不为留白删，丰富内容有节奏",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": ""
+    },
+    {
+      "id": "H01",
+      "meaning_from_spec": "适配摘要是假设",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G01",
+        "C01"
+      ],
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "required_review_groups": [
+        "F01"
+      ],
+      "criterion": "提供可比较条件与完整替代路径，未做真实偏好研究",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "设计假设已体现，不代表用户研究验证"
+    },
+    {
+      "id": "H02",
+      "meaning_from_spec": "连续性是假设",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G07",
+        "C02"
+      ],
+      "screens": [
+        "S01",
+        "S04",
+        "S05"
+      ],
+      "required_review_groups": [
+        "F02",
+        "C04"
+      ],
+      "criterion": "恢复与稳定入口已体现，未宣称提高留存",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "设计假设已体现，不代表用户研究验证"
+    },
+    {
+      "id": "H03",
+      "meaning_from_spec": "具体交付是假设",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G03",
+        "C05"
+      ],
+      "screens": [
+        "S06",
+        "S07",
+        "S08"
+      ],
+      "required_review_groups": [
+        "F05"
+      ],
+      "criterion": "包样例响应邻近，未用样例证明服务效果",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "设计假设已体现，不代表用户研究验证"
+    },
+    {
+      "id": "H04",
+      "meaning_from_spec": "尊重节奏是假设",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "N01",
+        "N02",
+        "N03",
+        "C08"
+      ],
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08"
+      ],
+      "required_review_groups": [
+        "F02",
+        "STATES"
+      ],
+      "criterion": "休息暂停恢复与具体投入，未宣称提高动力或健康",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "设计假设已体现，不代表用户研究验证"
+    },
+    {
+      "id": "H05",
+      "meaning_from_spec": "同品牌不同节奏是假设",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "L02",
+        "B05"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "MOTION"
+      ],
+      "criterion": "探索执行审阅有区别且同品牌，未做用户辨认实验",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "设计假设已体现，不代表用户研究验证"
+    },
+    {
+      "id": "Q01",
+      "meaning_from_spec": "近期行为研究边界",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "H01",
+        "H02",
+        "H03",
+        "H04"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "criterion": "Lead任务走查，未招募访谈，不声称真实用户研究",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+    },
+    {
+      "id": "Q02",
+      "meaning_from_spec": "理解结构的检查",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "L04",
+        "L06"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "F01",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "criterion": "操作能辨对象后果来处，无复制ID或学内部词",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+    },
+    {
+      "id": "Q03",
+      "meaning_from_spec": "吸引与使用分别判断",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "H05",
+        "L08",
+        "T06"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "VISUAL",
+        "RESPONSIVE",
+        "MOTION"
+      ],
+      "criterion": "实际审美评议与功能证据分开，不用build代表喜欢",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+    },
+    {
+      "id": "Q04",
+      "meaning_from_spec": "重复和失败检查",
+      "decision_file": "04_TRADEOFFS_AND_VALIDATION.md",
+      "parents": [
+        "G07",
+        "L09"
+      ],
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "required_review_groups": [
+        "STATES",
+        "F02",
+        "F03",
+        "F04"
+      ],
+      "criterion": "首次再次中断恢复失败重复与动画中操作有证据",
+      "status": "pending_final_frozen_review",
+      "evidence": [],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+    }
+  ]
+}
