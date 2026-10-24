@@ -3991,7 +3991,7 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "native running after one formal dispatch13:04; preserve staged progress; Lead independent acceptance pending"
+      "execution_state": "Full16-family candidate6dba rejected by Lead REVIEW_05 after75tests passed but3of6 identity seams failed; round1 transport failure recorded, round2 docs-only recovery completed, same-session round3 fix01 running; no full UI acceptance."
     },
     {
       "id": "D01-I",

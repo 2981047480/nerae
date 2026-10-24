@@ -13,5 +13,8 @@
   },
   "listener_observed_pid": 64273,
   "listener_cwd": "/private/tmp/nerae-ui-complete/design/prototype",
-  "accepted": false
+  "accepted": false,
+  "evidence_count": 69,
+  "evidence_mismatches": [],
+  "evidence_check_scope": "All entries in the immutable evidence manifest matched current saved files at15:53; ongoing dev log excluded by executor"
 }
