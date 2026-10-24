@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "shared state/data/type sources saved; stage-A views in progress; active same native round1",
+  "progress": "16 view files saved; whole preview/build handback still pending; same native round1",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -61,5 +61,18 @@
     "observed_dpr": 2.4000000953674316,
     "scope": "accepted first batch only",
     "old_tab": "7 no longer in inventory; created8 after verifying empty IAB tabs; old QA contexts must not be reused"
+  },
+  "copy_context_review": {
+    "feedback": "D01-03-copy-and-context-review.md",
+    "proof": "D01-03-copy-and-context-inserted.txt",
+    "status": "sent; current conversation title and design-reason copy need correction"
+  },
+  "recovery_module_recheck": {
+    "evidence": "../lead/expansion/monitor/store-candidate-diagnostic-03.log",
+    "source_sha256": "8c0d589cb6776304c4b0d9ab589b1fbb424cc3438ea32cc716fed4797e2d90bc",
+    "source_stable": true,
+    "detail_object_retained": true,
+    "three_confirmed_sets_retained": true,
+    "scope": "module with fake window/storage; final browser and repeated-start/resume still pending"
   }
 }
