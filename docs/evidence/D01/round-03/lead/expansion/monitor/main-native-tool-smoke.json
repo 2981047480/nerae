@@ -1,0 +1,11 @@
+{
+  "scope": "Focused fresh-dependency native binding smoke only; not full UI code checks",
+  "command": [
+    "/opt/homebrew/bin/node",
+    "--input-type=module",
+    "-e",
+    "import { transformWithEsbuild } from 'vite'; const result = await transformWithEsbuild('const localProbe: number = 12;', 'dependency-smoke.ts'); if (!result.code.includes('12') || result.code.includes(': number')) throw Error('Native transform failed'); console.log('Vite/esbuild native TypeScript transform passed; no UI build or acceptance claim');"
+  ],
+  "exit_code": 0,
+  "accepted_full_ui": false
+}

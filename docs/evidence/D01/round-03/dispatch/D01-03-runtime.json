@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "fix01 same-session round3/390steps at26m59; internal request retry4/5 observed but subsequent Fix ref kinds command running; no final failure or completion yet",
+  "progress": "fix01 same round3/428steps54m23; one EA19/EA20 actual CUA followup inserted while running, no stop/restart; normal handback still pending",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-status-step390.txt",
+  "last_native_progress": "D01-03-fix01-peer-followup-inserted.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -258,6 +258,16 @@
     "source_baseline": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
     "normal_handback_pending": true,
     "lead_ui_edit": false,
-    "internal_retry_observed": "4/5 followed by command running; do not count as final transport failure"
+    "internal_retry_observed": "4/5 followed by command running; do not count as final transport failure",
+    "peer_visibility_followup": {
+      "request": "D01-03-fix01-peer-visibility-followup.md",
+      "proof": "D01-03-fix01-peer-followup-inserted.txt",
+      "issues": [
+        "EA19 recipient failed/sending visibility",
+        "EA20 participant-private draft"
+      ],
+      "source_observation": "Unfrozen aggregate7ddb6f;60files stable before/after actual CUA flow; not acceptance",
+      "stop_or_restart": false
+    }
   }
 }

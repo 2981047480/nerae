@@ -111,6 +111,8 @@ try {
    assert.ok(e.visibleEvidence.every(x=>x.kind==='plan'),'Revoked training/feedback/diet evidence remained in coach selector')
    s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
    assert.ok(s.currentConversation.value.messages.some(x=>x.text===ownHealthText),'Student lost their own health message after revocation')
+   const ownMessage=s.currentConversation.value.messages.find(x=>x.text===ownHealthText)
+   assert.equal(s.messageTextForActor(s.currentConversation.value,ownMessage),ownHealthText,'Owner display projection hid their own retained message')
    s.goToCoachStudentDetail('lin-che')
    s.replyToStudent('lin-che')
    assert.equal(s.state.screen,'messages')
@@ -123,16 +125,16 @@ try {
    s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
    s.setMessageDraft('conv-gu-yan','周六的训练可以晚半小时开始吗')
    assert.equal(s.sendMessage('conv-gu-yan'),true)
-   e.studentUnreadAfterOwnSend=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   e.studentUnreadAfterOwnSend=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.equal(e.studentUnreadAfterOwnSend,0,'Sender acquired unread from own message')
    s.goToCoachTodo();s.goToMessages()
-   e.coachUnreadBeforeOpen=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   e.coachUnreadBeforeOpen=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.ok(e.coachUnreadBeforeOpen>=1,'Student message did not become unread for coach')
    s.openConversation('conv-gu-yan')
    s.setMessageDraft('conv-gu-yan','可以，按调整后的时间开始。')
    assert.equal(s.sendMessage('conv-gu-yan'),true)
    s.jumpToScenario('today');s.goToMessages()
-   e.studentUnreadBeforeOpen=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   e.studentUnreadBeforeOpen=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.ok(e.studentUnreadBeforeOpen>=1,'Coach message did not become unread for student')
  })
  await check('self-only observation stays private despite a general health grant',async e=>{
@@ -150,8 +152,10 @@ try {
    s.replyToStudent('lin-che')
    e.readOnly=s.messagesReadOnly.value
    assert.equal(e.readOnly,true)
-   const projected=s.currentConversation.value?.messages??[]
-   assert.ok(!projected.some(m=>sensitiveTexts.some(text=>m.text?.includes(text))),'Ended relationship retained sensitive message text in coach projection')
+   const conversation=s.currentConversation.value
+   const projected=(conversation?.messages??[]).map(m=>s.messageTextForActor(conversation,m))
+   assert.ok(!projected.some(body=>sensitiveTexts.some(text=>body?.includes(text))),'Ended relationship retained sensitive message text in coach display projection')
+   assert.ok(conversation.messages.every(m=>!s.messageRefsForActor(conversation,m).some(ref=>ref.kind==='training')),'Ended relationship retained a training reference in coach display projection')
    s.setMessageDraft('conv-gu-yan','服务结束后不应发送')
    assert.equal(s.sendMessage('conv-gu-yan'),false,'Ended relationship sent a new message')
  })
@@ -165,16 +169,21 @@ try {
    const raw=s.state.conversations.find(x=>x.id==='conv-gu-yan')
    assert.equal(raw.messages.find(x=>x.id===id)?.status,'failed')
    s.goToCoachTodo();s.goToMessages()
-   e.failedUnread=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   e.failedUnread=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.equal(e.failedUnread,0,'Failed message was counted as received')
    s.openConversation('conv-gu-yan')
-   assert.ok(!s.currentConversation.value.messages.some(x=>x.id===id),'Recipient received a failed outgoing message')
+   // Raw shared storage is deliberately retained for the sender. Recipient DOM
+   // visibility is checked separately through the actual browser after freeze.
+   e.recipientRetry=s.retryMessage(id,'conv-gu-yan')
+   assert.equal(e.recipientRetry,false,'Recipient was allowed to retry sender failure')
+   s.discardFailedMessage(id,'conv-gu-yan')
+   assert.equal(raw.messages.find(x=>x.id===id)?.status,'failed','Recipient deleted or changed sender failure')
    s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
    assert.equal(s.retryMessage(id,'conv-gu-yan'),true)
    s.retryMessage(id,'conv-gu-yan')
    assert.equal(raw.messages.filter(x=>x.id===id).length,1,'Retry duplicated the stable message ID')
    s.goToCoachTodo();s.goToMessages()
-   e.afterRetryUnread=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   e.afterRetryUnread=s.conversationUnread(s.conversationList.value.find(x=>x.id==='conv-gu-yan'))
    assert.equal(e.afterRetryUnread,1,'Same-ID retry was not received exactly once')
  })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'

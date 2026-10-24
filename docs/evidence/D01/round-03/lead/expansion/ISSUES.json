@@ -196,10 +196,12 @@
       "id": "EA19",
       "subject": "未读必须按双方读取位置分别计算",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "failed_frozen_01_fix01_running",
-      "latest_observation": "New student message appears in coach list with unread0",
+      "status": "fix01_interim_failed_recipient_visibility",
+      "latest_observation": "At stable in-progress60-file aggregate7ddb6f, actual CUA student failed body appears in coach list/thread with retry/delete; unread0 alone insufficient",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
-      "review": "../REVIEW_05.md"
+      "review": "../REVIEW_05.md",
+      "followup_feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
+      "followup_evidence": "fix01-interim/"
     },
     {
       "id": "VR09",
@@ -209,6 +211,15 @@
       "latest_observation": "Actual local15:38 message displayed07:38; raw ISO sliced",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md"
+    },
+    {
+      "id": "EA20",
+      "subject": "草稿按会话及参与者隔离，接收方不能看到发送方未发草稿",
+      "feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
+      "status": "fix01_interim_failed_peer_draft",
+      "latest_observation": "Actual CUA student typed private unsent draft; only role/nav switched; exact draft appears in coach composer. Source60files unchanged during observation.",
+      "evidence": "fix01-interim/failed-coach-thread-and-shared-draft.txt",
+      "source_aggregate_sha256": "7ddb6ff6a04fa0decc68bf82e5eee7262e0b652502917e161cd25b905e5f85aa"
     }
   ],
   "latest_review": "../REVIEW_05.md",
