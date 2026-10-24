@@ -15,4 +15,4 @@
 
 当前规划工具验证看PLAN_REFINEMENT；此前契约/视觉修复的对应SHA快照保留于[修复对照](方案修复对照-v1.2.md)，不自动代表后续任意修改。
 
-首批S01/S02/S04/S15已接受：最终指定Harness源码9a8c135，main原样集成并保存独立证据。Lead类型/构建/36测试、54次尺寸校验捕获与交互复验通过，见[REVIEW_04](evidence/D01/round-03/lead/REVIEW_04.md)。D01-03将用新隔离树完成其余12族，D01-I最终核对55项；完整目标仍active。
+首批S01/S02/S04/S15已接受：最终指定Harness源码9a8c135，main原样集成并保存独立证据。Lead类型/构建/36测试、54次尺寸校验捕获与交互复验通过，见[REVIEW_04](evidence/D01/round-03/lead/REVIEW_04.md)。D01-03已在新隔离树/private/tmp/nerae-ui-complete、指定Harness新会话运行，完成其余12族，D01-I最终核对55项；完整目标仍active。

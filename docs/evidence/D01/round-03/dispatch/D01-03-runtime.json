@@ -1,0 +1,23 @@
+{
+  "task": "D01-03",
+  "state": "running in native Harness; no accepted full UI",
+  "runtime": "DeepSeek Harness.app",
+  "provider": "opencode-go",
+  "model": "deepseek-v4.1-flash",
+  "reasoning": "Medium (Lead execution adjustment)",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "branch": "ui/full-round-three",
+  "base_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+  "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
+  "session_title": "# D01-03 全量扩展正式派发 D01-02",
+  "port": 4187,
+  "first_batch_accepted_revision": "b10c799295a091d2238f5d75995b66b154725442",
+  "managed_worktree_tool": "Not a git repository; did not retry same interface again; native Git worktree fallback created successfully",
+  "prompt_sha256": "03ef91714795377c30a827d5da29347ded96d44ca5ec1c333b7fa74dd8c407fe",
+  "submitted": true,
+  "submitted_at_local": "2026-10-24 13:04 Asia/Shanghai",
+  "identity_source": "native session export save dialog; export canceled, no ZIP claim",
+  "submission_proof": "D01-03-submitted.txt",
+  "running_proof": "D01-03-running.txt",
+  "model_proof": "D01-03-model-menu.txt"
+}

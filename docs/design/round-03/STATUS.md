@@ -1,6 +1,6 @@
 # 第三轮设计与 UI 交付状态
 
-D19完整目标仍active：55项意图、16界面族、F01–F07、M01–M12。D01-01文稿与D01-02首批UI已accepted；D01-03全量扩展planned，D01-I待后续。不能在四屏结束。
+D19完整目标仍active：55项意图、16界面族、F01–F07、M01–M12。D01-01文稿与D01-02首批UI已accepted；D01-03全量扩展active，D01-I待后续。不能在四屏结束。
 
 ## 已接受的首批
 
@@ -12,4 +12,4 @@ S01今天、S02发现、S04专注训练、S15教练编辑/审阅。指定Harness
 
 ## 下一步
 
-创建D01-03独立工作树，登记真实基线/会话/模型/端口后，经指定Harness完成其余12族及全部状态。派发文稿D01-03-prompt和EXPANSION_QA_PLAN已备，尚未发送。Lead只文稿、验收、集成，不写UI或启动Codex子代理。最后D01-I集成后核对全55项及动效。
+D01-03已于13:04正式派发到新Harness会话session-15de3174-0b22-47b7-9574-29dd3b032a8c，原生运行中；实际树/private/tmp/nerae-ui-complete，ui/full-round-three，基线b3949bf，端口4187。模型菜单核实OpenCode Go/Flash/Medium。Codex管理树接口仍报Not a git repository，已用原生Git成功隔离，不再反复重试该接口。完整派发及身份见dispatch/D01-03-runtime与running；EXPANSION_QA_PLAN为待执行验收索引。Lead只文稿、验收、集成，不写UI或启动Codex子代理。最后D01-I集成后核对全55项及动效。

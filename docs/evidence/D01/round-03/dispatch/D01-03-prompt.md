@@ -1,6 +1,15 @@
-# D01-03 全量扩展派发文稿（准备中，尚未发送）
+# D01-03 全量扩展正式派发
 
-此稿不是启动授权：仅在Lead接受D01-02并登记真实隔离工作树、源码基线、Harness会话/精确模型后发送。当前不运行第二个实现任务。
+D01-02已由Lead独立接受，REVIEW_04/54捕获及36测试为证据；本条正式启动D01-03，不是准备稿。不得重做已接受的四族，也不在阶段A后停止。持续完成A–D全部阶段，真实保存进度、源码和验证后交Lead验收。
+
+## 本次实际执行绑定
+
+- workspace：/private/tmp/nerae-ui-complete；branch：ui/full-round-three。
+- Git源码基线：b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed（已接受首批原样集成及登记）。主仓库/旧首批树不得写。
+- 执行：现有DeepSeek Harness，新工作区nerae-ui-complete的新会话；OpenCode Go / opencode-go/deepseek-v4.1-flash / Medium。Medium是Lead实施调整，不是人类指定等级。不要开其他代理或替代CLI执行。
+- 端口4187，仅127.0.0.1；旧4186是已接受首批预览，不能误用/停止。新树依赖按既有锁安装；已可用Node是/opt/homebrew/bin/node v26.0.0，Harness捆绑Node有native签名问题的RETRO已写。
+- 首先将新的D01-03工作阶段/基线/本会话身份/准备步骤写入worker/D01-03-progress.md；保留fix01/fix02历史，不能把旧report.json当本任务报告。随后分批写实际源码，避免一次长推导不落盘。
+- 本地tasks.json是此基线快照；最新派发登记保存在主仓库对应任务与dispatch/D01-03-runtime.json，只读即可，不自行改任务状态或验收条件。Lead证据仅只读。
 
 ## 执行合同
 
@@ -23,7 +32,7 @@
 
 稳定导航按05稿：学员今天/发现/记录/消息；教练待办/学员/消息/服务。发现承接训练/饮食/教练，不能把16族全放主导航。角色/情境/状态/文字放大/减少动态效果仅在外部预览控制。返回保留列表位置、筛选、当前对象和未发文本。不要再问用户重复选择已知学员或服务包。
 
-每阶段先写可运行源码与progress再继续，不靠一次长推导存在上下文。每个阶段实际typecheck/build/必要状态测试，失败先修接缝；无需等待Lead逐阶段许可，直到全量报告再停下待验。不得自动把自评写成accepted。
+每阶段先写可运行源码与D01-03-progress再继续，不靠一次长推导存在上下文。每个阶段实际typecheck/build/必要状态测试，失败先修接缝；无需等待Lead逐阶段许可，直到全量报告再停下待验。不得自动把自评写成accepted。
 
 ## 必须真实可复现的边界
 
@@ -43,7 +52,7 @@
 
 ## 持久产物与交回
 
-每一工作阶段更新worker/progress.md（实际文件/下一步/错误）。新`D01-03-report.md/json`记录status、runtime/provider/model/reasoning、实际workspace/branch/base、命令退出码/日志、服务PID/端口、素材与未验证项。保留此前报告历史，不覆盖成“全完成”。
+每一工作阶段更新worker/D01-03-progress.md（实际文件/下一步/错误）。新`D01-03-report.md/json`记录status、runtime/provider/model/reasoning、实际workspace/branch/base、命令退出码/日志、服务PID/端口、素材与未验证项。保留此前报告历史，不覆盖成“全完成”。
 
 提供`implementation-map.json`：55个来源项各自对应真实文件/可见行为；16族各自入口与状态操作路径；F01–F07及M01–M12触发路径。只写实现建议，不改Lead-owned coverage/接受状态。包括必要正反例和完整跨族接缝测试，不能用文字/快照存在代替行为。
 
