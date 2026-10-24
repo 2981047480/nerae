@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "stage A in progress; new types and D01-03-progress.md saved",
+  "progress": "shared state/data/type sources saved; stage-A views in progress; active same native round1",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -35,5 +35,19 @@
       "conflicting initial delivery facts"
     ],
     "status": "sent during implementation; not final render finding"
-  }
+  },
+  "data_reviews": [
+    {
+      "id": "01",
+      "feedback": "D01-03-data-review-01.md",
+      "status": "source improvement observed; actual UI still pending"
+    },
+    {
+      "id": "02",
+      "feedback": "D01-03-data-review-02.md",
+      "proof": "D01-03-data-review-02-inserted.txt",
+      "diagnostic": "../lead/expansion/monitor/store-candidate-diagnostic-02.log",
+      "status": "actual module reproduced detail reload mismatch and lost3 confirmed sets; fake window/storage, final browser pending"
+    }
+  ]
 }
