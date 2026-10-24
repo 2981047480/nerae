@@ -1,0 +1,28 @@
+{
+  "scope": "Lead dependency-config probe in copied disposable manifests; no worker/UI source edits",
+  "revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "directory": "/private/tmp/nerae-lead-pnpm-config-dz9vswvn",
+  "command": [
+    "/opt/homebrew/bin/pnpm",
+    "install",
+    "--offline",
+    "--frozen-lockfile",
+    "--lockfile-only",
+    "--ignore-scripts",
+    "--reporter=append-only"
+  ],
+  "status": "timeout",
+  "timeout_seconds": 40,
+  "exit_code": null,
+  "stdout": "Not retained because initial probe did not catch subprocess.TimeoutExpired; actual tool output is a Python TimeoutExpired traceback. No success claim.",
+  "config_inspection": {
+    "installed_pnpm": "11.5.3",
+    "implementation": "/opt/homebrew/lib/node_modules/pnpm/dist/pnpm.mjs",
+    "createAllowBuildFunction_lines": "153770 onward",
+    "writeIgnoredBuildsToAllowBuilds_lines": "193555 onward",
+    "finding": "The installed pnpm itself writes set this to true or false for undecided ignored builds; policy only treats literal booleans as decisions. The string alone is not evidence of invalid YAML or a UI defect."
+  },
+  "timeout_cause": "not established",
+  "impact": "Fresh dependency installation not verified by this probe; existing frozen source typecheck/build/tests remain independently verified. Recheck actual integrated dependency setup later.",
+  "accepted": false
+}

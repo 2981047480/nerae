@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "Round1 transport failed336steps; docs-only recovery round2 completed; fix01 round3 running at360steps/5m13 observed15:51 Asia/Shanghai.",
+  "progress": "fix01 same-session round3/390steps at26m59; internal request retry4/5 observed but subsequent Fix ref kinds command running; no final failure or completion yet",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-status-1551.txt",
+  "last_native_progress": "D01-03-fix01-status-step390.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -253,10 +253,11 @@
     "request": "D01-03-fix01-packet.md",
     "proof": "D01-03-fix01-queued.txt",
     "proof_note": "Idle send after doc recovery completed; filename is historical",
-    "last_native": "D01-03-fix01-status-1551.txt",
+    "last_native": "D01-03-fix01-status-step390.txt",
     "model": "OpenCode Go / opencode-go/deepseek-v4.1-flash / Medium",
     "source_baseline": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
     "normal_handback_pending": true,
-    "lead_ui_edit": false
+    "lead_ui_edit": false,
+    "internal_retry_observed": "4/5 followed by command running; do not count as final transport failure"
   }
 }
