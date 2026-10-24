@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "4187 live PID50258; active native round1 at53m/155steps; full UI not accepted",
+  "progress": "4187 live PID50258; same original native round1 at1h7m/195steps; full UI not accepted",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -95,5 +95,25 @@
       "VR04 duplicate action options and chart time/axis meaning"
     ],
     "status": "sent once into same running round1; candidate screenshots unaccepted"
+  },
+  "second_live_ui_review": {
+    "feedback": "D01-03-ui-review-02.md",
+    "proof": "D01-03-ui-review-02-inserted.txt",
+    "issues": [
+      "VR05 single consultation package/quote conflated with existing monthly agreement and view-service resets package",
+      "VR06 direct layout rationale in product copy"
+    ],
+    "status": "inserted once into same running round1; native bubble14:09; no stop/restart"
+  },
+  "start_review": {
+    "feedback": "D01-03-start-review.md",
+    "proof": "D01-03-start-review-inserted.txt",
+    "diagnostic": "../lead/expansion/monitor/start-candidate-diagnostic-01.log",
+    "source_stable": true,
+    "issues": [
+      "EA07 selected dayB starts dayA",
+      "EA08 second real confirmed set lost after repeat start and archive ID collision"
+    ],
+    "status": "inserted into same original running round1 at1h7m/195steps; pending correction and browser QA"
   }
 }

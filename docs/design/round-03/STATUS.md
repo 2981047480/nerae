@@ -8,7 +8,7 @@ S01今天、S02发现、S04专注训练、S15教练编辑/审阅。指定Harness
 
 最终worker源码9a8c135e7de4661aafda3dc222626bf57fec99c4在/private/tmp/nerae-ui-round-three；Lead原样导入main并保存证据，接受提交见tasks.json D01-02。43文件QA后及集成后散列一致，worker64文件散列一致。Lead独立类型/构建/36测试/store诊断exit0；五构图×五宽度×100/200文字及发布/skip/短屏共54捕获，尺寸前后一致。关键边界、焦点、恢复及M03已复验，详见[REVIEW_04](../../evidence/D01/round-03/lead/REVIEW_04.md)。旧fix02/fix03候选不当作冻结接受证据。
 
-实际预览127.0.0.1:4186，PID74496，cwd为首批隔离prototype；IAB tab7，已复位100%/full/3组。服务继续保留；后续新任务用独立树/端口。UI尚非正式uni-app/Go，系统字体、微信软键盘/真机、真实服务和用户研究未验。
+实际预览127.0.0.1:4186，PID74496，cwd为首批隔离prototype；IAB tab8（原tab7已失效），已复位100%/full/3组。服务继续保留；后续新任务用独立树/端口。UI尚非正式uni-app/Go，系统字体、微信软键盘/真机、真实服务和用户研究未验。
 
 ## 下一步
 
