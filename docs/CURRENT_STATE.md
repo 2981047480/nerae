@@ -15,4 +15,4 @@
 
 当前规划工具验证看PLAN_REFINEMENT；此前契约/视觉修复的对应SHA快照保留于[修复对照](方案修复对照-v1.2.md)，不自动代表后续任意修改。
 
-首批未接受UI检查点为 `1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22`（ui/round-three，`/private/tmp/nerae-ui-round-three`），没有合并main。Lead返工单见 [REVIEW_01](evidence/D01/round-03/lead/REVIEW_01.md)；当前Mac锁定，手动解锁后沿同一Harness会话派发修复并继续实际检查。
+首批未接受UI检查点为 `1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22`（ui/round-three，`/private/tmp/nerae-ui-round-three`），没有合并main。Lead返工单见 [REVIEW_01](evidence/D01/round-03/lead/REVIEW_01.md)；用户已回复解锁且原生核实可用，R01–R13已沿同一Harness会话发出，等待修复交回后实际复测。

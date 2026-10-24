@@ -3786,7 +3786,8 @@
       "implementation_revision": "1ad63982e8cef6bcd33f5ab88aaf83dc18c02d22",
       "review_status": "changes_requested",
       "review_document": "docs/evidence/D01/round-03/lead/REVIEW_01.md",
-      "waiting_on": "Manual macOS unlock to send R01-R13 fixes to the same native Harness session; independent browser QA is documented in AUDIT_02, fixes not sent."
+      "waiting_on": "Fix01 sent to same native Harness session after human unlock; live reading REVIEW_01 observed. Await repaired source/report then independent Lead acceptance.",
+      "fix_prompt_sent": true
     },
     {
       "id": "D01-03",
