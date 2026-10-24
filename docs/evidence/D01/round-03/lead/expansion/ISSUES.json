@@ -239,7 +239,9 @@
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/old-v7-message-opens-wrong-v8.txt"
+      "evidence": "frozen-02/old-v7-message-opens-wrong-v8.txt",
+      "static_followup": "../../dispatch/D01-03-fix02-reference-context-followup.md",
+      "followup_proof": "../../dispatch/D01-03-fix02-reference-context-inserted.txt"
     },
     {
       "id": "EA22",
@@ -271,7 +273,9 @@
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
       "status": "failed_frozen_02_fix02_dispatched",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/day-b-today-context-metadata-mismatch.txt"
+      "evidence": "frozen-02/day-b-today-context-metadata-mismatch.txt",
+      "static_followup": "../../dispatch/D01-03-fix02-count-followup.md",
+      "followup_proof": "../../dispatch/D01-03-fix02-count-inserted.txt"
     },
     {
       "id": "EA26",

@@ -1,0 +1,30 @@
+{
+  "scope": "QA control failures only; not product defects or accepted captures",
+  "attempts": [
+    {
+      "kind": "persistent REPL identifier collision",
+      "result": "script parse rejected before any UI action",
+      "fix": "unique binding names"
+    },
+    {
+      "kind": "selected-tab viewport control",
+      "requested": [
+        320,
+        900
+      ],
+      "old_target_tab": "9",
+      "observed": [
+        390,
+        900
+      ],
+      "browser_selected_tab": "8",
+      "result": "matrix aborted before capture; no product layout conclusion",
+      "fix": "new QA tab11 in same browser, selected11; actual320x900 DPR1 verified"
+    }
+  ],
+  "current_full_qa_tab": "11",
+  "old_tab9": "retained Handoff, valid read-only binding but not active viewport target",
+  "new_source_changed_during_recovery": true,
+  "interim_product_matrix_not_run": true,
+  "final_acceptance": false
+}

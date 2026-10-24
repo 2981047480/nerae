@@ -48,8 +48,17 @@ async function selectObservedScenario(ctx, pattern, scenarioIndex) {
   return ctx.tab.playwright.domSnapshot()
 }
 
-export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex } = {}) {
+async function selectObservedRole(ctx, role) {
+  if (!role) return
+  await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
+  const dialog = ctx.tab.playwright.getByRole('dialog', { name: '预览', exact: true })
+  await dialog.getByRole('button', { name: role, exact: true }).click()
+  await dialog.waitFor({ state: 'hidden' })
+}
+
+export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex, role } = {}) {
   await resetSample(ctx)
+  await selectObservedRole(ctx, role)
   await selectObservedScenario(ctx, pattern, scenarioIndex)
   await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
   const labels = await ctx.tab.playwright.evaluate(() =>
@@ -58,6 +67,7 @@ export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex 
   const rows = []
   for (const [index, label] of labels.entries()) {
     await resetSample(ctx)
+    await selectObservedRole(ctx, role)
     await selectObservedScenario(ctx, pattern, scenarioIndex)
     await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
     const dialog = ctx.tab.playwright.getByRole('dialog', { name: '预览', exact: true })

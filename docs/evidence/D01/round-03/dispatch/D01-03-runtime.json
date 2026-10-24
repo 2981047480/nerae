@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix02 running after Lead rejected frozen fix01; full UI not accepted",
+  "state": "fix02 transport failed; same-session recovery running from preserved partial freeze",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "fix01 normally handed back; Lead83tests/10seams passed;180captures+coreflows found issues; same-session fix02 submitted18:23",
+  "progress": "round4 failed Connection error5/5 at579steps; Lead typecheck/83tests pass stable; source frozenaaf1fe0; recovery submitted19:40",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -79,11 +79,11 @@
     "url": "http://127.0.0.1:4187/",
     "pid": 64273,
     "workspace": "/private/tmp/nerae-ui-complete/design/prototype",
-    "tab": "9",
+    "tab": "11",
     "visibility": "background",
     "mark": "handoff",
-    "candidate_source_id": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-    "viewport_control": "fresh browser viewport capability for tab9; actual390x900 DPR1 verified; never reuse tab7 capability",
+    "candidate_source_id": "aaf1fe0a8e9506b72c56157139eeda100d71a709 + running recovery changes",
+    "viewport_control": "browser capability affects selected tab only; tab11 selected/320x900 DPR1 verified; tab9 preserved but not viewport target",
     "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
     "candidate_note": "Frozen fix01 source; not yet accepted, full visual/state/motion checks pending"
   },
@@ -311,6 +311,28 @@
       "same_round": true,
       "latest_observed": "4round530steps16m32; still generating; retries1/5 recovered, no final failure",
       "scope": "V06 fallback label overlap only"
+    },
+    "count_followup": {
+      "packet": "D01-03-fix02-count-followup.md",
+      "proof": "D01-03-fix02-count-inserted.txt",
+      "kind": "EA25 static partial-source review, not frozen UI finding"
+    },
+    "reference_followup": {
+      "packet": "D01-03-fix02-reference-context-followup.md",
+      "proof": "D01-03-fix02-reference-context-inserted.txt",
+      "kind": "EA21 static context/unknown-ref review, not frozen UI finding"
+    },
+    "latest_observed": "4round572steps47m32; source repairs in progress; not a handback; no stop/restart",
+    "recovery": {
+      "failure": "D01-03-fix02-transport-failure.txt",
+      "snapshot": "../lead/expansion/fix02-interrupted/snapshot.json",
+      "freeze": "aaf1fe0a8e9506b72c56157139eeda100d71a709",
+      "packet": "D01-03-fix02-recovery.md",
+      "proof": "D01-03-fix02-recovery-running.txt",
+      "same_session": true,
+      "goal_active": true,
+      "accepted": false,
+      "latest_observed": "5round593steps7m56, same Flash/Medium, source repairs ongoing"
     }
   }
 }

@@ -3991,8 +3991,8 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "fix01 frozen6a5609c: Lead83tests/10seams passed,180captures/coreflows rejected remaining defects; same-session Flash/Medium fix02 running18:23; no full acceptance",
-      "candidate_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9"
+      "execution_state": "fix02 round4 transport failure579steps; partial source frozenaaf1fe0, Lead typecheck/83tests pass; same-session recovery running19:40; not accepted",
+      "candidate_revision": "aaf1fe0a8e9506b72c56157139eeda100d71a709"
     },
     {
       "id": "D01-I",
