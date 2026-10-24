@@ -26,5 +26,14 @@
     "mechanism": "排队发送 then 插话发送 into same round1",
     "proof": "D01-03-progress-inserted.txt",
     "stop_or_restart": false
+  },
+  "early_data_review": {
+    "feedback": "D01-03-data-review-01.md",
+    "proof": "D01-03-data-review-inserted.txt",
+    "issues": [
+      "arbitrary content-to-days splitting",
+      "conflicting initial delivery facts"
+    ],
+    "status": "sent during implementation; not final render finding"
   }
 }

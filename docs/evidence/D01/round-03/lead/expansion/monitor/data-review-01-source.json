@@ -1,0 +1,24 @@
+{
+  "recorded_utc": "2026-10-24T05:16:06.672627+00:00",
+  "scope": "provisional static source review; no final render claim",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "files": [
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "sha256": "8b6f5533a91dfdfc4a607b96cb90a4c5e1195f9842a2755098adf1b77c0e9d47",
+      "bytes": 10946
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "sha256": "724a47def479b519d261230efaac479c8a403181e53d31691c92f84cfe4d7f68",
+      "bytes": 18013
+    },
+    {
+      "path": "design/prototype/src/data/extended.ts",
+      "sha256": "3b00bf55083492fee969e02e49226efec09a30c4fcb6c145e6d45f049b342775",
+      "bytes": 31904
+    }
+  ],
+  "feedback": "docs/evidence/D01/round-03/dispatch/D01-03-data-review-01.md",
+  "delivery": "same running native round1, queued once then 插话发送; no restart"
+}
