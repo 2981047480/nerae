@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+  "scope": "Real CUA on existing saved state, no reset/regrant during these checks",
+  "checks": {
+    "zhouReplyOpensOwnConversation": true,
+    "unknownOldAgreementNotInvented": true,
+    "recipientDoesNotSeeFailedMessage": true,
+    "recipientDoesNotSeeOtherDraft": true,
+    "studentOwnDraftSurvivesReload": true,
+    "coachOwnDraftSurvivesReload": true,
+    "bothDraftsSurviveRoleSwitch": true,
+    "ownRetryKeepsCurrentDraft": true,
+    "retryReceivedOnce": true,
+    "recipientUnreadBeforeOpen": 1,
+    "recipientUnreadAfterOpen": 0,
+    "revokedBodyStillHiddenAfterRetry": true
+  },
+  "limits": [
+    "Unknown legacy text preservation separately verified by cold-module check10",
+    "Already-redacted legacy seed messages were not asserted recoverable"
+  ],
+  "acceptedFullUi": false
+}

@@ -1,0 +1,30 @@
+{
+  "scope": "Normal native round3 handback verification before Lead source freeze; UI not accepted",
+  "observed_utc": "2026-10-24T09:45:07.184369+00:00",
+  "manifests": {
+    "source": {
+      "manifest_matches_report": true,
+      "count": 60,
+      "mismatches": []
+    },
+    "evidence": {
+      "manifest_matches_report": true,
+      "count": 26,
+      "mismatches": []
+    }
+  },
+  "report_sha_checks": [
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-fix01-report.md",
+      "matches": true
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-fix01-report.json",
+      "matches": true
+    }
+  ],
+  "outside_write_scope": [],
+  "preexisting_staged": "",
+  "source_parent": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "accepted": false
+}

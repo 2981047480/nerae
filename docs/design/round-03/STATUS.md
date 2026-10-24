@@ -16,4 +16,6 @@ S01今天、S02发现、S04专注训练、S15教练编辑/审阅。指定Harness
 
 Lead独立类型/Vite构建/75测试通过，但额外六项身份接缝3过3败，真实CUA复现周岚回复不通、撤权后教练仍见健康内容且本人原文被清空、双方未读共用；消息UTC切片时间也错误。因此[REVIEW_05](../../evidence/D01/round-03/lead/REVIEW_05.md)拒绝该候选，全量尚未accepted。
 
-fix01已15:45交同一Harness会话session-15de3174-0b22-47b7-9574-29dd3b032a8c、OpenCode Go/Flash/Medium执行，第3轮运行中。树/private/tmp/nerae-ui-complete、ui/full-round-three，原始基线b3949bf，修复基线6dba；4187实际监听PID64273（旧50258过时）。完整记录见dispatch/D01-03-runtime.json。待正常交回后新冻结、独立复验，再做16族全状态、五宽100/200与M01–M12，最终D01-I原样集成/核对55项。Lead不写UI、不启Codex子代理；不能停在四屏或未接受候选。
+fix01已15:45交同一Harness会话session-15de3174-0b22-47b7-9574-29dd3b032a8c、OpenCode Go/Flash/Medium执行，第3轮后正常交回。树/private/tmp/nerae-ui-complete、ui/full-round-three，原始基线b3949bf，修复基线6dba；4187实际监听PID64273（旧50258过时）。完整记录见dispatch/D01-03-runtime.json。待正常交回后新冻结、独立复验，再做16族全状态、五宽100/200与M01–M12，最终D01-I原样集成/核对55项。Lead不写UI、不启Codex子代理；不能停在四屏或未接受候选。
+
+fix01第3轮正常结束1h56分58秒/493步，报告md/json与83项执行者测试齐全。Lead已核对60源/26证据及报告散列，原样冻结6a5609c5b0ecdb350be080350237f1a4e86d48b9；prototype clean，frozen-02/code独立类型/构建/83测试/10接缝通过。Lead实际180捕获与主流程检查保留全部证据，但发现历史引用、新报价误确认、空态和器械等残留，见[REVIEW_06](../../evidence/D01/round-03/lead/REVIEW_06.md)。同一指定会话18:23开始fix02，写域不变；全量与动效最终未接受，D01-03仍active。

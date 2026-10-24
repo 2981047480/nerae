@@ -1,7 +1,7 @@
 // Lead-only module QA, not browser or backend evidence. Run only after source freeze.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -204,6 +204,7 @@ try {
    conversation.draft='作者未记录的旧安排草稿'
    raw.actor='coach'
    const cold=await coldFrom(raw,'missing-owner')
+   assert.notEqual(cold.state,s.state,'Migration fixture did not load a distinct cold module')
    const migrated=cold.state.conversations.find(x=>x.id==='conv-gu-yan')
    assert.equal(migrated.drafts.student,'','Unknown legacy draft appeared in student composer source')
    assert.equal(migrated.drafts.coach,'','Last navigation actor was mistaken for draft author')
@@ -216,6 +217,7 @@ try {
    inferred.draftOwnerInferred='coach'
    inferredRaw.actor='coach'
    const coldInferred=await coldFrom(inferredRaw,'inferred-owner')
+   assert.notEqual(coldInferred.state,s.state,'Inferred-owner fixture did not cold-load')
    const repaired=coldInferred.state.conversations.find(x=>x.id==='conv-gu-yan')
    assert.equal(repaired.drafts.student,'已知属于学员的新草稿','Repair erased a known participant draft')
    assert.equal(repaired.drafts.coach,'','Unconfirmed inferred owner remained authoritative')
@@ -229,5 +231,7 @@ finally {
  report.sourceAfter=await manifest()
  report.sourceStable=JSON.stringify(sourceBefore)===JSON.stringify(report.sourceAfter)
  if(!report.sourceStable){report.status='failed';process.exitCode=1}
- console.log(JSON.stringify(report,null,2))
+ const serialized=JSON.stringify(report,null,2)
+ if(process.argv[3])await writeFile(process.argv[3],serialized+'\n',{flag:'wx'})
+ console.log(serialized)
 }

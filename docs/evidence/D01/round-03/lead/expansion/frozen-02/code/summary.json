@@ -1,0 +1,140 @@
+{
+  "source_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+  "checksPassed": true,
+  "code_exits": {
+    "typecheck": 0,
+    "build": 0,
+    "test": 0,
+    "identity-seams": 0
+  },
+  "test_count": 83,
+  "identity_checks": [
+    {
+      "name": "independent student drafts survive switching",
+      "status": "passed",
+      "evidence": {
+        "editedZhouNote": "快走与慢跑交替，保持能说话；本周调整",
+        "linUnchanged": true,
+        "zhouSavedNote": "快走与慢跑交替，保持能说话；本周调整"
+      }
+    },
+    {
+      "name": "Lin adoption while last coach context was Zhou",
+      "status": "passed",
+      "evidence": {
+        "adopted": true,
+        "linStudentVersion": 7,
+        "zhouVersion": 3,
+        "linCoachVersion": 7
+      }
+    },
+    {
+      "name": "Zhou publication leaves Lin delivery and messages unchanged",
+      "status": "passed",
+      "evidence": {
+        "sheet": "publish",
+        "published": true,
+        "zhouDeliveryVersion": 5,
+        "zhouDeliveryNote": "快走与慢跑交替，保持能说话；交付调整"
+      }
+    },
+    {
+      "name": "active Zhou reply opens Zhou rather than Lin",
+      "status": "passed",
+      "evidence": {
+        "screen": "messages",
+        "conversationId": "conv-zhou-lan",
+        "note": null
+      }
+    },
+    {
+      "name": "revocation reaches coach evidence while ordinary replies remain available",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ],
+        "ordinarySent": true
+      }
+    },
+    {
+      "name": "new messages update the recipient unread cursor independently",
+      "status": "passed",
+      "evidence": {
+        "studentUnreadAfterOwnSend": 0,
+        "coachUnreadBeforeOpen": 1,
+        "studentUnreadBeforeOpen": 1
+      }
+    },
+    {
+      "name": "self-only observation stays private despite a general health grant",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-1",
+            "dateLabel": "10月22日",
+            "title": "上肢力量 · 12 组",
+            "summary": "卧推 12.5 kg × 10/10/9/8；平板支撑 45 秒 × 2",
+            "kind": "training"
+          },
+          {
+            "id": "lin-2",
+            "dateLabel": "10月23日",
+            "title": "教练点评",
+            "summary": "保持 12.5 kg，先把次数补齐，不用急着加重量。",
+            "kind": "feedback"
+          },
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ended relationship removes coach health reads and blocks new sends",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ],
+        "readOnly": true
+      }
+    },
+    {
+      "name": "failed send is not received and same-ID retry counts once",
+      "status": "passed",
+      "evidence": {
+        "failedUnread": 0,
+        "recipientRetry": false,
+        "afterRetryUnread": 1
+      }
+    },
+    {
+      "name": "legacy draft authorship is not inferred from last navigation actor",
+      "status": "passed",
+      "evidence": {
+        "unassignedRetained": true,
+        "knownDraftPreserved": true
+      }
+    }
+  ],
+  "source_stable": true,
+  "accepted_full_ui": false
+}

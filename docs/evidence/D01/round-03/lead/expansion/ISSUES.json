@@ -28,8 +28,9 @@
       "id": "EA04",
       "subject": "替换保留已确认组",
       "feedback": "../../dispatch/D01-03-data-review-02.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "module old3 facts retained; browser final pending"
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
+      "recheck_evidence": "frozen-02/replacement-keeps-original-three-confirmed-sets.txt"
     },
     {
       "id": "EA05",
@@ -42,15 +43,17 @@
       "id": "EA06",
       "subject": "产品不出现实现与验收解释",
       "feedback": "../../dispatch/D01-03-copy-and-context-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "partial copy improvement; more residual instances reported"
+      "status": "failed_frozen_02_fix02_dispatched",
+      "latest_observation": "New actual UI residual: saved time UTC slice / direct implementation rationale; see REVIEW_06",
+      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md"
     },
     {
       "id": "EA07",
       "subject": "所选训练日与开始会话同源",
       "feedback": "../../dispatch/D01-03-start-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "module dayB startsB corrected"
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
+      "recheck_evidence": "frozen-02/start-day-b-matches-selected-exercises.txt"
     },
     {
       "id": "EA08",
@@ -63,8 +66,9 @@
       "id": "EA09",
       "subject": "不同学员草稿证据和交付对象隔离",
       "feedback": "../../dispatch/D01-03-student-context-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual Zhou todo opened Lin plan; pending recheck"
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
+      "recheck_evidence": "frozen-02/zhou-delivered-current-plan-unchanged.txt"
     },
     {
       "id": "EA10",
@@ -178,53 +182,130 @@
       "id": "EA17",
       "subject": "有效周岚关系的普通回复无法进入本人会话",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "fix01_interim_failed_legacy_reply",
-      "latest_observation": "Actual existing saved state: Coach students→Zhou→Reply still stays in detail and asks to confirm relationship, despite active service; no reset/regrant; source60stable",
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
       "followup_feedback": "../../dispatch/D01-03-fix01-legacy-reply-followup.md",
-      "followup_evidence": "fix01-interim/legacy-zhou-after-reply.txt"
+      "followup_evidence": "fix01-interim/legacy-zhou-after-reply.txt",
+      "recheck_evidence": "frozen-02/legacy-zhou-reply.txt"
     },
     {
       "id": "EA18",
       "subject": "撤权未统一读取面且错误清空本人消息",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "failed_frozen_01_fix01_running",
-      "latest_observation": "Actual revocation still exposes coach health evidence and training reference; own health message emptied",
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
-      "review": "../REVIEW_05.md"
+      "review": "../REVIEW_05.md",
+      "recheck_evidence": "frozen-02/fresh-revocation-student-profile.txt"
     },
     {
       "id": "EA19",
       "subject": "未读必须按双方读取位置分别计算",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "fix01_interim_failed_recipient_visibility",
-      "latest_observation": "At stable in-progress60-file aggregate7ddb6f, actual CUA student failed body appears in coach list/thread with retry/delete; unread0 alone insufficient",
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
       "followup_feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
-      "followup_evidence": "fix01-interim/"
+      "followup_evidence": "fix01-interim/",
+      "recheck_evidence": "frozen-02/retained-data-ui-checks.json"
     },
     {
       "id": "VR09",
       "subject": "消息时分必须按应用本地时区显示",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "failed_frozen_01_fix01_running",
-      "latest_observation": "Actual local15:38 message displayed07:38; raw ISO sliced",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "latest_observation": "New actual UI residual: saved time UTC slice / direct implementation rationale; see REVIEW_06",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
-      "review": "../REVIEW_05.md"
+      "review": "../REVIEW_05.md",
+      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md"
     },
     {
       "id": "EA20",
       "subject": "草稿按会话及参与者隔离，接收方不能看到发送方未发草稿",
       "feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
-      "status": "fix01_interim_failed_peer_draft",
-      "latest_observation": "Actual CUA student typed private unsent draft; only role/nav switched; exact draft appears in coach composer. Source60files unchanged during observation. Followup static review: parsed.actor is last navigation identity, not trustworthy authorship; owner decision requires retaining unknown legacy text unassigned and not in either composer.",
+      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "evidence": "fix01-interim/failed-coach-thread-and-shared-draft.txt",
       "source_aggregate_sha256": "7ddb6ff6a04fa0decc68bf82e5eee7262e0b652502917e161cd25b905e5f85aa",
-      "owner_boundary_decision": "../../dispatch/D01-03-fix01-legacy-draft-owner-decision.md"
+      "owner_boundary_decision": "../../dispatch/D01-03-fix01-legacy-draft-owner-decision.md",
+      "recheck_evidence": "frozen-02/retained-data-ui-checks.json"
+    },
+    {
+      "id": "EA21",
+      "subject": "旧计划消息引用打开最新版本且交付时间写死",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/old-v7-message-opens-wrong-v8.txt"
+    },
+    {
+      "id": "EA22",
+      "subject": "同包新报价错误标为已确认且隐藏原约定",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/same-package-new759-wrongly-confirmed.txt"
+    },
+    {
+      "id": "EA23",
+      "subject": "无记录/单条明细与趋势图摘要不同源",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/states-s05-01.txt"
+    },
+    {
+      "id": "EA24",
+      "subject": "教练无结果状态仍显示三位教练",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/states-s06-03.txt"
+    },
+    {
+      "id": "EA25",
+      "subject": "替换为新训练日后器械时长沿用旧安排",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/day-b-today-context-metadata-mismatch.txt"
+    },
+    {
+      "id": "EA26",
+      "subject": "私有AI调整被错误绑定公开投稿审核",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/ai-applied-reload-dedup.txt"
+    },
+    {
+      "id": "EA27",
+      "subject": "已保存发布的草稿仍标待保存",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/fresh-revocation-student-list-and-zhou-delivery.txt"
+    },
+    {
+      "id": "VR10",
+      "subject": "学员撤权确认的授权控制主语颠倒",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/health-revoke-confirm-dialog.txt"
+    },
+    {
+      "id": "VR11",
+      "subject": "320宽200字号内部按钮裁切与图片叠字",
+      "feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "status": "failed_frozen_02_fix02_dispatched",
+      "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+      "evidence": "frozen-02/matrix-summary.jsonl"
     }
   ],
-  "latest_review": "../REVIEW_05.md",
-  "latest_frozen_source": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d"
+  "latest_review": "../REVIEW_06.md",
+  "latest_frozen_source": "6a5609c5b0ecdb350be080350237f1a4e86d48b9"
 }

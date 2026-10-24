@@ -1,0 +1,22 @@
+{
+  "scope": "Pre-freeze handback byte checks only; report JSON exists, normal handback/MD pending; no UI acceptance",
+  "observed_utc": "2026-10-24T09:32:48.473997+00:00",
+  "manifests": {
+    "source": {
+      "manifest_matches_report": true,
+      "count": 60,
+      "mismatches": []
+    },
+    "evidence": {
+      "manifest_matches_report": true,
+      "count": 26,
+      "mismatches": []
+    }
+  },
+  "command_log_hashes": {
+    "vue-tsc --noEmit": true,
+    "vue-tsc --noEmit && vite build": true,
+    "vitest run": true
+  },
+  "accepted": false
+}

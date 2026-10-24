@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix01 source correction running in same native Harness session; full UI not accepted",
+  "state": "fix02 running after Lead rejected frozen fix01; full UI not accepted",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "fix01 same round3/468steps1h31m49; handoff checkpoint inserted to run latest checks/save candidate reports and end source changes; no stop/restart",
+  "progress": "fix01 normally handed back; Lead83tests/10seams passed;180captures+coreflows found issues; same-session fix02 submitted18:23",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -82,10 +82,10 @@
     "tab": "9",
     "visibility": "background",
     "mark": "handoff",
-    "candidate_source_id": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+    "candidate_source_id": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
     "viewport_control": "fresh browser viewport capability for tab9; actual390x900 DPR1 verified; never reuse tab7 capability",
     "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
-    "candidate_note": "6dba rejected; fix01 may change live source, so live preview is not frozen acceptance"
+    "candidate_note": "Frozen fix01 source; not yet accepted, full visual/state/motion checks pending"
   },
   "first_live_ui_review": {
     "feedback": "D01-03-ui-review-01.md",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-handoff-checkpoint-inserted.txt",
+  "last_native_progress": "D01-03-fix01-normal-handback.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -249,14 +249,14 @@
   },
   "fix01": {
     "round": 3,
-    "state": "running",
+    "state": "normal_completion",
     "request": "D01-03-fix01-packet.md",
     "proof": "D01-03-fix01-queued.txt",
     "proof_note": "Idle send after doc recovery completed; filename is historical",
     "last_native": "D01-03-fix01-status-step390.txt",
     "model": "OpenCode Go / opencode-go/deepseek-v4.1-flash / Medium",
     "source_baseline": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
-    "normal_handback_pending": true,
+    "normal_handback_pending": false,
     "lead_ui_edit": false,
     "internal_retry_observed": "4/5 followed by command running; do not count as final transport failure",
     "peer_visibility_followup": {
@@ -286,6 +286,24 @@
       "proof": "D01-03-fix01-handoff-checkpoint-inserted.txt",
       "normal_handback_pending": true,
       "reason": "Bound current candidate; Lead still performs complete16family/55item acceptance afterward"
-    }
+    },
+    "normal_handback_proof": "D01-03-fix01-normal-handback.txt",
+    "native_duration": "1h56m58",
+    "native_steps": 493,
+    "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+    "executor_tests": "83 passed, exit0",
+    "lead_check_status": "running"
+  },
+  "fix02": {
+    "packet": "D01-03-fix02-packet.md",
+    "running_proof": "D01-03-fix02-running.txt",
+    "submitted_at_local": "2026-10-24 18:23 Asia/Shanghai",
+    "base_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+    "review": "../lead/REVIEW_06.md",
+    "same_model_workspace_session": true,
+    "scope": "bounded repairs only; original reports preserved; no Lead UI edits",
+    "lead_code_checks": "../lead/expansion/frozen-02/code/summary.json",
+    "lead_matrix_captures": 180,
+    "full_accepted": false
   }
 }

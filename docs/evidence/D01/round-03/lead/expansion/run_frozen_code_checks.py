@@ -49,7 +49,7 @@ def main():
         ("typecheck", [node, "node_modules/vue-tsc/bin/vue-tsc.js", "--noEmit"]),
         ("build", [node, "node_modules/vite/bin/vite.js", "build"]),
         ("test", [node, "node_modules/vitest/vitest.mjs", "run"]),
-        ("identity-seams", [node, str(snapshot), args.revision]),
+        ("identity-seams", [node, str(snapshot), args.revision, str(output / "identity-seams.json")]),
     ]
     report = {
         "scope": "Lead frozen code checks; module identity checks use fake window/storage; no browser/backend acceptance",

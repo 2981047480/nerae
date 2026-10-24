@@ -3991,7 +3991,8 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "Full16-family candidate6dba rejected by Lead REVIEW_05 after75tests passed but3of6 identity seams failed; round1 transport failure recorded, round2 docs-only recovery completed, same-session round3 fix01 running; no full UI acceptance."
+      "execution_state": "fix01 frozen6a5609c: Lead83tests/10seams passed,180captures/coreflows rejected remaining defects; same-session Flash/Medium fix02 running18:23; no full acceptance",
+      "candidate_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9"
     },
     {
       "id": "D01-I",
