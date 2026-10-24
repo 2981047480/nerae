@@ -3791,8 +3791,8 @@
       "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
       "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
       "review_status": "changes_requested",
-      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
-      "waiting_on": "fix02 submitted once at 12:08 to original Harness session; running observed. Await repaired source/report and independent Lead acceptance.",
+      "review_document": "docs/evidence/D01/round-03/lead/REVIEW_03.md",
+      "waiting_on": "Same original Harness round handles REVIEW_03 via native 插话发送: R15a/b and R16 enlarged-text defects. R08/R10e observed improved; still unaccepted, await final report/frozen checks.",
       "fix_prompt_sent": true,
       "fix02_prompt_sent": true,
       "write_ownership": {
@@ -3803,7 +3803,8 @@
         "lead_only_review": [
           "docs/evidence/D01/round-03/lead/"
         ]
-      }
+      },
+      "fix03_feedback_sent": true
     },
     {
       "id": "D01-03",
