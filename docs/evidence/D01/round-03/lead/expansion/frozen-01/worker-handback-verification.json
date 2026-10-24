@@ -1,0 +1,17 @@
+{
+  "scope": "Worker doc-recovery report and source manifest check; no full UI acceptance",
+  "revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "candidate_commit_matches": true,
+  "tree_matches": true,
+  "source_count": 60,
+  "source_mismatches": [],
+  "report_files": {
+    "docs/evidence/D01/round-03/worker/D01-03-report.md": "94b91bb05fff477e609268f3b18464d3677400f81707fa2aebeb7ba3b54beadd",
+    "docs/evidence/D01/round-03/worker/D01-03-report.json": "4c75847206ad7fb384aed20fe3a70bb7df05a1a2226cdd68f2fe7259191b94b7",
+    "docs/evidence/D01/round-03/worker/logs/d01-03-source-sha256-frozen.txt": "02cc9625cdab20460c7dd054d2cadfa7a918026fe09e63eb114e039cf7ff01da",
+    "docs/evidence/D01/round-03/worker/logs/d01-03-evidence-sha256-frozen.txt": "69bf71d02a691d27743ace7244fe200adf0eca34bc80413952038dfb81331d13"
+  },
+  "listener_observed_pid": 64273,
+  "listener_cwd": "/private/tmp/nerae-ui-complete/design/prototype",
+  "accepted": false
+}

@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "running in native Harness; no accepted full UI",
+  "state": "fix01 source correction running in same native Harness session; full UI not accepted",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "same original native round1 at2h4m/315steps, Flash/Medium; final own audit ongoing, no stop/restart; complete report not yet handed back",
+  "progress": "Round1 transport failed336steps; docs-only recovery round2 completed; fix01 round3 running at360steps/5m13 observed15:51 Asia/Shanghai.",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -77,13 +77,15 @@
   },
   "full_preview": {
     "url": "http://127.0.0.1:4187/",
-    "pid": 50258,
+    "pid": 64273,
     "workspace": "/private/tmp/nerae-ui-complete/design/prototype",
     "tab": "9",
     "visibility": "background",
     "mark": "handoff",
-    "candidate_source_id": "cc642b3570c877813a5e36879093ae27f6afa58c2168b2f4b958a19a85437d06",
-    "viewport_control": "fresh browser viewport capability for tab9; actual390x900 DPR1 verified; never reuse tab7 capability"
+    "candidate_source_id": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+    "viewport_control": "fresh browser viewport capability for tab9; actual390x900 DPR1 verified; never reuse tab7 capability",
+    "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
+    "candidate_note": "6dba rejected; fix01 may change live source, so live preview is not frozen acceptance"
   },
   "first_live_ui_review": {
     "feedback": "D01-03-ui-review-01.md",
@@ -200,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "../lead/expansion/monitor/harness-round1-step315.txt",
+  "last_native_progress": "D01-03-fix01-status-1551.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -208,6 +210,53 @@
     "flows": 7,
     "motions": 12,
     "missing_ids": [],
-    "status": "candidate structure complete; source globs resolve; D01-03 reports still pending, not UI acceptance"
+    "status": "55/16/7/12 complete; report now handed back, independent full UI acceptance pending"
+  },
+  "transport_failure": {
+    "round": 1,
+    "steps": 336,
+    "error": "TRANSPORT Connection error",
+    "internal_retry": "5/5 failed",
+    "normal_completion": false,
+    "proof": "D01-03-transport-failure.txt"
+  },
+  "docs_recovery": {
+    "round": 2,
+    "status": "normal_completion",
+    "source_unchanged": true,
+    "candidate_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+    "request": "D01-03-transport-recovery-docs.md",
+    "proof": "D01-03-transport-recovery-docs-sent.txt",
+    "worker_report": "../worker/D01-03-report.json",
+    "verified": "../lead/expansion/frozen-01/worker-handback-verification.json"
+  },
+  "frozen_candidate_review": {
+    "revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+    "verdict": "rejected",
+    "review": "../lead/REVIEW_05.md",
+    "typecheck_exit": 0,
+    "vite_build_exit": 0,
+    "tests": "75 passed; exit0",
+    "identity_seams": "3 passed / 3 failed; exit1; actual modules with fake window/storage, also CUA reproductions",
+    "source_stable_during_checks": true,
+    "new_issues": [
+      "EA17",
+      "EA18",
+      "EA19",
+      "VR09"
+    ],
+    "full_visual_matrix": "not run on rejected source"
+  },
+  "fix01": {
+    "round": 3,
+    "state": "running",
+    "request": "D01-03-fix01-packet.md",
+    "proof": "D01-03-fix01-queued.txt",
+    "proof_note": "Idle send after doc recovery completed; filename is historical",
+    "last_native": "D01-03-fix01-status-1551.txt",
+    "model": "OpenCode Go / opencode-go/deepseek-v4.1-flash / Medium",
+    "source_baseline": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+    "normal_handback_pending": true,
+    "lead_ui_edit": false
   }
 }

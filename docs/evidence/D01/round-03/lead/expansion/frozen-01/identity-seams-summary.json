@@ -1,0 +1,94 @@
+{
+  "status": "failed",
+  "sourceStable": true,
+  "checks": [
+    {
+      "name": "independent student drafts survive switching",
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "editedZhouNote": "快走与慢跑交替，保持能说话；本周调整",
+        "linUnchanged": true,
+        "zhouSavedNote": "快走与慢跑交替，保持能说话；本周调整"
+      }
+    },
+    {
+      "name": "Lin adoption while last coach context was Zhou",
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "adopted": true,
+        "linStudentVersion": 7,
+        "zhouVersion": 3,
+        "linCoachVersion": 7
+      }
+    },
+    {
+      "name": "Zhou publication leaves Lin delivery and messages unchanged",
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "sheet": "publish",
+        "published": true,
+        "zhouDeliveryVersion": 5,
+        "zhouDeliveryNote": "快走与慢跑交替，保持能说话；交付调整"
+      }
+    },
+    {
+      "name": "active Zhou reply opens Zhou rather than Lin",
+      "status": "failed",
+      "error": "AssertionError [ERR_ASSERTION]: Active Zhou reply did not open a conversation",
+      "evidence": {
+        "screen": "coachStudentDetail",
+        "conversationId": "conv-gu-yan",
+        "note": "这位学员还没有可用的站内会话；先确认服务关系。"
+      }
+    },
+    {
+      "name": "revocation reaches coach evidence while ordinary replies remain available",
+      "status": "failed",
+      "error": "AssertionError [ERR_ASSERTION]: Revoked training/feedback/diet evidence remained in coach selector",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-1",
+            "dateLabel": "10月22日",
+            "title": "上肢力量 · 12 组",
+            "summary": "卧推 12.5 kg × 10/10/9/8；平板支撑 45 秒 × 2",
+            "kind": "training"
+          },
+          {
+            "id": "lin-2",
+            "dateLabel": "10月23日",
+            "title": "教练点评",
+            "summary": "保持 12.5 kg，先把次数补齐，不用急着加重量。",
+            "kind": "feedback"
+          },
+          {
+            "id": "lin-3",
+            "dateLabel": "10月24日",
+            "title": "饮食自评",
+            "summary": "按计划 · 晚餐蔬菜偏少（仅本人可见）",
+            "kind": "self-report"
+          },
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ]
+      }
+    },
+    {
+      "name": "new messages update the recipient unread cursor independently",
+      "status": "failed",
+      "error": "AssertionError [ERR_ASSERTION]: Student message did not become unread for coach",
+      "evidence": {
+        "studentUnreadAfterOwnSend": 0,
+        "coachUnreadBeforeOpen": 0
+      }
+    }
+  ]
+}

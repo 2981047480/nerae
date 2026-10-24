@@ -40,17 +40,19 @@ try {
  await check('independent student drafts survive switching',async e=>{
    const linBefore=plain(s.state.coach)
    s.goToCoachPlanForStudent('zhou-lan')
-   e.initialZhouTitle=s.state.coach.draft.title
-   const zhouTitle=e.initialZhouTitle+' · 本周调整'
-   s.updatePlanField('title',zhouTitle)
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   const note=exercise.note+'；本周调整'
+   s.updatePlanField(day.id,exercise.id,'note',note)
+   assert.equal(s.state.coach.draft.days[0].exercises[0].note,note,'Edit setup did not change Zhou note')
+   e.editedZhouNote=note
    assert.equal(await s.saveDraft(),true,'Valid Zhou draft did not save')
    const zhouSaved=plain(s.state.coach)
    s.goToCoachPlanForStudent('lin-che')
-   e.linAfter=plain(s.state.coach)
-   assert.deepEqual(e.linAfter,linBefore,'Editing Zhou changed Lin')
+   assert.deepEqual(plain(s.state.coach),linBefore,'Editing Zhou changed Lin')
+   e.linUnchanged=true
    s.goToCoachPlanForStudent('zhou-lan')
-   e.zhouAfter=plain(s.state.coach)
-   assert.deepEqual(e.zhouAfter,zhouSaved,'Zhou saved draft lost after switch')
+   assert.deepEqual(plain(s.state.coach),zhouSaved,'Zhou saved draft lost after switch')
+   e.zhouSavedNote=s.state.coach.draft.days[0].exercises[0].note
  })
  await check('Lin adoption while last coach context was Zhou',async e=>{
    s.goToCoachPlanForStudent('zhou-lan')
@@ -73,15 +75,19 @@ try {
    const linMessages=plain(s.state.conversations.find(x=>x.id==='conv-gu-yan')?.messages??[])
    const linCoach=plain(s.state.coach)
    s.goToCoachPlanForStudent('zhou-lan')
-   s.updatePlanField('title',s.state.coach.draft.title+' · 交付调整')
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   const note=exercise.note+'；交付调整'
+   s.updatePlanField(day.id,exercise.id,'note',note)
+   assert.equal(s.state.coach.draft.days[0].exercises[0].note,note,'Publication edit setup did not change note')
    assert.equal(await s.saveDraft(),true)
    s.requestPublish()
    e.sheet=s.ui.sheet
    assert.equal(e.sheet,'publish','Valid Zhou plan did not reach publication confirmation')
    e.published=s.confirmPublish()
    assert.equal(e.published,true)
-   e.zhouDeliveries=plain(s.state.coach.deliveries)
-   assert.ok(e.zhouDeliveries.length>0,'No Zhou delivery recorded')
+   const latest=[...s.state.coach.deliveries].sort((a,b)=>b.version-a.version)[0]
+   e.zhouDeliveryVersion=latest?.version;e.zhouDeliveryNote=latest?.content.days[0]?.exercises[0]?.note
+   assert.equal(e.zhouDeliveryNote,note,'Zhou publication did not deliver actual edit')
    assert.deepEqual(plain(s.state.student.incoming),linIncoming,'Zhou publication overwrote Lin incoming')
    assert.deepEqual(plain(s.state.conversations.find(x=>x.id==='conv-gu-yan')?.messages??[]),linMessages,'Zhou publication sent Lin a message')
    s.goToCoachPlanForStudent('lin-che')
@@ -93,18 +99,41 @@ try {
    e.screen=s.state.screen;e.conversationId=s.ui.activeConversationId;e.note=s.ui.saveNote
    assert.equal(e.screen,'messages','Active Zhou reply did not open a conversation')
    assert.ok(e.conversationId&&e.conversationId!=='conv-gu-yan','Zhou reply used Lin conversation')
+   const zhouConversationId=e.conversationId
+   s.jumpToScenario('today');s.goToMessages()
+   assert.ok(!s.conversationList.value.some(x=>x.id===zhouConversationId),'Student Lin was given Zhou conversation')
  })
  await check('revocation reaches coach evidence while ordinary replies remain available',async e=>{
+   const ownHealthText=s.state.conversations.find(x=>x.id==='conv-gu-yan').messages.find(x=>x.health&&x.author==='student').text
    s.confirmHealthRevoke()
    s.goToCoachStudentDetail('lin-che')
    e.visibleEvidence=plain(s.selectedStudentEvidence.value)
    assert.ok(e.visibleEvidence.every(x=>x.kind==='plan'),'Revoked training/feedback/diet evidence remained in coach selector')
+   s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
+   assert.ok(s.currentConversation.value.messages.some(x=>x.text===ownHealthText),'Student lost their own health message after revocation')
+   s.goToCoachStudentDetail('lin-che')
    s.replyToStudent('lin-che')
    assert.equal(s.state.screen,'messages')
    assert.equal(s.ui.activeConversationId,'conv-gu-yan')
    s.setMessageDraft('conv-gu-yan','周六的安排可以晚半小时吗')
    e.ordinarySent=s.sendMessage('conv-gu-yan')
    assert.equal(e.ordinarySent,true,'Health revocation incorrectly blocked ordinary arrangement reply')
+ })
+ await check('new messages update the recipient unread cursor independently',async e=>{
+   s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
+   s.setMessageDraft('conv-gu-yan','周六的训练可以晚半小时开始吗')
+   assert.equal(s.sendMessage('conv-gu-yan'),true)
+   e.studentUnreadAfterOwnSend=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   assert.equal(e.studentUnreadAfterOwnSend,0,'Sender acquired unread from own message')
+   s.goToCoachTodo();s.goToMessages()
+   e.coachUnreadBeforeOpen=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   assert.ok(e.coachUnreadBeforeOpen>=1,'Student message did not become unread for coach')
+   s.openConversation('conv-gu-yan')
+   s.setMessageDraft('conv-gu-yan','可以，按调整后的时间开始。')
+   assert.equal(s.sendMessage('conv-gu-yan'),true)
+   s.jumpToScenario('today');s.goToMessages()
+   e.studentUnreadBeforeOpen=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   assert.ok(e.studentUnreadBeforeOpen>=1,'Coach message did not become unread for student')
  })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}

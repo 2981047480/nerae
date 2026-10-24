@@ -1,0 +1,8 @@
+{
+  "executed_script_snapshot": "check-identity-executed-v2.mjs",
+  "sha256": "d1f44ca2d31de74e93e055b35328afc15f9ab8acfc422536bafdcb615dce357b",
+  "result": "identity-seams-v2.log",
+  "setup_correction": "First attempt used wrong updatePlanField parameters in two passing setup paths. v2 performs actual note edits and asserts they occurred. Three failing cases also reproduced in CUA.",
+  "scope": "actual modules with fake window/storage, not browser/backend",
+  "accepted": false
+}

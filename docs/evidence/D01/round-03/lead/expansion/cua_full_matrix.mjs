@@ -3,6 +3,29 @@
 import { captureViewport } from '../fix-01/cua_capture_v2.mjs'
 import { prepareViewport, auditDom, auditBounds } from '../fix-02/cua_review_v3.mjs'
 
+// Flow evidence must preserve the scroll/focus produced by the real action.
+// Unlike the width matrix, this function never calls viewport.set().
+export async function captureCurrentViewport(ctx, name) {
+  const inspect=()=>({
+    width:innerWidth,height:innerHeight,dpr:devicePixelRatio,scrollX,scrollY,
+    mainCount:document.querySelectorAll('main').length,
+    skipTargetExists:Boolean(document.getElementById('main')),
+    textScale:document.documentElement.dataset.textScale,
+  })
+  const before=await ctx.tab.playwright.evaluate(inspect)
+  const bytes=await ctx.tab.screenshot({fullPage:false})
+  const after=await ctx.tab.playwright.evaluate(inspect)
+  const dimensionsVerified=['width','height','dpr','scrollX','scrollY'].every(k=>before[k]===after[k])
+  const extension=bytes[0]===0x89&&bytes[1]===0x50?'png':'jpg'
+  await ctx.fs.mkdir(`${ctx.evidenceDir}/screenshots`,{recursive:true})
+  const path=`${ctx.evidenceDir}/screenshots/${name}.${extension}`
+  await ctx.fs.writeFile(path,bytes,{flag:'wx'})
+  const record={name,path,mode:'preserve-current-viewport',sourceRevision:ctx.sourceRevision,before,after,dimensionsVerified,accepted:false}
+  await ctx.fs.appendFile(`${ctx.evidenceDir}/flow-captures.jsonl`,JSON.stringify(record)+'\n')
+  if(!dimensionsVerified)throw Error(`Current viewport changed during capture; excluded: ${name}`)
+  return {...record,bytes}
+}
+
 export async function captureCurrentViewMatrix(ctx, {
   family,
   widths = [320, 390, 430, 768, 1440],
@@ -29,7 +52,7 @@ export async function captureCurrentViewMatrix(ctx, {
       const dom = await auditDom(ctx, name)
       const bounds = await auditBounds(ctx, name)
       if (dom.mainCount !== 1 || !dom.skipTargetExists) throw Error(`Rendered main/skip target unavailable: ${name}`)
-      if (bounds.scale !== String(scale / 100)) throw Error(`Text scale was not applied: ${name}, observed ${bounds.scale}`)
+      if (bounds.scale !== String(scale)) throw Error(`Text scale was not applied: ${name}, observed ${bounds.scale}`)
       let capture
       try { capture = await captureViewport(ctx, name, width, height) }
       catch (error) {

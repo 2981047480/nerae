@@ -173,6 +173,44 @@
       "feedback": "../../dispatch/D01-03-action-bar-review.md",
       "status": "pending_final_frozen_recheck",
       "latest_observation": "actual390x900 scroll0 bar704..828 covers first content row749..805,nav0,bottom72; sent original round1"
+    },
+    {
+      "id": "EA17",
+      "subject": "有效周岚关系的普通回复无法进入本人会话",
+      "feedback": "../../dispatch/D01-03-fix01-packet.md",
+      "status": "failed_frozen_01_fix01_running",
+      "latest_observation": "Actual Zhou reply stays in detail; same frozen module failed",
+      "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+      "review": "../REVIEW_05.md"
+    },
+    {
+      "id": "EA18",
+      "subject": "撤权未统一读取面且错误清空本人消息",
+      "feedback": "../../dispatch/D01-03-fix01-packet.md",
+      "status": "failed_frozen_01_fix01_running",
+      "latest_observation": "Actual revocation still exposes coach health evidence and training reference; own health message emptied",
+      "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+      "review": "../REVIEW_05.md"
+    },
+    {
+      "id": "EA19",
+      "subject": "未读必须按双方读取位置分别计算",
+      "feedback": "../../dispatch/D01-03-fix01-packet.md",
+      "status": "failed_frozen_01_fix01_running",
+      "latest_observation": "New student message appears in coach list with unread0",
+      "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+      "review": "../REVIEW_05.md"
+    },
+    {
+      "id": "VR09",
+      "subject": "消息时分必须按应用本地时区显示",
+      "feedback": "../../dispatch/D01-03-fix01-packet.md",
+      "status": "failed_frozen_01_fix01_running",
+      "latest_observation": "Actual local15:38 message displayed07:38; raw ISO sliced",
+      "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+      "review": "../REVIEW_05.md"
     }
-  ]
+  ],
+  "latest_review": "../REVIEW_05.md",
+  "latest_frozen_source": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d"
 }
