@@ -135,6 +135,48 @@ try {
    e.studentUnreadBeforeOpen=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
    assert.ok(e.studentUnreadBeforeOpen>=1,'Coach message did not become unread for student')
  })
+ await check('self-only observation stays private despite a general health grant',async e=>{
+   s.goToCoachStudentDetail('lin-che')
+   e.visibleEvidence=plain(s.selectedStudentEvidence.value)
+   assert.ok(!e.visibleEvidence.some(x=>x.id==='lin-3'||x.summary?.includes('晚餐蔬菜偏少')),'Explicitly self-only observation was exposed by general health authorization')
+ })
+ await check('ended relationship removes coach health reads and blocks new sends',async e=>{
+   const raw=s.state.conversations.find(x=>x.id==='conv-gu-yan')
+   const sensitiveTexts=raw.messages.filter(x=>x.health||x.refs?.some(ref=>ref.kind==='training')).map(x=>x.text).filter(Boolean)
+   s.applyPreviewState('messages','readonly')
+   s.goToCoachStudentDetail('lin-che')
+   e.visibleEvidence=plain(s.selectedStudentEvidence.value)
+   assert.ok(e.visibleEvidence.every(x=>x.kind==='plan'),'Ended relationship retained coach health evidence')
+   s.replyToStudent('lin-che')
+   e.readOnly=s.messagesReadOnly.value
+   assert.equal(e.readOnly,true)
+   const projected=s.currentConversation.value?.messages??[]
+   assert.ok(!projected.some(m=>sensitiveTexts.some(text=>m.text?.includes(text))),'Ended relationship retained sensitive message text in coach projection')
+   s.setMessageDraft('conv-gu-yan','服务结束后不应发送')
+   assert.equal(s.sendMessage('conv-gu-yan'),false,'Ended relationship sent a new message')
+ })
+ await check('failed send is not received and same-ID retry counts once',async e=>{
+   s.goToCoachTodo();s.goToMessages();s.openConversation('conv-gu-yan')
+   s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
+   s.applyPreviewState('messages','failed')
+   s.setMessageDraft('conv-gu-yan','失败重试只接收一次')
+   assert.equal(s.sendMessage('conv-gu-yan'),true)
+   const id=s.ui.lastSentMessageId
+   const raw=s.state.conversations.find(x=>x.id==='conv-gu-yan')
+   assert.equal(raw.messages.find(x=>x.id===id)?.status,'failed')
+   s.goToCoachTodo();s.goToMessages()
+   e.failedUnread=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   assert.equal(e.failedUnread,0,'Failed message was counted as received')
+   s.openConversation('conv-gu-yan')
+   assert.ok(!s.currentConversation.value.messages.some(x=>x.id===id),'Recipient received a failed outgoing message')
+   s.jumpToScenario('today');s.goToMessages();s.openConversation('conv-gu-yan')
+   assert.equal(s.retryMessage(id,'conv-gu-yan'),true)
+   s.retryMessage(id,'conv-gu-yan')
+   assert.equal(raw.messages.filter(x=>x.id===id).length,1,'Retry duplicated the stable message ID')
+   s.goToCoachTodo();s.goToMessages()
+   e.afterRetryUnread=s.conversationList.value.find(x=>x.id==='conv-gu-yan')?.unread
+   assert.equal(e.afterRetryUnread,1,'Same-ID retry was not received exactly once')
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {
