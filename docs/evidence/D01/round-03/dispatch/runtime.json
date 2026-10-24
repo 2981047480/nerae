@@ -17,7 +17,7 @@
     "S15"
   ],
   "preview_port": 4186,
-  "status": "fix01 completed normally; frozen independent Lead review changes_requested; fix02 ready, not yet sent",
+  "status": "fix02 submitted once to original native Harness session; live running observed",
   "reasoning_history": [
     "Max: initial request stopped at 38 steps without main source/progress",
     "Medium: continue same session for bounded implementation"
@@ -66,6 +66,10 @@
   "fix01_native_duration": "29m15s / 160 steps",
   "lead_review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
   "next_fix_prompt": "D01-02-fix-02-prompt.md",
-  "fix02_prompt_sent": false,
-  "goal_tool_status_latest": "active"
+  "fix02_prompt_sent": true,
+  "goal_tool_status_latest": "active",
+  "fix02_submitted_local": "2026-10-24 12:08 Asia/Shanghai",
+  "fix02_submission_proof": "docs/evidence/D01/round-03/dispatch/fix02-submitted.txt",
+  "fix02_input_revision": "19a2aeb",
+  "fix02_input_lead_revision": "7fc898c"
 }

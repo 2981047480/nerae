@@ -3790,8 +3790,9 @@
       "implementation_revision": "9b16be064e3da9d11b271b0e00769faa1d9d2079",
       "review_status": "changes_requested",
       "review_document": "docs/evidence/D01/round-03/lead/REVIEW_02.md",
-      "waiting_on": "fix01 normally completed and frozen; independent Lead review asks R08 remaining, R10e and preview text scaling. fix02 prepared for original Harness session.",
-      "fix_prompt_sent": true
+      "waiting_on": "fix02 submitted once at 12:08 to original Harness session; running observed. Await repaired source/report and independent Lead acceptance.",
+      "fix_prompt_sent": true,
+      "fix02_prompt_sent": true
     },
     {
       "id": "D01-03",
