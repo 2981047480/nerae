@@ -1,0 +1,129 @@
+{
+  "note": "Live follow-up; rendering source still being edited. Not an accepted/frozen check.",
+  "scale": "100",
+  "latestNormal": [
+    {
+      "name": "day-title-day-a",
+      "box": {
+        "bottom": 426.015625,
+        "height": 44,
+        "left": 37,
+        "right": 323.5,
+        "top": 382.015625,
+        "width": 286.5
+      }
+    },
+    {
+      "name": "移除动作 哑铃卧推",
+      "box": {
+        "bottom": 528.4609375,
+        "height": 44,
+        "left": 279.5,
+        "right": 323.5,
+        "top": 484.4609375,
+        "width": 44
+      }
+    },
+    {
+      "name": "动作备注",
+      "box": {
+        "bottom": 671.4453125,
+        "height": 52.390625,
+        "left": 69,
+        "right": 323.5,
+        "top": 619.0546875,
+        "width": 254.5
+      }
+    },
+    {
+      "name": "移除动作 高位下拉",
+      "box": {
+        "bottom": 748.4453125,
+        "height": 44,
+        "left": 279.5,
+        "right": 323.5,
+        "top": 704.4453125,
+        "width": 44
+      }
+    },
+    {
+      "name": "动作备注",
+      "box": {
+        "bottom": 891.4296875,
+        "height": 52.390625,
+        "left": 69,
+        "right": 323.5,
+        "top": 839.0390625,
+        "width": 254.5
+      }
+    },
+    {
+      "name": "移除动作 单臂哑铃划船",
+      "box": {
+        "bottom": 968.4296875,
+        "height": 44,
+        "left": 279.5,
+        "right": 323.5,
+        "top": 924.4296875,
+        "width": 44
+      }
+    },
+    {
+      "name": "动作备注",
+      "box": {
+        "bottom": 1111.4140625,
+        "height": 52.390625,
+        "left": 69,
+        "right": 323.5,
+        "top": 1059.0234375,
+        "width": 254.5
+      }
+    },
+    {
+      "name": "移除动作 平板支撑",
+      "box": {
+        "bottom": 1188.4140625,
+        "height": 44,
+        "left": 279.5,
+        "right": 323.5,
+        "top": 1144.4140625,
+        "width": 44
+      }
+    },
+    {
+      "name": "动作备注",
+      "box": {
+        "bottom": 1331.3984375,
+        "height": 52.390625,
+        "left": 69,
+        "right": 323.5,
+        "top": 1279.0078125,
+        "width": 254.5
+      }
+    }
+  ],
+  "normalTabs": [
+    {
+      "height": 46,
+      "name": " 训练 ",
+      "width": 30.6015625
+    },
+    {
+      "height": 46,
+      "name": " 饮食 ",
+      "width": 30.6015625
+    }
+  ],
+  "normalNav": [
+    {
+      "height": 44,
+      "name": " 今天 ",
+      "width": 30.6015625
+    },
+    {
+      "height": 44,
+      "name": " 发现 ",
+      "width": 30.6015625
+    }
+  ]
+}

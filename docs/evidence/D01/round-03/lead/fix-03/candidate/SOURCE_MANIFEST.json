@@ -1,0 +1,224 @@
+{
+  "accepted": false,
+  "provisional": true,
+  "source_id": "c0b3a7f9cdefe6de393b6a17786e05055ea3a2b8ade9161cdbfe1a1d5c7e9a2f",
+  "parent_revision": "19a2aeb438ddc68d35480db5df6749d25bf9135f",
+  "captured_utc": "2026-10-24T04:37:35.672872+00:00",
+  "files": [
+    {
+      "path": "design/prototype/ASSETS.md",
+      "sha256": "3b03e06a9a9015e6e6a9e3e5cece62255326ff5535c78b62b5736606a5e13508",
+      "mtime_ns": 1792779556441677160
+    },
+    {
+      "path": "design/prototype/README.md",
+      "sha256": "16ccddf17031dc7dabfb3f41c6c8b99d6cb75131aa30a15cbef8faa2d84faa39",
+      "mtime_ns": 1792816041982963624
+    },
+    {
+      "path": "design/prototype/STATES_AND_DATA.md",
+      "sha256": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013",
+      "mtime_ns": 1792816041983415171
+    },
+    {
+      "path": "design/prototype/index.html",
+      "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2",
+      "mtime_ns": 1792778203825936999
+    },
+    {
+      "path": "design/prototype/package.json",
+      "sha256": "1b1ff783c2dd406f0a71416b74b4b68a70aa202940f1d882e13169bcebf98926",
+      "mtime_ns": 1792812060982216835
+    },
+    {
+      "path": "design/prototype/pnpm-lock.yaml",
+      "sha256": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0",
+      "mtime_ns": 1792812060958111386
+    },
+    {
+      "path": "design/prototype/public/assets/diet-breakfast.webp",
+      "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+      "mtime_ns": 1792777387023181206
+    },
+    {
+      "path": "design/prototype/public/assets/diet-featured.webp",
+      "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+      "mtime_ns": 1792777384399245695
+    },
+    {
+      "path": "design/prototype/public/assets/diet-mealprep.webp",
+      "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+      "mtime_ns": 1792777389895959169
+    },
+    {
+      "path": "design/prototype/public/assets/explore-dumbbell.webp",
+      "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+      "mtime_ns": 1792777377114905406
+    },
+    {
+      "path": "design/prototype/public/assets/explore-featured.webp",
+      "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+      "mtime_ns": 1792777436852536659
+    },
+    {
+      "path": "design/prototype/public/assets/explore-plank.webp",
+      "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+      "mtime_ns": 1792777374799574168
+    },
+    {
+      "path": "design/prototype/public/assets/explore-stretch.webp",
+      "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+      "mtime_ns": 1792777372465204821
+    },
+    {
+      "path": "design/prototype/public/assets/gym-interior.webp",
+      "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+      "mtime_ns": 1792778413847027240
+    },
+    {
+      "path": "design/prototype/public/assets/hero-today.webp",
+      "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+      "mtime_ns": 1792777363953861369
+    },
+    {
+      "path": "design/prototype/public/assets/training-dumbbells.webp",
+      "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+      "mtime_ns": 1792777379986628462
+    },
+    {
+      "path": "design/prototype/src/App.vue",
+      "sha256": "ce9729434e80efaad7babe22cdd2de8bd9aadc8b113daf1bdd67eccf5f5212f3",
+      "mtime_ns": 1792816453600382711
+    },
+    {
+      "path": "design/prototype/src/components/AppHeader.vue",
+      "sha256": "3d8670e403d6686d07dc60b3e9c2a87692e45bcc176729ff1114e750f2f3159b",
+      "mtime_ns": 1792779667250376404
+    },
+    {
+      "path": "design/prototype/src/components/BaseSheet.vue",
+      "sha256": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086",
+      "mtime_ns": 1792815491813763663
+    },
+    {
+      "path": "design/prototype/src/components/PhotoFrame.vue",
+      "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0",
+      "mtime_ns": 1792778500925426519
+    },
+    {
+      "path": "design/prototype/src/components/PreviewControl.vue",
+      "sha256": "e01c03796bbb24667f5fdc47ce8ed5871279f62f5cd6731a67d61d9382b6fe7e",
+      "mtime_ns": 1792815715334881881
+    },
+    {
+      "path": "design/prototype/src/components/TabBar.vue",
+      "sha256": "22881d346774b40b4c41cd067743cf325cdf5127b15c119e042fd4f30f8ddf93",
+      "mtime_ns": 1792778527916908678
+    },
+    {
+      "path": "design/prototype/src/components/Wordmark.vue",
+      "sha256": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36",
+      "mtime_ns": 1792815346704563464
+    },
+    {
+      "path": "design/prototype/src/data/sample.ts",
+      "sha256": "6550501cfe3e7a1adfcece69e764e519a789debe2df90c90804315cbef2c3258",
+      "mtime_ns": 1792815298987441782
+    },
+    {
+      "path": "design/prototype/src/main.ts",
+      "sha256": "bc6f04df2e565f98f4b543a0d03ff85cc45b86536f4aa3a9abc6fe5acc62224a",
+      "mtime_ns": 1792778203870913880
+    },
+    {
+      "path": "design/prototype/src/state/store.ts",
+      "sha256": "509245a2d3679c1637159041297502d1c1f406bc28eb87a9b70b8580849b7a4e",
+      "mtime_ns": 1792815317681254497
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "sha256": "5ddb01a7b076d8264d96425bac042c404d6038e19e502342531486cf2acf707b",
+      "mtime_ns": 1792816453602708577
+    },
+    {
+      "path": "design/prototype/src/styles/tokens.css",
+      "sha256": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a",
+      "mtime_ns": 1792778247545234913
+    },
+    {
+      "path": "design/prototype/src/tests/logic.test.ts",
+      "sha256": "bdeb59186cca20f0165ee126b17e05d99bb0d117048925b2d5c4e9663eaaeef6",
+      "mtime_ns": 1792811996928688540
+    },
+    {
+      "path": "design/prototype/src/tests/store.test.ts",
+      "sha256": "03ae9978cc288847f11f552b9f9b32b027b8293865a04bed49b565233daaba92",
+      "mtime_ns": 1792815729789538893
+    },
+    {
+      "path": "design/prototype/src/tests/ui.test.ts",
+      "sha256": "9ead221fb61c2038cef4ddb3d1075e0a9e2607015ad9322fee07a1e7a6a6993c",
+      "mtime_ns": 1792815420599942453
+    },
+    {
+      "path": "design/prototype/src/types.ts",
+      "sha256": "3a966695616fb39d74e7daeacdfa93fa96cdef099addac9bd08200d5a1cdeab1",
+      "mtime_ns": 1792815298986715110
+    },
+    {
+      "path": "design/prototype/src/utils/dom.ts",
+      "sha256": "134012a7835d4663680b7d8446f02be6f472abb9362cd9dd2d24d0cbfb7ec03a",
+      "mtime_ns": 1792815506048539428
+    },
+    {
+      "path": "design/prototype/src/utils/format.ts",
+      "sha256": "84670d1934441f616873a47cbe61e3ec9c13f48c7c363610b0735b45d7e58a8a",
+      "mtime_ns": 1792778266895757630
+    },
+    {
+      "path": "design/prototype/src/utils/plan.ts",
+      "sha256": "98be06cedc1cc7c01c2d9331ac71888624e2db072b86432557169f4c8c7ddaa7",
+      "mtime_ns": 1792811506913911738
+    },
+    {
+      "path": "design/prototype/src/utils/training.ts",
+      "sha256": "7e882a1cec598242493de446683ca5213f82b0a11872075143ab8563e2833712",
+      "mtime_ns": 1792811506913292523
+    },
+    {
+      "path": "design/prototype/src/views/CoachReviewView.vue",
+      "sha256": "737da4fd07a137780606c4c06b7b9c93b0b603073d516e346be5ae6a0c11a9bf",
+      "mtime_ns": 1792816453604947316
+    },
+    {
+      "path": "design/prototype/src/views/ExploreView.vue",
+      "sha256": "7dc2562ef0850f1ee3bafc944f421b45a0bd3ae80d4b8b1de86b404a4607bc51",
+      "mtime_ns": 1792816453598864107
+    },
+    {
+      "path": "design/prototype/src/views/TodayView.vue",
+      "sha256": "c402fae042b76ca8874c3d98602ab5c398ddb54daf6b35971cf75f67c68f32a0",
+      "mtime_ns": 1792815394484182426
+    },
+    {
+      "path": "design/prototype/src/views/TrainingView.vue",
+      "sha256": "fed64d9ef603e6ebd9dfaa3e18ba30046b137d58d7e8800eab95d779403f9a17",
+      "mtime_ns": 1792815346708295198
+    },
+    {
+      "path": "design/prototype/src/vite-env.d.ts",
+      "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a",
+      "mtime_ns": 1792778203859779340
+    },
+    {
+      "path": "design/prototype/tsconfig.json",
+      "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db",
+      "mtime_ns": 1792778203837850646
+    },
+    {
+      "path": "design/prototype/vite.config.ts",
+      "sha256": "1e60c90abf496f97ab685bb6aab27479af2324ac69f3a0dc7bf1899fb88a0166",
+      "mtime_ns": 1792778203847734357
+    }
+  ]
+}

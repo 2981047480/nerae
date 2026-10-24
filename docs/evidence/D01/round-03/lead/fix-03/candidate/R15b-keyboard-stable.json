@@ -1,0 +1,15 @@
+{
+  "note": "After AX observation; initial R15b-keyboard.json sampled first frame of140ms transform and is not the focused visual verdict",
+  "stableSkip": {
+    "href": "#main",
+    "rect": {
+      "bottom": 74.8984375,
+      "height": 62.8984375,
+      "top": 12,
+      "width": 186.03125
+    },
+    "scrollY": 0,
+    "tag": "A",
+    "transform": "matrix(1, 0, 0, 1, 0, 12)"
+  }
+}

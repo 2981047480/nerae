@@ -1,0 +1,28 @@
+{
+  "source_id": "c0b3a7f9cdefe6de393b6a17786e05055ea3a2b8ade9161cdbfe1a1d5c7e9a2f",
+  "checked_utc": "2026-10-24T04:42:44.258485+00:00",
+  "files_checked": 43,
+  "changes": [
+    {
+      "path": "design/prototype/README.md",
+      "before": "16ccddf17031dc7dabfb3f41c6c8b99d6cb75131aa30a15cbef8faa2d84faa39",
+      "after": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5"
+    },
+    {
+      "path": "design/prototype/src/styles/base.css",
+      "before": "5ddb01a7b076d8264d96425bac042c404d6038e19e502342531486cf2acf707b",
+      "after": "149c2f969dae10a6a80cbe244c5e42a00537a248203cf17b5c15b3339d5cc117"
+    },
+    {
+      "path": "design/prototype/src/tests/ui.test.ts",
+      "before": "9ead221fb61c2038cef4ddb3d1075e0a9e2607015ad9322fee07a1e7a6a6993c",
+      "after": "741a84bcd10df822b5749fe33edd8f029031094609b69ea8b5f2d15927d1ba67"
+    },
+    {
+      "path": "design/prototype/src/utils/dom.ts",
+      "before": "134012a7835d4663680b7d8446f02be6f472abb9362cd9dd2d24d0cbfb7ec03a",
+      "after": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba"
+    }
+  ],
+  "accepted": false
+}

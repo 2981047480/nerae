@@ -1,0 +1,17 @@
+{
+  "skipFocused": {
+    "href": "#main",
+    "rect": {
+      "bottom": 0,
+      "height": 62.8984375,
+      "top": -62.8984375,
+      "width": 186.03125
+    },
+    "tag": "A",
+    "text": "跳到主要内容"
+  },
+  "skipTarget": {
+    "activeId": "main",
+    "activeTag": "MAIN"
+  }
+}
