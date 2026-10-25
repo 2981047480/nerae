@@ -1,0 +1,97 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "runtime": "http://127.0.0.1:4188/",
+  "frameOrFpsMeasured": false,
+  "samples": [
+    {
+      "elapsedMs": 292,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail view-enter-active view-enter-to"
+      ]
+    },
+    {
+      "elapsedMs": 490,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 545,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 604,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 655,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 707,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 758,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 810,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 862,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    },
+    {
+      "elapsedMs": 918,
+      "ghosts": [],
+      "hero": 1,
+      "motion": "full",
+      "viewClasses": [
+        "screen screen--wide plan-detail"
+      ]
+    }
+  ]
+}

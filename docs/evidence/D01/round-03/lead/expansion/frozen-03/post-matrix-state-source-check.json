@@ -1,0 +1,8 @@
+{
+  "source_revision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "observed_utc": "2026-10-24T13:04:40.744709+00:00",
+  "checked_files": 60,
+  "mismatches": [],
+  "scope": "After 220 matrix captures (10 excluded wrong-role samples), 96 isolated state captures; full flow/motion review pending",
+  "accepted": false
+}

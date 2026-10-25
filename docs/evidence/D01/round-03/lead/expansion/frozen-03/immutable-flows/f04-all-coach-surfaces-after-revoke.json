@@ -1,0 +1,117 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "needles": [
+    "右肩这两天有点紧",
+    "卧推最后一组 12.5 kg × 8",
+    "卧推 12.5 kg × 10/10/9/8",
+    "10月22日 · 上肢力量完成 12 组"
+  ],
+  "scope": "Rendered DOM/attributes only; no server permission claim",
+  "surfaces": [
+    {
+      "name": "f04-revoked-coach-todo",
+      "leaked": [],
+      "dom": {
+        "attrs": [
+          [
+            null,
+            "回到主要页面"
+          ],
+          [
+            null,
+            "Nerae"
+          ],
+          [
+            null,
+            "教练主导航"
+          ],
+          [
+            null,
+            "教练主导航"
+          ],
+          [
+            null,
+            "打开预览控制"
+          ]
+        ],
+        "body": "\n    跳到主要内容NERAE顾言 · 教练待办学员消息服务顾言 · 教练 · 10月24日 周六待办5 项待处理 1待回复1待跟进1授权1服务关系1草稿今日待办待回复1 项林澈今天健康相关内容未授权学员未授权健康内容；普通安排与服务仍可处理。进入回复  标记已处理 待跟进1 项林澈今天跟进版本 7 的采用10月23日已交付 · 学员尚未采用查看学员  标记已处理 授权1 项周岚本周健康内容未授权健康记录与饮食观察不可见；计划与服务记录仍可查看 健康内容未授权时不可见；计划与服务记录仍可查看。 打开  标记已处理 服务关系1 项安然今天服务约定待确认咨询已收到 · 尚未建立服务关系打开  标记已处理 草稿1 项周岚今天计划草稿未保存周四训练日有 2 处未保存改动打开  标记已处理 已处理还没有标记已处理的事项。标记已处理只改变队列状态，不会删除学员记录、消息或已交付计划。今天的上下文在读学员2 位待确认1 位已结束1 位按当前服务关系统计；已结束关系不计入在读。 队列来自学员消息、已交付计划、授权状态与未保存草稿。 待办学员消息服务预览\n  \n\n"
+      },
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"回到主要页面\":\n    - generic \"Nerae\": NERAE\n  - paragraph: 顾言 · 教练\n- main:\n  - paragraph: 顾言 · 教练 · 10月24日 周六\n  - heading \"待办\" [level=1]\n  - paragraph: 5 项待处理\n  - generic: \"1\"\n  - generic: 待回复\n  - generic: \"1\"\n  - generic: 待跟进\n  - generic: \"1\"\n  - generic: 授权\n  - generic: \"1\"\n  - generic: 服务关系\n  - generic: \"1\"\n  - generic: 草稿\n  - region \"今日待办\":\n    - heading \"今日待办\" [level=2]\n    - heading \"待回复\" [level=2]\n    - generic: 1 项\n    - list:\n      - generic: 林澈\n      - generic: 今天\n      - paragraph: 健康相关内容未授权\n      - paragraph: 学员未授权健康内容；普通安排与服务仍可处理。\n      - button \"进入回复\":\n        - text: 进入回复\n      - button \"标记已处理\":\n        - text: 标记已处理\n    - heading \"待跟进\" [level=2]\n    - generic: 1 项\n    - list:\n      - generic: 林澈\n      - generic: 今天\n      - paragraph: 跟进版本 7 的采用\n      - paragraph: 10月23日已交付 · 学员尚未采用\n      - button \"查看学员\":\n        - text: 查看学员\n      - button \"标记已处理\":\n        - text: 标记已处理\n    - heading \"授权\" [level=2]\n    - generic: 1 项\n    - list:\n      - generic: 周岚\n      - generic: 本周\n      - paragraph: 健康内容未授权\n      - paragraph: 健康记录与饮食观察不可见；计划与服务记录仍可查看\n      - paragraph:\n        - text: 健康内容未授权时不可见；计划与服务记录仍可查看。\n      - button \"打开\":\n        - text: 打开\n      - button \"标记已处理\":\n        - text: 标记已处理\n    - heading \"服务关系\" [level=2]\n    - generic: 1 项\n    - list:\n      - generic: 安然\n      - generic: 今天\n      - paragraph: 服务约定待确认\n      - paragraph: 咨询已收到 · 尚未建立服务关系\n      - button \"打开\":\n        - text: 打开\n      - button \"标记已处理\":\n        - text: 标记已处理\n    - heading \"草稿\" [level=2]\n    - generic: 1 项\n    - list:\n      - generic: 周岚\n      - generic: 今天\n      - paragraph: 计划草稿未保存\n      - paragraph: 周四训练日有 2 处未保存改动\n      - button \"打开\":\n        - text: 打开\n      - button \"标记已处理\":\n        - text: 标记已处理\n  - complementary:\n    - region \"已处理\":\n      - heading \"已处理\" [level=2]\n      - paragraph: 还没有标记已处理的事项。\n      - paragraph: 标记已处理只改变队列状态，不会删除学员记录、消息或已交付计划。\n    - region \"今天的上下文\":\n      - heading \"今天的上下文\" [level=2]\n      - term: 在读学员\n      - definition: 2 位\n      - term: 待确认\n      - definition: 1 位\n      - term: 已结束\n      - definition: 1 位\n      - paragraph: 按当前服务关系统计；已结束关系不计入在读。\n  - paragraph:\n    - text: 队列来自学员消息、已交付计划、授权状态与未保存草稿。\n- navigation \"教练主导航\":\n  - button \"待办\" [active]:\n    - generic: 待办\n  - button \"学员\":\n    - generic: 学员\n  - button \"消息\":\n    - generic: 消息\n  - button \"服务\":\n    - generic: 服务\n- button \"打开预览控制\":\n  - generic: 预览"
+    },
+    {
+      "name": "f04-revoked-students-list",
+      "leaked": [],
+      "dom": {
+        "attrs": [
+          [
+            null,
+            "回到主要页面"
+          ],
+          [
+            null,
+            "Nerae"
+          ],
+          [
+            null,
+            "教练主导航"
+          ],
+          [
+            null,
+            "教练主导航"
+          ],
+          [
+            null,
+            "打开预览控制"
+          ]
+        ],
+        "body": "\n    跳到主要内容NERAE顾言 · 教练待办学员消息服务顾言 · 教练学员4 位学员 · 健康内容按授权显示林林澈在读力量基础 · 月度计划  · 现用 v6  · 已交付 v7健康内容未授权，最近训练不可见 待处理：健康相关内容未授权健康不可见周周岚在读耐力基础 · 月度计划  · 现用 v3 健康内容未授权，最近训练不可见 待处理：计划草稿待保存健康不可见安安然待确认动作调整 · 单次（待确认）  · 服务未建立10月24日 · 发起服务咨询  · 还没有可查看的计划与记录待处理：确认服务范围与时间健康不可见陈陈墨已结束活动度与恢复 · 单次  · 现用 v2 9月30日 · 服务结束 健康不可见 返回学员列表时保留当前筛选与位置。 待办学员消息服务预览\n  \n\n"
+      },
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"回到主要页面\":\n    - generic \"Nerae\": NERAE\n  - paragraph: 顾言 · 教练\n- main:\n  - paragraph: 顾言 · 教练\n  - heading \"学员\" [level=1]\n  - paragraph: 4 位学员 · 健康内容按授权显示\n  - list:\n    - button \"林 林澈 在读 力量基础 · 月度计划 · 现用 v6 · 已交付 v7 健康内容未授权，最近训练不可见 待处理：健康相关内容未授权 健康不可见\":\n      - generic: 林\n      - generic: 林澈\n      - generic: 在读\n      - generic: 力量基础 · 月度计划 · 现用 v6 · 已交付 v7\n      - generic: 健康内容未授权，最近训练不可见\n      - generic: 待处理：健康相关内容未授权\n      - generic: 健康不可见\n    - button \"周 周岚 在读 耐力基础 · 月度计划 · 现用 v3 健康内容未授权，最近训练不可见 待处理：计划草稿待保存 健康不可见\":\n      - generic: 周\n      - generic: 周岚\n      - generic: 在读\n      - generic: 耐力基础 · 月度计划 · 现用 v3\n      - generic: 健康内容未授权，最近训练不可见\n      - generic: 待处理：计划草稿待保存\n      - generic: 健康不可见\n    - button \"安 安然 待确认 动作调整 · 单次（待确认） · 服务未建立 10月24日 · 发起服务咨询 · 还没有可查看的计划与记录 待处理：确认服务范围与时间 健康不可见\":\n      - generic: 安\n      - generic: 安然\n      - generic: 待确认\n      - generic: 动作调整 · 单次（待确认） · 服务未建立\n      - generic: 10月24日 · 发起服务咨询 · 还没有可查看的计划与记录\n      - generic: 待处理：确认服务范围与时间\n      - generic: 健康不可见\n    - button \"陈 陈墨 已结束 活动度与恢复 · 单次 · 现用 v2 9月30日 · 服务结束 健康不可见\":\n      - generic: 陈\n      - generic: 陈墨\n      - generic: 已结束\n      - generic: 活动度与恢复 · 单次 · 现用 v2\n      - generic: 9月30日 · 服务结束\n      - generic: 健康不可见\n  - paragraph: 返回学员列表时保留当前筛选与位置。\n- navigation \"教练主导航\":\n  - button \"待办\":\n    - generic: 待办\n  - button \"学员\" [active]:\n    - generic: 学员\n  - button \"消息\":\n    - generic: 消息\n  - button \"服务\":\n    - generic: 服务\n- button \"打开预览控制\":\n  - generic: 预览"
+    },
+    {
+      "name": "f04-revoked-lin-detail",
+      "leaked": [],
+      "dom": {
+        "attrs": [
+          [
+            null,
+            "返回上一页"
+          ],
+          [
+            null,
+            "打开预览控制"
+          ]
+        ],
+        "body": "\n    跳到主要内容学员详情顾言 · 教练林学员 · 力量基础 · 月度计划林澈服务进行中 现用版本 6  · 已交付版本 7健康内容未授权，最近训练与饮食观察不可见。 回复 继续计划草稿 健康内容不可见健康内容未授权：只能查看计划与服务记录，健康记录和饮食观察不可见。最近证据1 项可见计划计划版本 7已交付 · 尚未采用；现用版本 610月23日未完成工作健康相关内容未授权，暂不显示待回复的训练反馈。 继续处理 服务与授权服务力量基础 · 月度计划关系服务进行中计划现用版本 6  · 已交付版本 7最近事实健康内容未授权 健康内容未授权计划与服务记录：可见训练记录：不可见饮食观察：不可见教练不能代替学员开启或恢复授权；只能看到被授权的范围。回复上下文回复会带入这位学员与当前服务；健康内容未授权，不显示训练引用。进入这位学员的消息 未授权时不显示健康正文；关系结束后内容只读。 预览\n  \n\n"
+      },
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"返回上一页\":\n  - paragraph: 学员详情\n  - paragraph: 顾言 · 教练\n- main:\n  - generic: 林\n  - paragraph: 学员 · 力量基础 · 月度计划\n  - heading \"林澈\" [level=1]\n  - generic: 服务进行中\n  - generic: 现用版本 6 · 已交付版本 7\n  - paragraph: 健康内容未授权，最近训练与饮食观察不可见。\n  - button \"回复\":\n    - text: 回复\n  - button \"继续计划草稿\"\n  - status:\n    - paragraph:\n      - text: 健康内容不可见\n    - paragraph: 健康内容未授权：只能查看计划与服务记录，健康记录和饮食观察不可见。\n  - region \"最近证据\":\n    - heading \"最近证据\" [level=2]\n    - generic: 1 项可见\n    - list:\n      - button \"计划 计划版本 7 已交付 · 尚未采用；现用版本 6 10月23日\":\n        - generic: 计划\n        - generic: 计划版本 7\n        - generic: 已交付 · 尚未采用；现用版本 6\n        - generic: 10月23日\n    - region \"未完成工作\":\n      - heading \"未完成工作\" [level=2]\n      - paragraph: 健康相关内容未授权，暂不显示待回复的训练反馈。\n      - button \"继续处理\":\n        - text: 继续处理\n  - complementary:\n    - region \"服务与授权\":\n      - heading \"服务与授权\" [level=2]\n      - term: 服务\n      - definition: 力量基础 · 月度计划\n      - term: 关系\n      - definition: 服务进行中\n      - term: 计划\n      - definition: 现用版本 6 · 已交付版本 7\n      - term: 最近事实\n      - definition: 健康内容未授权\n      - paragraph:\n        - text: 健康内容未授权\n      - list:\n        - listitem: 计划与服务记录：可见\n        - listitem: 训练记录：不可见\n        - listitem: 饮食观察：不可见\n      - paragraph: 教练不能代替学员开启或恢复授权；只能看到被授权的范围。\n    - region \"回复上下文\":\n      - heading \"回复上下文\" [level=2]\n      - paragraph: 回复会带入这位学员与当前服务；健康内容未授权，不显示训练引用。\n      - button \"进入这位学员的消息\"\n  - paragraph: 未授权时不显示健康正文；关系结束后内容只读。\n- button \"打开预览控制\":\n  - generic: 预览"
+    },
+    {
+      "name": "f04-revoked-coach-plan-evidence",
+      "leaked": [],
+      "dom": {
+        "attrs": [
+          [
+            null,
+            "返回上一页"
+          ],
+          [
+            null,
+            "训练日"
+          ],
+          [
+            null,
+            "查看方式"
+          ],
+          [
+            null,
+            "打开预览控制"
+          ]
+        ],
+        "body": "\n    跳到主要内容计划顾言 · 教练学员计划力量基础 · 第 4 周林澈·现用版本 6·草稿版本 7保存草稿已发布版本 7版本 7 已交付 林澈，等待采用上肢力量 13 组下肢力量 12 组4 处改动 编辑  审阅  训练日 1 / 2上肢力量4 个动作 · 13 组本次改动 · 4 处对照现用版本 6高位下拉 · 目标次数/时长12 次→10 次高位下拉 · 备注先沉肩，再把横杆拉向锁骨→上一周期末两组完成吃紧，本周保持 10 次，动作更稳单臂哑铃划船 · 组数3 组→4 组平板支撑 · 目标次数/时长45 秒→50 秒01哑铃卧推4 组 × 10 次 · 休息 90 秒 重量以能完成 10 次、保留 2 次余力为准02高位下拉已调整3 组 × 10 次 · 休息 75 秒 上一周期末两组完成吃紧，本周保持 10 次，动作更稳03单臂哑铃划船已调整4 组 × 12 次/侧 · 休息 60 秒 髋部保持稳定，肘部贴近身体04平板支撑已调整2 组 × 50 秒 · 休息 60 秒 保持骨盆中立，正常呼吸判断依据10月23日计划版本 7已交付 · 尚未采用；现用版本 6版本与范围现用版本 6 · 哑铃卧推 4 组草稿版本 7已交付版本 7 · 哑铃卧推 4 组全案2 天 · 8 个动作 · 25 组 已交付版本 7 的快照共 25 组，后续编辑不会改动它。  发布后，林澈的现用版本 6 保持不变；采用新版本后，安排才会更新。 上次保存 10月23日 21:40保存已发布版本 7预览\n  \n\n"
+      },
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"返回上一页\":\n  - paragraph: 计划\n  - paragraph: 顾言 · 教练\n- main [active]:\n  - paragraph: 学员计划\n  - heading \"力量基础 · 第 4 周\" [level=1]\n  - paragraph:\n    - generic: 林澈\n    - generic: ·\n    - generic: 现用版本 6\n    - generic: ·\n    - generic: 草稿版本 7\n  - paragraph: 版本 7 已交付 林澈，等待采用\n  - tablist \"训练日\":\n    - tab \"上肢力量 13 组\" [selected]:\n      - text: 上肢力量\n      - generic: 13 组\n    - tab \"下肢力量 12 组\":\n      - text: 下肢力量\n      - generic: 12 组\n  - generic: 4 处改动\n  - group \"查看方式\":\n    - button \"编辑\"\n    - button \"审阅\" [pressed]\n  - region \"上肢力量\":\n    - paragraph: 训练日 1 / 2\n    - heading \"上肢力量\" [level=2]\n    - paragraph: 4 个动作 · 13 组\n    - heading \"本次改动 · 4 处\" [level=3]\n    - paragraph: 对照现用版本 6\n    - list:\n      - generic: 高位下拉 · 目标次数/时长\n      - text: 12 次→\n      - strong: 10 次\n      - generic: 高位下拉 · 备注\n      - text: 先沉肩，再把横杆拉向锁骨→\n      - strong: 上一周期末两组完成吃紧，本周保持 10 次，动作更稳\n      - generic: 单臂哑铃划船 · 组数\n      - text: 3 组→\n      - strong: 4 组\n      - generic: 平板支撑 · 目标次数/时长\n      - text: 45 秒→\n      - strong: 50 秒\n    - list:\n      - generic: \"01\"\n      - heading \"哑铃卧推\" [level=3]\n      - paragraph: 4 组 × 10 次 · 休息 90 秒\n      - paragraph: 重量以能完成 10 次、保留 2 次余力为准\n      - generic: \"02\"\n      - heading \"高位下拉\" [level=3]\n      - generic: 已调整\n      - paragraph: 3 组 × 10 次 · 休息 75 秒\n      - paragraph: 上一周期末两组完成吃紧，本周保持 10 次，动作更稳\n      - generic: \"03\"\n      - heading \"单臂哑铃划船\" [level=3]\n      - generic: 已调整\n      - paragraph: 4 组 × 12 次/侧 · 休息 60 秒\n      - paragraph: 髋部保持稳定，肘部贴近身体\n      - generic: \"04\"\n      - heading \"平板支撑\" [level=3]\n      - generic: 已调整\n      - paragraph: 2 组 × 50 秒 · 休息 60 秒\n      - paragraph: 保持骨盆中立，正常呼吸\n  - complementary \"判断依据\":\n    - heading \"判断依据\" [level=2]\n    - list:\n      - paragraph: 10月23日\n      - paragraph: 计划版本 7\n      - paragraph: 已交付 · 尚未采用；现用版本 6\n    - heading \"版本与范围\" [level=2]\n    - term: 现用\n    - definition: 版本 6 · 哑铃卧推 4 组\n    - term: 草稿\n    - definition: 版本 7\n    - term: 已交付\n    - definition: 版本 7 · 哑铃卧推 4 组\n    - term: 全案\n    - definition: 2 天 · 8 个动作 · 25 组\n    - paragraph: 已交付版本 7 的快照共 25 组，后续编辑不会改动它。\n    - paragraph: 发布后，林澈的现用版本 6 保持不变；采用新版本后，安排才会更新。\n    - paragraph: 上次保存 10月23日 21:40\n  - button \"保存\"\n  - button \"已发布版本 7\" [disabled]\n- button \"打开预览控制\":\n  - generic: 预览"
+    }
+  ],
+  "passed": true
+}

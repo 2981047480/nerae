@@ -1,0 +1,32 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "simulatedClock": false,
+  "start": {
+    "at": "2026-10-24T14:23:27.932Z",
+    "heading": "01:15"
+  },
+  "running": {
+    "at": "2026-10-24T14:23:29.254Z",
+    "heading": "01:14"
+  },
+  "paused": {
+    "at": "2026-10-24T14:23:29.560Z",
+    "heading": "01:14\n已暂停"
+  },
+  "afterReload": {
+    "at": "2026-10-24T14:23:29.808Z",
+    "heading": "01:14\n已暂停"
+  },
+  "afterRealPaused5500ms": {
+    "at": "2026-10-24T14:23:35.316Z",
+    "heading": "01:14\n已暂停"
+  },
+  "immediateResume": {
+    "at": "2026-10-24T14:23:35.609Z",
+    "heading": "01:20"
+  },
+  "afterResumed1300ms": {
+    "at": "2026-10-24T14:23:36.923Z",
+    "heading": "01:13"
+  }
+}

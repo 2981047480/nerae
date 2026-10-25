@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "failedDom": [
+    {
+      "attributes": [
+        [
+          "data-v-bd113094",
+          ""
+        ],
+        [
+          "class",
+          "message message--mine message--failed"
+        ]
+      ],
+      "text": "林澈22:50明天晚饭后训练，可以吗？ 未发送 重试  删除 "
+    }
+  ],
+  "recipientBeforeRetryList": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"回到主要页面\":\n    - generic \"Nerae\": NERAE\n  - paragraph: 顾言 · 教练\n- main [active]:\n  - paragraph: 教练工作台\n  - heading \"消息\" [level=1]\n  - region \"对话列表\":\n    - heading \"对话列表\" [level=2]\n    - list:\n      - button \"林 林澈 10月23日 21:40 力量基础 · 月度计划 新版计划发给你了：高位下拉从 12 次改成 10 次、备注写清了这周…\":\n        - generic: 林\n        - generic: 林澈\n        - generic: 10月23日 21:40\n        - generic: 力量基础 · 月度计划\n        - generic: 新版计划发给你了：高位下拉从 12 次改成 10 次、备注写清了这周…\n      - button \"周 周岚 10月15日 20:12 耐力基础 · 月度计划 这周先按周二、周四的耐力安排走，强度以能说完整句子为准。\":\n        - generic: 周\n        - generic: 周岚\n        - generic: 10月15日 20:12\n        - generic: 耐力基础 · 月度计划\n        - generic: 这周先按周二、周四的耐力安排走，强度以能说完整句子为准。\n  - paragraph:\n- navigation \"教练主导航\":\n  - button \"待办\":\n    - generic: 待办\n  - button \"学员\":\n    - generic: 学员\n  - button \"消息\":\n    - generic: 消息\n  - button \"服务\":\n    - generic: 服务\n- button \"打开预览控制\":\n  - generic: 预览",
+  "recipientAfterRetryList": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"回到主要页面\":\n    - generic \"Nerae\": NERAE\n  - paragraph: 顾言 · 教练\n- main [active]:\n  - paragraph: 教练工作台\n  - heading \"消息\" [level=1]\n  - region \"对话列表\":\n    - heading \"对话列表\" [level=2]\n    - list:\n      - button \"林 林澈 22:50 力量基础 · 月度计划 明天晚饭后训练，可以吗？ 1\":\n        - generic: 林\n        - generic: 林澈\n        - generic: 22:50\n        - generic: 力量基础 · 月度计划\n        - generic: 明天晚饭后训练，可以吗？\n        - generic: \"1\"\n      - button \"周 周岚 10月15日 20:12 耐力基础 · 月度计划 这周先按周二、周四的耐力安排走，强度以能说完整句子为准。\":\n        - generic: 周\n        - generic: 周岚\n        - generic: 10月15日 20:12\n        - generic: 耐力基础 · 月度计划\n        - generic: 这周先按周二、周四的耐力安排走，强度以能说完整句子为准。\n  - paragraph:\n- navigation \"教练主导航\":\n  - button \"待办\":\n    - generic: 待办\n  - button \"学员\":\n    - generic: 学员\n  - button \"消息\":\n    - generic: 消息\n  - button \"服务\":\n    - generic: 服务\n- button \"打开预览控制\":\n  - generic: 预览",
+  "senderVisibleCountAfterRetry": 1,
+  "stableIdVerifiedSeparatelyByFrozenModuleCheck": true,
+  "passed": true
+}

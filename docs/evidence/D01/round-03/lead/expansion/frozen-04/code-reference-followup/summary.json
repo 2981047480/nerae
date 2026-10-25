@@ -1,0 +1,42 @@
+{
+  "exit_code": 1,
+  "helper_sha256": "17abc589eb9053ba774e2cfc7f367ab2d1e8c3e4aa5583185bc6cd80ed8398af",
+  "status": "failed",
+  "checks": 21,
+  "failed": [
+    {
+      "name": "non-default training reference retains exact record across cold reload and back",
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+      "evidence": {
+        "recordId": "record-20260929",
+        "explicit": true
+      }
+    },
+    {
+      "name": "legacy shared messages cache keeps its actual coach reader",
+      "error": "AssertionError [ERR_ASSERTION]: A valid old coach messages cache defaulted to student",
+      "evidence": {
+        "savedActor": "coach",
+        "actorAfter": "student",
+        "conversation": "conv-zhou-lan"
+      }
+    },
+    {
+      "name": "legacy reference without persisted owner version is unavailable rather than Lin latest",
+      "error": "AssertionError [ERR_ASSERTION]: Legacy reader changed while restoring unknown reference",
+      "evidence": {
+        "actorAfter": "student",
+        "shownVersion": 7,
+        "available": true
+      }
+    },
+    {
+      "name": "legacy training reference cannot silently expand default October22 on cold reload",
+      "error": "AssertionError [ERR_ASSERTION]: Unknown legacy training reference fell back to default record mode",
+      "evidence": {
+        "explicit": false,
+        "recordId": null
+      }
+    }
+  ]
+}

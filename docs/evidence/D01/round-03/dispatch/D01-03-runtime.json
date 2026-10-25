@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix02 transport failed; same-session recovery running from preserved partial freeze",
+  "state": "fix04 frozen ae141ae; 101tests/21seams pass; M02 geometry fails; fix05 resumed after native round9 stopped",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "round4 failed Connection error5/5 at579steps; Lead typecheck/83tests pass stable; source frozenaaf1fe0; recovery submitted19:40",
+  "progress": "fix04 normal41m8s; independent checks pass; full accepted false",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -202,7 +202,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix01-normal-handback.txt",
+  "last_native_progress": "D01-03-fix05-running.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -328,7 +328,7 @@
       "snapshot": "../lead/expansion/fix02-interrupted/snapshot.json",
       "freeze": "aaf1fe0a8e9506b72c56157139eeda100d71a709",
       "packet": "D01-03-fix02-recovery.md",
-      "proof": "D01-03-fix02-recovery-running.txt",
+      "proof": "../lead/expansion/frozen-03/native-handback.txt",
       "same_session": true,
       "goal_active": true,
       "accepted": false,
@@ -336,7 +336,61 @@
       "last_followups": [
         "D01-03-fix02-state-consistency-followup.md",
         "D01-03-fix02-text200-followup.md"
-      ]
+      ],
+      "status": "normal_completion",
+      "normal_duration": "55m31s",
+      "native_steps": 678,
+      "candidate_revision": "a289b090b5b172cf027b37dd0d5535659dd68364"
+    },
+    "lead_frozen_03": {
+      "source": "a289b090b5b172cf027b37dd0d5535659dd68364",
+      "code": "../lead/expansion/frozen-03/code/code-checks.json",
+      "code_checks": "type/build/91 tests/14 identity checks exit0",
+      "accepted": false
     }
+  },
+  "fix03": {
+    "packet": "D01-03-fix03-packet.md",
+    "review": "../lead/REVIEW_07.md",
+    "base_revision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+    "running_proof": "D01-03-fix03-running.txt",
+    "same_session_model_workspace": true,
+    "native_round": 7,
+    "accepted": false,
+    "state": "normal_completion",
+    "frozen_revision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+    "lead_review": "../lead/REVIEW_08.md",
+    "identity_checks": "17/21; four fail"
+  },
+  "immutable_lead_qa": {
+    "source_revision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+    "url": "http://127.0.0.1:4188/",
+    "tab_id": "12",
+    "exec_session": 24044,
+    "dist": "/private/tmp/nerae-frozen-a289-s6cmgo_f/dist",
+    "proof": "../lead/expansion/frozen-03/frozen-static-preview.json"
+  },
+  "fix04": {
+    "native_round": 8,
+    "state": "normal_completion",
+    "duration": "41m8s",
+    "cumulative_steps": 791,
+    "frozen_revision": "ae141ae639fde8234b7782bf79775f78cc5e04c8",
+    "hash_check": "../lead/expansion/frozen-05/handback-verification.json",
+    "lead_code": "../lead/expansion/frozen-05/code/code-checks.json",
+    "lead_checks": "type/build/101tests/21identity-seams exit0",
+    "accepted": false
+  },
+  "fix05": {
+    "packet": "D01-03-fix05-m02-packet.md",
+    "state": "resumed generating",
+    "initial_round": 9,
+    "initial_state": "native stopped before implementation request; exact reason unavailable",
+    "initial_proof": "D01-03-fix05-stopped-trace.txt",
+    "resume_proof": "D01-03-fix05-running.txt",
+    "resume_time_local": "2026-10-25 14:29 Asia/Shanghai",
+    "same_session_model_workspace": true,
+    "scope": "M02 visible geometry only, no style redesign",
+    "accepted": false
   }
 }

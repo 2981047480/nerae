@@ -32,6 +32,15 @@ const report={scope:'actual frozen modules; fake window/storage; no browser/back
 try {
  const s=await server.ssrLoadModule('/src/state/store.ts')
  const plain=x=>JSON.parse(JSON.stringify(x))
+ async function coldCurrent(tag) {
+   assert.equal(s.retryPersist(),true,'Current selection failed to persist')
+   await Promise.resolve()
+   for(const id of timers)clearTimeout(id)
+   timers.clear()
+   const cold=await server.ssrLoadModule(`/src/state/store.ts?lead-reference-cold=${tag}`)
+   assert.notEqual(cold.state,s.state,'Cold reference test reused the original module')
+   return cold
+ }
  async function check(name,fn) {
    s.resetPreview();const evidence={}
    try {await fn(evidence);report.checks.push({name,status:'passed',evidence})}
@@ -299,6 +308,109 @@ try {
    assert.equal(repaired.drafts.coach,'','Unconfirmed inferred owner remained authoritative')
    assert.equal(repaired.unassignedLegacyDraft,'曾被错误推断给教练的旧草稿','Repair dropped the inferred legacy text')
    e.knownDraftPreserved=true
+ })
+ await check('coach reference cold reload and back retain reader student and read-only scope',async e=>{
+   const linBefore=plain(s.state.student)
+   s.goToCoachPlanForStudent('zhou-lan')
+   assert.equal(await s.saveDraft(),true)
+   s.requestPublish();assert.equal(s.ui.sheet,'publish')
+   assert.equal(s.confirmPublish(),true)
+   const delivery=[...s.state.coach.deliveries].sort((a,b)=>b.version-a.version)[0]
+   assert.ok(delivery)
+   s.replyToStudent('zhou-lan')
+   const ref=plain([...s.state.conversations.find(x=>x.studentId==='zhou-lan').messages].reverse().flatMap(x=>x.refs??[]).find(x=>x.kind==='plan'))
+   assert.ok(ref,'Published message reference fixture missing')
+   s.openMessageRef(ref)
+   const cold=await coldCurrent('coach-zhou')
+   e.actor=cold.state.actor;e.studentId=cold.ui.incomingHistoryStudentId;e.version=cold.incomingDelivery.value?.version
+   assert.equal(cold.state.actor,'coach')
+   assert.equal(cold.ui.incomingHistoryStudentId,'zhou-lan')
+   assert.equal(cold.ui.incomingReadOnly,true)
+   assert.equal(cold.incomingDelivery.value?.version,delivery.version)
+   assert.equal(cold.incomingAvailable.value,false)
+   cold.openAdoptSheet();assert.notEqual(cold.ui.sheet,'adopt')
+   assert.deepEqual(plain(cold.state.student),linBefore,'Reading Zhou after cold reload changed Lin')
+   cold.goBack()
+   assert.equal(cold.state.actor,'coach','Back from shared reference switched to student')
+   assert.equal(cold.state.screen,'messages')
+   assert.equal(cold.ui.activeConversationId,'conv-zhou-lan')
+ })
+ await check('student old reference cold reload does not become latest after coach context changed',async e=>{
+   const original=plain(s.state.student.incoming)
+   const ref=plain(s.state.conversations.find(x=>x.id==='conv-gu-yan').messages.flatMap(x=>x.refs??[]).find(x=>x.kind==='plan'))
+   assert.ok(ref)
+   s.goToCoachPlanForStudent('lin-che')
+   const day=s.state.coach.draft.days[0],exercise=day.exercises[0]
+   s.updatePlanField(day.id,exercise.id,'note','本周先保持动作稳定，再增加次数。')
+   assert.equal(await s.saveDraft(),true)
+   s.requestPublish();assert.equal(s.ui.sheet,'publish');assert.equal(s.confirmPublish(),true)
+   assert.ok(s.state.student.incoming.version>original.version)
+   s.goToCoachPlanForStudent('zhou-lan');s.jumpToScenario('today');s.goToConversation('conv-gu-yan');s.openMessageRef(ref)
+   const cold=await coldCurrent('student-history')
+   e.actor=cold.state.actor;e.version=cold.incomingDelivery.value?.version
+   assert.equal(cold.state.actor,'student')
+   assert.equal(cold.ui.incomingHistoryStudentId,'lin-che')
+   assert.equal(cold.incomingDelivery.value?.version,original.version)
+   assert.deepEqual(plain(cold.incomingDelivery.value.content),original.content)
+   assert.equal(cold.incomingAvailable.value,false)
+   cold.goBack();assert.equal(cold.state.actor,'student');assert.equal(cold.state.screen,'messages')
+ })
+ await check('missing reference remains unavailable through cold reload and adoption guard',async e=>{
+   s.goToConversation('conv-gu-yan')
+   s.openMessageRef({kind:'plan',id:'delivery-999999',title:'不存在的交付',detail:'缺失引用不能替换为最新'})
+   const cold=await coldCurrent('missing')
+   e.missing=cold.ui.incomingRefMissing;e.shown=cold.incomingDelivery.value?.version??null
+   assert.equal(cold.ui.incomingRefMissing,true)
+   assert.equal(cold.incomingDelivery.value==null,true)
+   assert.equal(cold.incomingAvailable.value,false)
+   cold.openAdoptSheet();assert.notEqual(cold.ui.sheet,'adopt')
+ })
+ await check('non-default training reference retains exact record across cold reload and back',async e=>{
+   const record=s.state.records.find(x=>x.id==='record-20260929')
+   assert.ok(record,'Non-default record fixture missing')
+   s.goToConversation('conv-gu-yan')
+   s.openMessageRef({kind:'training',id:record.id,title:'9月29日训练',detail:'原记录'})
+   const cold=await coldCurrent('record-september')
+   e.recordId=cold.ui.recordsFocusId;e.explicit=cold.ui.recordsFocusExplicit
+   assert.equal(cold.state.screen,'records')
+   assert.equal(cold.ui.recordsFocusExplicit,true)
+   assert.equal(cold.ui.recordsFocusId,record.id,'Cold reload fell back to default October22 record')
+   cold.goBack();assert.equal(cold.state.screen,'messages');assert.equal(cold.state.actor,'student')
+ })
+ await check('legacy shared messages cache keeps its actual coach reader',async e=>{
+   s.goToCoachPlanForStudent('zhou-lan');s.replyToStudent('zhou-lan');s.retryPersist()
+   const raw=JSON.parse(data.get(s.storageKey))
+   delete raw.selection.actor
+   await Promise.resolve();for(const id of timers)clearTimeout(id);timers.clear()
+   data.set(s.storageKey,JSON.stringify(raw))
+   const cold=await server.ssrLoadModule('/src/state/store.ts?lead-legacy-shared=coach-message')
+   e.savedActor=raw.actor;e.actorAfter=cold.state.actor;e.conversation=cold.ui.activeConversationId
+   assert.equal(cold.state.actor,'coach','A valid old coach messages cache defaulted to student')
+   assert.equal(cold.ui.activeConversationId,'conv-zhou-lan')
+ })
+ await check('legacy reference without persisted owner version is unavailable rather than Lin latest',async e=>{
+   s.goToCoachPlanForStudent('zhou-lan');s.replyToStudent('zhou-lan');s.retryPersist()
+   const raw=JSON.parse(data.get(s.storageKey));raw.screen='incomingPlan';raw.stack=['messages']
+   for(const field of ['actor','incomingHistoryVersion','incomingHistoryStudentId','incomingReadOnly','incomingRefMissing'])delete raw.selection[field]
+   await Promise.resolve();for(const id of timers)clearTimeout(id);timers.clear()
+   data.set(s.storageKey,JSON.stringify(raw))
+   const cold=await server.ssrLoadModule('/src/state/store.ts?lead-legacy-shared=unknown-reference')
+   e.actorAfter=cold.state.actor;e.shownVersion=cold.incomingDelivery.value?.version??null;e.available=cold.incomingAvailable.value
+   assert.equal(cold.state.actor,'coach','Legacy reader changed while restoring unknown reference')
+   assert.equal(cold.incomingDelivery.value==null,true,'Unknown old reference silently became Lin latest')
+   assert.equal(cold.incomingAvailable.value,false)
+   cold.openAdoptSheet();assert.notEqual(cold.ui.sheet,'adopt')
+ })
+ await check('legacy training reference cannot silently expand default October22 on cold reload',async e=>{
+   s.goToConversation('conv-gu-yan');s.retryPersist()
+   const raw=JSON.parse(data.get(s.storageKey));raw.screen='records';raw.stack=['messages']
+   delete raw.selection.recordsFocusId;delete raw.selection.recordsFocusExplicit
+   await Promise.resolve();for(const id of timers)clearTimeout(id);timers.clear()
+   data.set(s.storageKey,JSON.stringify(raw))
+   const cold=await server.ssrLoadModule('/src/state/store.ts?lead-legacy-shared=unknown-training')
+   e.explicit=cold.ui.recordsFocusExplicit;e.recordId=cold.ui.recordsFocusId
+   assert.equal(cold.ui.recordsFocusExplicit,true,'Unknown legacy training reference fell back to default record mode')
+   assert.equal(cold.ui.recordsFocusId,null,'Unknown record identity was guessed')
  })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}

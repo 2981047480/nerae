@@ -26,6 +26,20 @@ export async function resetSample(ctx, { width = 390, height = 900 } = {}) {
 
 export async function recordFlow(ctx, name) {
   if (!/^[a-f0-9]{40}$/.test(ctx.sourceRevision ?? '')) throw Error('Explicit frozen revision required')
+  // User actions can start browser smooth scrolling after focus restoration.
+  // Poll actual DOM geometry for a stable terminal view; motion probes run
+  // separately immediately after the trigger, before this terminal capture.
+  let previousViewport = null
+  let stableObservations = 0
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const viewport = JSON.stringify(await ctx.tab.playwright.evaluate(() =>
+      ({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio, scrollX, scrollY })))
+    stableObservations = viewport === previousViewport ? stableObservations + 1 : 0
+    if (stableObservations >= 2) break
+    if (attempt === 29) throw Error('Terminal viewport did not settle; preserve current evidence and inspect UI')
+    previousViewport = viewport
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
   const snapshot = await ctx.tab.playwright.domSnapshot()
   await ctx.fs.writeFile(`${ctx.evidenceDir}/${name}.txt`, snapshot, { flag: 'wx' })
   let capture
@@ -38,7 +52,12 @@ export async function recordFlow(ctx, name) {
   return { snapshot, path: capture.path }
 }
 
-async function selectObservedScenario(ctx, pattern, scenarioIndex) {
+async function selectObservedScenario(ctx, pattern, scenarioIndex, navigation) {
+  if (navigation) {
+    await ctx.tab.playwright.getByRole('navigation', { name: navigation.landmark, exact: true })
+      .getByRole('button', { name: navigation.button, exact: true }).click()
+    return ctx.tab.playwright.domSnapshot()
+  }
   if (scenarioIndex === undefined) return gotoScenario(ctx, pattern)
   await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
   const dialog = ctx.tab.playwright.getByRole('dialog', { name: '预览', exact: true })
@@ -56,10 +75,11 @@ async function selectObservedRole(ctx, role) {
   await dialog.waitFor({ state: 'hidden' })
 }
 
-export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex, role } = {}) {
+export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex, role, navigation, afterScenario } = {}) {
   await resetSample(ctx)
   await selectObservedRole(ctx, role)
-  await selectObservedScenario(ctx, pattern, scenarioIndex)
+  await selectObservedScenario(ctx, pattern, scenarioIndex, navigation)
+  if (afterScenario) await afterScenario(ctx)
   await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
   const labels = await ctx.tab.playwright.evaluate(() =>
     [...document.querySelectorAll('.state-chip')].map(element => element.textContent.trim()))
@@ -68,7 +88,8 @@ export async function sweepIsolatedStates(ctx, family, pattern, { scenarioIndex,
   for (const [index, label] of labels.entries()) {
     await resetSample(ctx)
     await selectObservedRole(ctx, role)
-    await selectObservedScenario(ctx, pattern, scenarioIndex)
+    await selectObservedScenario(ctx, pattern, scenarioIndex, navigation)
+    if (afterScenario) await afterScenario(ctx)
     await ctx.tab.playwright.getByRole('button', { name: '打开预览控制', exact: true }).click()
     const dialog = ctx.tab.playwright.getByRole('dialog', { name: '预览', exact: true })
     await dialog.getByRole('button', { name: label, exact: true }).click()

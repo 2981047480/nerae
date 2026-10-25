@@ -320,8 +320,62 @@
       "evidence": "missing-image-probe/screenshots/today-390-missing-image.jpg",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "proof": "../../dispatch/D01-03-fix02-missing-image-inserted.txt"
+    },
+    {
+      "id": "EA28",
+      "subject": "教练交付引用返回错误切为学员身份",
+      "feedback": "../../dispatch/D01-03-fix03-packet.md",
+      "status": "failed_frozen_03_fix03_ready",
+      "evidence": "../REVIEW_07.md"
+    },
+    {
+      "id": "EA29",
+      "subject": "引用刷新丢失所属人版本只读并显示另一学员采用动作",
+      "feedback": "../../dispatch/D01-03-fix03-packet.md",
+      "status": "failed_frozen_03_fix03_ready",
+      "evidence": "../REVIEW_07.md"
+    },
+    {
+      "id": "VR13",
+      "subject": "教练消息预览入口错误落学员",
+      "feedback": "../../dispatch/D01-03-fix03-packet.md",
+      "status": "failed_frozen_03_fix03_ready",
+      "evidence": "../REVIEW_07.md"
+    },
+    {
+      "id": "VR14",
+      "subject": "审阅差异标题320宽200字号逐字竖排",
+      "feedback": "../../dispatch/D01-03-fix03-packet.md",
+      "status": "failed_frozen_03_fix03_ready",
+      "evidence": "../REVIEW_07.md"
+    },
+    {
+      "id": "VR15",
+      "subject": "M02动态body ghost不匹配scoped规则，static且在视口下方",
+      "status": "failed_frozen_04_fix05_dispatched",
+      "feedback": "../../dispatch/D01-03-fix05-m02-packet.md",
+      "evidence": "frozen-04/motion/m02-ghost-visible-geometry.json"
+    },
+    {
+      "id": "VR16",
+      "subject": "M04完成标记动画仅在已被休息替换的不可见分支",
+      "status": "failed_frozen_03_fix03_followup",
+      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
+    },
+    {
+      "id": "VR17",
+      "subject": "M05暂停恢复第一帧使用旧时钟导致读数跳大",
+      "status": "failed_frozen_03_fix03_followup",
+      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
+    },
+    {
+      "id": "EA30",
+      "subject": "旧共享角色/引用缓存迁移默认覆盖可信角色、训练引用返回清栈",
+      "status": "passed_frozen_05_21_module_seams_browser_final_pending",
+      "feedback": "../../dispatch/D01-03-fix04-packet.md",
+      "evidence": "../REVIEW_08.md"
     }
   ],
-  "latest_review": "../REVIEW_06.md",
-  "latest_frozen_source": "6a5609c5b0ecdb350be080350237f1a4e86d48b9"
+  "latest_review": "../REVIEW_09.md",
+  "latest_frozen_source": "ae141ae639fde8234b7782bf79775f78cc5e04c8"
 }

@@ -1,0 +1,95 @@
+{
+  "task": "D01-03-fix03",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "git_head": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "source_state": "fix03 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-24T22:15:49.344144+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4188 Lead fixed build and 4186 first-batch preview untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-test.log",
+      "result": "4 files / 95 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-source-sha256.txt",
+    "manifest_sha256": "b874c208e601e84e4986debaf1f24db656408a6899ab52ee2923ed78234b2d5a",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "dbb82890f51068c479d793c92f620c4caa82e98819754a991d4eafd02e956414",
+      "src/components/AppHeader.vue": "d3f68055eab1efc9d170d110e51ac82defec1bdc2ae97aadc9bf0b638faf2b50",
+      "src/styles/base.css": "42d5118e95abfb2c54181b7a6ec8d82adf1de4fc3cf1babebf4a66c28d0e08a1",
+      "src/views/IncomingPlanView.vue": "2c236935900659b061fd903dfbdd84682a6c890a3dd61014cd23c37645cd5372"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-evidence-sha256.txt",
+    "manifest_sha256": "b51f845131871ea38f1fe4b3c4e14e67cf2670f67b62184f5394c56ba3a0b9ac",
+    "screenshots": 8,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "EA28/EA29",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "SelectionState 持久化 actor 与 incoming 引用上下文（studentId/version/readOnly/refMissing）+ recordsFocus；共享 messages/incomingPlan 导航和 goBack 保留当前读者角色；冷加载恢复引用而非默认林澈 latest。教练周岚旧交付 open→reload→back 始终教练周岚只读；学员林澈旧7 reload/back 始终学员林澈；缺失引用 reload 仍不可用；训练引用 reload 仍展开原记录。只读/历史入口 openAdoptSheet/confirmAdoption 拒绝采用。"
+    },
+    {
+      "id": "VR13",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "新增 coach-messages 预览情境；教练角色第二个“消息”进入教练列表/会话，不切学员；学生消息入口保留。"
+    },
+    {
+      "id": "VR14",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "320/200 .change-summary-head 纵向叠排，标题与“对照现用版本”合理换行；实测宽214/高37.5，非51×225竖排；不缩字号/不截字。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "95/95 vitest",
+      "EA28/29 reload+back for student/coach/missing/training; adoption gate; coach preview; persistence fields"
+    ],
+    "real_browser": [
+      "390x900 open→reload→back for student v7, coach Zhou old, missing ref, training ref; coach messages preview; 320x900/200 review title"
+    ],
+    "not_tested": [
+      "Lead full 16-family/5-width/200/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app/device/keyboard/safe-area",
+      "real AI/payment/user research"
+    ]
+  },
+  "unresolved": [
+    "No known code defect against fix03 scope.",
+    "Lead independent acceptance not done; candidate not accepted.",
+    "Reference context uses persisted local selection; corrupted/unknown legacy references are shown unavailable, no recovery UI."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser checks only.",
+    "Dev log excluded from immutable hashes."
+  ]
+}

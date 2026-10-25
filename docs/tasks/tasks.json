@@ -3996,8 +3996,8 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "fix02 round4 transport failure579steps; partial source frozenaaf1fe0, Lead typecheck/83tests pass; same-session recovery running19:40; not accepted",
-      "candidate_revision": "aaf1fe0a8e9506b72c56157139eeda100d71a709"
+      "execution_state": "fix04 normal frozen ae141ae; independent type/build/101tests/21seams pass; M02 visible geometry failed on559, same Harness fix05 resumed generating; full goal active",
+      "candidate_revision": "ae141ae639fde8234b7782bf79775f78cc5e04c8"
     },
     {
       "id": "D01-I",

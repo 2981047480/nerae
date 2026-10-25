@@ -1,0 +1,14 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "rows": [
+    {
+      "box": "{\"bottom\":1131.15625,\"height\":225,\"left\":37,\"right\":88.0625,\"top\":906.15625,\"width\":51.0625,\"x\":37,\"y\":906.15625}",
+      "parent": "change-summary-head",
+      "parentBox": "{\"bottom\":1131.15625,\"height\":226,\"left\":37,\"right\":283,\"top\":905.15625,\"width\":246,\"x\":37,\"y\":905.15625}",
+      "parentText": "本次改动 · 4 处对照现用版本 6",
+      "text": "本次改动 · 4 处"
+    }
+  ],
+  "screenshot": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-03/ui/screenshots/s15-review-320-text200-below-fold-final.jpg",
+  "previousScrollingCapturesExcluded": true
+}

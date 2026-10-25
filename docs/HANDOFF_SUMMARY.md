@@ -1,15 +1,13 @@
-# 交接摘要 · 2026-10-24
+# 交接摘要 · 2026-10-25
 
-D19目标active：55项/16族/F01–F07/M01–M12。D01-01/02 accepted，D01-03 active、D01-I planned；Lead只文稿/QA/原样集成，不写UI、不启Codex子代理。唯一实现者为原Harness/OpenCode Go/opencode-go/deepseek-v4.1-flash/Medium。
+D19完整目标active：55项/16族/F01–F07/M01–M12；D01-01/02 accepted，03 active、I planned。Lead只文稿/QA/原样集成，不写UI、不启Codex子代理。唯一执行者原Harness session-15de3174-0b22-47b7-9574-29dd3b032a8c，OpenCode Go/opencode-go/deepseek-v4.1-flash/Medium，原标题保留。
 
-首批source9a8c135、main接受b10c799；4186/PID74496、IAB8 Deliverable，REVIEW_04。全量树/private/tmp/nerae-ui-complete、ui/full-round-three、4187/PID64273；Harness session-15de3174-0b22-47b7-9574-29dd3b032a8c，标题“# D01-03 全量扩展正式派发 D01-02”。
+首批9a8c135/main b10c799、4186/PID74496/IAB8保留。全量树/private/tmp/nerae-ui-complete、ui/full-round-three、4187/PID64273。fix03第7轮正常冻结5599460，独立97测试过、21接缝17过4败；fix04第8轮正常41分8秒/791累计步交回，60源/12证据/2报告核对后冻结ae141ae639fde8234b7782bf79775f78cc5e04c8，独立类型/构建/101测试/21接缝全过（真实模块+假window/storage，非浏览器）。
 
-原全量336步TRANSPORT失败后冻结6dba，文档恢复正常。fix01第3轮正常1h56m58/493步，Lead冻结6a5609c5b0ecdb350be080350237f1a4e86d48b9；83测试/10身份接缝过、180尺寸捕获及实际流程发现残留，REVIEW_06拒绝。frozen-02保留全部证据及60源检查。首批/全量均非业务应用。
+M02实际失败：559固定4189/IAB13，ghost static、top1997，未入390×900；App scoped规则未命中动态body元素。fix05短包已发送，第9轮原生停止、轨迹仅step1上下文无实现请求，原因未知。14:29同会话继续请求后实际深度求索中，dispatch/fix05-running证明；不得重复发送/Stop。当前fix05未正常交回。
 
-fix02第4轮579步TRANSPORT/5of5失败（非正常交回）；已落盘源码Lead诊断类型/原83测试过，60源稳定并原样冻结aaf1fe0a8e9506b72c56157139eeda100d71a709，见fix02-interrupted/freeze.json，未接受。19:40同会话第5轮恢复，最新656步41m11/Flash-Medium仍生成，已补回归与针对性浏览器，尚无新报告。不要重复派发或因延迟Stop。
+frozen-03/a289已留220尺寸图（10错角色排除）、96逐态、完整12组/保留原3组、失败消息重试/双私稿/未读、撤权四读面、饮食/AI私稿/公开审阅、759新报价与699旧约定分离。F03周岚发布/取消/保存/撤销已走，林澈新8/旧7采用仍待实际完整路径。旧证据不是最终同源接受。
 
-原fix02单及补查均dispatch持久化：EA21引用归属/跨学员/缺失/原记录；EA25数量/器械/时长；EA23信息不足同源；EA27增删撤销也更新草稿待办；VR11窄屏200动作名逐字竖排；VR12缺图提示。最近两单state-consistency、text200已插入同恢复轮。Lead保留执行者20:01原候选图于fix02-recovery-interim；后续20:10图长动作名已上下排列，缺图提示移左上，均非Lead冻结CUA。测量须看实际图片/提示span，不能把含正常流文字的父容器当图片。
+固定4188/IAB12=a289，4189/IAB13=559；不要Harness碰，不把mutable4187当旧源证据。d01MotionCtx指13/frozen-04/motion；d01FlowCtx指12/frozen-03/immutable-flows；旧FinalCtx指11，勿复用。viewport只作用selected。
 
-CUA主验收tab11=d01ActiveFullTab（Handoff，4187）；旧fullPreviewTab9保留但不是viewport目标。浏览器viewport只作用selected，关临时10后落8曾导致矩阵尺寸不符中止，非产品失败；11实际320×900/DPR1校准过。不要复用旧ctx9或source6a/aaf给新源。最终重新import带query的cua_final_review/cua_full_matrix；活helper增加14身份接缝（新4项仅node--check，未执行）。矩阵增加窄标题预警，仍需看截图；isolated state每态UI重置，coach消息显式role。
-
-后续：等正常fix02 md/json/三SHA清单→核对/冻结→独立类型/构建/全部测试/14接缝→真实7流与16族全状态、五宽100/200/短屏/长文/焦点/缺图、12动效full/reduced→原样main集成/55语义ledger/D01-I→reset viewport、打开完整预览再complete。Enter触发后DOM/计算样式能捕获过渡/ghost；无fps/系统设置/真机/真实服务/用户研究接受。main依赖121包已备，不能代替最终集成验证。Mac可操作，无待答问题。
+下一步等fix05正常交回，散列核对/冻结/21接缝；最终16族状态/五宽200、完整主流、M01–12 full/reduced、短屏/缺图/对比度、55语义/同版本原样集成后D01-I再接受。所有产物落盘，UI样机不等于业务/真机/用户研究。

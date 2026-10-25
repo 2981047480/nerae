@@ -1,0 +1,7 @@
+{
+  "sourceRevision": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "excludedMatrix": "s08-coach-message",
+  "reason": "Selecting coach then second messages preview scenario rendered student Lin. Excluded as coach evidence; actual coach navigation used for s08-coach-actual.",
+  "actualCoachMatrix": "s08-coach-actual",
+  "productAccepted": false
+}

@@ -1,0 +1,30 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "frameOrFpsMeasured": false,
+  "backgroundSize": "auto",
+  "ghost": {
+    "bottom": 2308.125,
+    "height": 311.109375,
+    "left": 0,
+    "right": 350,
+    "top": 1997.015625,
+    "width": 350
+  },
+  "ghostInViewport": false,
+  "pointerEvents": "auto",
+  "position": "static",
+  "target": {
+    "bottom": 384.5638122558594,
+    "height": 320,
+    "left": 20,
+    "right": 370,
+    "top": 64.56381225585938,
+    "width": 350
+  },
+  "viewport": {
+    "height": 900,
+    "scrollY": 0,
+    "width": 390
+  },
+  "zIndex": "auto"
+}

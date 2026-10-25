@@ -1,0 +1,35 @@
+{
+  "scope": "Original round6 normal handback documents preserved while round7 motion followup runs; not a source freeze or acceptance",
+  "observed_utc": "2026-10-24T14:41:30.602140+00:00",
+  "native_duration": "49m44s",
+  "native_round": 6,
+  "continuation_round": 7,
+  "files": [
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-fix03-report.json",
+      "archive": "D01-03-fix03-report.json",
+      "sha256": "605c1b9796d45e45d03b9f5f161bc6328f87e7474f83f1b85c1a3db3058fe67e"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/D01-03-fix03-report.md",
+      "archive": "D01-03-fix03-report.md",
+      "sha256": "1c575f9855a58faa09acb66439b1ada4efe654b83fe1348355bb29ddc63de257"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-source-sha256.txt",
+      "archive": "d01-03-fix03-source-sha256.txt",
+      "sha256": "b874c208e601e84e4986debaf1f24db656408a6899ab52ee2923ed78234b2d5a"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-report-sha256.txt",
+      "archive": "d01-03-fix03-report-sha256.txt",
+      "sha256": "f65b80a1031f0599632adf57b692ecb8f45155e620c3110d1ed0c04c560342f0"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-evidence-sha256.txt",
+      "archive": "d01-03-fix03-evidence-sha256.txt",
+      "sha256": "b51f845131871ea38f1fe4b3c4e14e67cf2670f67b62184f5394c56ba3a0b9ac"
+    }
+  ],
+  "accepted": false
+}
