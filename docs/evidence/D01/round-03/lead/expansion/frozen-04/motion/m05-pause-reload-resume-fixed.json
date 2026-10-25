@@ -1,0 +1,9 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "scope": "actual UI rest clock; local sample",
+  "beforeReload": "01:16\n已暂停",
+  "afterReload": "01:16\n已暂停",
+  "after5500msHold": "01:16\n已暂停",
+  "resumeImmediate": "01:16",
+  "resumeAfter1300ms": "01:14"
+}

@@ -1,0 +1,15 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "fastReturnGhosts": 0,
+  "reenter": {
+    "position": "fixed",
+    "visible": true
+  },
+  "reduced": {
+    "cover": "/assets/explore-featured.webp",
+    "ghosts": 0,
+    "motion": "reduced",
+    "title": "上肢拉力与划船"
+  },
+  "frameOrFpsMeasured": false
+}

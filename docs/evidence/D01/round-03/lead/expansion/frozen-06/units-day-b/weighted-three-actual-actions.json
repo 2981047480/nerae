@@ -1,0 +1,19 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "scope": "three actual UI confirms using shown40kg/12 prefills, not physical exercise",
+  "negativeBlockedAtZero": true,
+  "actions": [
+    {
+      "set": 1,
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"退出\":\n    - generic: 退出\n  - generic: 一周两练 · 力量基础\n  - generic: 训练日 B · 拉与下肢\n- main:\n  - region \"01:15\":\n    - paragraph: 组间休息\n    - heading \"01:15\" [level=1]:\n      - generic: 01:15\n    - paragraph:\n      - text: 下一组 ·\n      - strong: 高位下拉 · 第 2 组\n    - paragraph:\n      - text: 高位下拉 第 1 组已记录 · 40 kg × 12 次\n    - paragraph: 休息结束后自动进入下一组，不需要额外操作。\n    - button \"暂停\":\n      - text: 暂停\n    - button \"加 15 秒\":\n      - text: 加 15 秒\n    - button \"提前结束休息\":\n      - text: 提前结束休息\n  - region \"本次记录\":\n    - heading \"本次记录\" [level=2]\n    - generic: 1 / 13 组\n    - heading \"高位下拉\" [level=3]\n    - generic: 1 / 3 组\n    - list:\n      - generic: 第 1 组\n      - generic: 40 kg × 12 次\n      - generic: 15:37\n    - heading \"单臂哑铃划船\" [level=3]\n    - generic: 0 / 3 组\n    - list\n    - heading \"高脚杯深蹲\" [level=3]\n    - generic: 0 / 4 组\n    - list\n    - heading \"罗马尼亚硬拉\" [level=3]\n    - generic: 0 / 3 组\n    - list\n- button \"打开预览控制\":\n  - generic: 预览"
+    },
+    {
+      "set": 2,
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"退出\":\n    - generic: 退出\n  - generic: 一周两练 · 力量基础\n  - generic: 训练日 B · 拉与下肢\n- main:\n  - region \"01:15\":\n    - paragraph: 组间休息\n    - heading \"01:15\" [level=1]:\n      - generic: 01:15\n    - paragraph:\n      - text: 下一组 ·\n      - strong: 高位下拉 · 第 3 组\n    - paragraph:\n      - text: 高位下拉 第 2 组已记录 · 40 kg × 12 次\n    - paragraph: 休息结束后自动进入下一组，不需要额外操作。\n    - button \"暂停\":\n      - text: 暂停\n    - button \"加 15 秒\":\n      - text: 加 15 秒\n    - button \"提前结束休息\":\n      - text: 提前结束休息\n  - region \"本次记录\":\n    - heading \"本次记录\" [level=2]\n    - generic: 2 / 13 组\n    - heading \"高位下拉\" [level=3]\n    - generic: 2 / 3 组\n    - list:\n      - generic: 第 1 组\n      - generic: 40 kg × 12 次\n      - generic: 15:37\n      - generic: 第 2 组\n      - generic: 40 kg × 12 次\n      - generic: 15:39\n    - heading \"单臂哑铃划船\" [level=3]\n    - generic: 0 / 3 组\n    - list\n    - heading \"高脚杯深蹲\" [level=3]\n    - generic: 0 / 4 组\n    - list\n    - heading \"罗马尼亚硬拉\" [level=3]\n    - generic: 0 / 3 组\n    - list\n- button \"打开预览控制\":\n  - generic: 预览"
+    },
+    {
+      "set": 3,
+      "snapshot": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"退出\":\n    - generic: 退出\n  - generic: 一周两练 · 力量基础\n  - generic: 训练日 B · 拉与下肢\n- main:\n  - region \"01:15\":\n    - paragraph: 组间休息\n    - heading \"01:15\" [level=1]:\n      - generic: 01:15\n    - paragraph:\n      - text: 下一组 ·\n      - strong: 单臂哑铃划船 · 第 1 组\n    - paragraph:\n      - text: 高位下拉 第 3 组已记录 · 40 kg × 12 次\n    - paragraph: 休息结束后自动进入下一组，不需要额外操作。\n    - button \"暂停\":\n      - text: 暂停\n    - button \"加 15 秒\":\n      - text: 加 15 秒\n    - button \"提前结束休息\":\n      - text: 提前结束休息\n  - region \"本次记录\":\n    - heading \"本次记录\" [level=2]\n    - generic: 3 / 13 组\n    - heading \"高位下拉\" [level=3]\n    - generic: 3 / 3 组\n    - list:\n      - generic: 第 1 组\n      - generic: 40 kg × 12 次\n      - generic: 15:37\n      - generic: 第 2 组\n      - generic: 40 kg × 12 次\n      - generic: 15:39\n      - generic: 第 3 组\n      - generic: 40 kg × 12 次\n      - generic: 15:41\n    - heading \"单臂哑铃划船\" [level=3]\n    - generic: 0 / 3 组\n    - list\n    - heading \"高脚杯深蹲\" [level=3]\n    - generic: 0 / 4 组\n    - list\n    - heading \"罗马尼亚硬拉\" [level=3]\n    - generic: 0 / 3 组\n    - list\n- button \"打开预览控制\":\n  - generic: 预览"
+    }
+  ]
+}

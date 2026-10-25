@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix04 frozen ae141ae; 101tests/21seams pass; M02 geometry fails; fix05 resumed after native round9 stopped",
+  "state": "fix05 normal frozen8e525; 102tests pass/23seams21pass2fail; fix06 round13 running latest reference+originalC03 units/recovery",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "fix04 normal41m8s; independent checks pass; full accepted false",
+  "progress": "native round13/875steps23m52 observed running after units inserted; not a handback",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -60,7 +60,8 @@
     ],
     "observed_dpr": 2.4000000953674316,
     "scope": "accepted first batch only",
-    "old_tab": "7 no longer in inventory; created8 after verifying empty IAB tabs; old QA contexts must not be reused"
+    "old_tab": "7 no longer in inventory; created8 after verifying empty IAB tabs; old QA contexts must not be reused",
+    "visibility_note": "retained Deliverable tab8; old visible=true is a prior observation, not reasserted foreground"
   },
   "copy_context_review": {
     "feedback": "D01-03-copy-and-context-review.md",
@@ -82,10 +83,10 @@
     "tab": "11",
     "visibility": "background",
     "mark": "handoff",
-    "candidate_source_id": "aaf1fe0a8e9506b72c56157139eeda100d71a709 + running recovery changes",
+    "candidate_source_id": "8e5251943ce06ec85f98fcc99769bf019a845f30 + running fix06 changes",
     "viewport_control": "browser capability affects selected tab only; tab11 selected/320x900 DPR1 verified; tab9 preserved but not viewport target",
     "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
-    "candidate_note": "Frozen fix01 source; not yet accepted, full visual/state/motion checks pending"
+    "candidate_note": "mutable candidate not accepted; use immutable4190 for8e525 evidence"
   },
   "first_live_ui_review": {
     "feedback": "D01-03-ui-review-01.md",
@@ -202,7 +203,7 @@
     "proof": "D01-03-review-checkpoint-inserted.txt",
     "status": "inserted once in original round1; worker to consolidate existing24issues without new scope; Lead next freezes after complete handback"
   },
-  "last_native_progress": "D01-03-fix05-running.txt",
+  "last_native_progress": "D01-03-fix06-status-after-unit-feedback.txt",
   "mapping_structural_check": {
     "evidence": "../lead/expansion/monitor/map-candidate-check-02.json",
     "items": 55,
@@ -383,7 +384,7 @@
   },
   "fix05": {
     "packet": "D01-03-fix05-m02-packet.md",
-    "state": "resumed generating",
+    "state": "normal_recovery_handback",
     "initial_round": 9,
     "initial_state": "native stopped before implementation request; exact reason unavailable",
     "initial_proof": "D01-03-fix05-stopped-trace.txt",
@@ -391,6 +392,75 @@
     "resume_time_local": "2026-10-25 14:29 Asia/Shanghai",
     "same_session_model_workspace": true,
     "scope": "M02 visible geometry only, no style redesign",
+    "accepted": false,
+    "native_round": 10,
+    "cumulative_steps": 833,
+    "partial_revision": "70c524508bd5a75894fa4fbc3f4f616df90e94f6",
+    "failure_proof": "../lead/expansion/fix05-interrupted/native-terminal.txt",
+    "snapshot": "../lead/expansion/fix05-interrupted/snapshot.json",
+    "followups": [
+      "D01-03-fix05-m12-followup.md",
+      "D01-03-fix05-contrast-followup.md",
+      "D01-03-fix05-copy-followup.md"
+    ],
+    "recovery": {
+      "packet": "D01-03-fix05-recovery.md",
+      "proof": "../lead/expansion/frozen-06/native-handback.txt",
+      "submitted_at_local": "2026-10-25 15:07 Asia/Shanghai",
+      "normal_handback": true,
+      "state": "normal_completion"
+    },
+    "final_native_round": 11,
+    "normal_duration": "11m38s",
+    "normal_cumulative_steps": 849,
+    "frozen_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+    "lead_code": "../lead/expansion/frozen-06/code/code-checks.json",
+    "lead_checks": "type/build/102tests pass;23seams21pass2fail latest-reference",
+    "lead_targeted_review": "../lead/expansion/frozen-06/TARGETED_REVIEW.md"
+  },
+  "lead_559_extra_checks": {
+    "evidence": "../lead/expansion/frozen-04/",
+    "passed": [
+      "M04 actual visible160ms",
+      "M05 actual pause/reload/resume monotonic",
+      "M01–M11 many reduced actual triggers",
+      "16family flat text plus4message variants (decorative dots excluded)"
+    ],
+    "failed": [
+      "M12 retry persists but visible preview failure remains",
+      "S16 unselected state text self-opacity=.8; composite3.3318",
+      "M02 dynamic ghost scoped rules not matched"
+    ],
+    "scope": "fixed559 source; not final acceptance"
+  },
+  "fix06": {
+    "state": "running",
+    "packet": "D01-03-fix06-latest-reference.md",
+    "base_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+    "submission_proof": "D01-03-fix06-submitted-confirmed.txt",
+    "initial_native_round": 12,
+    "initial_result": "native stopped before work; no normal report",
+    "resume_method": "keyboard Return after verified stopped; no Stop action",
+    "resume_proof": "D01-03-fix06-keyboard-resume.txt",
+    "running_proof": "D01-03-fix06-status-after-unit-feedback.txt",
+    "native_round": 13,
+    "last_cumulative_steps": 875,
+    "last_duration": "23m52s",
+    "same_session_model_workspace": true,
+    "followup": "D01-03-fix06-units-followup.md",
+    "followup_proof": "D01-03-fix06-units-inserted.txt",
+    "normal_handback": false,
     "accepted": false
+  },
+  "immutable_lead_qa_current": {
+    "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+    "url": "http://127.0.0.1:4190/",
+    "pid": 35435,
+    "exec_session": 23167,
+    "tab": "14",
+    "dist": "/private/tmp/nerae-frozen-8e52-w9zho6jp/dist",
+    "proof": "../lead/expansion/frozen-06/frozen-static-preview.json",
+    "post_qa_check": "../lead/expansion/frozen-06/post-targeted-build-check.json",
+    "source_and_artifact_scope": "fixed13buildfiles; mutable worker intentionally changes on4187"
   }
 }

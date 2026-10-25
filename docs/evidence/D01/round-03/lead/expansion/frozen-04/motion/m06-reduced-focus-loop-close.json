@@ -1,0 +1,12 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "trap": {
+    "focus": "关闭",
+    "insideDialog": true,
+    "motion": "reduced"
+  },
+  "closed": {
+    "dialogs": 0,
+    "focus": "筛选内容"
+  }
+}

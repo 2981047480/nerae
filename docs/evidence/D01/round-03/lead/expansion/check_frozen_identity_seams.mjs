@@ -412,6 +412,37 @@ try {
    assert.equal(cold.ui.recordsFocusExplicit,true,'Unknown legacy training reference fell back to default record mode')
    assert.equal(cold.ui.recordsFocusId,null,'Unknown record identity was guessed')
  })
+ await check('student own latest message reference remains eligible for explicit adoption',async e=>{
+   const beforeSession=plain(s.state.session)
+   s.jumpToScenario('today');s.goToConversation('conv-gu-yan')
+   const ref=plain(s.state.conversations.find(x=>x.id==='conv-gu-yan').messages.flatMap(x=>x.refs??[])
+     .find(x=>x.kind==='plan'&&x.id===`delivery-${s.state.student.incoming.version}`))
+   assert.ok(ref,'Seed latest message reference missing')
+   s.openMessageRef(ref)
+   e.version=s.incomingDelivery.value?.version;e.available=s.incomingAvailable.value
+   assert.equal(e.version,7,'Latest reference changed the requested version')
+   assert.equal(e.available,true,'Own latest actionable delivery was incorrectly treated as an unavailable snapshot')
+   s.openAdoptSheet();assert.equal(s.ui.sheet,'adopt')
+   s.closeSheet();assert.equal(s.state.student.planVersion,6,'Cancel adopted without confirmation')
+   s.openAdoptSheet();assert.equal(s.confirmAdoption(),true)
+   assert.equal(s.state.student.planVersion,7)
+   assert.deepEqual(plain(s.state.session),beforeSession,'Adoption rewrote today confirmed session')
+   e.adoptedAfterExplicitConfirmation=true;e.todayPreserved=true
+ })
+ await check('already adopted latest message reference keeps its actual status and cannot apply twice',async e=>{
+   s.jumpToScenario('today');s.goToIncomingPlan();s.openAdoptSheet()
+   assert.equal(s.confirmAdoption(),true,'Direct latest control did not adopt')
+   const beforeSchedule=plain(s.state.student.schedule)
+   s.goToConversation('conv-gu-yan')
+   const ref=plain(s.state.conversations.find(x=>x.id==='conv-gu-yan').messages.flatMap(x=>x.refs??[])
+     .find(x=>x.kind==='plan'&&x.id==='delivery-7'))
+   s.openMessageRef(ref)
+   e.shownStatus=s.incomingDelivery.value?.status
+   assert.equal(e.shownStatus,'adopted','Latest reference falsely became waiting/new after adoption')
+   assert.equal(s.confirmAdoption(),false,'Already adopted version was applied twice')
+   assert.deepEqual(plain(s.state.student.schedule),beforeSchedule,'Duplicate confirmation changed future schedule')
+   e.duplicateRejected=true
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {

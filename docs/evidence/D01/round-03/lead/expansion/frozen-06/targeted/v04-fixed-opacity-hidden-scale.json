@@ -1,0 +1,130 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "normal": [
+    {
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 4.916462639423658,
+      "tag": "SPAN",
+      "text": "隐藏",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(255, 255, 255)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 13.934764590472426,
+      "tag": "SPAN",
+      "text": "学员可见",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 4.916462639423658,
+      "tag": "SPAN",
+      "text": "学员可见",
+      "threshold": 4.5,
+      "weight": 400
+    }
+  ],
+  "text200": [
+    {
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 24,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 4.916462639423658,
+      "tag": "SPAN",
+      "text": "隐藏",
+      "threshold": 3,
+      "weight": 400
+    },
+    {
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(255, 255, 255)",
+      "fontSize": 24,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 13.934764590472426,
+      "tag": "SPAN",
+      "text": "学员可见",
+      "threshold": 3,
+      "weight": 400
+    },
+    {
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "package-tab-state",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 24,
+      "inViewport": true,
+      "numericCheck": "passed",
+      "opacity": 1,
+      "ratio": 4.916462639423658,
+      "tag": "SPAN",
+      "text": "学员可见",
+      "threshold": 3,
+      "weight": 400
+    }
+  ],
+  "viewport": {
+    "dpr": 1,
+    "height": 900,
+    "scrollX": 0,
+    "scrollY": 0,
+    "width": 320
+  },
+  "clippedControls": [],
+  "oldAgreementPreserved": true
+}

@@ -3,6 +3,27 @@
 import { gotoScenario } from '../fix-02/cua_review_v3.mjs'
 import { captureCurrentViewport } from './cua_full_matrix.mjs'
 
+export async function waitForSettledView(ctx) {
+  // Terminal checks must also wait for TrainingView's focus transition and
+  // mounted content animations, not only ordinary page view transitions.
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const settled = await ctx.tab.playwright.evaluate(() => {
+      if (document.querySelector('.view-enter-active,.view-leave-active,.focus-enter-active,.focus-leave-active')) return false
+      const title = document.querySelector('main h1') ?? document.querySelector('main h2') ?? document.querySelector('main')
+      if (!title) return false
+      let element = title
+      while (element) {
+        if (Number(getComputedStyle(element).opacity) < .999) return false
+        element = element.parentElement
+      }
+      return true
+    })
+    if (settled) return
+    if (attempt === 39) throw Error('Terminal view still transitioning; inspect current UI before accepting')
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
+}
+
 export async function closeObservedSheet(ctx) {
   const dialog = ctx.tab.playwright.getByRole('dialog')
   if (!await dialog.isVisible()) return
@@ -26,6 +47,7 @@ export async function resetSample(ctx, { width = 390, height = 900 } = {}) {
 
 export async function recordFlow(ctx, name) {
   if (!/^[a-f0-9]{40}$/.test(ctx.sourceRevision ?? '')) throw Error('Explicit frozen revision required')
+  await waitForSettledView(ctx)
   // User actions can start browser smooth scrolling after focus restoration.
   // Poll actual DOM geometry for a stable terminal view; motion probes run
   // separately immediately after the trigger, before this terminal capture.
@@ -148,6 +170,7 @@ export async function inspectMotionAndFocus(ctx, label) {
 export async function inspectFlatTextContrast(ctx, label) {
   // Numeric evidence is limited to flat, opaque backgrounds. Photo/sibling overlays
   // and unresolved color formats require screenshot judgement rather than a pass.
+  await waitForSettledView(ctx)
   const result = await ctx.tab.playwright.evaluate(() => {
     const rgba = value => {
       const match = value.match(/^rgba?\(([^)]+)\)$/)

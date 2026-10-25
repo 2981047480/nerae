@@ -1,0 +1,32 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "frameOrFpsMeasured": false,
+  "backgroundPosition": "50% 50%",
+  "backgroundSize": "cover",
+  "ghost": {
+    "bottom": 413.5078125,
+    "height": 294.6953125,
+    "left": 20,
+    "right": 370,
+    "top": 118.8125,
+    "width": 350
+  },
+  "inViewport": true,
+  "opacity": "0.249858",
+  "pointerEvents": "none",
+  "position": "fixed",
+  "target": {
+    "bottom": 387.4744262695313,
+    "height": 320,
+    "left": 20,
+    "right": 370,
+    "top": 67.47442626953125,
+    "width": 350
+  },
+  "viewport": {
+    "height": 900,
+    "scrollY": 0,
+    "width": 390
+  },
+  "zIndex": "150"
+}

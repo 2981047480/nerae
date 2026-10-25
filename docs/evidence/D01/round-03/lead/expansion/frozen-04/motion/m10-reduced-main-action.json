@@ -1,0 +1,14 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "trigger": "Actual native Tab.pressKey primary Continue, Space held500ms",
+  "before": {
+    "background": "rgb(201, 120, 87)",
+    "motion": "reduced",
+    "name": " 继续 高位下拉· 第 1 组",
+    "transform": "none",
+    "transition": "1e-06s"
+  },
+  "after": "- link \"跳到主要内容\":\n  - /url: \"#main\"\n- banner:\n  - button \"退出\":\n    - generic: 退出\n  - generic: 力量基础\n  - generic: 上肢力量\n- main:\n  - region \"01:15 已暂停\":\n    - paragraph: 组间休息\n    - heading \"01:15 已暂停\" [level=1]:\n      - generic: 01:15\n      - generic: 已暂停\n    - paragraph:\n      - text: 下一组 ·\n      - strong: 高位下拉 · 第 1 组\n    - paragraph:\n      - text: 哑铃卧推 第 4 组已记录 · 12.5 kg × 10 次\n    - paragraph: 休息结束后自动进入下一组，不需要额外操作。\n    - button \"继续计时\":\n      - text: 继续计时\n    - button \"加 15 秒\":\n      - text: 加 15 秒\n    - button \"提前结束休息\":\n      - text: 提前结束休息\n  - region \"本次记录\":\n    - heading \"本次记录\" [level=2]\n    - generic: 4 / 12 组\n    - heading \"哑铃卧推\" [level=3]\n    - generic: 4 / 4 组\n    - list:\n      - generic: 第 1 组\n      - generic: 12.5 kg × 10 次\n      - generic: 19:06\n      - generic: 第 2 组\n      - generic: 12.5 kg × 10 次\n      - generic: 19:09\n      - generic: 第 3 组\n      - generic: 12.5 kg × 9 次\n      - generic: 19:12\n      - generic: 第 4 组\n      - generic: 12.5 kg × 10 次\n      - generic: 19:14\n    - heading \"高位下拉\" [level=3]\n    - generic: 0 / 3 组\n    - list\n    - heading \"单臂哑铃划船\" [level=3]\n    - generic: 0 / 3 组\n    - list\n    - heading \"平板支撑\" [level=3]\n    - generic: 0 / 2 组\n    - list\n- button \"打开预览控制\":\n  - generic: 预览",
+  "heldPhaseCaptured": false,
+  "frameOrFpsMeasured": false
+}

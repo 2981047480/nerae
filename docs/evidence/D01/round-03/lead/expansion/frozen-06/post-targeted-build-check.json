@@ -1,0 +1,12 @@
+{
+  "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "scope": "fixed copied build only; mutable worker source is intentionally changing",
+  "expected_files": 13,
+  "actual_files": 13,
+  "matches": true,
+  "pid": 35435,
+  "exec_session": 23167,
+  "url": "http://127.0.0.1:4190/",
+  "tab": "14",
+  "observed_utc": "2026-10-25T07:48:13.915971+00:00"
+}

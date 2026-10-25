@@ -1,0 +1,11 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "frameOrFpsMeasured": false,
+  "class": "screen screen--narrow student-detail view-enter-active view-enter-to",
+  "duration": "0.18s",
+  "motion": "full",
+  "name": "student-context-in-31393561",
+  "opacity": "0.803414",
+  "title": "林澈",
+  "transform": "matrix(1, 0, 0, 1, 0, 0.786346)"
+}

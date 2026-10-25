@@ -1,0 +1,25 @@
+{
+  "source_revision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "scope": "flat self-opacity text over actual opaque canvas; no image or group opacity",
+  "foreground": [
+    94,
+    107,
+    112
+  ],
+  "background": [
+    243,
+    242,
+    238
+  ],
+  "opacity": 0.8,
+  "effective_foreground": [
+    123.79999999999998,
+    134.0,
+    137.2
+  ],
+  "contrast_ratio": 3.3318304541578563,
+  "threshold": 4.5,
+  "passes": false,
+  "dom_evidence": "s16-package-label-opacity.json",
+  "background_evidence": "text-contrast-observations.jsonl label s16"
+}

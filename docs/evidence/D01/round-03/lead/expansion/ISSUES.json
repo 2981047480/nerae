@@ -339,33 +339,36 @@
       "id": "VR13",
       "subject": "教练消息预览入口错误落学员",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "failed_frozen_03_fix03_ready",
-      "evidence": "../REVIEW_07.md"
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "evidence": "../REVIEW_07.md",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
     },
     {
       "id": "VR14",
       "subject": "审阅差异标题320宽200字号逐字竖排",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "failed_frozen_03_fix03_ready",
-      "evidence": "../REVIEW_07.md"
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "evidence": "../REVIEW_07.md",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
     },
     {
       "id": "VR15",
       "subject": "M02动态body ghost不匹配scoped规则，static且在视口下方",
-      "status": "failed_frozen_04_fix05_dispatched",
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
       "feedback": "../../dispatch/D01-03-fix05-m02-packet.md",
-      "evidence": "frozen-04/motion/m02-ghost-visible-geometry.json"
+      "evidence": "frozen-04/motion/m02-ghost-visible-geometry.json",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
     },
     {
       "id": "VR16",
       "subject": "M04完成标记动画仅在已被休息替换的不可见分支",
-      "status": "failed_frozen_03_fix03_followup",
+      "status": "passed_frozen_04_actual_visible_160ms_full_and_reduced",
       "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
     },
     {
       "id": "VR17",
       "subject": "M05暂停恢复第一帧使用旧时钟导致读数跳大",
-      "status": "failed_frozen_03_fix03_followup",
+      "status": "passed_frozen_04_actual_pause_reload_resume_full_and_reduced",
       "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
     },
     {
@@ -374,8 +377,53 @@
       "status": "passed_frozen_05_21_module_seams_browser_final_pending",
       "feedback": "../../dispatch/D01-03-fix04-packet.md",
       "evidence": "../REVIEW_08.md"
+    },
+    {
+      "id": "EA31",
+      "subject": "M12/C03同步失败或待保存预览的重试成功后不解除失败标志",
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "feedback": "../../dispatch/D01-03-fix05-m12-followup.md",
+      "evidence": "frozen-04/motion/m12-full-retry-still-failed.txt",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+    },
+    {
+      "id": "VR18",
+      "subject": "未选中服务包学员可见状态文字opacity=.8导致3.3318对比",
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "feedback": "../../dispatch/D01-03-fix05-contrast-followup.md",
+      "evidence": "frozen-04/contrast/s16-package-label-composite.json",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+    },
+    {
+      "id": "VR19",
+      "subject": "计划详情仍有适用条件与来源在开始前展示这一结构解释",
+      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "feedback": "../../dispatch/D01-03-fix05-copy-followup.md",
+      "evidence": "frozen-03/ui/dom-text/s03-plan-390-text100.txt:62",
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+    },
+    {
+      "id": "EA32",
+      "subject": "最新本人消息引用误作为不可用快照，无法采用且已采用后又显示等待决定",
+      "status": "failed_frozen_06_two_of_23_seams_and_real_ui_fix06_running",
+      "feedback": "../../dispatch/D01-03-fix06-latest-reference.md",
+      "evidence": "frozen-04/reference-flow/latest-eight-reference-blocked.json"
+    },
+    {
+      "id": "EA33",
+      "subject": "自重计次要求正kg、呼吸剂量被解析丢失、秒每侧存在分类风险",
+      "status": "failed_actual_frozen_06_dispatched_same_fix06_round13",
+      "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
+      "evidence": "frozen-06/units-day-b/bird-dog-self-weight-zero-cannot-complete.txt"
+    },
+    {
+      "id": "EA34",
+      "subject": "换新40秒会话仍残留上次重量错误并禁用完成",
+      "status": "failed_actual_frozen_06_dispatched_same_fix06_round13",
+      "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
+      "evidence": "frozen-06/units-day-b/new-duration-session-after-old-weight-error.txt"
     }
   ],
-  "latest_review": "../REVIEW_09.md",
-  "latest_frozen_source": "ae141ae639fde8234b7782bf79775f78cc5e04c8"
+  "latest_review": "../REVIEW_10.md",
+  "latest_frozen_source": "8e5251943ce06ec85f98fcc99769bf019a845f30"
 }

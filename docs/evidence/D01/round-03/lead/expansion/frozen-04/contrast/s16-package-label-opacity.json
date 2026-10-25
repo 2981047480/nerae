@@ -1,0 +1,98 @@
+{
+  "sourceRevision": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "rows": [
+    {
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tab-state",
+          "opacity": "0.8"
+        },
+        {
+          "background": "rgb(25, 47, 57)",
+          "class": "package-tab package-tab--active",
+          "opacity": "1"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tabs",
+          "opacity": "1"
+        }
+      ],
+      "background": "rgb(25, 47, 57)",
+      "buttonColor": "rgb(255, 255, 255)",
+      "color": "rgb(255, 255, 255)",
+      "opacity": "0.8",
+      "pageBackground": "rgba(0, 0, 0, 0)",
+      "rect": {
+        "bottom": 291.9609375,
+        "left": 33,
+        "right": 155.0234375,
+        "top": 272.1640625
+      },
+      "text": "学员可见"
+    },
+    {
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tab-state",
+          "opacity": "0.8"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tab",
+          "opacity": "1"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tabs",
+          "opacity": "1"
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0)",
+      "buttonColor": "rgb(94, 107, 112)",
+      "color": "rgb(94, 107, 112)",
+      "opacity": "0.8",
+      "pageBackground": "rgba(0, 0, 0, 0)",
+      "rect": {
+        "bottom": 291.9609375,
+        "left": 185.0234375,
+        "right": 280.5234375,
+        "top": 272.1640625
+      },
+      "text": "学员可见"
+    },
+    {
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tab-state",
+          "opacity": "0.8"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tab",
+          "opacity": "1"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "class": "package-tabs",
+          "opacity": "1"
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0)",
+      "buttonColor": "rgb(94, 107, 112)",
+      "color": "rgb(94, 107, 112)",
+      "opacity": "0.8",
+      "pageBackground": "rgba(0, 0, 0, 0)",
+      "rect": {
+        "bottom": 352.203125,
+        "left": 33,
+        "right": 148.953125,
+        "top": 332.40625
+      },
+      "text": "学员可见"
+    }
+  ]
+}

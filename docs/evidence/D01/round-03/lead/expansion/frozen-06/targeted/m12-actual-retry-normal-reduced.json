@@ -1,0 +1,24 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "scope": "actual available browser storage; forced real storage exception covered separately in worker browser/module evidence",
+  "rows": [
+    {
+      "mode": "full",
+      "beforeFailureShown": true,
+      "afterFailureGone": true,
+      "afterStillThree": true,
+      "reloadFailureGone": true,
+      "reloadStillThree": true,
+      "actualMotion": "full"
+    },
+    {
+      "mode": "reduced",
+      "beforeFailureShown": true,
+      "afterFailureGone": true,
+      "afterStillThree": true,
+      "reloadFailureGone": true,
+      "reloadStillThree": true,
+      "actualMotion": "reduced"
+    }
+  ]
+}
