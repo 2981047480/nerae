@@ -405,23 +405,45 @@
     {
       "id": "EA32",
       "subject": "最新本人消息引用误作为不可用快照，无法采用且已采用后又显示等待决定",
-      "status": "failed_frozen_06_two_of_23_seams_and_real_ui_fix06_running",
+      "status": "passed_frozen_07_targeted_pending_final_regression",
       "feedback": "../../dispatch/D01-03-fix06-latest-reference.md",
-      "evidence": "frozen-04/reference-flow/latest-eight-reference-blocked.json"
+      "evidence": "frozen-04/reference-flow/latest-eight-reference-blocked.json",
+      "latest_observation": "Actual publish8/current6,lastZhou,old7cold,new8messagecancel/confirm/reload/reopenadopted;today3/historyretained",
+      "recheck_evidence": "frozen-07/reference-flow/three-stage-results.json"
     },
     {
       "id": "EA33",
       "subject": "自重计次要求正kg、呼吸剂量被解析丢失、秒每侧存在分类风险",
-      "status": "failed_actual_frozen_06_dispatched_same_fix06_round13",
+      "status": "passed_frozen_07_dose_input_pending_comparable_series_fix07",
       "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
-      "evidence": "frozen-06/units-day-b/bird-dog-self-weight-zero-cannot-complete.txt"
+      "evidence": "frozen-06/units-day-b/bird-dog-self-weight-zero-cannot-complete.txt",
+      "latest_observation": "ActualCore8sets,selfweight/perSideTime;Mobility6sets/breathconflict/0block passed;separateEA35chartsemanticfailure",
+      "recheck_evidence": "frozen-07/units/"
     },
     {
       "id": "EA34",
       "subject": "换新40秒会话仍残留上次重量错误并禁用完成",
-      "status": "failed_actual_frozen_06_dispatched_same_fix06_round13",
+      "status": "passed_frozen_07_targeted_pending_final_regression",
       "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
-      "evidence": "frozen-06/units-day-b/new-duration-session-after-old-weight-error.txt"
+      "evidence": "frozen-06/units-day-b/new-duration-session-after-old-weight-error.txt",
+      "latest_observation": "Actual negativeweight error -> normalexit/newCore -> no staleerror -> valid40s firstconfirmation passed",
+      "recheck_evidence": "frozen-07/units/cross-session-results.json"
+    },
+    {
+      "id": "EA35",
+      "subject": "旧重量与新计次记录混为同一趋势/参考语义",
+      "feedback": "../../dispatch/D01-03-fix07-comparable-record-series.md",
+      "status": "failed_frozen_07_fix07_dispatched",
+      "latest_observation": "Actual settled CUA bird chart mixes0kg+10reps; axis kg/delta+10次; new28module27pass1fail/source60stable",
+      "recheck_evidence": "frozen-07/units/core-bird-chart-mixed-unit-terminal-bug.txt"
+    },
+    {
+      "id": "VR20",
+      "subject": "可见服务包保存会更新公开报价，但边界文案称不等于公开",
+      "feedback": "../../dispatch/D01-03-fix07-service-copy-note.md",
+      "status": "pending_fix07_copy_followup",
+      "latest_observation": "Actual 54 service save updates student759/item/8weeks whileold699/month4weeksv2retained; header and boundary copy conflict",
+      "recheck_evidence": "frozen-07/flows/f05-actual-student-coach-detail-new-quote.txt"
     }
   ],
   "latest_review": "../REVIEW_10.md",

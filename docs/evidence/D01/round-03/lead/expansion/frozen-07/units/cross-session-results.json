@@ -1,0 +1,8 @@
+{
+  "sourceRevision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "oldNegativeLoadBlocked": true,
+  "normalExitAndNewPlan": true,
+  "oldWeightErrorAbsentInDuration": true,
+  "validSecondsConfirmedOnce": true,
+  "scope": "Actual CUA UI without state injection; local sample"
+}

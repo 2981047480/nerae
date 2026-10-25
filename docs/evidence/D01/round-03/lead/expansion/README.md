@@ -2,9 +2,9 @@
 
 本文件是活跃索引，原始候选/失败/截图/报告按各自版本保留。D01-03完整16族/55项尚未accepted，Lead只写文稿、QA与原样集成，没有编辑UI源码。D01-02四族接受见REVIEW_04与fix-04/frozen，不能代替全量接受。
 
-当前以[REVIEW_10](../REVIEW_10.md)为最近正式评审：fix05正常交回冻结8e5251943ce06ec85f98fcc99769bf019a845f30，60源/22证据/2报告SHA核对一致；Lead类型/构建/102测试通过，23接缝21过2败。最新本人消息引用无法采用、已采用后又显示new，原Harness fix06第13轮修复中。C03真实自重/呼吸单位与跨会话错误也已并入同一轮，后续上次参考/冲突单位文字仅属静态检查点，尚非新构建UI失败证据。
+当前以[REVIEW_11](../REVIEW_11.md)为最近正式评审：fix06正常交回冻结54b74c，60源/16证据/2报告SHA核对；独立类型/构建/109测试/原27接缝通过，真实F03/自重/秒每侧/呼吸与错误恢复过。新增28项27过1败及真正终态图复现旧kg与新次数混比，fix07第14轮原Harness执行中，未accepted。
 
-- `ISSUES.json`是53项历史缺陷和复验索引，旧观察不自动代表当前版本；完整接受仍为false。
+- `ISSUES.json`是55项历史缺陷和复验索引，旧观察不自动代表当前版本；完整接受仍为false。
 - `frozen-03`绑定a289：220尺寸捕获中10张错角色排除，210张有效/21构图；96隔离状态及F01–F07大量真实操作证据。不自动升级为最终新源通过。
 - `frozen-04`绑定559：动效/对比/最新引用的补查与方法修正。照片或透明合成不由平面对比自动判定。
 - `frozen-05`绑定ae141：60源/12证据/2报告；独立101测试/21接缝过，但真实M02 scoped ghost不可见，故非接受版本。
@@ -13,6 +13,6 @@
 
 `candidate-*`、`monitor`、`fix*-interim`是实现中检查，不作最终接受。模块诊断使用替身window/storage，不是浏览器或后端证据；过早/错角色/错误断言方法均保留排除说明，不能升级为产品失败。
 
-QA工具：`verify_worker_handback.py`核对执行者3份清单/写域；`run_frozen_code_checks.py`拒绝脏源码并保存执行脚本/源码SHA；`create_frozen_preview.py`复制并散列固定构建；`cua_full_matrix.mjs`检查实际视口/控件/截图且不会自动accepted。`check_frozen_identity_seams.mjs`现已补为27项（单位/完成记录/图表/跨会话错误），当前只语法检查；最近实际执行仍是frozen-06的23项，不能混称27项通过。
+QA工具：`verify_worker_handback.py`核对执行者3份清单/写域；`run_frozen_code_checks.py`拒绝脏源码并保存执行脚本/源码SHA；`create_frozen_preview.py`复制并散列固定构建；`cua_full_matrix.mjs`检查实际视口/控件/截图且不会自动accepted。`check_frozen_identity_seams.mjs`现28项：最近实跑frozen-07/code-followup 27过1败，原27绿色快照在code。frozen-07还保存真实F03/单位走查、正常交回和13文件固定4191构建，不能将绿色旧子集当全量通过。
 
 最终新冻结后须完成同版22构图五宽100/200、隔离状态、F01–F07/C03–04、M01–M12与减少动态效果、短屏/焦点/缺图/文案/55语义，再原样集成和D01-I。实际会话、派发、模型和原生状态见[运行记录](../../dispatch/D01-03-runtime.json)。本地UI样机不代表业务、真机、真实用户研究、权限安全或健康效果已验证。

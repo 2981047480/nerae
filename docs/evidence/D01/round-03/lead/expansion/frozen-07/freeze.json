@@ -1,0 +1,24 @@
+{
+  "worker_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "parent_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "normal_handback": true,
+  "native_round": 13,
+  "native_steps": 924,
+  "native_duration": "1h2m50s",
+  "source_files": 60,
+  "evidence_files": 16,
+  "report_files": 2,
+  "lead_ui_source_edits": false,
+  "accepted": false,
+  "lead_checks": {
+    "typecheck": 0,
+    "build": 0,
+    "vitest": 109,
+    "identity_seams": 27,
+    "all_passed": true
+  },
+  "notes": [
+    "Worker PNG core-bird-dog depicts side-bridge input; treat actual depicted view as evidence, not filename. Independent CUA checks still required.",
+    "A nonessential Python version query used a nonexistent relative worker venv and exited127; all actual checks use the existing absolute main venv and passed."
+  ]
+}

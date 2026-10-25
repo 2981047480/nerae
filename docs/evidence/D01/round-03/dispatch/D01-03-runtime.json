@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix05 normal frozen8e525; 102tests pass/23seams21pass2fail; fix06 round13 running latest reference+originalC03 units/recovery",
+  "state": "fix06 normal frozen54b74c;109/type/build/original27 pass; new28th and settled actual chart failEA35; fix07 round14 running",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "native round13/906steps48m23 observed running; unit-label review inserted; not a handback",
+  "progress": "native round14/940steps13m40 running after single service-copy insertion",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -434,7 +434,7 @@
     "scope": "fixed559 source; not final acceptance"
   },
   "fix06": {
-    "state": "running",
+    "state": "normal_handback_frozen",
     "packet": "D01-03-fix06-latest-reference.md",
     "base_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
     "submission_proof": "D01-03-fix06-submitted-confirmed.txt",
@@ -449,21 +449,25 @@
     "same_session_model_workspace": true,
     "followup": "D01-03-fix06-units-followup.md",
     "followup_proof": "D01-03-fix06-units-inserted.txt",
-    "normal_handback": false,
+    "normal_handback": true,
     "accepted": false,
     "unit_label_review": "D01-03-fix06-unit-label-review.md",
-    "unit_label_review_proof": "D01-03-fix06-unit-label-inserted.txt"
+    "unit_label_review_proof": "D01-03-fix06-unit-label-inserted.txt",
+    "native_steps": 924,
+    "native_duration": "1h2m50s",
+    "source_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+    "normal_handback_proof": "../lead/expansion/frozen-07/native-handback.txt"
   },
   "immutable_lead_qa_current": {
-    "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
-    "url": "http://127.0.0.1:4190/",
-    "pid": 35435,
-    "exec_session": 23167,
-    "tab": "14",
-    "dist": "/private/tmp/nerae-frozen-8e52-w9zho6jp/dist",
-    "proof": "../lead/expansion/frozen-06/frozen-static-preview.json",
-    "post_qa_check": "../lead/expansion/frozen-06/post-targeted-build-check.json",
-    "source_and_artifact_scope": "fixed13buildfiles; mutable worker intentionally changes on4187"
+    "source_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+    "url": "http://127.0.0.1:4191/",
+    "exec_session": 28563,
+    "tab": "15",
+    "dist": "/private/tmp/nerae-frozen-54b7-pkt0z67k/dist",
+    "proof": "../lead/expansion/frozen-07/frozen-static-preview.json",
+    "scope": "13 copied build files; mutable worker changes only4187",
+    "pid": 54860,
+    "post_qa_check": "../lead/expansion/frozen-07/post-qa-build-check.json"
   },
   "lead_qa_preparation": {
     "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
@@ -472,5 +476,18 @@
     "scope": "old frozen build; entry/role verification only, not fix06 acceptance",
     "identity_checks_prepared": 27,
     "identity_checks_status": "new27 syntax checked only; old frozen06 execution remains23 checks"
+  },
+  "fix07": {
+    "state": "running",
+    "packet": "D01-03-fix07-comparable-record-series.md",
+    "base_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+    "accepted": false,
+    "submission_proof": "D01-03-fix07-submitted.txt",
+    "running_proof": "D01-03-fix07-status-after-flow.txt",
+    "native_round": 14,
+    "last_cumulative_steps": 940,
+    "last_duration": "13m40s",
+    "copy_followup": "D01-03-fix07-service-copy-note.md",
+    "copy_followup_proof": "D01-03-fix07-service-copy-inserted.txt"
   }
 }

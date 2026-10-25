@@ -1,0 +1,6 @@
+{
+  "scope": "New mixed-unit regression only; prior27 green snapshot retained separately",
+  "source_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "check_count": 28,
+  "helper_sha256": "dc4ba5312ac1dc89a0f04cf8a49e0d8b13b2e284f8c7121f75c8c5ae64653c10"
+}

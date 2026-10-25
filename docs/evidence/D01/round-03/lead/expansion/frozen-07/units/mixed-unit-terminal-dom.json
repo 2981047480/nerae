@@ -1,0 +1,12 @@
+{
+  "chart": [
+    {
+      "class": "chart",
+      "label": "鸟狗式在近 4 周的最高kg变化",
+      "opacity": "1",
+      "text": "0369kg010/211010/24"
+    }
+  ],
+  "selectedAction": "鸟狗式",
+  "transitions": []
+}

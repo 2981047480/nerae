@@ -8,7 +8,7 @@ export async function waitForSettledView(ctx) {
   // mounted content animations, not only ordinary page view transitions.
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const settled = await ctx.tab.playwright.evaluate(() => {
-      if (document.querySelector('.view-enter-active,.view-leave-active,.focus-enter-active,.focus-leave-active')) return false
+      if (document.querySelector('[class*="-enter-active"],[class*="-leave-active"]')) return false
       const title = document.querySelector('main h1') ?? document.querySelector('main h2') ?? document.querySelector('main')
       if (!title) return false
       let element = title

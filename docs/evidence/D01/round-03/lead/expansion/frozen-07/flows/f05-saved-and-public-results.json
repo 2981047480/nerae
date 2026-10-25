@@ -1,0 +1,12 @@
+{
+  "sourceRevision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "negativePriceBlocked": true,
+  "newQuote": 759,
+  "newUnit": "项",
+  "newCycle": "8周",
+  "response": "工作日12小时",
+  "coldRetained": true,
+  "oldAgreementText": "已有约定\n\n林澈 · 力量基础 · 月度计划\n\n确认价格\n¥699 / 月\n服务周期\n4 周\n确认时间\n2026-10-02\n约定服务版本\n版本 2\n\n修改服务说明或价格不会改写这份约定；新价格只影响之后的咨询与确认。",
+  "publicPreviewText": "学员看到的内容\n\n顾言 · 教练\n\n力量基础 · 月度计划\n\n¥759 / 项 · 8 周\n\n每周 3 次完整训练安排，围绕基础推拉与核心稳定；每次训练后给出文字反馈。\n\n适用目标\n力量基础 · 动作稳定\n具体范围\n每周 3 次训练安排；每次训练后的文字反馈；每 4 周 1 次计划调整\n响应\n工作日 12 小时内回复\n周期\n8 周\n可见\n学员可见\n\n学员可以带着这个服务包发起咨询；咨询不会自动建立服务关系。\n\n预览不会向学员发送通知；服务约定仍需双方确认。\n\n关闭",
+  "scope": "Local UI sample, no real quotation or transaction"
+}

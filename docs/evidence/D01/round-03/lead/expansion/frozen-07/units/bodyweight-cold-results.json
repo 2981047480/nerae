@@ -1,0 +1,9 @@
+{
+  "sourceRevision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "zeroRepsBlocked": true,
+  "confirmedWithoutFakeLoad": true,
+  "pausedClockBefore": "00:45\n已暂停",
+  "pausedClockAfter": "00:45\n已暂停",
+  "restoredCount": "3/8",
+  "scope": "Actual UI fixture confirmations, not physical exercise"
+}

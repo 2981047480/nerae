@@ -1,0 +1,432 @@
+{
+  "scope": "actual frozen modules; fake window/storage; no browser/backend claim",
+  "revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "sourceBefore": {
+    "ASSETS.md": "5dc7141b0c69dd90ba2aa8d5e27f25be13a6cf46aaf5039b3bca8107cc778abb",
+    "README.md": "379a33c5f002ec8493d2ffab6f7095052ea30f7c4490a0e7518e61d172364877",
+    "STATES_AND_DATA.md": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013",
+    "index.html": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2",
+    "package.json": "9410f4bf82f7708abf265ca4869cb743fe2afbc5dcdfd25c3e5c35f70a96f84f",
+    "pnpm-lock.yaml": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0",
+    "pnpm-workspace.yaml": "d6d0c24446d91ef762d37c6ba801bb516e65d7055aa9f8027fcd457409a97ce1",
+    "public/assets/diet-breakfast.webp": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+    "public/assets/diet-featured.webp": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+    "public/assets/diet-mealprep.webp": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+    "public/assets/explore-dumbbell.webp": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+    "public/assets/explore-featured.webp": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+    "public/assets/explore-plank.webp": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+    "public/assets/explore-stretch.webp": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+    "public/assets/gym-interior.webp": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+    "public/assets/hero-today.webp": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+    "public/assets/training-dumbbells.webp": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+    "src/App.vue": "9619c614ebe869f1a6a78ac9586e2b21403c1f3229ed09bad07fb390c8cbd9de",
+    "src/components/AppHeader.vue": "d3f68055eab1efc9d170d110e51ac82defec1bdc2ae97aadc9bf0b638faf2b50",
+    "src/components/BaseSheet.vue": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086",
+    "src/components/PhotoFrame.vue": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0",
+    "src/components/PreviewControl.vue": "0fc8faa5aee8069c21ec7928156a6dec251996e35d360fdd066c54cc5b21d4d6",
+    "src/components/TabBar.vue": "2400f025070e4497bdc36bc568d6760a3fdc4bfc1fdedee0bd9533665175af64",
+    "src/components/Wordmark.vue": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36",
+    "src/data/extended.ts": "b84c76039cf813cae9b107664724f6599f47f492beb89f41716da3d008371069",
+    "src/data/sample.ts": "5686bf5111bafab3fb5914c0736587fa30de77648a898091b7accd7cecd55b24",
+    "src/main.ts": "2ea478ae66a5af2daec2fe13179e51609d0a3f5a7b0404301078ec23ecd63035",
+    "src/state/store.ts": "74c663465607b5ed03944484df00bc2321ffa9a5a14fdce18078dad698c4625e",
+    "src/styles/base.css": "d28217b965dd19b905414bd2cc485ad7663d248a5e04c26e84d6527457e4684d",
+    "src/styles/screens.css": "5fc9d203af75fed78a33e724d437d5d4d29f9893dc57abb49e4e4532c7641a15",
+    "src/styles/tokens.css": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a",
+    "src/tests/expansion.test.ts": "3c0d61a80b862e312a0a8af62030461514f9ab3a01c06b45bf2ce01693cf335b",
+    "src/tests/logic.test.ts": "407f23673841c826dc2cdb2b0fdd82928e724ac6102396652c7ab4743a786b5c",
+    "src/tests/store.test.ts": "db7fbde7fc45e89aaa0008ec9b232f9edee5900593a99fa25cf70c5a7cbcb8fc",
+    "src/tests/ui.test.ts": "86c158ec479fcbc643337d6c8c505b80a681dff39f02f7e3f0dfb0a30a6b05e1",
+    "src/types.ts": "2b799dc8e9bb50c58f61a27c54fa47c8239f32d78ff8d0b82e07c3df74922e69",
+    "src/utils/dom.ts": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba",
+    "src/utils/format.ts": "a8ae0ef4cddcfc76d383eb0a989112129f11376bdcd4aec3c8c9808c952a315c",
+    "src/utils/plan.ts": "23913aa7ea72143417ab0ea554b1cba36db0d8a0dfc27dccd1fc8482f41b8d85",
+    "src/utils/training.ts": "0dcab43855ea9ddb8c1ceed5c1588ea8e9d8019748d6d3411c45fa0c9c58d97c",
+    "src/views/AiAssistView.vue": "23f2df08485a0d9ad82a5733a95243639807017fd3892b5d97c95300d6245484",
+    "src/views/CoachDetailView.vue": "e9d77c4c308e53fc5ecf84ee2d3fcf9ad02a919c2b387c9fdbf4da032defbc88",
+    "src/views/CoachReviewView.vue": "618269d59eef3848dce43abdc6fcfcf32e2d1625bd30fb0728ebf94504ff6edd",
+    "src/views/CoachServicesView.vue": "9221aed9af93e852b845a904150016d1f18cc59bb75281209c0cbe05b095fab5",
+    "src/views/CoachStudentDetailView.vue": "f5701812847469108b4b9a675be15d17b179547391edfb8e7f17ebcb63ade0d1",
+    "src/views/CoachStudentsView.vue": "b79341f8d1c07d36ef3768b8f7cd0f3c1d65724088e3c8d5d94f1e26827fd55d",
+    "src/views/CoachTodoView.vue": "16287663088b836ed9f6c6f64e9d3092ca2849bfbbc17d368026319bc422f2cc",
+    "src/views/DietView.vue": "20cae65ac3035e535f71ce45abfb841e398d52fd8a859526d08ed8822732419c",
+    "src/views/ExploreView.vue": "83fd7ee1cfb900896de8378c4c7dfc971b6a81d566da5ac97c33f85752bcd010",
+    "src/views/IncomingPlanView.vue": "2c236935900659b061fd903dfbdd84682a6c890a3dd61014cd23c37645cd5372",
+    "src/views/MessagesView.vue": "78ff2e90869fcfc26517ea007dd45f40255581166547a124a0788f6799b2a500",
+    "src/views/MyPlanView.vue": "296417460b25cf5f12937bc11b255de44d5d411b06200c6770618577a71e5fbf",
+    "src/views/PlanDetailView.vue": "ee87e7e3c7d41213fa618c1054105fda065fcd3bb622e6bfc6b23f24829856fc",
+    "src/views/RecordsView.vue": "7bfc415f6bfc2482ecea1b5ba6f2d1a7c62483b26384e7c3b00dd1a20da61769",
+    "src/views/StudentPlanView.vue": "53797e3ef64b8c60d89bacb906161722a8ed3694eabd0c29926d6c0f33565f72",
+    "src/views/TodayView.vue": "df7969c69d74ef1a6a48d7c94d4e72dee966434150d9ae1925100d3997efbb70",
+    "src/views/TrainingView.vue": "4b080bd8d565a12ac3c0cd65a596ec0130c72875e4a08407244fd213a3011823",
+    "src/vite-env.d.ts": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a",
+    "tsconfig.json": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db",
+    "vite.config.ts": "d0912127795858800c90821e885c6ad3117e0b75098552fc9442150c8eed759c"
+  },
+  "checks": [
+    {
+      "name": "independent student drafts survive switching",
+      "status": "passed",
+      "evidence": {
+        "editedZhouNote": "快走与慢跑交替，保持能说话；本周调整",
+        "linUnchanged": true,
+        "zhouSavedNote": "快走与慢跑交替，保持能说话；本周调整"
+      }
+    },
+    {
+      "name": "Lin adoption while last coach context was Zhou",
+      "status": "passed",
+      "evidence": {
+        "adopted": true,
+        "linStudentVersion": 7,
+        "zhouVersion": 3,
+        "linCoachVersion": 7
+      }
+    },
+    {
+      "name": "Zhou publication leaves Lin delivery and messages unchanged",
+      "status": "passed",
+      "evidence": {
+        "sheet": "publish",
+        "published": true,
+        "zhouDeliveryVersion": 5,
+        "zhouDeliveryNote": "快走与慢跑交替，保持能说话；交付调整"
+      }
+    },
+    {
+      "name": "historical Lin reference survives last coach context being Zhou",
+      "status": "passed",
+      "evidence": {
+        "latestVersion": 8,
+        "referenceId": "delivery-7",
+        "shownVersion": 7
+      }
+    },
+    {
+      "name": "coach plan reference preserves Zhou participant and read-only role",
+      "status": "passed",
+      "evidence": {
+        "actor": "coach",
+        "screen": "incomingPlan",
+        "selectedStudent": "zhou-lan"
+      }
+    },
+    {
+      "name": "missing plan reference never silently displays latest delivery",
+      "status": "passed",
+      "evidence": {
+        "screen": "incomingPlan",
+        "shownVersion": null,
+        "note": null
+      }
+    },
+    {
+      "name": "published draft work follows add remove and undo without false pending work",
+      "status": "passed",
+      "evidence": {
+        "currentDraftMatchesDelivered": true,
+        "finalDraftTodoDone": true
+      }
+    },
+    {
+      "name": "active Zhou reply opens Zhou rather than Lin",
+      "status": "passed",
+      "evidence": {
+        "screen": "messages",
+        "conversationId": "conv-zhou-lan",
+        "note": null
+      }
+    },
+    {
+      "name": "revocation reaches coach evidence while ordinary replies remain available",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ],
+        "ordinarySent": true
+      }
+    },
+    {
+      "name": "new messages update the recipient unread cursor independently",
+      "status": "passed",
+      "evidence": {
+        "studentUnreadAfterOwnSend": 0,
+        "coachUnreadBeforeOpen": 1,
+        "studentUnreadBeforeOpen": 1
+      }
+    },
+    {
+      "name": "self-only observation stays private despite a general health grant",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-1",
+            "dateLabel": "10月22日",
+            "title": "上肢力量 · 12 组",
+            "summary": "卧推 12.5 kg × 10/10/9/8；平板支撑 45 秒 × 2",
+            "kind": "training"
+          },
+          {
+            "id": "lin-2",
+            "dateLabel": "10月23日",
+            "title": "教练点评",
+            "summary": "保持 12.5 kg，先把次数补齐，不用急着加重量。",
+            "kind": "feedback"
+          },
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ended relationship removes coach health reads and blocks new sends",
+      "status": "passed",
+      "evidence": {
+        "visibleEvidence": [
+          {
+            "id": "lin-4",
+            "dateLabel": "10月23日",
+            "title": "计划版本 7",
+            "summary": "已交付 · 尚未采用；现用版本 6",
+            "kind": "plan"
+          }
+        ],
+        "readOnly": true
+      }
+    },
+    {
+      "name": "failed send is not received and same-ID retry counts once",
+      "status": "passed",
+      "evidence": {
+        "failedUnread": 0,
+        "recipientRetry": false,
+        "afterRetryUnread": 1
+      }
+    },
+    {
+      "name": "legacy draft authorship is not inferred from last navigation actor",
+      "status": "passed",
+      "evidence": {
+        "unassignedRetained": true,
+        "knownDraftPreserved": true
+      }
+    },
+    {
+      "name": "coach reference cold reload and back retain reader student and read-only scope",
+      "status": "passed",
+      "evidence": {
+        "actor": "coach",
+        "studentId": "zhou-lan",
+        "version": 5
+      }
+    },
+    {
+      "name": "student old reference cold reload does not become latest after coach context changed",
+      "status": "passed",
+      "evidence": {
+        "actor": "student",
+        "version": 7
+      }
+    },
+    {
+      "name": "missing reference remains unavailable through cold reload and adoption guard",
+      "status": "passed",
+      "evidence": {
+        "missing": true,
+        "shown": null
+      }
+    },
+    {
+      "name": "non-default training reference retains exact record across cold reload and back",
+      "status": "passed",
+      "evidence": {
+        "recordId": "record-20260929",
+        "explicit": true
+      }
+    },
+    {
+      "name": "legacy shared messages cache keeps its actual coach reader",
+      "status": "passed",
+      "evidence": {
+        "savedActor": "coach",
+        "actorAfter": "coach",
+        "conversation": "conv-zhou-lan"
+      }
+    },
+    {
+      "name": "legacy reference without persisted owner version is unavailable rather than Lin latest",
+      "status": "passed",
+      "evidence": {
+        "actorAfter": "coach",
+        "shownVersion": null,
+        "available": false
+      }
+    },
+    {
+      "name": "legacy training reference cannot silently expand default October22 on cold reload",
+      "status": "passed",
+      "evidence": {
+        "explicit": true,
+        "recordId": null
+      }
+    },
+    {
+      "name": "student own latest message reference remains eligible for explicit adoption",
+      "status": "passed",
+      "evidence": {
+        "version": 7,
+        "available": true,
+        "adoptedAfterExplicitConfirmation": true,
+        "todayPreserved": true
+      }
+    },
+    {
+      "name": "already adopted latest message reference keeps its actual status and cannot apply twice",
+      "status": "passed",
+      "evidence": {
+        "shownStatus": "adopted",
+        "duplicateRejected": true
+      }
+    },
+    {
+      "name": "bodyweight per-side records repetitions without invented load and survives cold restore",
+      "status": "passed",
+      "evidence": {
+        "label": "自重 × 10 次/侧",
+        "confirmedDelta": 1,
+        "restoredWithoutLoad": true
+      }
+    },
+    {
+      "name": "seconds per-side remains time rather than weighted repetitions",
+      "status": "passed",
+      "evidence": {
+        "label": "30 秒/侧",
+        "timeChart": {
+          "date": "2026-10-24",
+          "label": "10/24",
+          "value": 30,
+          "unit": "秒",
+          "recordId": "session-plan-core-plan-core-day-1-20261024-2"
+        },
+        "bodyweightChart": {
+          "date": "2026-10-24",
+          "label": "10/24",
+          "value": 10,
+          "unit": "次",
+          "recordId": "session-plan-core-plan-core-day-1-20261024-2"
+        },
+        "repeatedTimeReference": "上次 · 10月24日 · 30 秒/侧",
+        "remoteTimeConflict": "42 秒/侧"
+      }
+    },
+    {
+      "name": "breath count is retained from public content through confirmation",
+      "status": "passed",
+      "evidence": {
+        "label": "8 次呼吸",
+        "breathChart": {
+          "date": "2026-10-24",
+          "label": "10/24",
+          "value": 8,
+          "unit": "次呼吸",
+          "recordId": "session-plan-mobility-plan-mobility-day-1-20261024-2"
+        },
+        "repeatedBreathReference": "上次 · 10月24日 · 8 次呼吸",
+        "breathConflict": {
+          "setId": "s-plan-mobility-plan-mobility-d1-e1-1",
+          "exerciseName": "猫牛式",
+          "setIndex": 1,
+          "localText": "8 次呼吸",
+          "remoteText": "8 次呼吸",
+          "remoteAt": "10月24日 19:13 · 另一台设备"
+        }
+      }
+    },
+    {
+      "name": "new valid duration session is not blocked by prior weight validation errors",
+      "status": "passed",
+      "evidence": {
+        "validSeconds": 40,
+        "noStaleWeightError": true
+      }
+    }
+  ],
+  "status": "passed",
+  "sourceAfter": {
+    "ASSETS.md": "5dc7141b0c69dd90ba2aa8d5e27f25be13a6cf46aaf5039b3bca8107cc778abb",
+    "README.md": "379a33c5f002ec8493d2ffab6f7095052ea30f7c4490a0e7518e61d172364877",
+    "STATES_AND_DATA.md": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013",
+    "index.html": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2",
+    "package.json": "9410f4bf82f7708abf265ca4869cb743fe2afbc5dcdfd25c3e5c35f70a96f84f",
+    "pnpm-lock.yaml": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0",
+    "pnpm-workspace.yaml": "d6d0c24446d91ef762d37c6ba801bb516e65d7055aa9f8027fcd457409a97ce1",
+    "public/assets/diet-breakfast.webp": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+    "public/assets/diet-featured.webp": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+    "public/assets/diet-mealprep.webp": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+    "public/assets/explore-dumbbell.webp": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+    "public/assets/explore-featured.webp": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+    "public/assets/explore-plank.webp": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+    "public/assets/explore-stretch.webp": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+    "public/assets/gym-interior.webp": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+    "public/assets/hero-today.webp": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+    "public/assets/training-dumbbells.webp": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+    "src/App.vue": "9619c614ebe869f1a6a78ac9586e2b21403c1f3229ed09bad07fb390c8cbd9de",
+    "src/components/AppHeader.vue": "d3f68055eab1efc9d170d110e51ac82defec1bdc2ae97aadc9bf0b638faf2b50",
+    "src/components/BaseSheet.vue": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086",
+    "src/components/PhotoFrame.vue": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0",
+    "src/components/PreviewControl.vue": "0fc8faa5aee8069c21ec7928156a6dec251996e35d360fdd066c54cc5b21d4d6",
+    "src/components/TabBar.vue": "2400f025070e4497bdc36bc568d6760a3fdc4bfc1fdedee0bd9533665175af64",
+    "src/components/Wordmark.vue": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36",
+    "src/data/extended.ts": "b84c76039cf813cae9b107664724f6599f47f492beb89f41716da3d008371069",
+    "src/data/sample.ts": "5686bf5111bafab3fb5914c0736587fa30de77648a898091b7accd7cecd55b24",
+    "src/main.ts": "2ea478ae66a5af2daec2fe13179e51609d0a3f5a7b0404301078ec23ecd63035",
+    "src/state/store.ts": "74c663465607b5ed03944484df00bc2321ffa9a5a14fdce18078dad698c4625e",
+    "src/styles/base.css": "d28217b965dd19b905414bd2cc485ad7663d248a5e04c26e84d6527457e4684d",
+    "src/styles/screens.css": "5fc9d203af75fed78a33e724d437d5d4d29f9893dc57abb49e4e4532c7641a15",
+    "src/styles/tokens.css": "7232086921fdcbb81533dc0945c375e95d5d075b8853256cc1b5dac75408a25a",
+    "src/tests/expansion.test.ts": "3c0d61a80b862e312a0a8af62030461514f9ab3a01c06b45bf2ce01693cf335b",
+    "src/tests/logic.test.ts": "407f23673841c826dc2cdb2b0fdd82928e724ac6102396652c7ab4743a786b5c",
+    "src/tests/store.test.ts": "db7fbde7fc45e89aaa0008ec9b232f9edee5900593a99fa25cf70c5a7cbcb8fc",
+    "src/tests/ui.test.ts": "86c158ec479fcbc643337d6c8c505b80a681dff39f02f7e3f0dfb0a30a6b05e1",
+    "src/types.ts": "2b799dc8e9bb50c58f61a27c54fa47c8239f32d78ff8d0b82e07c3df74922e69",
+    "src/utils/dom.ts": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba",
+    "src/utils/format.ts": "a8ae0ef4cddcfc76d383eb0a989112129f11376bdcd4aec3c8c9808c952a315c",
+    "src/utils/plan.ts": "23913aa7ea72143417ab0ea554b1cba36db0d8a0dfc27dccd1fc8482f41b8d85",
+    "src/utils/training.ts": "0dcab43855ea9ddb8c1ceed5c1588ea8e9d8019748d6d3411c45fa0c9c58d97c",
+    "src/views/AiAssistView.vue": "23f2df08485a0d9ad82a5733a95243639807017fd3892b5d97c95300d6245484",
+    "src/views/CoachDetailView.vue": "e9d77c4c308e53fc5ecf84ee2d3fcf9ad02a919c2b387c9fdbf4da032defbc88",
+    "src/views/CoachReviewView.vue": "618269d59eef3848dce43abdc6fcfcf32e2d1625bd30fb0728ebf94504ff6edd",
+    "src/views/CoachServicesView.vue": "9221aed9af93e852b845a904150016d1f18cc59bb75281209c0cbe05b095fab5",
+    "src/views/CoachStudentDetailView.vue": "f5701812847469108b4b9a675be15d17b179547391edfb8e7f17ebcb63ade0d1",
+    "src/views/CoachStudentsView.vue": "b79341f8d1c07d36ef3768b8f7cd0f3c1d65724088e3c8d5d94f1e26827fd55d",
+    "src/views/CoachTodoView.vue": "16287663088b836ed9f6c6f64e9d3092ca2849bfbbc17d368026319bc422f2cc",
+    "src/views/DietView.vue": "20cae65ac3035e535f71ce45abfb841e398d52fd8a859526d08ed8822732419c",
+    "src/views/ExploreView.vue": "83fd7ee1cfb900896de8378c4c7dfc971b6a81d566da5ac97c33f85752bcd010",
+    "src/views/IncomingPlanView.vue": "2c236935900659b061fd903dfbdd84682a6c890a3dd61014cd23c37645cd5372",
+    "src/views/MessagesView.vue": "78ff2e90869fcfc26517ea007dd45f40255581166547a124a0788f6799b2a500",
+    "src/views/MyPlanView.vue": "296417460b25cf5f12937bc11b255de44d5d411b06200c6770618577a71e5fbf",
+    "src/views/PlanDetailView.vue": "ee87e7e3c7d41213fa618c1054105fda065fcd3bb622e6bfc6b23f24829856fc",
+    "src/views/RecordsView.vue": "7bfc415f6bfc2482ecea1b5ba6f2d1a7c62483b26384e7c3b00dd1a20da61769",
+    "src/views/StudentPlanView.vue": "53797e3ef64b8c60d89bacb906161722a8ed3694eabd0c29926d6c0f33565f72",
+    "src/views/TodayView.vue": "df7969c69d74ef1a6a48d7c94d4e72dee966434150d9ae1925100d3997efbb70",
+    "src/views/TrainingView.vue": "4b080bd8d565a12ac3c0cd65a596ec0130c72875e4a08407244fd213a3011823",
+    "src/vite-env.d.ts": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a",
+    "tsconfig.json": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db",
+    "vite.config.ts": "d0912127795858800c90821e885c6ad3117e0b75098552fc9442150c8eed759c"
+  },
+  "sourceStable": true
+}

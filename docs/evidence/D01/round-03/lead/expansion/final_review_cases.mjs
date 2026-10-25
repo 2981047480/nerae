@@ -30,7 +30,7 @@ export const cases = [
 export async function prepareCase(ctx, family) {
   const item = cases.find(item => item.family === family)
   if (!item) throw Error(`Unknown QA case ${family}`)
-  await resetSample(ctx)
+  await (ctx.qa?.resetSample ?? resetSample)(ctx)
   if (item.scenario) await gotoScenario(ctx, item.scenario)
   else if (family.startsWith('s08-')) {
     if (item.actor === 'coach') {
@@ -54,7 +54,7 @@ export async function prepareCase(ctx, family) {
   }
   await ctx.tab.playwright.getByRole('heading', { name: item.heading, exact: true }).first()
     .waitFor({ state: 'visible' })
-  await waitForSettledView(ctx)
+  await (ctx.qa?.waitForSettledView ?? waitForSettledView)(ctx)
   const header = await ctx.tab.playwright.evaluate(() => document.querySelector('header')?.textContent ?? '')
   const visibleCoach = header.replace(/\s/g, '').includes('顾言·教练')
   if (visibleCoach !== (item.actor === 'coach')) {

@@ -16,30 +16,30 @@ export async function startPublishedPlan(ctx, title) {
 export async function recordActualDose(ctx, { name, field, value, label }) {
   await ctx.tab.playwright.locator('h1#exercise-title').filter({ hasText: name })
     .waitFor({ state: 'visible' })
-  await waitForSettledView(ctx)
+  await (ctx.qa?.waitForSettledView ?? waitForSettledView)(ctx)
   const snapshot = await ctx.tab.playwright.domSnapshot()
   if (snapshot.includes('textbox "重量，千克"')) throw Error(`Unweighted dose exposes a kg field: ${name}`)
   await ctx.tab.playwright.getByRole('textbox', { name: field, exact: true }).fill(String(value))
   const complete = ctx.tab.playwright.getByRole('button', { name: /^完成第 \d+ 组$/ })
   if (!await complete.isEnabled()) throw Error(`Actual valid dose is blocked: ${name}`)
   await complete.click()
-  const result = await recordFlow(ctx, label)
+  const result = await (ctx.qa?.recordFlow ?? recordFlow)(ctx, label)
   return result
 }
 
 export async function skipActualRest(ctx) {
   const skip = ctx.tab.playwright.getByRole('button', { name: '提前结束休息', exact: true })
   if (await skip.isVisible()) await skip.click()
-  await waitForSettledView(ctx)
+  await (ctx.qa?.waitForSettledView ?? waitForSettledView)(ctx)
   return ctx.tab.playwright.domSnapshot()
 }
 
 export async function prepareCore(ctx) {
-  await resetSample(ctx)
+  await (ctx.qa?.resetSample ?? resetSample)(ctx)
   return startPublishedPlan(ctx, '核心稳定 · 20 分钟')
 }
 
 export async function prepareMobility(ctx) {
-  await resetSample(ctx)
+  await (ctx.qa?.resetSample ?? resetSample)(ctx)
   return startPublishedPlan(ctx, '训练后舒展 · 髋与肩')
 }

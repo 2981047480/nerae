@@ -572,6 +572,18 @@ try {
    assert.equal(s.doneSets.value,1,'New session gained extra confirmed facts')
    e.validSeconds=entry.set.seconds;e.noStaleWeightError=true
  })
+ await check('mixed legacy weight and new count records do not become a false single-unit trend',async e=>{
+   const originalRecords=plain(s.state.records)
+   startDosePlan('plan-core')
+   finishDoseSession({'死虫式':{seconds:40},'鸟狗式':{reps:10},'侧桥':{seconds:30},'平板支撑':{seconds:45}})
+   s.goToRecords();s.setRecordsExercise('鸟狗式')
+   e.points=plain(s.recordChart.value);e.summary=plain(s.recordSummary.value)
+   assert.ok(e.points.some(x=>x.value===10&&/^次(?:\/侧)?$/.test(x.unit)),'Confirmed count is unavailable')
+   assert.ok(e.points.every(x=>/^次(?:\/侧)?$/.test(x.unit)),'Legacy kg and new repetitions were plotted as one comparable series')
+   if(e.points.length===1)assert.equal(e.summary.delta,null,'One comparable point fabricated a trend')
+   for(const old of originalRecords)assert.deepEqual(plain(s.state.records.find(x=>x.id===old.id)),old,'Chart normalization rewrote a confirmed historical record')
+   e.originalFactsRetained=true
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {

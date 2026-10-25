@@ -3996,8 +3996,8 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "fix05 normal round11 frozen8e525; Lead102tests/type/build pass,23seams21pass2fail; M02/M12/V04/VR13/14/copy actual8e checks pass; reference+bodyweight/breaths/stale errors fix06 round13 running; full goal active",
-      "candidate_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30"
+      "execution_state": "fix06 normal round13 frozen54b74c;Lead109/type/build/27pass; actual F03/adoption+Core/breath/staleerror pass; new28th mixed-unit trend fails; sameHarnessfix07round14running; full goal active",
+      "candidate_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1"
     },
     {
       "id": "D01-I",
