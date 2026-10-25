@@ -443,6 +443,135 @@ try {
    assert.deepEqual(plain(s.state.student.schedule),beforeSchedule,'Duplicate confirmation changed future schedule')
    e.duplicateRejected=true
  })
+ const doseFormat=await server.ssrLoadModule('/src/utils/format.ts')
+ const doseTraining=await server.ssrLoadModule('/src/utils/training.ts')
+ function startDosePlan(id) {
+   s.goToPlanDetail(id)
+   const result=s.requestStartPlan(id)
+   if(result==='replace')s.confirmReplaceAndStart()
+   assert.equal(s.state.screen,'training','Dose fixture did not enter training')
+ }
+ function reachCoreExercise(name) {
+   startDosePlan('plan-core')
+   for(let guard=0;s.currentEntry.value?.exercise.name!==name&&guard<8;guard++) {
+     const entry=s.currentEntry.value
+     assert.ok(entry,'Core fixture ended before requested exercise')
+     if(entry.exercise.name==='死虫式')s.setInputValue(entry.set.id,'seconds','40')
+     else if(entry.exercise.name==='鸟狗式')s.setInputValue(entry.set.id,'reps','10')
+     else throw Error('Unexpected fixture exercise before '+name+': '+entry.exercise.name)
+     assert.equal(s.completeCurrentSet(),true,'Valid preceding bodyweight dose was blocked: '+JSON.stringify(s.ui.trainingErrors))
+     s.skipRest()
+   }
+   assert.equal(s.currentEntry.value?.exercise.name,name)
+   return s.currentEntry.value
+ }
+ function finishDoseSession(values) {
+   for(let guard=0;s.currentEntry.value&&guard<24;guard++) {
+     s.skipRest()
+     const entry=s.currentEntry.value
+     if(!entry)break
+     const actual=values[entry.exercise.name]
+     assert.ok(actual,'No explicit QA dose for '+entry.exercise.name)
+     for(const [field,value] of Object.entries(actual))s.setInputValue(entry.set.id,field,String(value))
+     assert.equal(s.completeCurrentSet(),true,'Valid dose was blocked: '+entry.exercise.name)
+   }
+   assert.equal(s.isComplete.value,true,'Dose session did not finish within bounded actual confirmations')
+ }
+ function assertDoseChart(name,value,unit) {
+   s.goToRecords();s.setRecordsExercise(name)
+   const point=s.recordChart.value.find(x=>x.recordId===s.state.session.id)
+   assert.ok(point,'Completed dose session is missing from records chart: '+name)
+   assert.equal(point.value,value,'Chart changed confirmed dose: '+name)
+   assert.match(point.unit,unit,'Chart changed confirmed unit: '+name)
+   return plain(point)
+ }
+ await check('bodyweight per-side records repetitions without invented load and survives cold restore',async e=>{
+   const entry=reachCoreExercise('鸟狗式')
+   const before=s.doneSets.value
+   s.setInputValue(entry.set.id,'reps','0')
+   assert.equal(s.completeCurrentSet(),false,'Zero repetitions were accepted')
+   assert.equal(s.doneSets.value,before,'Invalid dose added a confirmed set')
+   s.setInputValue(entry.set.id,'reps','10')
+   assert.equal(s.completeCurrentSet(),true,'Valid self-weight count required a fake positive kg value')
+   assert.equal(entry.set.weightKg,null,'Bodyweight confirmation invented an external load')
+   assert.equal(entry.set.reps,10);assert.equal(entry.set.seconds,null)
+   e.label=doseFormat.setValueLabel(entry.exercise.kind,entry.set)
+   assert.match(e.label,/10/);assert.match(e.label,/侧/);assert.doesNotMatch(e.label,/kg|秒/)
+   const cold=await coldCurrent('bodyweight-confirmed')
+   const restored=cold.state.session.exercises.find(x=>x.name==='鸟狗式').sets[0]
+   assert.equal(restored.reps,10);assert.equal(restored.weightKg,null)
+   assert.equal(cold.doneSets.value,before+1)
+   e.confirmedDelta=1;e.restoredWithoutLoad=true
+ })
+ await check('seconds per-side remains time rather than weighted repetitions',async e=>{
+   const entry=reachCoreExercise('侧桥')
+   assert.match(entry.exercise.targetText,/秒.*侧/)
+   s.setInputValue(entry.set.id,'seconds','0')
+   assert.equal(s.completeCurrentSet(),false,'Zero time was accepted')
+   s.setInputValue(entry.set.id,'seconds','30')
+   assert.equal(s.completeCurrentSet(),true,'Valid seconds per side was not accepted')
+   assert.equal(entry.set.seconds,30);assert.equal(entry.set.reps,null);assert.equal(entry.set.weightKg,null)
+   e.label=doseFormat.setValueLabel(entry.exercise.kind,entry.set)
+   assert.match(e.label,/30/);assert.match(e.label,/秒/);assert.match(e.label,/侧/)
+   assert.doesNotMatch(e.label,/kg|次/)
+   finishDoseSession({'死虫式':{seconds:40},'鸟狗式':{reps:10},'侧桥':{seconds:30},'平板支撑':{seconds:45}})
+   e.timeChart=assertDoseChart('侧桥',30,/^秒(?:\/侧)?$/)
+   e.bodyweightChart=assertDoseChart('鸟狗式',10,/^次(?:\/侧)?$/)
+   startDosePlan('plan-core')
+   e.repeatedTimeReference=doseTraining.referenceText(s.state.session.exercises.find(x=>x.name==='侧桥'))
+   assert.match(e.repeatedTimeReference,/30/);assert.match(e.repeatedTimeReference,/秒/)
+   assert.match(e.repeatedTimeReference,/侧/,'Per-side context was lost from the last confirmed reference')
+   const conflictEntry=reachCoreExercise('侧桥')
+   s.applyPreviewState('training','conflict')
+   e.remoteTimeConflict=s.activeConflict.value.remoteText
+   assert.match(e.remoteTimeConflict,/秒/);assert.match(e.remoteTimeConflict,/侧/)
+   const beforeConflict=s.doneSets.value
+   assert.equal(s.resolveSetConflict('remote'),true)
+   assert.equal(conflictEntry.set.seconds,42);assert.equal(conflictEntry.set.reps,null)
+   assert.equal(conflictEntry.set.weightKg,null);assert.equal(s.doneSets.value,beforeConflict+1)
+   assert.equal(s.resolveSetConflict('remote'),false,'Resolved time conflict added a second fact')
+ })
+ await check('breath count is retained from public content through confirmation',async e=>{
+   startDosePlan('plan-mobility')
+   const entry=s.currentEntry.value
+   assert.equal(entry.exercise.name,'猫牛式')
+   assert.match(entry.exercise.targetText,/8.*呼吸/,'Parsing discarded the published breath unit')
+   s.setInputValue(entry.set.id,'reps','8')
+   assert.equal(s.completeCurrentSet(),true,'Breath count required kg or seconds')
+   assert.equal(entry.set.reps,8);assert.equal(entry.set.seconds,null);assert.equal(entry.set.weightKg,null)
+   e.label=doseFormat.setValueLabel(entry.exercise.kind,entry.set)
+   assert.match(e.label,/8/);assert.match(e.label,/呼吸/);assert.doesNotMatch(e.label,/kg|秒/)
+   finishDoseSession({'猫牛式':{reps:8},'90/90 髋部转换':{reps:6},'跪姿肩屈':{reps:8},'腿后侧伸展':{seconds:30},'髋屈肌伸展':{seconds:30},'胸椎旋转':{reps:8}})
+   e.breathChart=assertDoseChart('猫牛式',8,/^次呼吸$/)
+   startDosePlan('plan-mobility')
+   e.repeatedBreathReference=doseTraining.referenceText(s.currentEntry.value.exercise)
+   assert.match(e.repeatedBreathReference,/8/);assert.match(e.repeatedBreathReference,/呼吸/)
+   assert.doesNotMatch(e.repeatedBreathReference,/kg|秒/)
+   const conflictEntry=s.currentEntry.value
+   s.setInputValue(conflictEntry.set.id,'reps','8')
+   s.applyPreviewState('training','conflict')
+   e.breathConflict=plain(s.activeConflict.value)
+   assert.match(e.breathConflict.localText,/呼吸/);assert.match(e.breathConflict.remoteText,/呼吸/)
+   const beforeConflict=s.doneSets.value
+   assert.equal(s.resolveSetConflict('remote'),true)
+   assert.equal(conflictEntry.set.reps,8);assert.equal(conflictEntry.set.seconds,null)
+   assert.equal(conflictEntry.set.weightKg,null);assert.equal(s.doneSets.value,beforeConflict+1)
+   assert.equal(s.resolveSetConflict('remote'),false,'Resolved breath conflict added a second fact')
+ })
+ await check('new valid duration session is not blocked by prior weight validation errors',async e=>{
+   const old=s.currentEntry.value
+   s.setInputValue(old.set.id,'weightKg','-1')
+   assert.equal(s.completeCurrentSet(),false)
+   assert.ok(s.ui.trainingErrors.weightKg,'Invalid-weight setup did not produce a weight error')
+   startDosePlan('plan-core')
+   const entry=s.currentEntry.value
+   assert.equal(entry.exercise.name,'死虫式')
+   assert.deepEqual(plain(s.ui.trainingErrors),{},'Unrelated old validation crossed into new session')
+   s.setInputValue(entry.set.id,'seconds','40')
+   assert.equal(s.completeCurrentSet(),true)
+   assert.equal(s.doneSets.value,1,'New session gained extra confirmed facts')
+   e.validSeconds=entry.set.seconds;e.noStaleWeightError=true
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {

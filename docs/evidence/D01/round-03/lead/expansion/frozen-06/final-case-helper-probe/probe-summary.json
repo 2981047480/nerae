@@ -1,0 +1,182 @@
+{
+  "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "scope": "QA helper entry verification only; no new source acceptance",
+  "results": [
+    {
+      "family": "s01-today",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "上肢力量",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s02-explore",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "发现",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s03-plan",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "上肢拉力与划船",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s04-training",
+      "expectedActor": "student",
+      "renderedHeader": "退出力量基础上肢力量3 / 12 组",
+      "expectedHeading": "哑铃卧推",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s05-records",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "记录",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s06-coaches",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "发现",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s07-coach-detail",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "顾言",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s08-student-list",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "消息",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s08-student-thread",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "顾言",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s08-coach-list",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "消息",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s08-coach-thread",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "林澈",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s09-incoming",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "收到新版计划",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s10-own-plan",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "我的计划",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s11-ai",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "整理这份计划",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s12-diet",
+      "expectedActor": "student",
+      "renderedHeader": "NERAE林澈 · 10月24日 周六今天发现记录消息",
+      "expectedHeading": "训练日三餐 · 分配原则",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s13-todo",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "待办",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s14-students",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "学员",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s14-student-detail",
+      "expectedActor": "coach",
+      "renderedHeader": "学员详情顾言 · 教练",
+      "expectedHeading": "林澈",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s15-review",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "力量基础 · 第 4 周",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s15-edit",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "力量基础 · 第 4 周",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s16-services",
+      "expectedActor": "coach",
+      "renderedHeader": "NERAE顾言 · 教练待办学员消息服务",
+      "expectedHeading": "服务内容",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    },
+    {
+      "family": "s01-current-plan",
+      "expectedActor": "student",
+      "renderedHeader": "现用计划林澈 · 10月24日 周六",
+      "expectedHeading": "力量基础",
+      "sourceRevision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+      "verified": true
+    }
+  ]
+}

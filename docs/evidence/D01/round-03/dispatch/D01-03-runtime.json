@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "native round13/875steps23m52 observed running after units inserted; not a handback",
+  "progress": "native round13/906steps48m23 observed running; unit-label review inserted; not a handback",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -442,15 +442,17 @@
     "initial_result": "native stopped before work; no normal report",
     "resume_method": "keyboard Return after verified stopped; no Stop action",
     "resume_proof": "D01-03-fix06-keyboard-resume.txt",
-    "running_proof": "D01-03-fix06-status-after-unit-feedback.txt",
+    "running_proof": "D01-03-fix06-unit-label-inserted.txt",
     "native_round": 13,
-    "last_cumulative_steps": 875,
-    "last_duration": "23m52s",
+    "last_cumulative_steps": 906,
+    "last_duration": "48m23s",
     "same_session_model_workspace": true,
     "followup": "D01-03-fix06-units-followup.md",
     "followup_proof": "D01-03-fix06-units-inserted.txt",
     "normal_handback": false,
-    "accepted": false
+    "accepted": false,
+    "unit_label_review": "D01-03-fix06-unit-label-review.md",
+    "unit_label_review_proof": "D01-03-fix06-unit-label-inserted.txt"
   },
   "immutable_lead_qa_current": {
     "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
@@ -462,5 +464,13 @@
     "proof": "../lead/expansion/frozen-06/frozen-static-preview.json",
     "post_qa_check": "../lead/expansion/frozen-06/post-targeted-build-check.json",
     "source_and_artifact_scope": "fixed13buildfiles; mutable worker intentionally changes on4187"
+  },
+  "lead_qa_preparation": {
+    "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+    "normal_case_entries_verified": 22,
+    "evidence": "../lead/expansion/frozen-06/final-case-helper-probe/probe-summary.json",
+    "scope": "old frozen build; entry/role verification only, not fix06 acceptance",
+    "identity_checks_prepared": 27,
+    "identity_checks_status": "new27 syntax checked only; old frozen06 execution remains23 checks"
   }
 }
