@@ -1,0 +1,112 @@
+{
+  "task": "D01-03-fix05",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "70c524508bd5a75894fa4fbc3f4f616df90e94f6",
+  "prior_freeze": "ae141ae639fde8234b7782bf79775f78cc5e04c8",
+  "git_head": "70c524508bd5a75894fa4fbc3f4f616df90e94f6",
+  "source_state": "one copy-only change uncommitted on recovery freeze; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-25T15:15:07.031540+08:00",
+  "transport_failure": {
+    "round": 10,
+    "error": "TRANSPORT / Connection error",
+    "retries": "5/5 failed",
+    "normal_handback": false,
+    "note": "Lead froze partial work at 70c52450; this recovery only finished copy cleanup."
+  },
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4186/4188/4189 frozen previews untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix05-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix05-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix05-test.log",
+      "result": "4 files / 102 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix05-source-sha256.txt",
+    "manifest_sha256": "630f1673969c83a0e4cb2e7d2ac26266835da55def0d598e3ba15c2d3ac27d0e",
+    "file_count": 60,
+    "key_files": {
+      "src/App.vue": "9619c614ebe869f1a6a78ac9586e2b21403c1f3229ed09bad07fb390c8cbd9de",
+      "src/state/store.ts": "3070eb301a9c088a0a67db717703d2cd164d94f2d3a6992254ee9a6dd85f4bc4",
+      "src/styles/base.css": "d28217b965dd19b905414bd2cc485ad7663d248a5e04c26e84d6527457e4684d",
+      "src/views/CoachServicesView.vue": "9221aed9af93e852b845a904150016d1f18cc59bb75281209c0cbe05b095fab5",
+      "src/views/PlanDetailView.vue": "ee87e7e3c7d41213fa618c1054105fda065fcd3bb622e6bfc6b23f24829856fc"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix05-evidence-sha256.txt",
+    "manifest_sha256": "6058b5aaebe92c7f077c3243023699c80c1d9ce2fbb958f5e0ccbc52cc55b0eb",
+    "screenshots": 8,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "M02",
+      "status": "fixed_pending_lead_recheck",
+      "detail": ".plan-focus-ghost 全局规则移出 scoped；实际 body 节点 computedStyle position=fixed/z150/pointer-events:none/backgroundSize=cover/backgroundPosition=50% 50%；390 Full Motion 首次 ghost 169ms、280ms、inViewport=true、目标 350×320；完成移除；快速返回/再进入无遗留；Reduce Motion 不创建。"
+    },
+    {
+      "id": "M12",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "retryPersist 仅 persistNow 成功时清 sync-failed/sync-pending；真实 localStorage.setItem 抛出时保留失败块、输入、3组和 ok=false；恢复后按钮成功清状态；正常/失败恢复/Reduce Motion 实测，无增组。"
+    },
+    {
+      "id": "V04",
+      "status": "fixed_pending_lead_recheck",
+      "detail": ".package-tab-state opacity 由 .8 移除；未选中文字 opacity=1、12px、rgb(94,107,112)、canvas rgb(243,242,238)，实际对比 4.9165:1；选中/隐藏/三包/200字号保留。V04 overflow=true 表示 scrollWidth<=innerWidth，不是溢出。"
+    },
+    {
+      "id": "copy",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "PlanDetailView 删除“适用条件与来源在开始前展示；”前缀；保留疼痛提示、真实来源/条件；浏览器实际 prefix=false/pain=true。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "102/102 vitest",
+      "M12 success/failure storage state; fix04 refs retained"
+    ],
+    "real_browser": [
+      "M02 computedStyle + viewport intersection + removal/fast/reenter/reduce; M12 real retry success/failure/recover/reduced; V04 computed opacity/color/backdrop 4.9165; copy check"
+    ],
+    "not_tested": [
+      "Lead full 16-family/55-item/5-width/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app device",
+      "M04/M05 recheck (Lead passed at fixed 559)"
+    ]
+  },
+  "retained": [
+    "fix04 reference lifecycle/migration",
+    "M03/M04/M05/M06/M07 and VR13/14"
+  ],
+  "unresolved": [
+    "No known code defect against fix05 scope.",
+    "Lead final integration not done; candidate not accepted."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser only; no full matrix.",
+    "Dev log excluded."
+  ]
+}

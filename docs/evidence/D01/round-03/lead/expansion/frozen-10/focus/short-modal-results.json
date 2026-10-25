@@ -1,0 +1,28 @@
+{
+  "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+  "modalMetrics": {
+    "dialog": {
+      "height": 533.9140625,
+      "width": 320,
+      "x": 0,
+      "y": 34.0859375
+    },
+    "focus": "关闭",
+    "scrollables": [
+      {
+        "class": "sheet-body",
+        "clientHeight": 229,
+        "scrollHeight": 371
+      }
+    ],
+    "viewport": {
+      "height": 568,
+      "width": 320
+    }
+  },
+  "reverseFocus": "使用样例身份继续",
+  "forwardFocus": "关闭",
+  "returnedFocus": " 开始这次训练 ",
+  "OSKeyboardSimulated": false,
+  "scope": "Browser keyboard and emulated viewport; no physical mobile device"
+}

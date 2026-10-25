@@ -1,0 +1,105 @@
+{
+  "task": "D01-03-fix04",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "git_head": "55994603461ee5710a5be4f70b1180d445dba5c5",
+  "source_state": "fix04 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-25T00:55:48.699618+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4186/4188/4189 frozen previews untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix04-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix04-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix04-test.log",
+      "result": "4 files / 101 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix04-source-sha256.txt",
+    "manifest_sha256": "f0a8b428284a52c50cd8eec5b0aaba9ea54eac6372d7c3cefcb8d7c7ac419014",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "82a392bf05cdbe3352c94cead9aa50d815f803abd8e1e942cbf049100b5ab23c",
+      "src/tests/expansion.test.ts": "761e27fca6f69885db6bec0f80304365851670395597c94cc9a2b420baef1dfa",
+      "src/views/RecordsView.vue": "024bad89e0ab0092ab53d2b6c27d372e9b38c77aa279699cd6573a620ae1d954"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix04-evidence-sha256.txt",
+    "manifest_sha256": "128996a68507b65f6810847c40e310a19b5630e53a9f80b9087636d89f098ade",
+    "screenshots": 4,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "EA03/EA28 training reference back",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "训练引用不再调用清栈的 goToRecords root；改用引用导航保留 messages 来处和 recordId。9/29 冷恢复仍展开 9/29，goBack 回 Gu messages/student。缺失记录显式不可用且不展开默认。"
+    },
+    {
+      "id": "EA29 legacy coach messages actor",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "loadState 用原始 selection 字段存在性与合法 actor，不再先合并 base 默认 student；旧 coach messages 缺 selection.actor 时按 parsed.actor=coach 迁移，conv-zhou 保留。"
+    },
+    {
+      "id": "EA29 legacy incoming unknown",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "旧 incomingPlan 缺 owner/version/readOnly/refMissing 时保留可信读者，从 active conversation 取所属学员；incomingRefMissing=true、incomingView=null、不可采用，不落任何 latest。"
+    },
+    {
+      "id": "EA03/EA28 legacy records unknown",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "旧 records 引用（stack 含 messages）缺 focus 字段时 explicit=true/id=null 并显示不可用提示；正常直接旧记录入口仍 explicit=false 并默认展开最近 10/22。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "101/101 vitest",
+      "training 9/29 cold+back; legacy coach messages; unknown incoming; unknown records ref; direct records default"
+    ],
+    "real_browser": [
+      "390 isolated context: 9/29 ref open→reload→back messages, legacy coach messages actor coach, legacy incoming missing no latest/adopt, legacy records ref notice/no expansion, direct records default 10/22"
+    ],
+    "not_tested": [
+      "Lead full 16-family/5-width/200/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app device",
+      "M02/M04/M05 re-render acceptance by Lead"
+    ]
+  },
+  "retained": [
+    "EA21–EA29 existing fixes",
+    "VR13 coach messages preview",
+    "VR14 320/200 title",
+    "M02 plan bridge, M04 160ms rest confirm, M05 resume clock"
+  ],
+  "unresolved": [
+    "No known code defect against fix04 scope.",
+    "Lead independent 21-seam/browser acceptance not done; candidate not accepted.",
+    "Unknown legacy reference recovery has no manual repair UI by design."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser only; not full matrix.",
+    "Dev log excluded."
+  ]
+}

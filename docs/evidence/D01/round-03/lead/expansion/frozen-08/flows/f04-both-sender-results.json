@@ -1,0 +1,11 @@
+{
+  "sourceRevision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "privateDraftsSeparate": true,
+  "studentDraftColdRestored": true,
+  "studentFailureNotDelivered": true,
+  "studentRetryDeliveredOnce": true,
+  "coachNormalReplyDelivered": true,
+  "coachFailureNotDelivered": true,
+  "coachRetryDeliveredOnce": true,
+  "scope": "Actual local UI through explicit preview failure mode; no real message delivery service"
+}

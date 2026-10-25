@@ -1,0 +1,157 @@
+{
+  "task": "D01-03-fix02",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "recovery_point": "aaf1fe0a8e9506b72c56157139eeda100d71a709",
+  "git_head": "aaf1fe0a8e9506b72c56157139eeda100d71a709",
+  "base_before_fix02": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
+  "source_state": "fix02 changes uncommitted on recovery point; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-24T20:30:30.844043+08:00",
+  "transport_failure": {
+    "turn": 4,
+    "step": "~579",
+    "error": "TRANSPORT / Connection error",
+    "retries": "5/5 failed",
+    "normal_handback": false,
+    "note": "Lead froze current files at aaf1fe0a; this recovery continued from that point."
+  },
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "bind": "127.0.0.1",
+    "pid": 64273,
+    "running": true,
+    "note": "not restarted/stopped; dev log excluded from hash"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix02-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix02-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix02-test.log",
+      "result": "4 files / 91 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix02-source-sha256.txt",
+    "manifest_sha256": "8f18586c52fb1865f4acd7bc6f7a82cf4f25756815aac7fc3d9713b5eae490bd",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "ed911255d278b4d09e09098ef5826290c11781941b4bc5eace89ae1bef710242",
+      "src/views/IncomingPlanView.vue": "2c236935900659b061fd903dfbdd84682a6c890a3dd61014cd23c37645cd5372",
+      "src/views/PlanDetailView.vue": "c98502b5fa5583b21307f7533b6d49f512320ac209c18e671a3218c9222ab935",
+      "src/views/RecordsView.vue": "8d7cb1d23fcc3f26fb14a47e4c00bba7feabb123e1714b262ac9607dbaadc8b0",
+      "src/views/TrainingView.vue": "fee1bd60da7031153c89ec3ed68e9e07a04c9b843654d0adae415b00303bd2e9"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix02-evidence-sha256.txt",
+    "manifest_sha256": "4f388c32cb4bb5c140842841ec7beab2d7ff371c1f4779bea1d479c1b34fb69e",
+    "screenshots": 15,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "EA21",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "incoming 按 ref 所属 studentId 读取 active/snapshot 的不可变 delivery，不再只看当前 coach；旧 v7 不被 v8/周岚覆盖；缺失引用进入“引用不可用”，不 fallback；教练查看周岚交付只读，diff 对周岚现用 v3，标题/对象/版本/时间同源；发布非 Lin 也生成计划引用；训练引用写 recordsFocusId 并展开原记录，缺失不展开默认；服务包按 ID 找所属 coach/package。"
+    },
+    {
+      "id": "EA22",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "当前包同 packageId 但 serviceVersion 不同不再“已确认”；759/v3 显示尚未确认，699/v2 旧约定单独保留；不同包同源。"
+    },
+    {
+      "id": "EA23",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "recordViewRows 统一 empty/single/insufficient；insufficient 图表/摘要/明细/点评均为空并显示原因；单条一个点、delta null。"
+    },
+    {
+      "id": "EA24",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "preview coach empty 使 filteredCoaches/计数为 0，保留筛选；loading/error 计数不伪装 3。"
+    },
+    {
+      "id": "EA25",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "B 日 duration 40、动作 4、器械 high pulldown/dumbbell 按动作；Today 时长/动作数/器械来自 session；非4动作用 facts 数量；训练图按器械替换。"
+    },
+    {
+      "id": "EA26",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "AI 候选只说明改草稿、保存/安排；公开审阅另为选择；不要求公开才能使用。"
+    },
+    {
+      "id": "EA27",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "add/remove/undo/update 全部同步 planDraftStatus/todo-draft；发布/保存/撤销回原内容按真实 dirty 完成；失败不完成；回复/授权不自动完成；发布后显示进展而非待保存。"
+    },
+    {
+      "id": "VR09",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "消息/我的内容/饮食/记录完整时间用 formatTime/formatDateTime，本地时区，不改 UTC 存储。"
+    },
+    {
+      "id": "VR10",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "撤权确认改为“健康授权由你决定，教练不能替你恢复”。"
+    },
+    {
+      "id": "VR11",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "320/200 Today side links 不横向溢出；S03 hero 文字移入文档流、动作名/组次叠排、图片不叠字；390/320 scrollWidth=innerWidth。"
+    },
+    {
+      "id": "VR12",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "缺图提示置于素材左上，替代文本保留；实际 span 与 kicker 不重叠；正常摄影构图不变。"
+    },
+    {
+      "id": "EA06",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "删除“没有虚假等待”实现解释，保留保存/交付结果说明。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "91/91 vitest",
+      "EA21 cross-student/missing/training tests",
+      "EA23 empty/single/insufficient",
+      "EA24 coach empty",
+      "EA25 B metadata",
+      "EA27 add/remove/undo"
+    ],
+    "real_browser": [
+      "390x900 CDP: old v7 after v8 + coach switched, coach Zhou read-only, missing ref, training ref expanded, quote v3/v2, records empty/single/insufficient, coach empty, B today 40m/4 actions, Zhou progress, revoke copy",
+      "320x900/200: today scrollWidth 320, plan action names horizontal, image/text no overlap",
+      "390 missing-image forced 404: fallback span top-left no overlap"
+    ],
+    "not_tested": [
+      "Lead frozen 16-family/5-width/200/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app/device/keyboard/safe-area",
+      "real AI/payment/user research"
+    ]
+  },
+  "unresolved": [
+    "No known code defect against fix02 scope as of this candidate.",
+    "Legacy raw.draft with no reliable owner remains unassigned and not shown to either participant; no recovery UI this round.",
+    "Lead independent acceptance not done; candidate not accepted."
+  ],
+  "limits": [
+    "Local fixed sample; not server-side permissions.",
+    "Dev log continuously written and excluded from immutable evidence.",
+    "Browser checks targeted, not full matrix."
+  ]
+}

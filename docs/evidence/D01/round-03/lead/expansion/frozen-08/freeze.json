@@ -1,0 +1,20 @@
+{
+  "worker_revision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "parent_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
+  "normal_handback": true,
+  "native_round": 14,
+  "native_steps": 966,
+  "native_duration": "30m41s",
+  "source_files": 60,
+  "evidence_files": 10,
+  "report_files": 2,
+  "lead_ui_source_edits": false,
+  "accepted": false,
+  "lead_checks": {
+    "typecheck": 0,
+    "build": 0,
+    "vitest": 111,
+    "identity_seams": 28,
+    "all_passed": true
+  }
+}

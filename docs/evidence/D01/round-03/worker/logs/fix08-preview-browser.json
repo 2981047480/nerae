@@ -1,0 +1,52 @@
+{
+  "before": {
+    "conv": "conv-gu-yan",
+    "messages": 4,
+    "studentDraft": "学员真实私稿",
+    "coachDraft": "教练真实私稿",
+    "other": [
+      "conv-gu-yan",
+      "conv-jiang-yao",
+      "conv-zhou-lan",
+      "conv-he-an"
+    ]
+  },
+  "failed": {
+    "conv": true,
+    "placeholder": true,
+    "messages": 5,
+    "studentDraft": "学员真实私稿",
+    "coachDraft": "教练真实私稿",
+    "body": true
+  },
+  "normal": {
+    "conv": true,
+    "placeholder": false,
+    "messages": 4,
+    "studentDraft": "学员真实私稿",
+    "coachDraft": "教练真实私稿",
+    "other": [
+      "conv-gu-yan",
+      "conv-jiang-yao",
+      "conv-zhou-lan",
+      "conv-he-an"
+    ],
+    "textarea": [
+      "学员真实私稿"
+    ],
+    "body": true
+  },
+  "reload": {
+    "conv": true,
+    "studentDraft": "学员真实私稿",
+    "coachDraft": "教练真实私稿",
+    "messages": 4,
+    "other": [
+      "conv-gu-yan",
+      "conv-jiang-yao",
+      "conv-zhou-lan",
+      "conv-he-an"
+    ],
+    "body": true
+  }
+}

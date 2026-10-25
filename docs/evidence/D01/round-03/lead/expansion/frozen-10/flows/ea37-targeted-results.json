@@ -1,0 +1,43 @@
+{
+  "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+  "actualDefaultTraining": 12,
+  "realWeightPair": "20kgx5 not20kgx10",
+  "weightedSideSummary": true,
+  "actualCoreGroups": 8,
+  "bodyweightPerSideSummary": true,
+  "durationPerSideSummary": true,
+  "legacyZeroKgSummaryAndRawRetained": true,
+  "comparableBirdSinglePoint": true,
+  "actualMobilityGroups": 6,
+  "mobilityActual89": [
+    {
+      "name": "90/90 髋部转换",
+      "field": "完成次数",
+      "value": 6
+    },
+    {
+      "name": "跪姿肩屈",
+      "field": "完成次数",
+      "value": 8
+    },
+    {
+      "name": "腿后侧伸展",
+      "field": "完成秒数",
+      "value": 30
+    },
+    {
+      "name": "髋屈肌伸展",
+      "field": "完成秒数",
+      "value": 30
+    },
+    {
+      "name": "胸椎旋转",
+      "field": "完成次数",
+      "value": 8
+    }
+  ],
+  "breathZeroRejected": true,
+  "breathConflictRemoteResolvedOnce": true,
+  "breathSummary": "8次呼吸·1组",
+  "scope": "Local UI confirmations and simulated device conflict only"
+}

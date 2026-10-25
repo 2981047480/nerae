@@ -1,0 +1,13 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "filteredResultRetained": true,
+  "anonymousCanReadFullPlan": true,
+  "loginCancelSamePlan": true,
+  "ageCannotBeBypassedWithOtherContent": true,
+  "minorBlocked": true,
+  "adultExplicitConfirmation": true,
+  "replacementCancelKeepsThree": true,
+  "confirmedCoreStartsZero": true,
+  "focusLoopAndRestoration": true,
+  "scope": "Local disposable UI only"
+}

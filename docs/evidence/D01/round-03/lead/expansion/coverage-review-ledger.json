@@ -6,7 +6,7 @@
     "03_VISUAL_AND_MOTION.md",
     "04_TRADEOFFS_AND_VALIDATION.md"
   ],
-  "status": "planned_review_only",
+  "status": "55 Lead-reviewed UI meanings; integration acceptance separate",
   "worker_map_is_evidence_not_spec": true,
   "semantic_mismatches_in_old_worker_map": [
     "L07",
@@ -35,9 +35,17 @@
         "F01"
       ],
       "criterion": "匿名可比较内容，准入只在开始时出现",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "匿名读完整条件后才在开始处登录/成年；筛选取消回退保持。"
     },
     {
       "id": "G02",
@@ -59,9 +67,22 @@
         "F07"
       ],
       "criterion": "免费探索到执行记录完整，不依赖选教练",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "免费Core8与Mobility6可独立完成并进入记录，不须先选教练。"
     },
     {
       "id": "G03",
@@ -79,9 +100,18 @@
         "S16"
       ],
       "criterion": "可比较与选择服务，教练自主定价，约定不被改写",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "选包带入咨询而不自动发送；新759/项不重写699/月旧约定。"
     },
     {
       "id": "G04",
@@ -101,9 +131,22 @@
         "C04"
       ],
       "criterion": "具体记录和不可变引用对应具体反馈",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "旧7消息保留原快照，点评回具体记录，新8须本人决定采用。"
     },
     {
       "id": "G05",
@@ -119,9 +162,16 @@
         "F06"
       ],
       "criterion": "有来源候选可审阅，专业与重要决定留人",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "固定模板来源、差异与确认清楚，个人草稿变8而当前3/12不动。"
     },
     {
       "id": "G06",
@@ -140,9 +190,22 @@
         "F05"
       ],
       "criterion": "成年、咨询、服务、授权独立，未知不造事实",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "未成年开始受阻；授权撤回本人历史保留，教练读面裁剪；资质未知据实。"
     },
     {
       "id": "G07",
@@ -162,9 +225,20 @@
         "C04"
       ],
       "criterion": "固定日历、历史快照、恢复、确认与去重",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "B日13组不猜拆；新8采用不改今日3组与历史，冷恢复保留对象。"
     },
     {
       "id": "N01",
@@ -190,9 +264,21 @@
         "F06"
       ],
       "criterion": "默认可改、重要动作可取消、无强制授权",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "登录/替换/采用/候选/公开确认可取消；咨询私稿可改。"
     },
     {
       "id": "N02",
@@ -215,9 +301,22 @@
         "F07"
       ],
       "criterion": "单位参考与下一步清楚，数据不足不假成绩",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "每侧/秒/呼吸值可合法确认，单一可比点不制造趋势，摘要不拼组。"
     },
     {
       "id": "N03",
@@ -239,9 +338,20 @@
         "F05"
       ],
       "criterion": "人和AI分明，署名时间引用真实，不造关怀",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "人类作者/时间/引用与固定模板分明，双方私稿及失败可见性隔离。"
     },
     {
       "id": "L01",
@@ -280,9 +390,20 @@
         "F05"
       ],
       "criterion": "训练服务身份具体，自助指导同等成立",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "自助完成与真人服务均有独立价值入口，原图语境为训练而非营销后台。"
     },
     {
       "id": "L02",
@@ -303,9 +424,19 @@
         "MOTION"
       ],
       "criterion": "探索执行审阅交流回归各有密度",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "探索摄影和对比、训练深色主操作、审阅平面差异、消息正文优先。"
     },
     {
       "id": "L03",
@@ -329,9 +460,20 @@
         "F05"
       ],
       "criterion": "适配来源边界状态靠近判断，不伪评分",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "开始前给适用条件、服务前给包/样例/价格，未知认证评价不伪造。"
     },
     {
       "id": "L04",
@@ -370,9 +512,29 @@
         "F07"
       ],
       "criterion": "活动衔接不暴露内部模块，无重复选对象抄资料",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "今天一步继续、队列两次导航到草稿、咨询预填包和已知时间。"
     },
     {
       "id": "L05",
@@ -404,9 +566,17 @@
         "STATES"
       ],
       "criterion": "主要回答在前，必要依据可读，空失败仍有下一步",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "首要标题/当前事实/主动作优先，96状态仍给具体恢复与去向。"
     },
     {
       "id": "L06",
@@ -436,9 +606,26 @@
         "F07"
       ],
       "criterion": "人判断、App执行、AI有据草稿，确认结果准确",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "App接管对象带入保存恢复，用户保留完成值与采用/服务/授权/公开决定。"
     },
     {
       "id": "L07",
@@ -471,9 +658,17 @@
         "STATES"
       ],
       "criterion": "逐段用户相关性，理由与实现验收语言不上屏",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/copy-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "220 DOM逐段审查，未出现设计与验收工具词；预览样例边界明确。"
     },
     {
       "id": "L08",
@@ -511,9 +706,18 @@
         "RESPONSIVE"
       ],
       "criterion": "比例中文素材节制细节统一，不等同空白和金色",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "同材质字体图标与稳定排版，22构图五宽双字号及有效像素接受。"
     },
     {
       "id": "L09",
@@ -539,9 +743,25 @@
         "F04"
       ],
       "criterion": "12动效因果清楚，减少效果等价，不打断读历史",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "12因果动效真实触发；reduced保留正文、数值、对象、焦点与重试结果。"
     },
     {
       "id": "C01",
@@ -561,9 +781,17 @@
         "F01"
       ],
       "criterion": "筛选回退、完整详情、登录取消、成年下架替换重复",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "匿名条件比较、登录/年龄/替换取消与B日冷恢复均实际走查。"
     },
     {
       "id": "C02",
@@ -584,9 +812,18 @@
         "STATES"
       ],
       "criterion": "当前合法会话一步接续，不丢输入、不改过去",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "今天主动作继续当前第4组，暂停与冷恢复保留计时和输入。"
     },
     {
       "id": "C03",
@@ -605,9 +842,17 @@
         "F02"
       ],
       "criterion": "各单位校验、去重、真实计时、恢复、冲突同步",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "实际12/Core8/Mobility6覆盖负重每侧秒自重呼吸，冲突仅一次，模块覆盖故障恢复。"
     },
     {
       "id": "C04",
@@ -629,9 +874,23 @@
         "F07"
       ],
       "criterion": "图文同源范围单位，空单条补记，点评回原记录",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "真实摘要只取同一组，0kg旧事实保留，范围/单位同图同源；补记不冒充准时。"
     },
     {
       "id": "C05",
@@ -654,9 +913,18 @@
         "S16"
       ],
       "criterion": "比较包样例价格，带包咨询，草稿保留，渠道边界",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "包、周期、响应、交付样例邻近，咨询带选包和私稿，新价与旧约定分开。"
     },
     {
       "id": "C06",
@@ -678,9 +946,20 @@
         "F04"
       ],
       "criterion": "发送重试私稿，具体引用，采用版本明确，撤权隔离",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "双方失败不对方可见，重试一次；旧7与新8可识别，采用取消/确认保持现用。"
     },
     {
       "id": "C07",
@@ -703,9 +982,19 @@
         "S16"
       ],
       "criterion": "队列接续完整草稿，证据差异与明确交付",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "队列接续完整草稿，保存/差异/发布分步，未授权与关系结束不显示健康材料。"
     },
     {
       "id": "C08",
@@ -728,9 +1017,22 @@
         "STATES"
       ],
       "criterion": "暂停漏练周期关系结束分开，不羞辱不补造历史",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "今天暂停/休息/周期结束分开；关系结束只读，历史不清零或羞辱。"
     },
     {
       "id": "B01",
@@ -756,9 +1058,20 @@
         "F05"
       ],
       "criterion": "完整内容单位和影响，不以空摘要冒充专业",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "完整版动作组次、版本差异与采用影响均可读，未用空摘要冒充专业。"
     },
     {
       "id": "B02",
@@ -780,9 +1093,22 @@
         "F02"
       ],
       "criterion": "内容吸引、执行专注、真实短反馈",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "内容摄影吸引与执行收拢相配；已记录160ms反馈跟真实4/12。"
     },
     {
       "id": "B03",
@@ -804,9 +1130,22 @@
         "VISUAL"
       ],
       "criterion": "人物署名引用可信，不造头像认证在线",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "姓名字标、署名时间与具体引用，未虚构教练人像、认证、在线或评分。"
     },
     {
       "id": "B04",
@@ -827,9 +1166,20 @@
         "F07"
       ],
       "criterion": "范围来源单位个人积累，不假趋势身体结果",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "图表仅同方式已确认记录；只有一次不推断趋势，自评不推断营养或身体结果。"
     },
     {
       "id": "B05",
@@ -862,9 +1212,19 @@
         "MOTION"
       ],
       "criterion": "同语义、材质、图像图标与不同任务节奏",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "暖白深墨陶色、系统中文与同套线性图标；任务密度有区别。"
     },
     {
       "id": "V01",
@@ -897,9 +1257,18 @@
         "VISUAL"
       ],
       "criterion": "中文层级单位换行，重要字号可读与200检查",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "中文层级与单位可读，五宽200%无挤压标题或字段裁切标记。"
     },
     {
       "id": "V02",
@@ -933,9 +1302,18 @@
         "FOCUS"
       ],
       "criterion": "五宽与短屏、长文、固定动作不遮挡",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "校准220尺寸与320×568长页End证明末尾可达，固定动作不盖尾文。"
     },
     {
       "id": "V03",
@@ -967,9 +1345,16 @@
         "VISUAL"
       ],
       "criterion": "关系靠编排，主面平面说明分明，不套白卡",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "行、平面、说明区和强调面按关系编排，消息正文优先而非套卡堆叠。"
     },
     {
       "id": "V04",
@@ -1003,9 +1388,17 @@
         "VISUAL"
       ],
       "criterion": "实测平面文字对比与状态文字，暖陶onAccent",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "22普通构图平面文字阈值通过；装饰圆点排除，照片和禁用另看原图。"
     },
     {
       "id": "V05",
@@ -1039,9 +1432,19 @@
         "VISUAL"
       ],
       "criterion": "触达44、轮廓、按压焦点禁用错误完整",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "44触达、轮廓/错误文字/禁用均检查；短屏弹层焦点闭环和返回通过。"
     },
     {
       "id": "V06",
@@ -1065,9 +1468,18 @@
         "VISUAL"
       ],
       "criterion": "本地来源裁切替代文本，教练字标不造权威",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "design/prototype/ASSETS.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/missing-image-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "10本地素材附来源记录，404保留尺寸替代文本；教练用姓名字标。"
     },
     {
       "id": "V07",
@@ -1100,9 +1512,18 @@
         "FOCUS"
       ],
       "criterion": "同套lucide、可访问名称、重要动作文字",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "同套lucide，图标动作有可访问名称，重要动作有文字。"
     },
     {
       "id": "V08",
@@ -1134,9 +1555,17 @@
         "MOTION"
       ],
       "criterion": "M01到M12实际触发与reduced，无假系统声音震动",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "M01–M12实际双模式；无假声或震动，未冒称FPS或硬件测量。"
     },
     {
       "id": "T01",
@@ -1159,9 +1588,21 @@
         "F05"
       ],
       "criterion": "自助无服务阻断，训练无促销，咨询稳定可达",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "免费独立完整训练与服务咨询稳定可达，执行中不插促销。"
     },
     {
       "id": "T02",
@@ -1183,9 +1624,22 @@
         "C04"
       ],
       "criterion": "返回位置条件选择稳定，重复使用连续",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "筛选回退、选B日冷恢复、原记录引用与私稿保持，重复使用不靠记忆。"
     },
     {
       "id": "T03",
@@ -1204,9 +1658,16 @@
         "F03"
       ],
       "criterion": "两步接续而不略证据，不自动确认安全",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "两步接续草稿同时完整证据/差异/人工发布仍在，未自动确认安全。"
     },
     {
       "id": "T04",
@@ -1231,9 +1692,21 @@
         "F06"
       ],
       "criterion": "预填可见可改，重要确认可取消，取消不丢",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "已知时间和选包预填、重大动作可取消，恢复减少重复输入。"
     },
     {
       "id": "T05",
@@ -1256,9 +1729,20 @@
         "STATES"
       ],
       "criterion": "真实投入，休息暂停正常，无排名清零或虚假效果",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "只展示真实确认投入，暂停休息正常；无榜单清零或虚假身体成绩。"
     },
     {
       "id": "T06",
@@ -1291,9 +1775,18 @@
         "RESPONSIVE"
       ],
       "criterion": "必要事实不为留白删，丰富内容有节奏",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "探索有图像节奏，审阅保留完整动作与事实，不以留白删除内容。"
     },
     {
       "id": "H01",
@@ -1311,9 +1804,17 @@
         "F01"
       ],
       "criterion": "提供可比较条件与完整替代路径，未做真实偏好研究",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "设计假设已体现，不代表用户研究验证"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "设计假设已体现，不代表用户研究验证",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "条件摘要与完整内容替代路径已体现；没有招募真实用户证明偏好。"
     },
     {
       "id": "H02",
@@ -1333,9 +1834,19 @@
         "C04"
       ],
       "criterion": "恢复与稳定入口已体现，未宣称提高留存",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "设计假设已体现，不代表用户研究验证"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "设计假设已体现，不代表用户研究验证",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "保存/恢复与稳定入口已体现；没有留存提升证据。"
     },
     {
       "id": "H03",
@@ -1354,9 +1865,16 @@
         "F05"
       ],
       "criterion": "包样例响应邻近，未用样例证明服务效果",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "设计假设已体现，不代表用户研究验证"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "设计假设已体现，不代表用户研究验证",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "具体服务包/样例/响应已体现；样例不证明真实服务效果。"
     },
     {
       "id": "H04",
@@ -1379,9 +1897,18 @@
         "STATES"
       ],
       "criterion": "休息暂停恢复与具体投入，未宣称提高动力或健康",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "设计假设已体现，不代表用户研究验证"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "limits": "设计假设已体现，不代表用户研究验证",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "正常休息/暂停/回归已体现；没有动力或健康效果实证。"
     },
     {
       "id": "H05",
@@ -1414,9 +1941,19 @@
         "MOTION"
       ],
       "criterion": "探索执行审阅有区别且同品牌，未做用户辨认实验",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "设计假设已体现，不代表用户研究验证"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "设计假设已体现，不代表用户研究验证",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "不同任务节奏共享语法，未做品牌辨认实验。"
     },
     {
       "id": "Q01",
@@ -1456,9 +1993,29 @@
         "F07"
       ],
       "criterion": "Lead任务走查，未招募访谈，不声称真实用户研究",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "完成Lead实际任务走查，未把它称作真实行为访谈。"
     },
     {
       "id": "Q02",
@@ -1493,9 +2050,23 @@
         "F05"
       ],
       "criterion": "操作能辨对象后果来处，无复制ID或学内部词",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "界面辨对象/版本/后果，无需复制ID或学习内部分类。"
     },
     {
       "id": "Q03",
@@ -1530,9 +2101,21 @@
         "MOTION"
       ],
       "criterion": "实际审美评议与功能证据分开，不用build代表喜欢",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "实际原图审美与可操作证据分别评议，构建不是喜欢程度证明。"
     },
     {
       "id": "Q04",
@@ -1567,9 +2150,25 @@
         "F04"
       ],
       "criterion": "首次再次中断恢复失败重复与动画中操作有证据",
-      "status": "pending_final_frozen_review",
-      "evidence": [],
-      "limits": "Lead走查与本地样机接受，不代表真实用户或生产"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json"
+      ],
+      "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
+      "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "observed": "96独立状态、冷恢复、重复阻止、失败重试和实际动画/焦点检查有记录。"
     }
-  ]
+  ],
+  "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+  "review_mode": "sequential product/UX/visual/QA roles by Lead independent of UI implementer"
 }

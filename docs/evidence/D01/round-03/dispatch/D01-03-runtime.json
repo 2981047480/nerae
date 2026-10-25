@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix06 normal frozen54b74c;109/type/build/original27 pass; new28th and settled actual chart failEA35; fix07 round14 running",
+  "state": "fix09 normalround16 frozen898e; Lead116/type/build/30pass; EA37actual12/Core8/Mobility6 pass; final220pixelverified/96states pass; focus/End pass; integrationpending",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "native round14/940steps13m40 running after single service-copy insertion",
+  "progress": "normal handback16m59/1014steps19:05; no active worker",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -459,15 +459,12 @@
     "normal_handback_proof": "../lead/expansion/frozen-07/native-handback.txt"
   },
   "immutable_lead_qa_current": {
-    "source_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
-    "url": "http://127.0.0.1:4191/",
-    "exec_session": 28563,
-    "tab": "15",
-    "dist": "/private/tmp/nerae-frozen-54b7-pkt0z67k/dist",
-    "proof": "../lead/expansion/frozen-07/frozen-static-preview.json",
-    "scope": "13 copied build files; mutable worker changes only4187",
-    "pid": 54860,
-    "post_qa_check": "../lead/expansion/frozen-07/post-qa-build-check.json"
+    "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+    "url": "http://127.0.0.1:4194/",
+    "exec_session": 90051,
+    "tab": "18",
+    "dist": "/private/tmp/nerae-frozen-898e-gedkgp7b/dist",
+    "proof": "../lead/expansion/frozen-10/frozen-static-preview.json"
   },
   "lead_qa_preparation": {
     "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
@@ -478,7 +475,7 @@
     "identity_checks_status": "new27 syntax checked only; old frozen06 execution remains23 checks"
   },
   "fix07": {
-    "state": "running",
+    "state": "normal_handback_frozen",
     "packet": "D01-03-fix07-comparable-record-series.md",
     "base_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1",
     "accepted": false,
@@ -488,6 +485,43 @@
     "last_cumulative_steps": 940,
     "last_duration": "13m40s",
     "copy_followup": "D01-03-fix07-service-copy-note.md",
-    "copy_followup_proof": "D01-03-fix07-service-copy-inserted.txt"
+    "copy_followup_proof": "D01-03-fix07-service-copy-inserted.txt",
+    "normal_handback": true,
+    "native_steps": 966,
+    "native_duration": "30m41s",
+    "source_revision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+    "normal_handback_proof": "../lead/expansion/frozen-08/native-handback.txt"
+  },
+  "fix08": {
+    "state": "normal_handback_frozen",
+    "packet": "D01-03-fix08-message-preview-retention.md",
+    "base_revision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+    "submission_proof": "D01-03-fix08-submitted.txt",
+    "running_proof": "D01-03-fix08-running.txt",
+    "native_round": 15,
+    "last_cumulative_steps": 967,
+    "last_duration": "25s",
+    "accepted": false,
+    "normal_handback": true,
+    "source_revision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+    "native_steps": 985,
+    "native_duration": "7m59s",
+    "normal_handback_proof": "../lead/expansion/frozen-09/native-handback.txt"
+  },
+  "fix09": {
+    "state": "normal_handback_frozen",
+    "packet": "D01-03-fix09-record-summary.md",
+    "base_revision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+    "submission_proof": "D01-03-fix09-submitted-confirmed.txt",
+    "normal_handback": true,
+    "accepted": false,
+    "scope": "S05 record summary, pure format helper/tests only",
+    "submission_method_note": "AX setValue produced no text/bubble; click plus paste verified populated native composer before Return; actual user bubble observed18:48; no duplicate prompt",
+    "normal_handback_proof": "../lead/expansion/frozen-10/native-handback.txt",
+    "native_round": 16,
+    "native_steps": 1014,
+    "native_duration": "16m59s",
+    "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+    "lead_checks": "../lead/expansion/frozen-10/code/code-checks.json"
   }
 }

@@ -1,0 +1,38 @@
+{
+  "before": {
+    "preview": "sync-failed",
+    "ok": true,
+    "done": 3,
+    "sync": [
+      "已记录，但还没有保存到本机\n\n这一组的事实已经在本次记录中；保存失败不会自动新增一组。可以重试保存，已输入的数值保留。\n\n重试保存"
+    ],
+    "buttons": 1
+  },
+  "afterSuccess": {
+    "preview": "normal",
+    "ok": true,
+    "done": 3,
+    "sync": false,
+    "text": false
+  },
+  "failure": {
+    "preview": "sync-failed",
+    "ok": false,
+    "done": 3,
+    "sync": "已记录，但还没有保存到本机\n\n这一组的事实已经在本次记录中；保存失败不会自动新增一组。可以重试保存，已输入的数值保留。\n\n重试保存",
+    "retry": 2
+  },
+  "afterRecover": {
+    "preview": "normal",
+    "ok": true,
+    "done": 3,
+    "sync": false
+  },
+  "reduced": {
+    "reduceMotion": true,
+    "preview": "normal",
+    "ok": true,
+    "done": 3,
+    "sync": false
+  }
+}

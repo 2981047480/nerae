@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4186 --strictPort",
+    "dev": "vite --host 127.0.0.1 --port 4187 --strictPort",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview --host 127.0.0.1 --port 4186 --strictPort"
+    "preview": "vite preview --host 127.0.0.1 --port 4187 --strictPort"
   },
   "dependencies": {
     "@lucide/vue": "^1.61.0",

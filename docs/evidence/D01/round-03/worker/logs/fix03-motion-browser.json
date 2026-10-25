@@ -1,0 +1,113 @@
+{
+  "planBridge": {
+    "samples": [
+      {
+        "t": 162,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 181,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 202,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 223,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 242,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 263,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 281,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 301,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 322,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 342,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 361,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 381,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 402,
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 422,
+        "durations": [
+          280
+        ]
+      }
+    ],
+    "screen": "planDetail",
+    "ghostNow": false
+  },
+  "fastBackGhost": false,
+  "reduceGhost": false,
+  "m04Before": {
+    "rest": false,
+    "just": null
+  },
+  "m04": {
+    "rest": true,
+    "just": "s-a1-4",
+    "marker": true,
+    "animation": [
+      160
+    ],
+    "text": "哑铃卧推 第 4 组已记录 · 42.5 kg × 11 次"
+  },
+  "m05": {
+    "restText": "01:30",
+    "pausedText": "01:30\n已暂停",
+    "resumeImmediate": "01:30",
+    "after": "01:29"
+  }
+}

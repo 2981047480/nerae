@@ -3,33 +3,36 @@ import { computed } from 'vue'
 import { SlidersHorizontal } from '@lucide/vue'
 import BaseSheet from './BaseSheet.vue'
 import {
+  applyPreviewState,
   closeSheet,
   coacheeContext,
   jumpToScenario,
   openSheet,
   previewScenarios,
+  previewStateFor,
+  PREVIEW_STATES,
   resetPreview,
   setReduceMotion,
   setTextScale,
   state,
   ui,
 } from '../state/store'
-
-function selectStudent(key: 'today' | 'explore' | 'training'): void {
-  jumpToScenario(key)
-}
-
-function selectCoach(key: 'coach-edit' | 'coach-review'): void {
-  jumpToScenario(key)
-}
-
-function setRole(role: 'student' | 'coach'): void {
-  if (role === 'coach') jumpToScenario('coach-review')
-  else jumpToScenario('today')
-}
+import type { PreviewScenario } from '../state/store'
 
 const props = defineProps<{ dark?: boolean }>()
 const triggerClass = computed(() => (props.dark ? 'preview-trigger preview-trigger--dark' : 'preview-trigger'))
+
+function setRole(role: 'student' | 'coach'): void {
+  if (role === 'coach') jumpToScenario('coach-todo')
+  else jumpToScenario('today')
+}
+
+function selectScenario(key: string): void {
+  jumpToScenario(key as PreviewScenario)
+}
+
+const currentStates = computed(() => PREVIEW_STATES[state.screen] ?? [])
+const currentState = computed(() => previewStateFor(state.screen))
 
 const credits = [
   {
@@ -104,22 +107,42 @@ const credits = [
             :key="item.key"
             type="button"
             class="scenario"
-            @click="selectStudent(item.key)"
-          >
-            <span class="scenario-title">{{ item.label }}</span>
-            <span class="scenario-meta">{{ item.meta }}</span>
-          </button>
-          <button
-            v-for="item in previewScenarios.coach"
-            :key="item.key"
-            type="button"
-            class="scenario"
-            @click="selectCoach(item.key)"
+            @click="selectScenario(item.key)"
           >
             <span class="scenario-title">{{ item.label }}</span>
             <span class="scenario-meta">{{ item.meta }}</span>
           </button>
         </div>
+        <div class="scenario-grid scenario-grid--coach">
+          <button
+            v-for="item in previewScenarios.coach"
+            :key="item.key"
+            type="button"
+            class="scenario"
+            @click="selectScenario(item.key)"
+          >
+            <span class="scenario-title">{{ item.label }}</span>
+            <span class="scenario-meta">{{ item.meta }}</span>
+          </button>
+        </div>
+      </section>
+
+      <section v-if="currentStates.length" class="preview-section">
+        <h3 class="preview-label">当前页状态</h3>
+        <div class="state-wrap">
+          <button
+            v-for="option in currentStates"
+            :key="option.key"
+            type="button"
+            class="state-chip"
+            :class="{ 'state-chip--active': currentState === option.key }"
+            :aria-pressed="currentState === option.key"
+            @click="applyPreviewState(state.screen, option.key)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <p class="preview-help">切换只改变当前样例状态；重置可回到初始数据。</p>
       </section>
 
       <section class="preview-section switch-row">
@@ -180,7 +203,7 @@ const credits = [
           <button type="button" class="reset-link" @click="ui.resetConfirm = true">重置预览数据</button>
         </template>
         <div v-else class="reset-confirm">
-          <p>会清除本机的训练记录、收藏和教练草稿，文字大小与动效设置也回到初始状态。</p>
+          <p>会清除本机的训练记录、收藏、消息、计划和自评，文字大小与动效设置也回到初始状态。</p>
           <div class="reset-actions">
             <button type="button" class="btn btn--ghost btn--sm" @click="ui.resetConfirm = false">取消</button>
             <button type="button" class="btn btn--sm reset-btn" @click="resetPreview()">确认重置</button>
@@ -192,153 +215,143 @@ const credits = [
 </template>
 
 <style scoped>
+.preview-root {
+  position: relative;
+  z-index: 60;
+}
+
 .preview-trigger {
   position: fixed;
-  z-index: 40;
-  top: calc(12px + env(safe-area-inset-top));
+  z-index: 60;
+  top: calc(10px + env(safe-area-inset-top));
   right: 12px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   min-height: 44px;
-  padding: 0 11px;
-  border: 1px dashed rgba(25, 47, 57, 0.32);
-  border-radius: var(--radius-md);
-  background: rgba(243, 242, 238, 0.94);
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(243, 242, 238, 0.92);
   color: var(--muted);
   font-size: var(--text-12);
-  line-height: 1;
-  letter-spacing: 0.02em;
-  transition:
-    color 140ms var(--ease-out),
-    border-color 140ms var(--ease-out);
-}
-
-.preview-trigger:hover {
-  color: var(--ink);
-  border-color: rgba(25, 47, 57, 0.55);
-}
-
-.preview-trigger:focus-visible {
-  outline-offset: 2px;
-}
-
-@media (min-width: 768px) {
-  .preview-trigger {
-    top: calc(20px + env(safe-area-inset-top));
-    right: 20px;
-  }
+  font-weight: 500;
+  backdrop-filter: blur(6px);
 }
 
 .preview-trigger--dark {
-  color: var(--focus-muted);
-  border-color: rgba(241, 240, 234, 0.32);
+  border-color: var(--focus-line);
   background: rgba(22, 42, 51, 0.9);
+  color: var(--focus-muted);
 }
 
 .preview-note {
-  margin-bottom: var(--sp-5);
-  padding: 10px 12px;
-  border-left: 2px solid var(--line-strong);
+  padding-bottom: var(--sp-3);
   color: var(--muted);
   font-size: var(--text-13);
   line-height: 1.55;
+  border-bottom: 1px solid var(--line);
 }
 
 .preview-section {
   padding: var(--sp-4) 0;
-  border-top: 1px solid var(--line);
-}
-
-.preview-section:first-of-type {
-  border-top: 0;
-  padding-top: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .preview-label {
-  margin-bottom: var(--sp-3);
-  color: var(--ink);
   font-size: var(--text-14);
   font-weight: 600;
 }
 
 .preview-help {
+  margin-top: 4px;
   color: var(--muted);
   font-size: var(--text-12);
   line-height: 1.5;
 }
 
 .role-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--canvas);
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
 }
 
 .role-btn {
+  flex: 1;
   min-height: 44px;
-  border-radius: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
   color: var(--muted);
   font-size: var(--text-14);
-  line-height: 1.3;
-  transition:
-    background-color 140ms var(--ease-out),
-    color 140ms var(--ease-out);
 }
 
 .role-btn--active {
-  background: var(--surface);
-  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(25, 47, 57, 0.08);
 }
 
 .scenario-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: var(--sp-2);
 }
 
-@media (min-width: 420px) {
-  .scenario-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
+.scenario-grid--coach {
+  margin-top: 6px;
 }
 
 .scenario {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 2px;
-  min-height: 62px;
-  padding: 10px 12px;
+  min-height: 46px;
+  padding: 7px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   text-align: left;
-  transition:
-    border-color 140ms var(--ease-out),
-    background-color 140ms var(--ease-out);
 }
 
 .scenario:hover {
   border-color: var(--line-strong);
-  background: var(--canvas);
+  background: rgba(25, 47, 57, 0.035);
 }
 
 .scenario-title {
-  color: var(--ink);
   font-size: var(--text-14);
-  font-weight: 600;
-  line-height: 1.35;
+  font-weight: 500;
 }
 
 .scenario-meta {
   color: var(--muted);
   font-size: var(--text-12);
   line-height: 1.35;
+}
+
+.state-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--sp-2);
+}
+
+.state-chip {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--text-13);
+}
+
+.state-chip--active {
+  border-color: var(--ink);
+  background: rgba(25, 47, 57, 0.07);
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .switch-row {
@@ -348,98 +361,90 @@ const credits = [
   gap: var(--sp-4);
 }
 
-.switch-row .preview-label {
-  margin-bottom: 2px;
-}
-
 .switch {
   position: relative;
   flex: none;
   width: 52px;
   height: 44px;
-  padding: 0;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .switch::before {
   content: '';
   position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 10px;
-  bottom: 10px;
+  left: 2px;
+  right: 2px;
+  top: 8px;
+  height: 28px;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--line-strong);
   transition: background-color 160ms var(--ease-out);
-}
-
-.switch[aria-checked='true']::before {
-  background: var(--ink);
 }
 
 .switch-knob {
   position: absolute;
-  top: 13px;
+  top: 12px;
   left: 6px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--surface);
+  background: #fff;
   transition: transform 160ms var(--ease-out);
 }
 
 .switch-knob--on {
   transform: translateX(20px);
+  background: var(--ink);
+}
+
+.switch[aria-checked='true']::before {
+  background: var(--accent);
 }
 
 .text-scale-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  margin-top: var(--sp-3);
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--canvas);
+  display: flex;
+  gap: 6px;
+  margin-top: var(--sp-2);
 }
 
 .text-scale-btn {
   min-height: 44px;
-  border-radius: 6px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
   color: var(--muted);
   font-size: var(--text-14);
-  line-height: 1.3;
 }
 
 .text-scale-btn--active {
-  background: var(--surface);
+  border-color: var(--ink);
   color: var(--ink);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(25, 47, 57, 0.08);
 }
 
 .credits {
-  padding: var(--sp-3) 0;
-  border-top: 1px solid var(--line);
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line);
   color: var(--muted);
   font-size: var(--text-12);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .credits summary {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
+  cursor: pointer;
   color: var(--ink);
   font-size: var(--text-13);
-  cursor: pointer;
 }
 
 .credits ul {
-  margin: 6px 0;
+  margin-top: 6px;
 }
 
 .credits a {
-  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .credits p {
@@ -447,31 +452,42 @@ const credits = [
 }
 
 .reset-section {
-  display: flex;
-  justify-content: flex-start;
+  border-bottom: 0;
 }
 
 .reset-link {
   min-height: 44px;
   color: var(--error);
   font-size: var(--text-14);
-  text-align: left;
 }
 
 .reset-confirm p {
-  margin-bottom: var(--sp-3);
-  color: var(--ink);
-  font-size: var(--text-14);
-  line-height: 1.5;
+  color: var(--muted);
+  font-size: var(--text-13);
+  line-height: 1.55;
 }
 
 .reset-actions {
   display: flex;
+  justify-content: flex-end;
   gap: var(--sp-2);
+  margin-top: var(--sp-2);
 }
 
 .reset-btn {
-  background: var(--ink);
-  color: var(--surface);
+  background: var(--error);
+}
+
+@media (max-width: 359px) {
+  .scenario-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .preview-trigger {
+    top: 16px;
+    right: 20px;
+  }
 }
 </style>

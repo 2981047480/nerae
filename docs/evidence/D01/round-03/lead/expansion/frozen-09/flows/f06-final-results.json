@@ -1,0 +1,10 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "cancelRetainsTen": true,
+  "explicitApplyEight": true,
+  "duplicateAfterColdDisabled": true,
+  "todayOriginalThreeRetained": true,
+  "todayVerificationEntry": "normal Preview scenario without resetting data",
+  "coachTemplateBoundary": "draft source shown; does not directly apply coach plan",
+  "scope": "Fixed local template candidate only; no real model call or personal prescription"
+}

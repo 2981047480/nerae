@@ -69,6 +69,7 @@ describe('弹层焦点', () => {
 describe('应用结构与未知过渡根节点', () => {
   async function mountApp() {
     vi.resetModules()
+    window.localStorage.clear()
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: false,
       addEventListener: vi.fn(),
@@ -158,6 +159,9 @@ describe('应用结构与未知过渡根节点', () => {
     store.jumpToScenario('coach-edit')
     await flushPromises()
     await nextTick()
+    store.updatePlanField('day-a', 'a1', 'sets', '5')
+    expect(store.saveDraft()).toBe(true)
+    await nextTick()
     const triggers = Array.from(
       document.querySelectorAll<HTMLButtonElement>('[data-publish-trigger]'),
     )
@@ -165,6 +169,7 @@ describe('应用结构与未知过渡根节点', () => {
     const desktopTrigger = triggers[0]!
     const mobileTrigger = triggers[1]!
     desktopTrigger.focus()
+    expect(document.activeElement).toBe(desktopTrigger)
     store.requestPublish()
     await flushPromises()
     await nextTick()

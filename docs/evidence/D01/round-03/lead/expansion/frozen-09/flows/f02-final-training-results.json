@@ -1,0 +1,14 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "actualNewConfirmations": 9,
+  "alreadyConfirmed": 3,
+  "finalConfirmedGroups": 12,
+  "negativeSubmission": "rejected; count remains3; disabled only after first invalid submit, so initial button-enabled observation was not a validation failure",
+  "doseKinds": [
+    "weight",
+    "perSide",
+    "duration"
+  ],
+  "summaryAcceptance": "failed EA37; see ea37-summary-invents-twenty-by-ten.txt",
+  "scope": "Local UI confirmations only; no physical exercise, backend or health result"
+}

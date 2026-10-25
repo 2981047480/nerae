@@ -1,0 +1,59 @@
+{
+  "normal": {
+    "text": "学员可见",
+    "color": "rgb(94, 107, 112)",
+    "opacity": "1",
+    "fontSize": "12px",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "backdrop": [
+      243,
+      242,
+      238
+    ],
+    "ratio": 4.9165,
+    "tabOpacity": "1",
+    "tabs": [
+      {
+        "active": true,
+        "name": "力量基础 · 月度计划"
+      },
+      {
+        "active": false,
+        "name": "动作调整 · 单次"
+      },
+      {
+        "active": false,
+        "name": "服务咨询 · 20 分钟"
+      }
+    ]
+  },
+  "text200": {
+    "text": "学员可见",
+    "color": "rgb(94, 107, 112)",
+    "opacity": "1",
+    "fontSize": "24px",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "backdrop": [
+      243,
+      242,
+      238
+    ],
+    "ratio": 4.9165,
+    "tabOpacity": "1",
+    "tabs": [
+      {
+        "active": true,
+        "name": "力量基础 · 月度计划"
+      },
+      {
+        "active": false,
+        "name": "动作调整 · 单次"
+      },
+      {
+        "active": false,
+        "name": "服务咨询 · 20 分钟"
+      }
+    ]
+  },
+  "overflow": true
+}

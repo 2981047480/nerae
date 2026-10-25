@@ -1,0 +1,57 @@
+{
+  "trainingReference": {
+    "open": {
+      "screen": "records",
+      "focus": "record-20260929",
+      "explicit": true,
+      "body": true
+    },
+    "reload": {
+      "screen": "records",
+      "focus": "record-20260929",
+      "explicit": true,
+      "expanded": [
+        "9月29日 周二上肢力量 9.5 kg × 10 次 · 4 组收起"
+      ]
+    },
+    "back": {
+      "screen": "messages",
+      "actor": "student",
+      "conv": "conv-gu-yan"
+    }
+  },
+  "legacyCoachMessages": {
+    "actor": "coach",
+    "screen": "messages",
+    "conv": "conv-zhou-lan",
+    "body": false
+  },
+  "legacyIncoming": {
+    "actor": "coach",
+    "screen": "incomingPlan",
+    "missing": true,
+    "view": null,
+    "label": "引用不可用",
+    "student": "zhou-lan",
+    "adopt": false
+  },
+  "legacyIncomingBack": {
+    "screen": "messages",
+    "actor": "coach"
+  },
+  "legacyRecordsRef": {
+    "screen": "records",
+    "explicit": true,
+    "focus": null,
+    "notice": true,
+    "expanded": []
+  },
+  "legacyRecordsDirect": {
+    "screen": "records",
+    "explicit": false,
+    "focus": null,
+    "expanded": [
+      "10月22日 周四上肢力量 12.5 kg × 10 次 · 4 组收起"
+    ]
+  }
+}

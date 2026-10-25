@@ -1,0 +1,2160 @@
+{
+  "meta": {
+    "task": "D01-03",
+    "generated_at": "2026-10-24T14:55:18.281252+08:00",
+    "workspace": "/private/tmp/nerae-ui-complete",
+    "branch": "ui/full-round-three",
+    "base_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+    "port": "127.0.0.1:4187",
+    "source_coverage": "docs/design/round-03/coverage.json",
+    "source_item_count": 55,
+    "acceptance": "pending Lead frozen recheck",
+    "note": "只记录实现落点与可操作路径，不修改 Lead-owned coverage/接受状态。"
+  },
+  "items": [
+    {
+      "id": "G01",
+      "group": "产品基因",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/views/PlanDetailView.vue",
+        "src/state/store.ts"
+      ],
+      "visible_behavior": "匿名浏览训练内容；条件筛选可撤销；详情完整；开始前完成必要服务准入；新用户不面对空白仪表盘。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G02",
+      "group": "产品基因",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S10",
+        "S12"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/MyPlanView.vue",
+        "src/views/RecordsView.vue"
+      ],
+      "visible_behavior": "免费训练从发现→详情→开始→记录→回看可独立完成，不被教练选择阻断；自有内容可编辑与审阅。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G03",
+      "group": "产品基因",
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/views/CoachDetailView.vue",
+        "src/views/CoachServicesView.vue"
+      ],
+      "visible_behavior": "教练列表按目标/方式/价格比较；详情展示服务包、交付样例、响应与价格语境；可带包咨询；保存服务说明回读一致。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S06 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G04",
+      "group": "产品基因",
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14",
+        "S15"
+      ],
+      "files": [
+        "src/views/RecordsView.vue",
+        "src/views/MessagesView.vue",
+        "src/views/IncomingPlanView.vue"
+      ],
+      "visible_behavior": "训练记录可打开关联点评；消息引用可回到同一训练/计划；交付与采用分开，旧计划可查。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S05 / S08 / S09",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G05",
+      "group": "产品基因",
+      "screens": [
+        "S10",
+        "S11",
+        "S15"
+      ],
+      "files": [
+        "src/views/AiAssistView.vue",
+        "src/views/MyPlanView.vue",
+        "src/views/CoachReviewView.vue"
+      ],
+      "visible_behavior": "AI 只使用已有模板固定候选；缺项、安全阻断、技术失败、额度、过期、重复分开；教练计划不可被学员自助改写。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S10 / S11 / S15",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G06",
+      "group": "产品基因",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "files": [
+        "src/views/CoachDetailView.vue",
+        "src/views/MessagesView.vue",
+        "src/views/CoachServicesView.vue",
+        "src/App.vue"
+      ],
+      "visible_behavior": "服务确认、健康授权与咨询分开；未核定渠道明确不可用；确认前展示对象/范围/影响；平台内不收款。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "G07",
+      "group": "产品基因",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S09",
+        "S15"
+      ],
+      "files": [
+        "src/state/store.ts",
+        "src/views/TrainingView.vue",
+        "src/views/IncomingPlanView.vue"
+      ],
+      "visible_behavior": "版本、历史快照、采用与发布分离；同组只计一次；替换/刷新/失败恢复不丢合法事实，也不重放已确认组。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04 / S05",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "N01",
+      "group": "心理需要",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "files": [
+        "src/views/PlanDetailView.vue",
+        "src/views/ExploreView.vue",
+        "src/App.vue"
+      ],
+      "visible_behavior": "筛选、计划日、替换、登录/年龄、本节取消与返回都可操作；重要替换和授权有明确确认；默认项可改。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "N02",
+      "group": "心理需要",
+      "screens": [
+        "S04",
+        "S05",
+        "S11",
+        "S12"
+      ],
+      "files": [
+        "src/views/TrainingView.vue",
+        "src/views/RecordsView.vue"
+      ],
+      "visible_behavior": "训练单位、上次参考、当前组与完成事实清楚；记录给范围/单位/来源；空或资料不足不生成成绩。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S04 / S05 / S11",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "N03",
+      "group": "心理需要",
+      "screens": [
+        "S05",
+        "S08",
+        "S09",
+        "S14"
+      ],
+      "files": [
+        "src/views/MessagesView.vue",
+        "src/views/CoachStudentDetailView.vue"
+      ],
+      "visible_behavior": "教练署名、时间、具体训练引用和具体回复可追溯；未回复/未采用分别表达；AI 与教练身份不混淆。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S05 / S08 / S09",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L01",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/App.vue",
+        "src/components/AppHeader.vue",
+        "src/components/TabBar.vue",
+        "src/styles/tokens.css"
+      ],
+      "visible_behavior": "统一品牌、中文排版、内容摄影和训练/审阅/交流三种节奏；不是通用 SaaS 工作台或商城。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L02",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S08",
+        "S15"
+      ],
+      "files": [
+        "src/components/TabBar.vue",
+        "src/views/TodayView.vue",
+        "src/views/CoachTodoView.vue"
+      ],
+      "visible_behavior": "今天/发现/记录/消息与教练待办/学员/消息/服务导航稳定；不同注意力状态使用不同密度。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L03",
+      "group": "体验层级",
+      "screens": [
+        "S03",
+        "S07",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "files": [
+        "src/views/CoachDetailView.vue"
+      ],
+      "visible_behavior": "教练身份、服务范围、交付样例与咨询入口按人物组织；价格不与内容脱节。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L04",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/state/store.ts",
+        "src/App.vue",
+        "src/views/MessagesView.vue"
+      ],
+      "visible_behavior": "返回保留列表位置、筛选、当前对象与未发文本；刷新恢复选择与训练输入；深链/详情回退不丢对象。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L05",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/IncomingPlanView.vue",
+        "src/views/CoachReviewView.vue",
+        "src/views/StudentPlanView.vue"
+      ],
+      "visible_behavior": "现用、草稿、交付、采用、公开、历史快照分别显示；重要版本变化有影响摘要。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L06",
+      "group": "体验层级",
+      "screens": [
+        "S03",
+        "S04",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/AiAssistView.vue",
+        "src/views/MyPlanView.vue"
+      ],
+      "visible_behavior": "计划解读/已有模板调整/教练草稿在具体对象内进入；保留手动路径；应用前展示候选与影响。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S04 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L07",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/state/store.ts",
+        "src/data/extended.ts"
+      ],
+      "visible_behavior": "所有页面读取同一份共享状态；计数、组数、未读、版本和差异从集合计算，不各页维护副本。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L08",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/state/store.ts",
+        "src/components/PreviewControl.vue"
+      ],
+      "visible_behavior": "预览状态、角色、训练/计划/消息/服务使用稳定 ID；重置与异步任务不污染新场景。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "L09",
+      "group": "体验层级",
+      "screens": [
+        "S01",
+        "S03",
+        "S04",
+        "S05",
+        "S08",
+        "S09",
+        "S15"
+      ],
+      "files": [
+        "src/views/RecordsView.vue",
+        "src/views/CoachReviewView.vue",
+        "src/views/IncomingPlanView.vue"
+      ],
+      "visible_behavior": "日期、版本、来源、健康授权和同步状态在需要判断处出现；内部 hash/ID 不进入正文。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S03 / S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C01",
+      "group": "使用情境",
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/views/PlanDetailView.vue",
+        "src/App.vue"
+      ],
+      "visible_behavior": "匿名发现→条件→详情→服务准入→开始；取消/未成年/下架/重复/替换均有路径；开始后保存到我的计划。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C02",
+      "group": "使用情境",
+      "screens": [
+        "S01",
+        "S04"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/TrainingView.vue"
+      ],
+      "visible_behavior": "今天按已安排/进行中/完成/休息/暂停/周期结束/未安排/不可用给出不同默认下一步；恢复不改过去。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C03",
+      "group": "使用情境",
+      "screens": [
+        "S04"
+      ],
+      "files": [
+        "src/views/TrainingView.vue",
+        "src/state/store.ts"
+      ],
+      "visible_behavior": "重量/次数/单侧/秒分别校验；完成一组真实记录；休息真实计时；退出刷新恢复；同步失败重试不增组。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C04",
+      "group": "使用情境",
+      "screens": [
+        "S05",
+        "S08"
+      ],
+      "files": [
+        "src/views/RecordsView.vue",
+        "src/views/MessagesView.vue"
+      ],
+      "visible_behavior": "记录范围/动作/单位切换；汇总对明细；空/单条/资料不足/补记；点评回原记录；饮食自评不变成摄入。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S05 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C05",
+      "group": "使用情境",
+      "screens": [
+        "S06",
+        "S07",
+        "S08",
+        "S16"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/views/CoachDetailView.vue",
+        "src/views/MessagesView.vue"
+      ],
+      "visible_behavior": "比较教练、看服务包/样例、带包咨询；筛选与返回位置保留；渠道不可用保留咨询；普通交流不依赖计划。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S06 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C06",
+      "group": "使用情境",
+      "screens": [
+        "S08",
+        "S09",
+        "S11"
+      ],
+      "files": [
+        "src/views/MessagesView.vue",
+        "src/views/IncomingPlanView.vue"
+      ],
+      "visible_behavior": "消息草稿/引用/发送中/失败同 ID 重试/只读/撤权；收到计划回到采用；教练回复保持同一学员上下文。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S08 / S09 / S11",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C07",
+      "group": "使用情境",
+      "screens": [
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/CoachTodoView.vue",
+        "src/views/CoachStudentsView.vue",
+        "src/views/CoachReviewView.vue"
+      ],
+      "visible_behavior": "教练待办按原因和学员接续；完整计划编辑/审阅/缺项/安全/技术失败/冲突/发布；草稿回读与学员隔离。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S13 / S14 / S15",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "C08",
+      "group": "使用情境",
+      "screens": [
+        "S01",
+        "S04",
+        "S08"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/TrainingView.vue",
+        "src/views/MessagesView.vue"
+      ],
+      "visible_behavior": "暂停/漏练/周期结束/关系结束分别处理；恢复只接续合法未来；不追补历史、不用红色羞辱。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "B01",
+      "group": "品牌体验",
+      "screens": [
+        "S03",
+        "S07",
+        "S09",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/PlanDetailView.vue",
+        "src/views/CoachReviewView.vue"
+      ],
+      "visible_behavior": "完整内容、准确单位、版本影响与专业密度建立可判断感；详情/审阅/服务不使用空摘要。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S07 / S09",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "B02",
+      "group": "品牌体验",
+      "screens": [
+        "S01",
+        "S02",
+        "S04"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/ExploreView.vue",
+        "src/views/TrainingView.vue"
+      ],
+      "visible_behavior": "今天主任务、发现内容张力和训练专注空间形成行动节奏；完成反馈短促，不延迟下一步。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "B03",
+      "group": "品牌体验",
+      "screens": [
+        "S07",
+        "S08",
+        "S14"
+      ],
+      "files": [
+        "src/views/MessagesView.vue",
+        "src/views/CoachDetailView.vue"
+      ],
+      "visible_behavior": "具体回复、引用、署名和人物字标建立关系；没有授权人像时不冒充真实教练。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S07 / S08 / S14",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "B04",
+      "group": "品牌体验",
+      "screens": [
+        "S04",
+        "S05",
+        "S12"
+      ],
+      "files": [
+        "src/views/RecordsView.vue"
+      ],
+      "visible_behavior": "记录按时间/动作/单位解释积累；图表有刻度和明细；没有数据不造趋势、不把训练量当身体结果。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S04 / S05 / S12",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "B05",
+      "group": "品牌体验",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/tokens.css",
+        "src/styles/base.css",
+        "src/styles/screens.css"
+      ],
+      "visible_behavior": "跨 16 族共用色彩角色、字级、留白、图标、摄影语气和短动效；探索/执行/审阅密度不同。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V01",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/tokens.css",
+        "src/styles/base.css",
+        "src/styles/screens.css"
+      ],
+      "visible_behavior": "系统中文字体 fallback、16px 正文、精确字级与单位；200% 下关键内容不截断、不把按钮文字挤坏。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V02",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/screens.css",
+        "src/App.vue"
+      ],
+      "visible_behavior": "移动 16/20px 边距、4px 节奏；320–1440 内容不横向溢出；固定操作与 safe-area 可操作。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V03",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/screens.css",
+        "src/views/*.vue"
+      ],
+      "visible_behavior": "主面/平面内容/关联说明有层级；不是每段文字套白卡；控件圆角与边框稳定。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V04",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/tokens.css"
+      ],
+      "visible_behavior": "canvas/surface/ink/accent/focus 色角色；状态不只靠颜色；accent 上使用 onAccent。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V05",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/base.css",
+        "src/styles/screens.css"
+      ],
+      "visible_behavior": "哑光面、精确边缘、有限阴影；触达≥44；按压/焦点/禁用/错误可辨。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V06",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S06",
+        "S07"
+      ],
+      "files": [
+        "src/components/PhotoFrame.vue",
+        "ASSETS.md"
+      ],
+      "visible_behavior": "本地摄影有裁切与来源；教练用字标而非陌生人像；图片失败有可读替代。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V07",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/components/*.vue",
+        "src/views/*.vue"
+      ],
+      "visible_behavior": "统一 lucide 线性图标与可访问名称；重要动作配文字；无 emoji 混用或无动作伪按钮。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "V08",
+      "group": "视觉子系统",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/styles/base.css",
+        "src/App.vue",
+        "src/views/*.vue"
+      ],
+      "visible_behavior": "M01–M12 的短动效解释对象/状态；Reduce Motion 直接呈现结果并保留焦点；无虚假等待。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T01",
+      "group": "核心矛盾",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "S07"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/ExploreView.vue",
+        "src/views/CoachDetailView.vue"
+      ],
+      "visible_behavior": "免费内容与教练服务共同成立；不让教练选择阻断自助闭环；价格与服务范围相邻。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T02",
+      "group": "核心矛盾",
+      "screens": [
+        "S01",
+        "S02",
+        "S04",
+        "S05"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/RecordsView.vue"
+      ],
+      "visible_behavior": "训练有开始/完成/恢复；空/休息/暂停不共用文案；不用单次训练推断身体结果。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S04",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T03",
+      "group": "核心矛盾",
+      "screens": [
+        "S13",
+        "S14",
+        "S15"
+      ],
+      "files": [
+        "src/views/CoachReviewView.vue",
+        "src/views/CoachStudentDetailView.vue"
+      ],
+      "visible_behavior": "审阅可看完整方案、变化和证据；判断密度高但不做后台 KPI 堆。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S13 / S14 / S15",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T04",
+      "group": "核心矛盾",
+      "screens": [
+        "S03",
+        "S08",
+        "S09",
+        "S11",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/AiAssistView.vue",
+        "src/views/IncomingPlanView.vue"
+      ],
+      "visible_behavior": "AI 只做有证据的固定候选/草稿；重要应用要确认；失败/额度/安全分开；教练计划只转教练。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S03 / S08 / S09",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T05",
+      "group": "核心矛盾",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08",
+        "S12"
+      ],
+      "files": [
+        "src/views/RecordsView.vue",
+        "src/views/DietView.vue"
+      ],
+      "visible_behavior": "个人记录有范围、单位、来源和明细；延迟完成明确补记；饮食自评不造摄入。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04 / S05",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "T06",
+      "group": "核心矛盾",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/views/PlanDetailView.vue",
+        "src/views/IncomingPlanView.vue",
+        "src/views/MyPlanView.vue",
+        "src/views/CoachServicesView.vue"
+      ],
+      "visible_behavior": "版本、授权、发布、采用、替换、公开分别确认；取消不丢内容；角色切换不授予真实权限。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "H01",
+      "group": "待验证假设",
+      "screens": [
+        "S02",
+        "S03"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/App.vue"
+      ],
+      "visible_behavior": "匿名浏览与少量条件；开始前必要登录/年龄；不先填完整资料；空结果可放宽。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "H02",
+      "group": "待验证假设",
+      "screens": [
+        "S01",
+        "S04",
+        "S05"
+      ],
+      "files": [
+        "src/views/TodayView.vue",
+        "src/views/TrainingView.vue"
+      ],
+      "visible_behavior": "训练主任务在首屏；组/单位/参考可读；完成回今天仍是完成事实。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04 / S05",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "H03",
+      "group": "待验证假设",
+      "screens": [
+        "S06",
+        "S07",
+        "S08"
+      ],
+      "files": [
+        "src/views/ExploreView.vue",
+        "src/views/CoachDetailView.vue"
+      ],
+      "visible_behavior": "教练列表无伪评分；服务包/样例可核对；咨询带入已知信息；渠道未核定有恢复路径。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S06 / S07 / S08",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "H04",
+      "group": "待验证假设",
+      "screens": [
+        "S01",
+        "S04",
+        "S05",
+        "S08"
+      ],
+      "files": [
+        "src/views/RecordsView.vue"
+      ],
+      "visible_behavior": "记录可用范围/单位解释；空/单条不显示假趋势；点评可回原记录。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S04 / S05",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "H05",
+      "group": "待验证假设",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/components/PreviewControl.vue",
+        "src/App.vue"
+      ],
+      "visible_behavior": "跨 320–1440、长中文、200% 文字、缺图、焦点、弹层、固定操作、reduce motion 的可操作预览路径。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "Q01",
+      "group": "验证原则",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "README.md",
+        "docs/evidence/D01/round-03/worker/D01-03-report.md"
+      ],
+      "visible_behavior": "用真实操作、DOM/截图与状态断言验证；不以 build 通过代替视觉接受。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "Q02",
+      "group": "验证原则",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "src/state/store.ts",
+        "src/components/PreviewControl.vue"
+      ],
+      "visible_behavior": "正常/空/加载失败/只读/撤权/冲突/过期/取消/重复/恢复均有可操作路径。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "Q03",
+      "group": "验证原则",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "README.md",
+        "docs/evidence/D01/round-03/worker/D01-03-report.json"
+      ],
+      "visible_behavior": "测试、截图、散列与报告同版本；Lead 冻结后自行复验，不由 worker 自评通过。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    },
+    {
+      "id": "Q04",
+      "group": "验证原则",
+      "screens": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "files": [
+        "README.md",
+        "docs/evidence/D01/round-03/worker/D01-03-report.json"
+      ],
+      "visible_behavior": "证据区分本地样机、模块替身、真实浏览器、真实服务与未测项；不声称业务鉴权/生产发布。",
+      "preview_path": "预览 → 情境 / 当前页状态 → S01 / S02 / S03",
+      "verification": [
+        "src/tests/logic.test.ts",
+        "src/tests/store.test.ts",
+        "src/tests/ui.test.ts",
+        "src/tests/expansion.test.ts"
+      ],
+      "lead_status": "pending_final_frozen_recheck",
+      "coverage_status": "implemented_not_accepted"
+    }
+  ],
+  "families": {
+    "S01": {
+      "entry": "学员主导航「今天」",
+      "files": [
+        "src/views/TodayView.vue"
+      ],
+      "states": [
+        "已安排",
+        "进行中",
+        "完成",
+        "休息日",
+        "已暂停",
+        "周期结束",
+        "未安排",
+        "内容不可用"
+      ],
+      "operations": [
+        "继续/开始/恢复",
+        "查看记录",
+        "现用安排",
+        "我的内容",
+        "收到计划",
+        "饮食自评"
+      ]
+    },
+    "S02": {
+      "entry": "学员主导航「发现」",
+      "files": [
+        "src/views/ExploreView.vue"
+      ],
+      "states": [
+        "训练/饮食/教练",
+        "加载中",
+        "加载失败",
+        "无结果",
+        "内容下架"
+      ],
+      "operations": [
+        "筛选/撤销",
+        "搜索",
+        "收藏",
+        "打开详情",
+        "比较教练"
+      ]
+    },
+    "S03": {
+      "entry": "发现 → 训练内容 → 查看完整计划",
+      "files": [
+        "src/views/PlanDetailView.vue"
+      ],
+      "states": [
+        "正常",
+        "已下架",
+        "匿名/年龄未知/未成年准入",
+        "替换确认"
+      ],
+      "operations": [
+        "切换训练日",
+        "展开动作说明",
+        "收藏/分享",
+        "开始",
+        "取消",
+        "重复开始"
+      ]
+    },
+    "S04": {
+      "entry": "今天继续/开始",
+      "files": [
+        "src/views/TrainingView.vue"
+      ],
+      "states": [
+        "记录中",
+        "无历史",
+        "待保存/保存失败",
+        "同组冲突",
+        "休息",
+        "暂停",
+        "全部完成"
+      ],
+      "operations": [
+        "编辑重量/次数/秒",
+        "完成组",
+        "暂停/继续/加时/跳过休息",
+        "恢复",
+        "重试保存",
+        "裁决冲突"
+      ]
+    },
+    "S05": {
+      "entry": "学员主导航「记录」",
+      "files": [
+        "src/views/RecordsView.vue"
+      ],
+      "states": [
+        "正常",
+        "空",
+        "仅一条",
+        "信息不足",
+        "补记"
+      ],
+      "operations": [
+        "切换范围/动作",
+        "查看图表与明细",
+        "打开点评",
+        "回原记录"
+      ]
+    },
+    "S06": {
+      "entry": "发现 → 教练",
+      "files": [
+        "src/views/ExploreView.vue"
+      ],
+      "states": [
+        "正常",
+        "筛选空"
+      ],
+      "operations": [
+        "目标/方式/价格筛选",
+        "恢复筛选",
+        "打开教练详情"
+      ]
+    },
+    "S07": {
+      "entry": "发现 → 教练 → 教练卡片",
+      "files": [
+        "src/views/CoachDetailView.vue"
+      ],
+      "states": [
+        "正常",
+        "外部渠道不可用"
+      ],
+      "operations": [
+        "切换服务包",
+        "查看完整样例",
+        "带包咨询",
+        "返回列表"
+      ]
+    },
+    "S08": {
+      "entry": "学员/教练主导航「消息」",
+      "files": [
+        "src/views/MessagesView.vue"
+      ],
+      "states": [
+        "正常",
+        "空",
+        "发送中",
+        "失败",
+        "只读",
+        "撤权",
+        "关系待确认"
+      ],
+      "operations": [
+        "打开会话",
+        "草稿",
+        "发送/同ID重试",
+        "引用跳转",
+        "查看服务与授权",
+        "撤回健康授权"
+      ]
+    },
+    "S09": {
+      "entry": "今天/消息 → 收到计划",
+      "files": [
+        "src/views/IncomingPlanView.vue"
+      ],
+      "states": [
+        "新版本",
+        "已采用",
+        "已过期",
+        "冲突",
+        "无权限"
+      ],
+      "operations": [
+        "看变化与完整内容",
+        "采用",
+        "暂不采用",
+        "回复教练",
+        "重发请求"
+      ]
+    },
+    "S10": {
+      "entry": "今天「我的内容」",
+      "files": [
+        "src/views/MyPlanView.vue"
+      ],
+      "states": [
+        "正常",
+        "空库",
+        "保存中",
+        "保存失败",
+        "冲突",
+        "缺项",
+        "待审核",
+        "已下架"
+      ],
+      "operations": [
+        "编辑训练日/动作",
+        "保存回读",
+        "AI 整理入口",
+        "公开预览/提交审阅",
+        "冲突裁决"
+      ]
+    },
+    "S11": {
+      "entry": "我的内容 → 用已有模板调整",
+      "files": [
+        "src/views/AiAssistView.vue"
+      ],
+      "states": [
+        "ready",
+        "needs_input",
+        "safety_block",
+        "tech_error",
+        "quota",
+        "expired",
+        "duplicate"
+      ],
+      "operations": [
+        "选模板/输入意图",
+        "核对候选",
+        "应用一次",
+        "教练计划转请教练"
+      ]
+    },
+    "S12": {
+      "entry": "今天/记录/发现饮食内容",
+      "files": [
+        "src/views/DietView.vue"
+      ],
+      "states": [
+        "未记录",
+        "已自评",
+        "补充观察",
+        "信息不足",
+        "保存失败",
+        "内容提示",
+        "已撤权"
+      ],
+      "operations": [
+        "读原则",
+        "选择按计划/部分/未",
+        "补充观察",
+        "保存回读",
+        "查看教练可见性"
+      ]
+    },
+    "S13": {
+      "entry": "教练主导航「待办」",
+      "files": [
+        "src/views/CoachTodoView.vue"
+      ],
+      "states": [
+        "正常",
+        "无待办"
+      ],
+      "operations": [
+        "按原因打开",
+        "进入回复/学员/计划",
+        "标记已处理",
+        "恢复"
+      ]
+    },
+    "S14": {
+      "entry": "教练主导航「学员」",
+      "files": [
+        "src/views/CoachStudentsView.vue",
+        "src/views/CoachStudentDetailView.vue"
+      ],
+      "states": [
+        "正常",
+        "空",
+        "未授权",
+        "关系结束",
+        "数据过期"
+      ],
+      "operations": [
+        "定位学员",
+        "查看现用/已交付",
+        "查看可见证据",
+        "回复",
+        "继续计划"
+      ]
+    },
+    "S15": {
+      "entry": "待办/学员 → 计划",
+      "files": [
+        "src/views/CoachReviewView.vue"
+      ],
+      "states": [
+        "正常",
+        "缺项",
+        "安全阻断",
+        "技术失败",
+        "冲突",
+        "发布中",
+        "已交付",
+        "AI 草稿"
+      ],
+      "operations": [
+        "编辑完整方案",
+        "保存/回读",
+        "审阅差异",
+        "发布/取消",
+        "按学员隔离"
+      ]
+    },
+    "S16": {
+      "entry": "教练主导航「服务」",
+      "files": [
+        "src/views/CoachServicesView.vue"
+      ],
+      "states": [
+        "正常",
+        "保存中",
+        "保存失败",
+        "学员预览"
+      ],
+      "operations": [
+        "编辑说明/范围/目标/响应/价格单位/周期/可见",
+        "保存回读",
+        "预览学员视图",
+        "保留既有约定"
+      ]
+    }
+  },
+  "flows": {
+    "F01": {
+      "task": "第一次找到并开始内容",
+      "path": "发现 → 训练/饮食/教练 → 条件 → 计划详情 → 必要登录/年龄 → 替换确认（若有安排）→ 训练",
+      "files": [
+        "ExploreView.vue",
+        "PlanDetailView.vue",
+        "App.vue"
+      ],
+      "checks": [
+        "匿名浏览",
+        "取消回同一内容/训练日",
+        "未成年终止",
+        "下架禁止开始",
+        "重复开始同一会话"
+      ]
+    },
+    "F02": {
+      "task": "回来继续训练",
+      "path": "今天（八态）→ 继续/恢复/查看记录/重新安排",
+      "files": [
+        "TodayView.vue",
+        "TrainingView.vue"
+      ],
+      "checks": [
+        "刷新恢复",
+        "完成不倒退为休息",
+        "替换确认",
+        "未来日期正确"
+      ]
+    },
+    "F03": {
+      "task": "完成当前组",
+      "path": "训练 → 编辑重量/次数/秒 → 完成组 → 休息 → 下一组/完成",
+      "files": [
+        "TrainingView.vue",
+        "state/store.ts"
+      ],
+      "checks": [
+        "空/负数/小数校验",
+        "真实计时",
+        "同步失败重试不增组",
+        "同组冲突"
+      ]
+    },
+    "F04": {
+      "task": "接收指导与回复",
+      "path": "消息 → 会话/引用 → 草稿 → 发送/失败重试 → 收到计划 → 采用/暂不采用",
+      "files": [
+        "MessagesView.vue",
+        "IncomingPlanView.vue"
+      ],
+      "checks": [
+        "同 ID 重试",
+        "只读/撤权不露健康原文",
+        "采用只改未来",
+        "旧确认失效"
+      ]
+    },
+    "F05": {
+      "task": "选择教练与服务并咨询",
+      "path": "发现教练 → 详情 → 服务包/样例 → 咨询 → 消息当前包上下文",
+      "files": [
+        "ExploreView.vue",
+        "CoachDetailView.vue",
+        "MessagesView.vue"
+      ],
+      "checks": [
+        "筛选/返回",
+        "带包咨询",
+        "当前包与既有约定分开",
+        "查看服务回同包"
+      ]
+    },
+    "F06": {
+      "task": "用已有模板整理计划",
+      "path": "我的内容 → 模板 → 意图/补充 → 候选 → 应用一次 → 保存/审阅",
+      "files": [
+        "AiAssistView.vue",
+        "MyPlanView.vue"
+      ],
+      "checks": [
+        "ready/needs_input/safety/tech/quota/expired/duplicate",
+        "教练计划只转教练",
+        "未确认不改现用安排"
+      ]
+    },
+    "F07": {
+      "task": "自己的内容编辑、公开审阅与饮食自评",
+      "path": "我的内容 → 编辑/保存 → 公开预览（含休息/公开备注，排除健康备注）→ 待审核；饮食 → 自评 → 保存回读",
+      "files": [
+        "MyPlanView.vue",
+        "DietView.vue"
+      ],
+      "checks": [
+        "改内容旧确认失效",
+        "提交不等于公开",
+        "不造摄入",
+        "保存失败保留"
+      ]
+    }
+  },
+  "motions": {
+    "M01": {
+      "trigger": "稳定空间内切换视图",
+      "files": [
+        "App.vue",
+        "styles/base.css"
+      ],
+      "implementation": "view Transition opacity+8px，220/140ms；Reduce Motion 直接呈现",
+      "reduce_motion": "transition-duration 0.001ms，保留标题与焦点"
+    },
+    "M02": {
+      "trigger": "发现选中计划 → 详情",
+      "files": [
+        "ExploreView.vue",
+        "PlanDetailView.vue",
+        "App.vue"
+      ],
+      "implementation": "封面/标题 origin 接续，280ms；无 origin 时 view transition",
+      "reduce_motion": "无 ghost，直接显示同图同标题"
+    },
+    "M03": {
+      "trigger": "今天 → 专注训练",
+      "files": [
+        "TodayView.vue",
+        "App.vue",
+        "TrainingView.vue"
+      ],
+      "implementation": "标题 ghost 接续 260ms + focus 过渡",
+      "reduce_motion": "无 ghost，立即切换并保留当前动作"
+    },
+    "M04": {
+      "trigger": "确认完成一组",
+      "files": [
+        "TrainingView.vue",
+        "state/store.ts"
+      ],
+      "implementation": "组状态 120–160ms 反馈，进度按实际组数更新，下一组 180ms",
+      "reduce_motion": "文字与数值立即更新"
+    },
+    "M05": {
+      "trigger": "休息计时",
+      "files": [
+        "TrainingView.vue",
+        "state/store.ts"
+      ],
+      "implementation": "基于 endsAt 的真实时间，250ms tick；暂停/继续",
+      "reduce_motion": "同样可读的数值与文字"
+    },
+    "M06": {
+      "trigger": "弹层/确认",
+      "files": [
+        "BaseSheet.vue",
+        "styles/base.css"
+      ],
+      "implementation": "scrim 200ms；sheet 220/160ms + 20px 位移；焦点陷阱",
+      "reduce_motion": "立即出现，关闭/焦点行为相同"
+    },
+    "M07": {
+      "trigger": "草稿字段变化 → 差异",
+      "files": [
+        "CoachReviewView.vue"
+      ],
+      "implementation": "变更行 300ms 底色强调后回落，完整方案仍显示",
+      "reduce_motion": "变化说明保持，不依赖闪色"
+    },
+    "M08": {
+      "trigger": "消息发送/失败",
+      "files": [
+        "MessagesView.vue",
+        "state/store.ts"
+      ],
+      "implementation": "TransitionGroup 160ms 淡入/占位；失败保留原文",
+      "reduce_motion": "立即添加，状态与重试相同"
+    },
+    "M09": {
+      "trigger": "查看记录范围/动作",
+      "files": [
+        "RecordsView.vue"
+      ],
+      "implementation": "图表 180ms 淡入，范围/单位/刻度同时更新；真实日期间距",
+      "reduce_motion": "直接更新数据与文本"
+    },
+    "M10": {
+      "trigger": "主操作按压",
+      "files": [
+        "styles/base.css"
+      ],
+      "implementation": "scale(.985) 90ms，松开恢复；不阻断点击",
+      "reduce_motion": "明暗反馈，可不缩放"
+    },
+    "M11": {
+      "trigger": "教练切换学员上下文",
+      "files": [
+        "CoachStudentDetailView.vue",
+        "App.vue",
+        "CoachReviewView.vue"
+      ],
+      "implementation": "学员详情 180ms 淡入 + 保持队列位置；计划按学员快照切换",
+      "reduce_motion": "直接更新选中与标题"
+    },
+    "M12": {
+      "trigger": "恢复/同步状态改变",
+      "files": [
+        "TrainingView.vue",
+        "CoachReviewView.vue",
+        "state/store.ts"
+      ],
+      "implementation": "只更新状态与相关区域，约 160ms；错误不抖动/不强制弹屏",
+      "reduce_motion": "同样文字与恢复按钮"
+    }
+  },
+  "seams": {
+    "tests": "vitest 75/75（logic 11 / store 8 / ui 13 / expansion 43）",
+    "key_cases": [
+      "交付快照与采用分离",
+      "选择/current object 冷重载",
+      "替换归档与唯一会话",
+      "所选训练日与会话同源",
+      "周岚/林澈计划隔离与发布对象",
+      "未授权健康裁剪",
+      "消息同 ID 重试/撤权",
+      "公开审阅字段",
+      "登录/年龄准入",
+      "服务字段/价格/单位/约定快照/迁移",
+      "记录动作归一与真实日期间距",
+      "预览 16 族状态循环",
+      "17 视图 #main/Transition 根节点"
+    ],
+    "not_service": [
+      "不是服务端鉴权/权限证明",
+      "不是真实 AI/消息/支付/健康结论",
+      "不是真机/微信/字体/用户研究"
+    ]
+  },
+  "unverified": [
+    "正式 uni-app/Go/API/DB/OpenAPI",
+    "真实登录/短信/健康授权/服务端权限",
+    "真实 AI 供应商与消息/支付",
+    "微信真机/软键盘/safe-area/系统字体",
+    "真实用户研究与专业审核",
+    "Lead 冻结版五宽度/200%文字/动效最终复验"
+  ]
+}

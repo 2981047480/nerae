@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import {
+  ArrowRight,
   Bookmark,
   BookmarkCheck,
   ChevronDown,
   Compass,
+  MapPin,
+  RotateCcw,
   Search,
   SlidersHorizontal,
+  Users,
   X,
 } from '@lucide/vue'
 import PhotoFrame from '../components/PhotoFrame.vue'
@@ -14,7 +18,12 @@ import BaseSheet from '../components/BaseSheet.vue'
 import {
   activeFilterCount,
   applyFilterDraft,
+  applyPreviewState,
   currentFilters,
+  filteredCoaches,
+  goToCoachDetail,
+  goToDiet,
+  openPlanFromExplore,
   exploreFeatured,
   exploreRest,
   filteredExplore,
@@ -39,8 +48,37 @@ const rest = exploreRest
 const mode = computed(() => state.explore.mode)
 const favorites = computed(() => state.favorites)
 const totalCount = computed(() => filteredExplore.value.length)
+const coachResults = filteredCoaches
+const isCoachMode = computed(() => mode.value === 'coach')
+const isLoading = computed(() => state.preview.explore === 'loading')
+const isError = computed(() => state.preview.explore === 'error')
+
+const defaultFilterText = computed(() => (isCoachMode.value ? '全部教练' : '全部内容'))
+
+const headingCount = computed(() => {
+  if (isLoading.value) return '正在加载'
+  if (isError.value) return '未能加载'
+  if (isCoachMode.value) return `${coachResults.value.length} 位教练`
+  return mode.value === 'training' ? `${totalCount.value} 份训练内容` : `${totalCount.value} 份饮食内容`
+})
+
+function coachPrice(coach: { packages: Array<{ priceYuan: number; visible: boolean }> }): string {
+  const prices = coach.packages.filter((pack) => pack.visible && pack.priceYuan > 0).map((pack) => pack.priceYuan)
+  return prices.length ? `¥${Math.min(...prices)} 起` : '含免费咨询'
+}
 
 const activeFilterText = computed(() => {
+  if (isCoachMode.value) {
+    const filters = state.explore.coachFilters
+    const parts: string[] = []
+    const goal = filterGroups.value.find((item) => item.key === 'goal')?.options.find((item) => item.value === filters.goal)
+    const coachMode = filterGroups.value.find((item) => item.key === 'equipment')?.options.find((item) => item.value === filters.mode)
+    const price = filterGroups.value.find((item) => item.key === 'duration')?.options.find((item) => item.value === filters.price)
+    if (goal) parts.push(goal.label)
+    if (coachMode) parts.push(coachMode.label)
+    if (price) parts.push(price.label)
+    return parts.join(' · ')
+  }
   const parts: string[] = []
   const filters = currentFilters.value
   if (filters.goal !== 'all') {
@@ -63,9 +101,10 @@ const activeFilterText = computed(() => {
   return parts.join(' · ')
 })
 
-const emptyTitle = computed(() =>
-  mode.value === 'training' ? '没有符合条件的训练内容' : '没有符合条件的饮食内容',
-)
+const emptyTitle = computed(() => {
+  if (isCoachMode.value) return '没有符合条件的教练'
+  return mode.value === 'training' ? '没有符合条件的训练内容' : '没有符合条件的饮食内容'
+})
 
 const emptyActionLabel = computed(() =>
   activeFilterCount.value > 0 ? '放宽一个条件' : '清除搜索',
@@ -113,8 +152,38 @@ watch(
   },
 )
 
-function selectMode(next: 'training' | 'diet'): void {
+function selectMode(next: 'training' | 'diet' | 'coach'): void {
   setExploreMode(next)
+}
+
+function retryExplore(): void {
+  applyPreviewState('explore', 'normal')
+}
+
+function openPlan(item: ExploreItem, event?: Event): void {
+  if (item.status === 'removed') return
+  const trigger = event?.currentTarget as HTMLElement | null
+  const media =
+    trigger?.closest('article')?.querySelector<HTMLElement>('.featured-media') ??
+    trigger?.closest('li')?.querySelector<HTMLElement>('.item-thumb') ??
+    null
+  const rect = media?.getBoundingClientRect()
+  const origin =
+    rect && rect.width > 0
+      ? {
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+          text: item.title,
+          image: item.image,
+        }
+      : undefined
+  openPlanFromExplore(item.id, origin)
+}
+
+function openDiet(item: ExploreItem): void {
+  goToDiet(item.id)
 }
 </script>
 
@@ -124,12 +193,11 @@ function selectMode(next: 'training' | 'diet'): void {
     <header class="explore-head">
       <div class="explore-heading">
         <h1 class="explore-title">发现</h1>
-        <p class="explore-sub num">
-          {{ mode === 'training' ? `${totalCount} 份训练内容` : `${totalCount} 份饮食内容` }}
-        </p>
+        <p class="explore-sub num">{{ headingCount }}</p>
       </div>
       <div class="explore-tools">
         <button
+          v-if="!isCoachMode"
           type="button"
           class="icon-btn tool-btn"
           :aria-label="ui.searchOpen ? '关闭搜索' : '搜索内容'"
@@ -173,10 +241,20 @@ function selectMode(next: 'training' | 'diet'): void {
       >
         饮食
       </button>
+      <button
+        type="button"
+        role="tab"
+        class="mode-tab"
+        :class="{ 'mode-tab--active': mode === 'coach' }"
+        :aria-selected="mode === 'coach'"
+        @click="selectMode('coach')"
+      >
+        教练
+      </button>
     </div>
 
     <Transition name="search">
-      <div v-if="ui.searchOpen" class="search-row">
+      <div v-if="ui.searchOpen && !isCoachMode" class="search-row">
         <Search :size="17" aria-hidden="true" class="search-icon" />
         <input
           ref="searchInput"
@@ -197,7 +275,7 @@ function selectMode(next: 'training' | 'diet'): void {
     <div class="filter-summary">
       <p class="filter-text">
         <template v-if="activeFilterText">{{ activeFilterText }}</template>
-        <template v-else>全部内容</template>
+        <template v-else>{{ defaultFilterText }}</template>
       </p>
       <button
         v-if="activeFilterCount"
@@ -209,7 +287,70 @@ function selectMode(next: 'training' | 'diet'): void {
       </button>
     </div>
 
-    <template v-if="items.length">
+    <template v-if="isLoading">
+      <div class="skeleton-list" aria-busy="true" aria-label="正在加载内容">
+        <div v-for="index in 3" :key="index" class="skeleton-card">
+          <div class="skeleton-media" />
+          <div class="skeleton-line skeleton-line--title" />
+          <div class="skeleton-line" />
+        </div>
+      </div>
+    </template>
+
+    <section v-else-if="isError" class="state-block" aria-labelledby="load-error-title">
+      <Compass :size="28" aria-hidden="true" class="empty-icon" />
+      <h2 id="load-error-title" class="state-title">内容没有加载出来</h2>
+      <p class="state-text">这是加载失败，不是没有内容。可以重试，已保存的收藏和筛选不会丢失。</p>
+      <div class="empty-actions">
+        <button type="button" class="btn" @click="retryExplore">
+          <RotateCcw :size="15" aria-hidden="true" />
+          重试加载
+        </button>
+        <button type="button" class="btn btn--ghost" @click="resetFilters()">清除筛选</button>
+      </div>
+    </section>
+
+    <template v-else-if="isCoachMode">
+      <ul v-if="coachResults.length" class="coach-list">
+        <li v-for="coach in coachResults" :key="coach.id">
+          <button type="button" class="coach-card" @click="goToCoachDetail(coach.id)">
+            <span class="avatar avatar--muted coach-avatar">{{ coach.name.slice(0, 1) }}</span>
+            <span class="coach-main">
+              <span class="coach-head">
+                <span class="coach-name">{{ coach.name }}</span>
+                <span class="coach-price num">{{ coachPrice(coach) }}</span>
+              </span>
+              <span class="coach-title">{{ coach.title }}</span>
+              <span class="coach-focus">{{ coach.focus.join(' · ') }}</span>
+              <span class="coach-meta">
+                {{ coach.modes.join(' · ') }} · {{ coach.response }}
+                <template v-if="coach.city && !coach.supportsOnline">
+                  <span class="coach-city"><MapPin :size="12" aria-hidden="true" />{{ coach.city }}</span>
+                </template>
+              </span>
+              <span class="coach-packages">
+                {{ coach.packages.length }} 个服务包 · 暂无足够评价
+              </span>
+            </span>
+            <ArrowRight :size="17" aria-hidden="true" class="coach-arrow" />
+          </button>
+        </li>
+      </ul>
+      <section v-else class="empty" aria-labelledby="coach-empty-title">
+        <Users :size="30" aria-hidden="true" class="empty-icon" />
+        <h2 id="coach-empty-title" class="empty-title">{{ emptyTitle }}</h2>
+        <p class="empty-text">
+          <template v-if="activeFilterText">当前条件：{{ activeFilterText }}。</template>
+          可以放宽条件，或查看全部教练。
+        </p>
+        <div class="empty-actions">
+          <button type="button" class="btn btn--ghost btn--sm" @click="relaxFilters()">{{ emptyActionLabel }}</button>
+          <button type="button" class="btn btn--sm" @click="resetFilters()">清除全部条件</button>
+        </div>
+      </section>
+    </template>
+
+    <template v-else-if="items.length">
       <article v-if="featured" class="featured">
         <div class="featured-media">
           <PhotoFrame
@@ -236,24 +377,36 @@ function selectMode(next: 'training' | 'diet'): void {
           <p class="item-overline">
             {{ featured.type === 'training' ? '训练内容' : '饮食内容' }}
             <span v-if="featured.type === 'training'"> · {{ equipmentLabel(featured.equipment) }}</span>
+            <span v-if="featured.status === 'removed'" class="removed-tag">已下架</span>
           </p>
           <h2 class="featured-title">{{ featured.title }}</h2>
           <p class="item-meta num">{{ itemMeta(featured) }}</p>
           <p class="item-summary">{{ featured.summary }}</p>
-          <button
-            type="button"
-            class="expand-btn"
-            :aria-expanded="ui.expandedId === featured.id"
-            :aria-controls="`content-${featured.id}`"
-            @click="toggleExpanded(featured.id)"
-          >
-            {{ ui.expandedId === featured.id ? '收起内容' : '查看完整内容' }}
-            <ChevronDown
-              :size="16"
-              aria-hidden="true"
-              :class="{ 'expand-icon--open': ui.expandedId === featured.id }"
-            />
-          </button>
+          <div class="featured-actions">
+            <button
+              type="button"
+              class="expand-btn"
+              :aria-expanded="ui.expandedId === featured.id"
+              :aria-controls="`content-${featured.id}`"
+              @click="toggleExpanded(featured.id)"
+            >
+              {{ ui.expandedId === featured.id ? '收起内容' : '查看完整内容' }}
+              <ChevronDown
+                :size="16"
+                aria-hidden="true"
+                :class="{ 'expand-icon--open': ui.expandedId === featured.id }"
+              />
+            </button>
+            <button
+              type="button"
+              class="btn btn--sm"
+              :disabled="featured.status === 'removed'"
+              @click="featured.type === 'training' ? openPlan(featured, $event) : openDiet(featured)"
+            >
+              {{ featured.type === 'training' ? '查看完整计划' : '打开饮食内容' }}
+              <ArrowRight :size="15" aria-hidden="true" />
+            </button>
+          </div>
           <Transition name="expand">
             <div
               v-if="ui.expandedId === featured.id"
@@ -298,11 +451,21 @@ function selectMode(next: 'training' | 'diet'): void {
               <p class="item-overline">
                 {{ item.type === 'training' ? '训练内容' : '饮食内容' }}
                 <span v-if="item.type === 'training'"> · {{ equipmentLabel(item.equipment) }}</span>
+                <span v-if="item.status === 'removed'" class="removed-tag">已下架</span>
               </p>
               <h2 class="item-title">{{ item.title }}</h2>
               <p class="item-meta num">{{ itemMeta(item) }}</p>
               <p class="item-summary">{{ item.summary }}</p>
               <div class="item-actions">
+                <button
+                  type="button"
+                  class="btn btn--sm item-open"
+                  :disabled="item.status === 'removed'"
+                  @click="item.type === 'training' ? openPlan(item, $event) : openDiet(item)"
+                >
+                  {{ item.type === 'training' ? '查看完整计划' : '打开饮食内容' }}
+                  <ArrowRight :size="14" aria-hidden="true" />
+                </button>
                 <button
                   type="button"
                   class="expand-btn"
@@ -575,7 +738,7 @@ function selectMode(next: 'training' | 'diet'): void {
 }
 
 .clear-link {
-  min-height: 32px;
+  min-height: 44px;
   color: var(--ink);
   font-size: var(--text-13);
   text-decoration: underline;
@@ -685,6 +848,7 @@ function selectMode(next: 'training' | 'diet'): void {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-width: 44px;
   min-height: 44px;
   color: var(--ink);
   font-size: var(--text-13);
@@ -976,6 +1140,189 @@ function selectMode(next: 'training' | 'diet'): void {
   .featured {
     grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.75fr);
     gap: var(--sp-8);
+  }
+}
+
+.featured-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+.item-open {
+  min-height: 44px;
+}
+
+.removed-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(162, 63, 61, 0.1);
+  color: var(--error);
+  font-size: var(--text-12);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.skeleton-list {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.skeleton-card {
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.skeleton-media {
+  height: 190px;
+  border-radius: var(--radius-lg);
+  background: rgba(25, 47, 57, 0.07);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 12px;
+  margin-top: 10px;
+  border-radius: 4px;
+  background: rgba(25, 47, 57, 0.07);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line--title {
+  width: 46%;
+  height: 18px;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-7) 0;
+  border-top: 1px solid var(--line);
+}
+
+.state-title {
+  font-size: var(--text-17);
+  font-weight: 600;
+}
+
+.state-text {
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: var(--text-14);
+  line-height: 1.65;
+}
+
+.coach-list {
+  border-top: 1px solid var(--line);
+}
+
+.coach-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.coach-card:hover {
+  background: rgba(25, 47, 57, 0.02);
+}
+
+.coach-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: var(--text-17);
+}
+
+.coach-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.coach-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.coach-name {
+  font-size: var(--text-17);
+  font-weight: 600;
+}
+
+.coach-price {
+  flex: none;
+  color: var(--ink);
+  font-size: var(--text-13);
+  font-weight: 600;
+}
+
+.coach-title {
+  color: var(--muted);
+  font-size: var(--text-13);
+}
+
+.coach-focus {
+  color: var(--ink);
+  font-size: var(--text-13);
+  line-height: 1.5;
+}
+
+.coach-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--muted);
+  font-size: var(--text-12);
+  line-height: 1.5;
+}
+
+.coach-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.coach-packages {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-12);
+}
+
+.coach-arrow {
+  flex: none;
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-media,
+  .skeleton-line {
+    animation: none;
   }
 }
 </style>

@@ -1,0 +1,116 @@
+{
+  "viewport": {
+    "width": 320,
+    "height": 900,
+    "dpr": 1
+  },
+  "capturedAt": "2026-10-24T07:23:36.613Z",
+  "screens": [
+    {
+      "screen": "today",
+      "count": 16,
+      "small": []
+    },
+    {
+      "screen": "explore",
+      "count": 34,
+      "small": []
+    },
+    {
+      "screen": "planDetail",
+      "count": 10,
+      "small": []
+    },
+    {
+      "screen": "training",
+      "count": 11,
+      "small": []
+    },
+    {
+      "screen": "records",
+      "count": 23,
+      "small": []
+    },
+    {
+      "screen": "messages",
+      "count": 21,
+      "small": []
+    },
+    {
+      "screen": "incomingPlan",
+      "count": 10,
+      "small": []
+    },
+    {
+      "screen": "myPlan",
+      "count": 35,
+      "small": []
+    },
+    {
+      "screen": "studentPlan",
+      "count": 8,
+      "small": []
+    },
+    {
+      "screen": "aiAssist",
+      "count": 13,
+      "small": []
+    },
+    {
+      "screen": "diet",
+      "count": 14,
+      "small": []
+    },
+    {
+      "screen": "coachDetail",
+      "count": 11,
+      "small": []
+    },
+    {
+      "screen": "coachTodo",
+      "count": 21,
+      "small": []
+    },
+    {
+      "screen": "coachStudents",
+      "count": 15,
+      "small": []
+    },
+    {
+      "screen": "coachStudentDetail",
+      "count": 8,
+      "small": []
+    },
+    {
+      "screen": "coachServices",
+      "count": 25,
+      "small": []
+    },
+    {
+      "screen": "coachPlan",
+      "count": 11,
+      "small": []
+    },
+    {
+      "screen": "previewPanel",
+      "count": 16,
+      "small": []
+    }
+  ],
+  "incomingAction": {
+    "navCount": 1,
+    "innerWidth": 320,
+    "innerHeight": 900,
+    "scrollY": 0,
+    "bar": {
+      "top": 1504.671875,
+      "bottom": 1604.671875,
+      "height": 100
+    },
+    "firstExercise": {
+      "top": 769.34375,
+      "bottom": 825.03125
+    },
+    "scrollHeight": 1777
+  }
+}

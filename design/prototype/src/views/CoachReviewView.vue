@@ -19,6 +19,10 @@ import {
   coachPlanTotals,
   coachPublishDisabled,
   coachStatus,
+  coachSafetyBlock,
+  coachTechError,
+  coachConflictPreview,
+  coachLatestDelivery,
   confirmPublish,
   consumeFocusRequest,
   focusValidationIssue,
@@ -31,6 +35,9 @@ import {
   retryPersist,
   updateDayTitle,
   updatePlanField,
+  selectedStudent,
+  selectedStudentEvidence,
+  selectedStudentHealthAuthorized,
   state,
   ui,
   undoRemoveExercise,
@@ -47,6 +54,13 @@ const changes = coachChanges
 const issues = coachIssues
 const status = coachStatus
 const dirty = coachDirty
+const studentName = computed(() => selectedStudent.value?.name ?? '学员')
+const studentEvidence = selectedStudentEvidence
+const safetyBlock = coachSafetyBlock
+const techError = coachTechError
+const conflictPreview = coachConflictPreview
+const previewMode = computed(() => state.preview.coachPlan)
+const latestDelivery = coachLatestDelivery
 const isReview = computed(() => ui.coachMode === 'review')
 const statusRow = ref<HTMLElement | null>(null)
 let deliveredFocusPending = false
@@ -60,9 +74,9 @@ const deliveryFirst = computed(
 )
 
 watch(
-  () => state.coach.deliveredVersion,
+  () => coachLatestDelivery.value?.version,
   (next, previous) => {
-    if (next !== null && next !== previous) deliveredFocusPending = true
+    if (next && next !== previous) deliveredFocusPending = true
   },
 )
 
@@ -86,7 +100,7 @@ const planSummary = computed(() => ({
   version: state.coach.draftVersion,
   publishedVersion: state.coach.publishedVersion,
   activeVersion: state.coach.activeStudentVersion,
-  deliveredVersion: state.coach.deliveredVersion,
+  deliveredVersion: coachLatestDelivery.value?.version ?? null,
   title: state.coach.draft.title,
   cycle: state.coach.draft.cycle,
   totals: { ...allTotals.value, days: state.coach.draft.days.length },
@@ -95,34 +109,13 @@ const planSummary = computed(() => ({
 const activeIssueCount = computed(() => issues.value.length)
 const publishSheetOpen = computed(() => ui.sheet === 'publish')
 
-const evidence = computed(() => {
-  const strength = state.session.exercises.find((exercise) => exercise.id === 'a1')
-  const completed = strength?.sets.filter((set) => set.status === 'done') ?? []
-  const rows: Array<{ date: string; title: string; detail: string }> = []
-  if (completed.length) {
-    rows.push({
-      date: '10月24日',
-      title: '哑铃卧推',
-      detail: completed
-        .map((set) => `${set.index} 组 ${set.weightKg ?? '—'} kg × ${set.reps ?? '—'} 次`)
-        .join('，'),
-    })
-  }
-  const pulldown = state.session.exercises.find((exercise) => exercise.id === 'a2')
-  if (pulldown) {
-    rows.push({
-      date: pulldown.lastRef.dateLabel,
-      title: '高位下拉',
-      detail: `${pulldown.lastRef.weightKg ?? '—'} kg × ${pulldown.lastRef.reps ?? '—'} 次 · 上次参考`,
-    })
-  }
-  rows.push({
-    date: '本周',
-    title: '训练节奏',
-    detail: '周二、周四已完成，今天为本周第 3 次训练',
-  })
-  return rows
-})
+const evidence = computed(() =>
+  studentEvidence.value.slice(0, 4).map((record) => ({
+    date: record.dateLabel,
+    title: record.title,
+    detail: record.summary,
+  })),
+)
 
 function issueFor(exerciseId: string, field: string): PlanValidationIssue | undefined {
   return issues.value.find(
@@ -275,7 +268,7 @@ const dateOfSave = computed(() => {
         <p class="overline">学员计划</p>
         <h1 class="coach-title">{{ planSummary.title }} · {{ planSummary.cycle }}</h1>
         <p class="coach-context">
-          <span>林澈</span>
+          <span>{{ studentName }}</span>
           <span class="dot-sep" aria-hidden="true">·</span>
           <span class="num">现用版本 {{ planSummary.activeVersion }}</span>
           <span class="dot-sep" aria-hidden="true">·</span>
@@ -291,7 +284,7 @@ const dateOfSave = computed(() => {
           :disabled="coachPublishDisabled"
           @click="handlePublish"
         >
-          {{ coachPublishDisabled ? `已发布版本 ${planSummary.deliveredVersion}` : '发布给林澈' }}
+          {{ coachPublishDisabled ? `已发布版本 ${planSummary.deliveredVersion}` : `发布给${studentName}` }}
         </button>
       </div>
     </header>
@@ -317,6 +310,51 @@ const dateOfSave = computed(() => {
       >
         重试保存
       </button>
+    </div>
+
+    <div v-if="safetyBlock" class="state-banner state-banner--error" role="alert">
+      <div>
+        <p class="state-banner-title">安全阻断 · 暂不能发布</p>
+        <p class="state-banner-text">{{ safetyBlock }}</p>
+        <p class="state-banner-text">当前草稿仍保留。先核对动作范围与是否需要专业判断；安全阻断不会被当成技术失败或自动绕过。</p>
+      </div>
+    </div>
+
+    <div v-else-if="techError" class="state-banner state-banner--warning" role="alert">
+      <div>
+        <p class="state-banner-title">技术失败 · 没有发布</p>
+        <p class="state-banner-text">{{ techError }}</p>
+        <button type="button" class="btn btn--ghost btn--sm state-banner-action" @click="handleRetrySave()">重试保存</button>
+      </div>
+    </div>
+
+    <div v-else-if="conflictPreview" class="state-banner state-banner--warning" role="alert">
+      <div>
+        <p class="state-banner-title">版本冲突 · 本地版本 {{ conflictPreview.localVersion }} / 另一处版本 {{ conflictPreview.remoteVersion }}</p>
+        <p class="state-banner-text">{{ conflictPreview.text }}</p>
+        <p class="state-banner-text">下面的完整方案仍可查看与编辑；差异没有被静默覆盖。</p>
+      </div>
+    </div>
+
+    <div v-else-if="previewMode === 'publishing'" class="state-banner" role="status">
+      <div>
+        <p class="state-banner-title">正在保存并更新交付状态</p>
+        <p class="state-banner-text">保存完成后会显示交付版本与保存时间；学员在你发布前仍使用现用版本。</p>
+      </div>
+    </div>
+
+    <div v-else-if="previewMode === 'ai-draft'" class="state-banner state-banner--warning" role="status">
+      <div>
+        <p class="state-banner-title">已有模板整理的草稿 · 待你核对</p>
+        <p class="state-banner-text">这份草稿有 {{ changes.length }} 处相对现用版本的变化说明，来自已有模板，不会自动发布，也不代替安全判断。完整方案仍可编辑。</p>
+      </div>
+    </div>
+
+    <div v-else-if="previewMode === 'delivered' && latestDelivery" class="state-banner state-banner--positive" role="status">
+      <div>
+        <p class="state-banner-title">版本 {{ latestDelivery.version }} 已交付 {{ studentName }}</p>
+        <p class="state-banner-text">学员现用版本 {{ planSummary.activeVersion }} 仍未改变，等待学员采用。发布不会自动替换学员安排。</p>
+      </div>
     </div>
 
     <div v-if="ui.publishBlocked && activeIssueCount" class="issue-banner" role="alert">
@@ -568,13 +606,16 @@ const dateOfSave = computed(() => {
       <aside class="evidence" aria-labelledby="evidence-title">
         <section class="evidence-section">
           <h2 id="evidence-title" class="evidence-heading">判断依据</h2>
-          <ul class="evidence-list">
+          <ul v-if="evidence.length" class="evidence-list">
             <li v-for="row in evidence" :key="row.title" class="evidence-item">
               <p class="evidence-date">{{ row.date }}</p>
               <p class="evidence-title">{{ row.title }}</p>
               <p class="evidence-detail num">{{ row.detail }}</p>
             </li>
           </ul>
+          <p v-else class="evidence-detail evidence-detail--empty">
+            {{ selectedStudentHealthAuthorized ? '还没有可查看的训练证据。' : '健康内容未授权，暂不显示训练证据。' }}
+          </p>
         </section>
         <section class="evidence-section">
           <h2 class="evidence-heading">版本与范围</h2>
@@ -602,7 +643,7 @@ const dateOfSave = computed(() => {
             已交付版本 {{ lastDelivery.version }} 的快照共 {{ planTotals(lastDelivery.content).sets }} 组，后续编辑不会改动它。
           </p>
           <p class="evidence-note">
-            发布后，林澈的现用版本 {{ planSummary.activeVersion }} 保持不变；林澈采用新版本后，安排才会更新。
+            发布后，{{ studentName }}的现用版本 {{ planSummary.activeVersion }} 保持不变；采用新版本后，安排才会更新。
           </p>
         </section>
         <p v-if="state.coach.savedAt" class="saved-at num">上次保存 {{ dateOfSave }}</p>
@@ -618,14 +659,14 @@ const dateOfSave = computed(() => {
         :disabled="coachPublishDisabled"
         @click="handlePublish"
       >
-        {{ coachPublishDisabled ? `已发布版本 ${planSummary.deliveredVersion}` : '发布给林澈' }}
+        {{ coachPublishDisabled ? `已发布版本 ${planSummary.deliveredVersion}` : `发布给${studentName}` }}
       </button>
     </div>
   </div>
 
   <BaseSheet
     :open="publishSheetOpen"
-    title="发布给 林澈"
+    :title="`发布给 ${studentName}`"
     :return-focus="publishReturnFocus"
     @close="ui.sheet = null"
   >
@@ -649,7 +690,7 @@ const dateOfSave = computed(() => {
         </div>
       </dl>
       <div class="publish-impact">
-        <p>林澈会收到完整方案和改动说明；在采用之前，现用安排和已有训练记录都不会改变。</p>
+        <p>{{ studentName }}会收到完整方案和改动说明；在采用之前，现用安排和已有训练记录都不会改变。</p>
       </div>
       <div v-if="!storageState.ok || ui.saveNoteTone === 'error'" class="publish-error" role="alert">
         <p>{{ storageState.message || ui.saveNote }}</p>
@@ -1273,7 +1314,7 @@ const dateOfSave = computed(() => {
 }
 
 .undo-bar button {
-  min-height: 36px;
+  min-height: 44px;
   color: var(--ink);
   font-size: var(--text-13);
   font-weight: 600;
@@ -1455,6 +1496,10 @@ const dateOfSave = computed(() => {
     display: flex;
   }
 
+  .mobile-actions {
+    display: none;
+  }
+
   .field-grid {
     padding-left: 32px;
   }
@@ -1480,10 +1525,6 @@ const dateOfSave = computed(() => {
     padding-top: 2px;
   }
 
-  .mobile-actions {
-    display: none;
-  }
-
   .day-head {
     padding: var(--sp-5) var(--sp-6);
   }
@@ -1499,5 +1540,47 @@ const dateOfSave = computed(() => {
   .plan-footer {
     padding: var(--sp-3) var(--sp-6) var(--sp-4);
   }
+}
+
+.state-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.state-banner--error {
+  border-color: rgba(162, 63, 61, 0.4);
+  background: rgba(162, 63, 61, 0.06);
+}
+
+.state-banner--warning {
+  border-color: rgba(128, 92, 34, 0.4);
+  background: rgba(128, 92, 34, 0.06);
+}
+
+.state-banner--positive {
+  border-color: rgba(39, 111, 83, 0.35);
+  background: rgba(39, 111, 83, 0.05);
+}
+
+.state-banner-title {
+  font-size: var(--text-14);
+  font-weight: 600;
+}
+
+.state-banner-text {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: var(--text-13);
+  line-height: 1.6;
+}
+
+.state-banner-action {
+  margin-top: var(--sp-2);
 }
 </style>

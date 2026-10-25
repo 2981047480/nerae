@@ -1,0 +1,102 @@
+{
+  "task": "D01-03-fix06",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "git_head": "8e5251943ce06ec85f98fcc99769bf019a845f30",
+  "source_state": "fix06 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-25T16:24:51.451658+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4186/4188/4189/4190 frozen previews untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix06-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix06-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix06-test.log",
+      "result": "4 files / 109 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix06-source-sha256.txt",
+    "manifest_sha256": "89ef599172fe8155868878036e6ab8d112a33e5fbddc23985f9d3fcf39470e7d",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "74c663465607b5ed03944484df00bc2321ffa9a5a14fdce18078dad698c4625e",
+      "src/utils/format.ts": "a8ae0ef4cddcfc76d383eb0a989112129f11376bdcd4aec3c8c9808c952a315c",
+      "src/utils/plan.ts": "23913aa7ea72143417ab0ea554b1cba36db0d8a0dfc27dccd1fc8482f41b8d85",
+      "src/utils/training.ts": "0dcab43855ea9ddb8c1ceed5c1588ea8e9d8019748d6d3411c45fa0c9c58d97c",
+      "src/views/TrainingView.vue": "4b080bd8d565a12ac3c0cd65a596ec0130c72875e4a08407244fd213a3011823",
+      "src/views/TodayView.vue": "df7969c69d74ef1a6a48d7c94d4e72dee966434150d9ae1925100d3997efbb70",
+      "src/views/RecordsView.vue": "7bfc415f6bfc2482ecea1b5ba6f2d1a7c62483b26384e7c3b00dd1a20da61769"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix06-evidence-sha256.txt",
+    "manifest_sha256": "6a05c617412ecb78e92334bee0abb92738e4389b0f208ebc8b4226ee291c8dc8",
+    "screenshots": 6,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "latest reference",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "学员本人、最新且与 student.incoming 同版的计划引用返回 live incoming；最新7可打开明确采用，取消保留现用6/3组，确认后现用7且 status=adopted；返回再开同引用保持已采用、无重复按钮。旧7/教练只读/缺失/撤权不变。"
+    },
+    {
+      "id": "units C03",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "新增 durationPerSide/bodyweight/bodyweightPerSide/breath；parseContentLine 保留次呼吸；鸟狗式自重10次/侧不要求kg，侧桥30秒/侧存seconds，猫牛式8次呼吸存reps；负重仍kg/reps。换会话清 ui.trainingErrors，旧确认组不增。"
+    },
+    {
+      "id": "unit labels",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "lastReferenceLabel 按 kind 保留 次呼吸/秒/侧；referenceText 传 kind；ensureTrainingConflict 的 breath/秒每侧 local/remote 文案同步，不自造重量。"
+    },
+    {
+      "id": "retained",
+      "status": "retained",
+      "detail": "fix04 引用迁移/记录返回、fix05 M02/M12/V04/文案、M04/M05 均保留。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "109/109 vitest",
+      "latest ref adopt/cancel/reopen; old refs; units core/mobility; cross-session error clearing; labels/conflict"
+    ],
+    "real_browser": [
+      "390 latest7 enabled→cancel6→confirm7→reopen adopted; core bird dog 10/侧 no kg, side bridge 30秒/侧, cat cow 8 breaths; old weight error cleared on new duration session"
+    ],
+    "not_tested": [
+      "Lead full 16-family/55-item/5-width/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app device",
+      "all unit combinations beyond core/mobility/weighted samples"
+    ]
+  },
+  "unresolved": [
+    "No known code defect against fix06 scope.",
+    "Lead final integration not done; candidate not accepted."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser only; no full matrix.",
+    "Dev log excluded."
+  ]
+}

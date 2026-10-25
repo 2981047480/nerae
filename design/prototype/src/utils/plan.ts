@@ -1,5 +1,6 @@
 import type {
   PlanChange,
+  PlanExercise,
   PlanContent,
   PlanDay,
   PlanValidationIssue,
@@ -318,4 +319,54 @@ export function changeDisplayValue(change: PlanChange): { before: string; after:
 
 export function planChangeCountLabel(count: number): string {
   return `${count} 处改动`
+}
+
+/** 固定内容哈希：用于预览中的版本/确认失效判断，不是服务端安全哈希。 */
+export function hashContent(text: string): string {
+  let hash = 2166136261
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+export function planHash(content: PlanContent): string {
+  return hashContent(serializePlan(sanitizePlan(content)))
+}
+
+function parseContentLine(line: { name: string; detail: string }): PlanExercise {
+  const setsMatch = line.detail.match(/(\d+)\s*组/)
+  const targetMatch = line.detail.match(/(\d+)\s*(次呼吸|秒|次)(\s*\/\s*侧)?/)
+  const restMatch = line.detail.match(/组间\s*(\d+)\s*秒/)
+  return {
+    id: `ex-${hashContent(line.name).slice(0, 6)}-${hashContent(line.detail).slice(0, 4)}`,
+    name: line.name,
+    sets: setsMatch ? setsMatch[1]! : '1',
+    target: targetMatch
+      ? `${targetMatch[1]} ${targetMatch[2]}${targetMatch[3] ? '/侧' : ''}`
+      : line.detail,
+    restSeconds: restMatch ? restMatch[1]! : '60',
+    note: '',
+  }
+}
+
+/** 从发现内容生成一个完整训练单元；训练日数量只能由内容明确给出，不按动作数量推断。 */
+export function daysFromContents(item: {
+  id: string
+  title: string
+  contents: Array<{ name: string; detail: string }>
+}): PlanDay[] {
+  if (!item.contents.length) return []
+  return [
+    {
+      id: `${item.id}-day-1`,
+      title: '完整训练日',
+      exercises: item.contents.map((line, exerciseIndex) => ({
+        ...parseContentLine(line),
+        id: `${item.id}-d1-e${exerciseIndex + 1}`,
+        note: line.detail,
+      })),
+    },
+  ]
 }

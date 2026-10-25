@@ -1,0 +1,108 @@
+{
+  "core": {
+    "kinds": [
+      "duration",
+      "bodyweightPerSide",
+      "durationPerSide",
+      "duration"
+    ],
+    "targets": [
+      "40 秒",
+      "10 次/侧",
+      "30 秒/侧",
+      "45 秒"
+    ],
+    "first": "死虫式",
+    "weightField": false,
+    "secondsField": true
+  },
+  "birdBefore": {
+    "name": "鸟狗式",
+    "kind": "bodyweightPerSide",
+    "target": "10 次/侧",
+    "weightField": false,
+    "repLabel": [
+      "次数（每侧）"
+    ],
+    "errors": []
+  },
+  "birdAfter": {
+    "kind": "bodyweightPerSide",
+    "target": "10 次/侧",
+    "sets": [
+      {
+        "weight": null,
+        "reps": 10,
+        "seconds": null,
+        "status": "done"
+      },
+      {
+        "weight": null,
+        "reps": 10,
+        "seconds": null,
+        "status": "done"
+      }
+    ],
+    "records": []
+  },
+  "sideBefore": {
+    "name": "侧桥",
+    "kind": "durationPerSide",
+    "target": "30 秒/侧",
+    "secondsField": true,
+    "weightField": false
+  },
+  "sideAfter": {
+    "kind": "durationPerSide",
+    "target": "30 秒/侧",
+    "sets": [
+      {
+        "seconds": 30,
+        "reps": null,
+        "status": "done"
+      },
+      {
+        "seconds": null,
+        "reps": null,
+        "status": "pending"
+      }
+    ],
+    "errors": []
+  },
+  "mobility": {
+    "name": "猫牛式",
+    "kind": "breath",
+    "target": "8 次呼吸",
+    "weightField": false,
+    "repHint": [
+      "次呼吸"
+    ],
+    "errors": []
+  },
+  "catAfter": {
+    "kind": "breath",
+    "target": "8 次呼吸",
+    "set": {
+      "reps": 8,
+      "weight": null,
+      "status": "done"
+    }
+  },
+  "beforeNew": {
+    "screen": "training",
+    "errors": [
+      "重量要大于 0"
+    ],
+    "alert": "重量要大于 0"
+  },
+  "afterNew": {
+    "name": "死虫式",
+    "kind": "duration",
+    "errors": [],
+    "alert": null
+  },
+  "afterNewComplete": {
+    "done": 1,
+    "errors": []
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "baseline": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "candidate": "898e3546363cf7348b6599601b2570597a14820c",
+  "changed_source_files": [
+    "design/prototype/src/tests/expansion.test.ts",
+    "design/prototype/src/utils/format.ts",
+    "design/prototype/src/views/RecordsView.vue"
+  ],
+  "source_file_count": 60,
+  "scope_review": "Three files only. format.ts adds a new summary helper; preexisting exports unchanged. RecordsView.vue imports/calls only that helper, no template/style change. expansion.test.ts adds valid tests. Store/navigation/data/other views/global CSS unchanged. Recheck S05 all sizes/states/actual record summaries, all code checks and integrated smoke. Carry forward prior unaffected UI evidence explicitly, never relabel its source.",
+  "shared_build_files": {
+    "assets/diet-breakfast.webp": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+    "assets/diet-featured.webp": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+    "assets/diet-mealprep.webp": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+    "assets/explore-dumbbell.webp": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+    "assets/explore-featured.webp": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+    "assets/explore-plank.webp": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+    "assets/explore-stretch.webp": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+    "assets/gym-interior.webp": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+    "assets/hero-today.webp": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+    "assets/training-dumbbells.webp": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7"
+  },
+  "accepted": false
+}

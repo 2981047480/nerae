@@ -1,0 +1,137 @@
+{
+  "task": "D01-03-fix01",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_candidate": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "git_head": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "source_state": "fix01 modifications uncommitted in working tree; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-24T17:31:08.407360+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "bind": "127.0.0.1",
+    "pid": 64273,
+    "running": true,
+    "note": "not restarted/stopped; browser data restored after isolated legacy check"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix01-typecheck.log",
+      "sha256": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix01-build.log",
+      "sha256": "81563d1e313aaf1e0677338cb42eeb0b98ce01b21c86e9ab38c499a37c24dce2",
+      "artifacts": [
+        "dist/index.html 0.85kB",
+        "dist/assets/index-CT-1viGa.css 131.27kB",
+        "dist/assets/index-RcpgEM9D.js 403.27kB"
+      ]
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix01-test.log",
+      "sha256": "e36ed2e79b35c5e9a27b6cc094bf55686d9336d9a6a28c13edbfb7bdc2c18ee2",
+      "result": "4 files / 83 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "working_tree_manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix01-source-sha256.txt",
+    "manifest_sha256": "e4855979c3fe524ca0d282df9ccf401c8391e42f8bcfbd084aad8f70e93469ce",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "2b7648aa8c5b34f8acbe1acf13b00198d0cbc06ed29c5bc2768fcaaf8793b6e5",
+      "src/views/MessagesView.vue": "eb1fe6168d03f59ac2184378a82a421251e2496e80dff3539c089572d4adf25b",
+      "src/types.ts": "93a017873b2f8f2fabd6e43b0d7b7646f22d8c6ac786979047a237f70dd900bc",
+      "src/data/extended.ts": "37070fe8b2a2a0e23ef066dd68ea91942e4087734b5377846c9e5ec796be76c5"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix01-evidence-sha256.txt",
+    "manifest_sha256": "c321721f09a8d29e179f68706e64303b188c04743174d15b247cd23d33d1d927",
+    "screenshots": 12,
+    "dev_log_excluded": "logs/d01-03-dev-4187.log continuously written; excluded from immutable hash"
+  },
+  "feedback": [
+    {
+      "id": "EA17",
+      "subject": "有效学员普通消息与对象",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "replyToStudent 按 studentId 复用/创建 conversation；新增周岚 conv/rel；旧合法状态缺关联时按 active 学员恢复关系与会话；回复打开周岚，不借林澈/江遥包或价格；未知旧约定 needsReview/priceKnown=false。"
+    },
+    {
+      "id": "EA18",
+      "subject": "撤权覆盖所有读取面且保留本人所有权",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "健康授权只从 relation 派生；教练列表/详情/头部/最近事实/未完成工作/待办/证据/消息正文/摘要/训练引用统一裁剪；撤权不清共享正文，学生历史保留；private 观察即使授权也不给教练；结束关系同样约束。"
+    },
+    {
+      "id": "EA19",
+      "subject": "按双方读取位置计算未读",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "去掉共享 unread，改双方 readBy 游标；只推进当前方；stable message id；失败/发送中不投给接收方，不计数；同 ID 成功重试只计一次；列表/线程/摘要/引用/空态同源；重试/删除限作者。"
+    },
+    {
+      "id": "EA20",
+      "subject": "草稿按参与者归属",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "conversation.drafts.student/coach；编辑/切换/刷新/发送清空只影响当前方；旧 raw.draft 无可信 owner 进 unassignedLegacyDraft，两方都不可见；旧 draftOwnerInferred 也退回未归属；新草稿不受影响。"
+    },
+    {
+      "id": "VR09",
+      "subject": "消息时分与应用时区",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "MessagesView 使用 formatTime/formatDateTime；UTC 07:38 显示 Asia/Shanghai 15:38；未改存储时间戳。"
+    },
+    {
+      "id": "EA17-legacy",
+      "subject": "旧 active 关系缺新关联时恢复回复",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "旧 relations/conversations 无 rel-zhou/conv-zhou 时，load 按 active 学员补关系与会话；planVersion 3、健康拒绝、草稿一致；relation packageId 为空、价格未知不填充；实际隔离浏览器验证回复打开周岚。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "83/83 vitest",
+      "regressions for EA17/18/19/20/VR09",
+      "legacy saved state normalization",
+      "draft ownership unassigned"
+    ],
+    "real_browser": [
+      "390x900/DPR1 CUA-like CDP checks: Zhou reply, legacy Zhou reply, coach unread, local time, revoke student/coach read surfaces, failed message recipient, draft isolation"
+    ],
+    "evidence_files": [
+      "logs/fix01-browser.json",
+      "logs/fix01-browser2.json",
+      "logs/fix01-legacy-browser.json",
+      "screenshots/fix01-390-*.png (12)"
+    ],
+    "not_tested": [
+      "Lead frozen 10 seams / all 16 families states",
+      "five widths and 200% all screens",
+      "motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app/device/keyboard/safe-area",
+      "real AI/payment",
+      "legacy draft owner recovery UI (not requested)"
+    ]
+  },
+  "unresolved": [
+    "No known code defect against EA17/18/19/20/VR09 as of this candidate.",
+    "Old unassigned draft is preserved but not shown to either participant; no owner recovery UI this round (explicit boundary).",
+    "Lead independent acceptance not performed; candidate not accepted.",
+    "Browser verification limited to 390x900/DPR1; five-width/200%/motion still pending Lead."
+  ],
+  "limits": [
+    "Fixed local sample; does not prove server-side auth/health/message permission.",
+    "Legacy draft owner cannot be inferred from navigation actor; stored as unassigned only.",
+    "Dev log excluded from immutable hash."
+  ]
+}

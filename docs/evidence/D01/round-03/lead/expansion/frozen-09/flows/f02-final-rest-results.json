@@ -1,0 +1,12 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "clockStart": "00:31",
+  "clockPaused": "00:31\n已暂停",
+  "clockCold": "00:31\n已暂停",
+  "clockExtended": "00:46\n已暂停",
+  "clockRunning": "00:43",
+  "pausedReloadStable": true,
+  "extendedExactly15": true,
+  "qaCorrection": "Parse clock only; heading also includes 已暂停. Initial numeric parser rejected UI that actually showed correct +15.",
+  "scope": "UI rest clock only; no physical exercise or background OS guarantee"
+}

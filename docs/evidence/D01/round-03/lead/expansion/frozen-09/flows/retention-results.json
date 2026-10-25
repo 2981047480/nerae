@@ -1,0 +1,9 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "failedToNormalKeepsConversation": true,
+  "sendingToNormalKeepsConversation": true,
+  "coldDraftRetained": true,
+  "oppositePrivateDraftRetainedAndIsolated": true,
+  "oldMessageStillVisible": true,
+  "scope": "Actual local UI; no backend delivery claim"
+}

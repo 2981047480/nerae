@@ -82,6 +82,7 @@ describe('今天与训练状态', () => {
     const event = nextEventTime(session, 90)
     expect(Date.parse(event)).toBeGreaterThan(Date.parse('2026-10-24T19:12:00+08:00'))
     expect(formatTime(event)).toBe('19:14')
+    expect(formatTime('2026-10-24T07:38:00Z')).toBe('15:38')
   })
 
   it('拒绝空、零、负数、小数次数与超界值，错误靠近字段', () => {
@@ -150,7 +151,9 @@ describe('教练计划差异与校验', () => {
     expect(validatePlan(draft)).toEqual([])
     expect(coach.draftVersion).toBe(7)
     expect(coach.publishedVersion).toBe(6)
-    expect(coach.deliveredVersion).toBeNull()
+    expect(coach.deliveries[0]!.version).toBe(7)
+    expect(coach.deliveries).toHaveLength(1)
+    expect(coach.deliveries[0]!.version).toBe(7)
   })
 
   it('缺项会按字段返回，并给出可定位的训练日与动作', () => {
@@ -181,7 +184,7 @@ describe('教练计划差异与校验', () => {
 describe('发现筛选与搜索', () => {
   it('默认每个模式都有内容', () => {
     const emptyFilters = { goal: 'all', equipment: 'all', duration: 'all' }
-    expect(filterExploreItems(EXPLORE_ITEMS, 'training', emptyFilters, '')).toHaveLength(5)
+    expect(filterExploreItems(EXPLORE_ITEMS, 'training', emptyFilters, '')).toHaveLength(6)
     expect(filterExploreItems(EXPLORE_ITEMS, 'diet', emptyFilters, '')).toHaveLength(3)
   })
 

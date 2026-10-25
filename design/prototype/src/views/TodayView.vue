@@ -3,18 +3,87 @@ import { computed, ref } from 'vue'
 import { ArrowRight, Check, CheckCircle2, ChevronRight, Dumbbell } from '@lucide/vue'
 import PhotoFrame from '../components/PhotoFrame.vue'
 import {
-  enterTraining,
+  goToDiet,
+  goToExplore,
+  goToIncomingPlan,
+  goToMyPlan,
+  goToRecords,
+  goToStudentPlan,
+  incomingDelivery,
   openSheet,
+  recoverTodayContent,
+  requestContinueTraining,
+  requestResumeTraining,
+  requestStartScheduled,
   sessionGroups,
+  state,
   todayFacts,
   ui,
   weekSummary,
 } from '../state/store'
 import { NEXT_SESSION_LABEL, PREVIEW_DATE_LABEL, PREVIEW_WEEK_LABEL } from '../data/sample'
-import { formatWeight } from '../utils/format'
+import {
+  formatWeight,
+  isBodyweightKind,
+  isDurationKind,
+  isPerSideKind,
+} from '../utils/format'
 
 const facts = todayFacts
 const groups = sessionGroups
+
+const mode = computed(() => state.todayMode)
+const isTrainingDay = computed(() =>
+  ['in_progress', 'scheduled', 'paused', 'complete', 'offline'].includes(mode.value),
+)
+const isOffline = computed(() => mode.value === 'offline')
+const isRestDay = computed(() => mode.value === 'rest_day')
+const isCycleEnd = computed(() => mode.value === 'cycle_end')
+const isScheduled = computed(() => mode.value === 'scheduled')
+const isUnscheduled = computed(() => mode.value === 'unscheduled')
+const isPaused = computed(() => mode.value === 'paused')
+
+const heroKicker = computed(() => {
+  if (isOffline.value) return '今天 · ' + PREVIEW_DATE_LABEL + ' · 内容暂不可用'
+  if (isScheduled.value) return '今天 · ' + PREVIEW_DATE_LABEL + ' · 已安排'
+  if (isPaused.value) return '今天 · ' + PREVIEW_DATE_LABEL + ' · 已暂停'
+  return '今天 · ' + PREVIEW_DATE_LABEL
+})
+
+const restCopy = computed(() => {
+  if (isRestDay.value) {
+    return {
+      title: '今天休息',
+      text: '本周的训练安排在周二、周四、周六。今天不需要补练，下一次训练是 10月27日 周二。',
+      primary: '查看我的计划',
+      primaryAction: goToMyPlan,
+      secondary: '去发现内容',
+      secondaryAction: goToExplore,
+    }
+  }
+  if (isCycleEnd.value) {
+    return {
+      title: '本周期已结束',
+      text: '第 4 周的训练已经结束。不会自动开始新周期；需要重新安排时，先确认接下来两周的时间。',
+      primary: '重新安排',
+      primaryAction: goToExplore,
+      secondary: '查看我的计划',
+      secondaryAction: goToMyPlan,
+    }
+  }
+  return {
+    title: '今天没有安排',
+    text: '还没有训练安排。可以从发现开始一份训练，或编辑自己的计划。',
+    primary: '去发现训练内容',
+    primaryAction: goToExplore,
+    secondary: '编辑我的计划',
+    secondaryAction: goToMyPlan,
+  }
+})
+
+const planLinkLabel = computed(() => `现用安排 · 版本 ${state.student.planVersion}`)
+const incomingNew = computed(() => state.student.incoming?.status === 'new')
+const dietDone = computed(() => Boolean(state.diet.report.status))
 
 const heroTitle = ref<HTMLElement | null>(null)
 
@@ -29,6 +98,12 @@ const equipmentText = computed(() => {
   return [...labels].join(' · ')
 })
 
+function startToday(): void {
+  if (isScheduled.value) requestStartScheduled()
+  else if (isPaused.value) requestResumeTraining()
+  else startTraining()
+}
+
 function startTraining(): void {
   const rect = heroTitle.value?.getBoundingClientRect()
   if (rect && typeof rect.width === 'number' && rect.width > 0) {
@@ -42,10 +117,21 @@ function startTraining(): void {
   } else {
     ui.focusOrigin = null
   }
-  enterTraining()
+  requestContinueTraining()
 }
 
 const week = computed(() => weekSummary.value)
+
+const weekNote = computed(() => {
+  const done = `${week.value.doneCount} 次训练已完成`
+  if (isRestDay.value) return `${done} · 今天休息`
+  if (isCycleEnd.value) return `${done} · 本周期结束`
+  if (isUnscheduled.value) return `${done} · 今天未安排`
+  if (isOffline.value) return `${done} · 今天内容暂不可用`
+  if (isPaused.value) return `${done} · 今天已暂停`
+  if (isScheduled.value) return `${done} · 今天已安排`
+  return `${done} · 今天进行中`
+})
 
 function setsDots(progress: { done: number; total: number }) {
   return Array.from({ length: progress.total }, (_, index) => ({
@@ -64,7 +150,22 @@ function setsDots(progress: { done: number; total: number }) {
   <div class="today">
     <div class="today-grid">
       <div class="today-main">
-        <article class="hero" :class="{ 'hero--complete': facts.complete }">
+        <article v-if="!isTrainingDay" class="rest-hero">
+          <p class="hero-kicker rest-kicker">今天 · {{ PREVIEW_DATE_LABEL }}</p>
+          <h1 class="rest-title">{{ restCopy.title }}</h1>
+          <p class="rest-text">{{ restCopy.text }}</p>
+          <div class="rest-actions">
+            <button class="btn btn--accent" type="button" @click="restCopy.primaryAction">{{ restCopy.primary }}</button>
+            <button class="btn btn--ghost" type="button" @click="restCopy.secondaryAction">{{ restCopy.secondary }}</button>
+          </div>
+          <div class="rest-links">
+            <button type="button" class="link-btn" @click="goToIncomingPlan()">收到计划</button>
+            <button type="button" class="link-btn" @click="goToDiet()">饮食自评</button>
+            <button type="button" class="link-btn" @click="goToRecords">训练记录</button>
+          </div>
+        </article>
+
+        <article v-else class="hero" :class="{ 'hero--complete': facts.complete }">
           <div class="hero-media">
             <PhotoFrame
               src="/assets/hero-today.webp"
@@ -74,13 +175,60 @@ function setsDots(progress: { done: number; total: number }) {
             />
             <div class="hero-scrim" aria-hidden="true" />
             <div class="hero-content">
-              <p class="hero-kicker">今天 · {{ PREVIEW_DATE_LABEL }}</p>
+              <p class="hero-kicker">{{ heroKicker }}</p>
               <h1 ref="heroTitle" class="hero-title" data-today-session-title>{{ facts.title }}</h1>
               <p class="hero-meta num">
-                约 32 分钟 · 4 个动作 · {{ facts.total }} 组
+                约 {{ facts.durationMin }} 分钟 · {{ facts.exerciseCount }} 个动作 · {{ facts.total }} 组
               </p>
 
-              <template v-if="!facts.complete">
+              <template v-if="isOffline">
+                <div class="hero-offline" role="alert">
+                  <p class="hero-complete-status">内容暂不可用</p>
+                  <p class="hero-next">本地已记录的训练仍在，但这部分内容没有加载出来。可以重试，或先查看记录。</p>
+                  <div class="fallback-actions">
+                    <button class="btn btn--accent" type="button" @click="recoverTodayContent">重试加载</button>
+                    <button class="btn btn--ghost hero-secondary" type="button" @click="goToRecords">查看记录</button>
+                  </div>
+                </div>
+              </template>
+
+              <template v-else-if="facts.complete">
+                <div class="hero-complete-status">
+                  <CheckCircle2 :size="18" aria-hidden="true" />
+                  <span>今天已完成</span>
+                </div>
+                <p class="hero-next num">下次训练 · {{ NEXT_SESSION_LABEL }}</p>
+                <div class="fallback-actions">
+                  <button class="btn btn--ghost hero-secondary" type="button" @click="openSheet('records')">
+                    查看本次记录
+                    <ChevronRight :size="16" aria-hidden="true" />
+                  </button>
+                  <button class="btn btn--ghost hero-secondary" type="button" @click="goToRecords">全部记录</button>
+                </div>
+              </template>
+
+              <template v-else-if="isScheduled">
+                <p class="hero-next">今天已安排 · 还没有开始；开始后会保存到我的计划。</p>
+                <button class="btn btn--accent btn--block hero-cta" type="button" @click="startToday">
+                  <span class="hero-cta-label">开始这次训练</span>
+                  <ArrowRight :size="18" aria-hidden="true" />
+                </button>
+              </template>
+
+              <template v-else-if="isPaused">
+                <div class="hero-progress">
+                  <div class="progress-track" aria-hidden="true">
+                    <span class="progress-fill" :style="{ width: `${Math.max(4, facts.percent)}%` }" />
+                  </div>
+                  <p class="hero-progress-text num">已记录 {{ facts.done }} / {{ facts.total }} 组 · 暂停不会丢掉记录</p>
+                </div>
+                <button class="btn btn--accent btn--block hero-cta" type="button" @click="startToday">
+                  <span class="hero-cta-label">恢复训练</span>
+                  <ArrowRight :size="18" aria-hidden="true" />
+                </button>
+              </template>
+
+              <template v-else>
                 <div class="hero-progress">
                   <div class="progress-track" aria-hidden="true">
                     <span class="progress-fill" :style="{ width: `${Math.max(4, facts.percent)}%` }" />
@@ -100,26 +248,14 @@ function setsDots(progress: { done: number; total: number }) {
                   <ArrowRight :size="18" aria-hidden="true" />
                 </button>
               </template>
-
-              <template v-else>
-                <div class="hero-complete-status">
-                  <CheckCircle2 :size="18" aria-hidden="true" />
-                  <span>今天已完成</span>
-                </div>
-                <p class="hero-next num">下次训练 · {{ NEXT_SESSION_LABEL }}</p>
-                <button class="btn btn--ghost hero-secondary" type="button" @click="openSheet('records')">
-                  查看本次记录
-                  <ChevronRight :size="16" aria-hidden="true" />
-                </button>
-              </template>
             </div>
           </div>
         </article>
 
-        <section class="arrangement" aria-labelledby="arrangement-title">
+        <section v-if="isTrainingDay && !isOffline" class="arrangement" aria-labelledby="arrangement-title">
           <header class="section-head">
             <h2 id="arrangement-title" class="section-title">本次安排</h2>
-            <span class="section-meta num">4 个动作 · {{ facts.total }} 组</span>
+            <span class="section-meta num">{{ facts.exerciseCount }} 个动作 · {{ facts.total }} 组</span>
           </header>
           <ol class="exercise-list">
             <li
@@ -166,13 +302,24 @@ function setsDots(progress: { done: number; total: number }) {
                   v-if="facts.currentExercise === group.exercise.name && !facts.complete && group.exercise.lastRef"
                   class="exercise-reference num"
                 >
+                  <template v-if="group.exercise.lastRef.dateLabel === '暂无可比较参考'">
+                    暂无同单位参考
+                  </template>
+                  <template v-else>
                   上次 {{ group.exercise.lastRef.dateLabel }} ·
-                  <template v-if="group.exercise.kind === 'duration'">
-                    {{ group.exercise.lastRef.seconds }} 秒
+                  <template v-if="isDurationKind(group.exercise.kind)">
+                    {{ group.exercise.lastRef.seconds }} 秒{{ isPerSideKind(group.exercise.kind) ? '/侧' : '' }}
+                  </template>
+                  <template v-else-if="group.exercise.kind === 'breath'">
+                    {{ group.exercise.lastRef.reps }} 次呼吸
+                  </template>
+                  <template v-else-if="isBodyweightKind(group.exercise.kind)">
+                    自重 × {{ group.exercise.lastRef.reps }} 次{{ isPerSideKind(group.exercise.kind) ? '/侧' : '' }}
                   </template>
                   <template v-else>
                     {{ formatWeight(group.exercise.lastRef.weightKg ?? 0) }} kg ×
-                    {{ group.exercise.lastRef.reps }} 次{{ group.exercise.kind === 'perSide' ? '/侧' : '' }}
+                    {{ group.exercise.lastRef.reps }} 次{{ isPerSideKind(group.exercise.kind) ? '/侧' : '' }}
+                  </template>
                   </template>
                 </p>
               </div>
@@ -203,14 +350,10 @@ function setsDots(progress: { done: number; total: number }) {
               <span class="week-dot" aria-hidden="true" />
             </li>
           </ol>
-          <p class="week-note num">
-            {{ week.doneCount }} 次训练已完成
-            <span v-if="!facts.complete">· 今天进行中</span>
-            <span v-else>· 下次 {{ NEXT_SESSION_LABEL }}</span>
-          </p>
+          <p class="week-note num">{{ weekNote }}</p>
         </section>
 
-        <section class="side-section side-facts" aria-labelledby="facts-title">
+        <section v-if="isTrainingDay" class="side-section side-facts" aria-labelledby="facts-title">
           <h2 id="facts-title" class="section-title">本次训练</h2>
           <dl class="fact-list">
             <div class="fact-row">
@@ -227,6 +370,38 @@ function setsDots(progress: { done: number; total: number }) {
             </div>
           </dl>
           <p class="side-source">训练内容来自我的计划 · 版本 {{ facts.version }}</p>
+        </section>
+
+        <section class="side-section plan-links" aria-labelledby="plan-links-title">
+          <h2 id="plan-links-title" class="section-title">相关安排</h2>
+          <button type="button" class="plan-link" @click="goToStudentPlan">
+            <span>
+              <span class="plan-link-label">{{ planLinkLabel }}</span>
+              <span class="plan-link-meta">{{ state.student.plan.title }} · {{ state.student.plan.days.length }} 个训练日</span>
+            </span>
+            <ChevronRight :size="16" aria-hidden="true" />
+          </button>
+          <button type="button" class="plan-link" @click="goToMyPlan">
+            <span>
+              <span class="plan-link-label">我的内容 · 版本 {{ state.ownPlan.version }}</span>
+              <span class="plan-link-meta">{{ state.ownPlan.title }} · 只属于自己</span>
+            </span>
+            <ChevronRight :size="16" aria-hidden="true" />
+          </button>
+          <button v-if="incomingNew" type="button" class="plan-link plan-link--attention" @click="goToIncomingPlan()">
+            <span>
+              <span class="plan-link-label">收到新版计划</span>
+              <span class="plan-link-meta">版本 {{ incomingDelivery?.version }} · 尚未采用</span>
+            </span>
+            <ChevronRight :size="16" aria-hidden="true" />
+          </button>
+          <button type="button" class="plan-link" @click="goToDiet()">
+            <span>
+              <span class="plan-link-label">饮食自评</span>
+              <span class="plan-link-meta">{{ dietDone ? '今天已自评' : '今天还没有自评' }}</span>
+            </span>
+            <ChevronRight :size="16" aria-hidden="true" />
+          </button>
         </section>
       </aside>
     </div>
@@ -694,5 +869,91 @@ function setsDots(progress: { done: number; total: number }) {
   .hero-media {
     height: 600px;
   }
+}
+
+.rest-hero {
+  padding: var(--sp-6) 0 var(--sp-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.rest-kicker {
+  color: var(--muted);
+}
+
+.rest-title {
+  margin-top: 6px;
+  font-size: clamp(2rem, 7vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.rest-text {
+  margin-top: var(--sp-3);
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: var(--text-15);
+  line-height: 1.7;
+}
+
+.rest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.rest-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.hero-offline .hero-next {
+  max-width: 46ch;
+}
+
+.fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.plan-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.plan-link-label {
+  display: block;
+  font-size: var(--text-14);
+  font-weight: 500;
+}
+
+.plan-link-meta {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-12);
+  line-height: 1.45;
+}
+
+.plan-link--attention .plan-link-label {
+  color: var(--ink);
+}
+
+.plan-link--attention .plan-link-meta {
+  color: var(--warning);
 }
 </style>

@@ -1,0 +1,25 @@
+[
+  {
+    "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+    "published8": true,
+    "current6": true,
+    "savedAndReloaded": true,
+    "queueToDraftNavigations": 2,
+    "scope": "Local UI sample, no server or real professional review"
+  },
+  {
+    "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+    "old7SnapshotRetained": true,
+    "lastCoachWasZhou": true,
+    "coldReloadRetained": true,
+    "returnedToMessageComposer": true
+  },
+  {
+    "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+    "canceledBeforeConfirmation": true,
+    "adopted8": true,
+    "reloadRetained": true,
+    "originalThreeSetsPreserved": true,
+    "historicalValuesRetained": true
+  }
+]

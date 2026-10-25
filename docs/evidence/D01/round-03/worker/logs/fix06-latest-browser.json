@@ -1,0 +1,45 @@
+{
+  "before": {
+    "done": 3,
+    "planVersion": 6,
+    "incoming": 7,
+    "status": "new"
+  },
+  "opened": {
+    "screen": "incomingPlan",
+    "version": 7,
+    "available": true,
+    "status": "版本 7 · 等待你的决定",
+    "button": false
+  },
+  "sheet": {
+    "sheet": "adopt",
+    "hash": true,
+    "planVersion": 6
+  },
+  "cancelled": {
+    "sheet": null,
+    "planVersion": 6,
+    "done": 3,
+    "incomingStatus": "new"
+  },
+  "confirmed": {
+    "screen": "incomingPlan",
+    "planVersion": 7,
+    "adopted": 7,
+    "status": "adopted",
+    "available": false,
+    "statusLabel": "已采用",
+    "done": 3,
+    "adoptedFacts": true
+  },
+  "reopened": {
+    "screen": "incomingPlan",
+    "version": 7,
+    "status": "adopted",
+    "available": false,
+    "statusLabel": "已采用",
+    "adoptButton": false,
+    "adoptedFacts": true
+  }
+}

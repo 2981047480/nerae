@@ -1,0 +1,90 @@
+{
+  "studentOpen": {
+    "screen": "incomingPlan",
+    "actor": "student",
+    "version": 7,
+    "readOnly": false,
+    "hasAdopt": false
+  },
+  "studentReload": {
+    "screen": "incomingPlan",
+    "actor": "student",
+    "version": 7,
+    "student": "lin-che",
+    "hasAdopt": false,
+    "body": true
+  },
+  "studentBack": {
+    "screen": "messages",
+    "actor": "student",
+    "active": "conv-gu-yan"
+  },
+  "coachOpen": {
+    "screen": "incomingPlan",
+    "actor": "coach",
+    "version": 5,
+    "student": "zhou-lan",
+    "readOnly": true,
+    "title": "教练查看交付版本",
+    "hasLin": false,
+    "hasAdopt": false
+  },
+  "coachReload": {
+    "screen": "incomingPlan",
+    "actor": "coach",
+    "version": 5,
+    "student": "zhou-lan",
+    "readOnly": true,
+    "title": "教练查看交付版本",
+    "hasZhou": true,
+    "hasLin": false,
+    "hasAdopt": false
+  },
+  "coachBack": {
+    "screen": "messages",
+    "actor": "coach",
+    "student": "zhou-lan",
+    "hasNavCoach": true
+  },
+  "missingReload": {
+    "screen": "incomingPlan",
+    "actor": "student",
+    "missing": true,
+    "version": null,
+    "label": "引用不可用",
+    "body": true
+  },
+  "trainingReload": {
+    "screen": "records",
+    "focus": "record-20261022",
+    "explicit": true,
+    "expanded": [
+      "10月22日 周四上肢力量 12.5 kg × 10 次 · 4 组收起"
+    ]
+  },
+  "trainingOpen": {
+    "screen": "records",
+    "focus": "record-20261022",
+    "explicit": true,
+    "expanded": [
+      "10月22日 周四上肢力量 12.5 kg × 10 次 · 4 组收起"
+    ]
+  },
+  "coachMessages": {
+    "screen": "messages",
+    "actor": "coach",
+    "nav": true,
+    "students": [
+      "林澈",
+      "周岚"
+    ]
+  },
+  "review320": {
+    "text": "本次改动 · 4 处",
+    "width": 214.03125,
+    "height": 37.5,
+    "sub": "对照现用版本 6",
+    "scrollWidth": 320,
+    "innerWidth": 320
+  }
+}

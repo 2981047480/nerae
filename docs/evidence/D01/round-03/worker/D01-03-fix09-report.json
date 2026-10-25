@@ -1,0 +1,94 @@
+{
+  "task": "D01-03-fix09",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "git_head": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "source_state": "fix09 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-25T19:03:30.971120+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4186 and 4188-4193 frozen previews untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix09-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix09-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix09-test.log",
+      "result": "4 files / 116 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix09-source-sha256.txt",
+    "manifest_sha256": "9dec8bbedaab5c57b9a5fc2d9285b578306042aa48e7be227a7bc70bbf469334",
+    "file_count": 60,
+    "key_files": {
+      "src/utils/format.ts": "a4b83c672dfa90d280745fc4f76f769feb1620bf355f3724a989b4e09bcd95cb",
+      "src/views/RecordsView.vue": "debf6edf9083214a9a4a9903cf90655998708005490ccec72a5108be4ad56cab"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix09-evidence-sha256.txt",
+    "manifest_sha256": "2cc33c2610486dc8903817337db58eea46ea1cf882e91ca4f033e62059befb3e",
+    "screenshots": 2,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "EA37 summary real-set",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "新增 summarizeRecordSets，摘要从真实组中选代表，不再分别取最大重量/最大次数拼接。20kg×5 与 12.5kg×10 返回 `20 kg × 5 次 · 4 组`，明细含真实 20×5，无 20×10。"
+    },
+    {
+      "id": "perSide/breath/bodyweight",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "perSide 次数/秒、breath、bodyweightPerSide、旧0kg 均保留 /侧、次呼吸、自重与真实 kg 事实；不同 kind 混方式返回“多种记录方式 · 查看明细”，不合并单位。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "116/116 vitest",
+      "20×5 vs 12.5×10; perSide reps/seconds; breath; bodyweight; old0kg; mixed kinds"
+    ],
+    "real_browser": [
+      "390 complete 12 sets → summary `20 kg × 5 次 · 4 组`, detail 12.5×10/10/9 + 20×5; no 20×10; 320/200 summary same, no horizontal overflow"
+    ],
+    "not_tested": [
+      "Lead full 16-family/55-item/5-width/motion matrix",
+      "real backend/auth/message/health permission",
+      "WeChat/uni-app device",
+      "all record combinations"
+    ]
+  },
+  "retained": [
+    "fix08 message preview retention",
+    "fix07 series/S16",
+    "fix06 latest reference/units",
+    "fix05 M02/M12/V04/copy",
+    "fix04 migration/records"
+  ],
+  "unresolved": [
+    "No known code defect against fix09 scope.",
+    "Lead final integration not done; candidate not accepted."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser only; no full matrix.",
+    "Dev log excluded."
+  ]
+}

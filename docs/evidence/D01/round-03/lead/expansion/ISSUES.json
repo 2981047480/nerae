@@ -7,445 +7,970 @@
       "id": "EA01",
       "subject": "内容不应按动作数量猜分训练日",
       "feedback": "../../dispatch/D01-03-data-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "source improvement observed"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "source improvement observed",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA02",
       "subject": "教练交付与学员收到事实统一",
       "feedback": "../../dispatch/D01-03-data-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "source improvement and candidate delivery state observed"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "source improvement and candidate delivery state observed",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "EA03",
       "subject": "刷新保留非默认当前对象",
       "feedback": "../../dispatch/D01-03-data-review-02.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "module cold reload corrected; browser final pending"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "module cold reload corrected; browser final pending",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "EA04",
       "subject": "替换保留已确认组",
       "feedback": "../../dispatch/D01-03-data-review-02.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
-      "recheck_evidence": "frozen-02/replacement-keeps-original-three-confirmed-sets.txt"
+      "recheck_evidence": "frozen-02/replacement-keeps-original-three-confirmed-sets.txt",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ]
     },
     {
       "id": "EA05",
       "subject": "非默认消息人物和收件人同源",
       "feedback": "../../dispatch/D01-03-copy-and-context-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "candidate titles corrected; final all recipients pending"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "candidate titles corrected; final all recipients pending",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA06",
       "subject": "产品不出现实现与验收解释",
       "feedback": "../../dispatch/D01-03-copy-and-context-review.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "New actual UI residual: saved time UTC slice / direct implementation rationale; see REVIEW_06",
-      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md"
+      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/copy-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ]
     },
     {
       "id": "EA07",
       "subject": "所选训练日与开始会话同源",
       "feedback": "../../dispatch/D01-03-start-review.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
-      "recheck_evidence": "frozen-02/start-day-b-matches-selected-exercises.txt"
+      "recheck_evidence": "frozen-02/start-day-b-matches-selected-exercises.txt",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA08",
       "subject": "重复开始与新一次会话身份分开",
       "feedback": "../../dispatch/D01-03-start-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "module unique sessions retain12x8 and17x9 corrected"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "module unique sessions retain12x8 and17x9 corrected",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ]
     },
     {
       "id": "EA09",
       "subject": "不同学员草稿证据和交付对象隔离",
       "feedback": "../../dispatch/D01-03-student-context-review.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
-      "recheck_evidence": "frozen-02/zhou-delivered-current-plan-unchanged.txt"
+      "recheck_evidence": "frozen-02/zhou-delivered-current-plan-unchanged.txt",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "EA10",
       "subject": "未授权或结束关系不露健康事实",
       "feedback": "../../dispatch/D01-03-student-context-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual unauthorized Zhou training facts exposed; pending recheck"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual unauthorized Zhou training facts exposed; pending recheck",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA11",
       "subject": "公开审阅包含全部公开字段",
       "feedback": "../../dispatch/D01-03-share-and-first-use-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual public notes/rest absent; pending recheck"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual public notes/rest absent; pending recheck",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA12",
       "subject": "匿名取消登录与未成年服务边界",
       "feedback": "../../dispatch/D01-03-share-and-first-use-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "local first-use states absent; pending recheck"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "local first-use states absent; pending recheck",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA13",
       "subject": "服务保存全部公开字段同步",
       "feedback": "../../dispatch/D01-03-services-review.md",
-      "status": "pending_final_frozen_recheck",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "new save source improved; actual cold-loaded public projection still old scope/goals/24h despite saved2times/12h; follow-up dispatched",
-      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md"
+      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ]
     },
     {
       "id": "EA14",
       "subject": "无效价格不静默改成免费",
       "feedback": "../../dispatch/D01-03-services-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual -12 became0;0 not saved,759 restored"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual -12 became0;0 not saved,759 restored",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA15",
       "subject": "完成今日训练后更换未来安排须确认",
       "feedback": "../../dispatch/D01-03-completed-plan-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "module confirmed12 sets then replacement changed future before confirmation"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "module confirmed12 sets then replacement changed future before confirmation",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR01",
       "subject": "真实触达尺寸最低44",
       "feedback": "../../dispatch/D01-03-ui-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual36/32/34px targets; partial improvements observed"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual36/32/34px targets; partial improvements observed",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ]
     },
     {
       "id": "VR02",
       "subject": "今天现用计划与自有内容对象不串",
       "feedback": "../../dispatch/D01-03-ui-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "source StudentPlan added; final actual route pending"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "source StudentPlan added; final actual route pending",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR03",
       "subject": "消息先支持交流再按需看上下文",
       "feedback": "../../dispatch/D01-03-ui-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual disclosure improvement observed; final review pending"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual disclosure improvement observed; final review pending",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR04",
       "subject": "记录动作选项与图表时间单位有意义",
       "feedback": "../../dispatch/D01-03-ui-review-01.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "duplicate options and unequal date gaps equidistant reported"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "duplicate options and unequal date gaps equidistant reported",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "VR05",
       "subject": "当前咨询包与既有约定区分并保留包选择",
       "feedback": "../../dispatch/D01-03-ui-review-02.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual single199 conflated with monthly699; pending recheck"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual single199 conflated with monthly699; pending recheck",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR06",
       "subject": "逐段清理直接布局解释与重复免责声明",
       "feedback": "../../dispatch/D01-03-ui-review-02.md",
-      "status": "pending_final_frozen_recheck",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "partial copy improvement; services still had layout explanation",
-      "followup_feedback": "../../dispatch/D01-03-action-bar-review.md"
+      "followup_feedback": "../../dispatch/D01-03-action-bar-review.md",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/copy-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ]
     },
     {
       "id": "VR07",
       "subject": "服务计价单位时区和开关语义一致",
       "feedback": "../../dispatch/D01-03-services-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual preview unit missing,UTC displayed as local,switch inverted name"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual preview unit missing,UTC displayed as local,switch inverted name",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA16",
       "subject": "旧合法服务快照补新增字段并能冷启动",
       "feedback": "../../dispatch/D01-03-persisted-state-review.md",
-      "status": "pending_final_frozen_recheck",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "actual cold start restored759/8weeks/version4 and0newerrors; old-agreement new fields remained blank and public projection stale; follow-up dispatched, final recheck pending",
-      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md"
+      "followup_feedback": "../../dispatch/D01-03-recovery-projection-review.md",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR08",
       "subject": "采用动作条不能在无导航页遮住正文并留底部透出",
       "feedback": "../../dispatch/D01-03-action-bar-review.md",
-      "status": "pending_final_frozen_recheck",
-      "latest_observation": "actual390x900 scroll0 bar704..828 covers first content row749..805,nav0,bottom72; sent original round1"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "actual390x900 scroll0 bar704..828 covers first content row749..805,nav0,bottom72; sent original round1",
+      "historical_status_before_final_review": "pending_final_frozen_recheck",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json"
+      ]
     },
     {
       "id": "EA17",
       "subject": "有效周岚关系的普通回复无法进入本人会话",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
       "followup_feedback": "../../dispatch/D01-03-fix01-legacy-reply-followup.md",
       "followup_evidence": "fix01-interim/legacy-zhou-after-reply.txt",
-      "recheck_evidence": "frozen-02/legacy-zhou-reply.txt"
+      "recheck_evidence": "frozen-02/legacy-zhou-reply.txt",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA18",
       "subject": "撤权未统一读取面且错误清空本人消息",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
-      "recheck_evidence": "frozen-02/fresh-revocation-student-profile.txt"
+      "recheck_evidence": "frozen-02/fresh-revocation-student-profile.txt",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA19",
       "subject": "未读必须按双方读取位置分别计算",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
       "followup_feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
       "followup_evidence": "fix01-interim/",
-      "recheck_evidence": "frozen-02/retained-data-ui-checks.json"
+      "recheck_evidence": "frozen-02/retained-data-ui-checks.json",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR09",
       "subject": "消息时分必须按应用本地时区显示",
       "feedback": "../../dispatch/D01-03-fix01-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "New actual UI residual: saved time UTC slice / direct implementation rationale; see REVIEW_06",
       "frozen_revision": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
       "review": "../REVIEW_05.md",
-      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md"
+      "followup_feedback": "../../dispatch/D01-03-fix02-packet.md",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA20",
       "subject": "草稿按会话及参与者隔离，接收方不能看到发送方未发草稿",
       "feedback": "../../dispatch/D01-03-fix01-peer-visibility-followup.md",
-      "status": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "latest_observation": "Lead actual CUA/module recheck passed on6a5609c; final next-source regression required",
       "evidence": "fix01-interim/failed-coach-thread-and-shared-draft.txt",
       "source_aggregate_sha256": "7ddb6ff6a04fa0decc68bf82e5eee7262e0b652502917e161cd25b905e5f85aa",
       "owner_boundary_decision": "../../dispatch/D01-03-fix01-legacy-draft-owner-decision.md",
-      "recheck_evidence": "frozen-02/retained-data-ui-checks.json"
+      "recheck_evidence": "frozen-02/retained-data-ui-checks.json",
+      "historical_status_before_final_review": "passed_fix01_frozen_recheck_pending_fix02_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA21",
       "subject": "旧计划消息引用打开最新版本且交付时间写死",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/old-v7-message-opens-wrong-v8.txt",
       "static_followup": "../../dispatch/D01-03-fix02-reference-context-followup.md",
-      "followup_proof": "../../dispatch/D01-03-fix02-reference-context-inserted.txt"
+      "followup_proof": "../../dispatch/D01-03-fix02-reference-context-inserted.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "EA22",
       "subject": "同包新报价错误标为已确认且隐藏原约定",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/same-package-new759-wrongly-confirmed.txt"
+      "evidence": "frozen-02/same-package-new759-wrongly-confirmed.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA23",
       "subject": "无记录/单条明细与趋势图摘要不同源",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/states-s05-01.txt",
-      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md"
+      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA24",
       "subject": "教练无结果状态仍显示三位教练",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/states-s06-03.txt"
+      "evidence": "frozen-02/states-s06-03.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA25",
       "subject": "替换为新训练日后器械时长沿用旧安排",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/day-b-today-context-metadata-mismatch.txt",
       "static_followup": "../../dispatch/D01-03-fix02-count-followup.md",
-      "followup_proof": "../../dispatch/D01-03-fix02-count-inserted.txt"
+      "followup_proof": "../../dispatch/D01-03-fix02-count-inserted.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA26",
       "subject": "私有AI调整被错误绑定公开投稿审核",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/ai-applied-reload-dedup.txt"
+      "evidence": "frozen-02/ai-applied-reload-dedup.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA27",
       "subject": "已保存发布的草稿仍标待保存",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/fresh-revocation-student-list-and-zhou-delivery.txt",
-      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md"
+      "recovery_followup": "../../dispatch/D01-03-fix02-state-consistency-followup.md",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "VR10",
       "subject": "学员撤权确认的授权控制主语颠倒",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "evidence": "frozen-02/health-revoke-confirm-dialog.txt"
+      "evidence": "frozen-02/health-revoke-confirm-dialog.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "VR11",
       "subject": "320宽200字号内部按钮裁切与图片叠字",
       "feedback": "../../dispatch/D01-03-fix02-packet.md",
-      "status": "failed_frozen_02_fix02_dispatched",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
       "evidence": "frozen-02/matrix-summary.jsonl",
-      "recovery_followup": "../../dispatch/D01-03-fix02-text200-followup.md"
+      "recovery_followup": "../../dispatch/D01-03-fix02-text200-followup.md",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_dispatched",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json"
+      ]
     },
     {
       "id": "VR12",
       "subject": "今天缺图提示与日期叠字",
       "feedback": "../../dispatch/D01-03-fix02-missing-image-followup.md",
-      "status": "failed_frozen_02_fix02_followup_inserted",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "evidence": "missing-image-probe/screenshots/today-390-missing-image.jpg",
       "frozen_revision": "6a5609c5b0ecdb350be080350237f1a4e86d48b9",
-      "proof": "../../dispatch/D01-03-fix02-missing-image-inserted.txt"
+      "proof": "../../dispatch/D01-03-fix02-missing-image-inserted.txt",
+      "historical_status_before_final_review": "failed_frozen_02_fix02_followup_inserted",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "design/prototype/ASSETS.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/missing-image-results.json"
+      ]
     },
     {
       "id": "EA28",
       "subject": "教练交付引用返回错误切为学员身份",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "failed_frozen_03_fix03_ready",
-      "evidence": "../REVIEW_07.md"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "evidence": "../REVIEW_07.md",
+      "historical_status_before_final_review": "failed_frozen_03_fix03_ready",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "EA29",
       "subject": "引用刷新丢失所属人版本只读并显示另一学员采用动作",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "failed_frozen_03_fix03_ready",
-      "evidence": "../REVIEW_07.md"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "evidence": "../REVIEW_07.md",
+      "historical_status_before_final_review": "failed_frozen_03_fix03_ready",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "VR13",
       "subject": "教练消息预览入口错误落学员",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "evidence": "../REVIEW_07.md",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ]
     },
     {
       "id": "VR14",
       "subject": "审阅差异标题320宽200字号逐字竖排",
       "feedback": "../../dispatch/D01-03-fix03-packet.md",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "evidence": "../REVIEW_07.md",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ]
     },
     {
       "id": "VR15",
       "subject": "M02动态body ghost不匹配scoped规则，static且在视口下方",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix05-m02-packet.md",
       "evidence": "frozen-04/motion/m02-ghost-visible-geometry.json",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "VR16",
       "subject": "M04完成标记动画仅在已被休息替换的不可见分支",
-      "status": "passed_frozen_04_actual_visible_160ms_full_and_reduced",
-      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md",
+      "historical_status_before_final_review": "passed_frozen_04_actual_visible_160ms_full_and_reduced",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "VR17",
       "subject": "M05暂停恢复第一帧使用旧时钟导致读数跳大",
-      "status": "passed_frozen_04_actual_pause_reload_resume_full_and_reduced",
-      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "feedback": "../../dispatch/D01-03-fix03-motion-followup.md",
+      "historical_status_before_final_review": "passed_frozen_04_actual_pause_reload_resume_full_and_reduced",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "EA30",
       "subject": "旧共享角色/引用缓存迁移默认覆盖可信角色、训练引用返回清栈",
-      "status": "passed_frozen_05_21_module_seams_browser_final_pending",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix04-packet.md",
-      "evidence": "../REVIEW_08.md"
+      "evidence": "../REVIEW_08.md",
+      "historical_status_before_final_review": "passed_frozen_05_21_module_seams_browser_final_pending",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
     },
     {
       "id": "EA31",
       "subject": "M12/C03同步失败或待保存预览的重试成功后不解除失败标志",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix05-m12-followup.md",
       "evidence": "frozen-04/motion/m12-full-retry-still-failed.txt",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "VR18",
       "subject": "未选中服务包学员可见状态文字opacity=.8导致3.3318对比",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix05-contrast-followup.md",
       "evidence": "frozen-04/contrast/s16-package-label-composite.json",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ]
     },
     {
       "id": "VR19",
       "subject": "计划详情仍有适用条件与来源在开始前展示这一结构解释",
-      "status": "passed_actual_frozen_06_targeted_pending_final_version",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix05-copy-followup.md",
       "evidence": "frozen-03/ui/dom-text/s03-plan-390-text100.txt:62",
-      "latest_evidence": "frozen-06/TARGETED_REVIEW.md"
+      "latest_evidence": "frozen-06/TARGETED_REVIEW.md",
+      "historical_status_before_final_review": "passed_actual_frozen_06_targeted_pending_final_version",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/copy-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ]
     },
     {
       "id": "EA32",
       "subject": "最新本人消息引用误作为不可用快照，无法采用且已采用后又显示等待决定",
-      "status": "passed_frozen_07_targeted_pending_final_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix06-latest-reference.md",
       "evidence": "frozen-04/reference-flow/latest-eight-reference-blocked.json",
       "latest_observation": "Actual publish8/current6,lastZhou,old7cold,new8messagecancel/confirm/reload/reopenadopted;today3/historyretained",
-      "recheck_evidence": "frozen-07/reference-flow/three-stage-results.json"
+      "recheck_evidence": "frozen-07/reference-flow/three-stage-results.json",
+      "historical_status_before_final_review": "passed_frozen_07_targeted_pending_final_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json"
+      ]
     },
     {
       "id": "EA33",
       "subject": "自重计次要求正kg、呼吸剂量被解析丢失、秒每侧存在分类风险",
-      "status": "passed_frozen_07_dose_input_pending_comparable_series_fix07",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
       "evidence": "frozen-06/units-day-b/bird-dog-self-weight-zero-cannot-complete.txt",
       "latest_observation": "ActualCore8sets,selfweight/perSideTime;Mobility6sets/breathconflict/0block passed;separateEA35chartsemanticfailure",
-      "recheck_evidence": "frozen-07/units/"
+      "recheck_evidence": "frozen-07/units/",
+      "historical_status_before_final_review": "passed_frozen_07_dose_input_pending_comparable_series_fix07",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "EA34",
       "subject": "换新40秒会话仍残留上次重量错误并禁用完成",
-      "status": "passed_frozen_07_targeted_pending_final_regression",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
       "feedback": "../../dispatch/D01-03-fix06-units-followup.md",
       "evidence": "frozen-06/units-day-b/new-duration-session-after-old-weight-error.txt",
       "latest_observation": "Actual negativeweight error -> normalexit/newCore -> no staleerror -> valid40s firstconfirmation passed",
-      "recheck_evidence": "frozen-07/units/cross-session-results.json"
+      "recheck_evidence": "frozen-07/units/cross-session-results.json",
+      "historical_status_before_final_review": "passed_frozen_07_targeted_pending_final_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ]
     },
     {
       "id": "EA35",
       "subject": "旧重量与新计次记录混为同一趋势/参考语义",
       "feedback": "../../dispatch/D01-03-fix07-comparable-record-series.md",
-      "status": "failed_frozen_07_fix07_dispatched",
-      "latest_observation": "Actual settled CUA bird chart mixes0kg+10reps; axis kg/delta+10次; new28module27pass1fail/source60stable",
-      "recheck_evidence": "frozen-07/units/core-bird-chart-mixed-unit-terminal-bug.txt"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "Actual Core8;Birdsinglecountpoint/noDelta,old0kgretained,Side秒/侧source;Lead28pass",
+      "recheck_evidence": "frozen-08/unit-series/comparable-series-results.json",
+      "historical_status_before_final_review": "passed_frozen_08_targeted_pending_final_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     },
     {
       "id": "VR20",
       "subject": "可见服务包保存会更新公开报价，但边界文案称不等于公开",
       "feedback": "../../dispatch/D01-03-fix07-service-copy-note.md",
-      "status": "pending_fix07_copy_followup",
-      "latest_observation": "Actual 54 service save updates student759/item/8weeks whileold699/month4weeksv2retained; header and boundary copy conflict",
-      "recheck_evidence": "frozen-07/flows/f05-actual-student-coach-detail-new-quote.txt"
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "Newaccuratesave/visibilitycopyactuallyviewedat1440normaland320/200",
+      "recheck_evidence": "frozen-08/ui/dom-text/s16-services-1440-text100.txt",
+      "historical_status_before_final_review": "passed_frozen_08_targeted_pending_final_regression",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ]
+    },
+    {
+      "id": "EA36",
+      "subject": "消息失败/发送中切回正常删除整个会话及草稿",
+      "feedback": "../../dispatch/D01-03-fix08-message-preview-retention.md",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "latest_observation": "Actual failed/sending->normal retains Gu conversation,old messages,private drafts/cold;opposite draft isolated;Lead29pass",
+      "recheck_evidence": "frozen-09/flows/retention-results.json",
+      "historical_status_before_final_review": "passed_frozen_09_targeted_pending_final_review",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ]
+    },
+    {
+      "id": "EA37",
+      "subject": "记录摘要拼接不同组重量次数并遗漏每侧单位",
+      "status": "passed_lead_UI_review_candidate898_pending_integration",
+      "feedback": "../../dispatch/D01-03-fix09-record-summary.md",
+      "evidence": "frozen-09/flows/ea37-summary-invents-twenty-by-ten.txt",
+      "latest_observation": "Actual20kgx5 fourth set; summary20kgx10 absent from details. Bodyweight/time per-side summaries omit side.",
+      "historical_status_before_final_review": "failed_actual_frozen_09_pending_fix09",
+      "final_source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "final_evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ]
     }
   ],
-  "latest_review": "../REVIEW_10.md",
-  "latest_frozen_source": "8e5251943ce06ec85f98fcc99769bf019a845f30"
+  "latest_review": "../REVIEW_14.md",
+  "latest_frozen_source": "898e3546363cf7348b6599601b2570597a14820c"
 }

@@ -1,0 +1,237 @@
+{
+  "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+  "status": "excluded raster frames, DOM bounds remain separate evidence",
+  "rows": [
+    {
+      "family": "s01-today",
+      "name": "s01-today-320-text100",
+      "width": 320,
+      "scale": 100,
+      "actual": [
+        320,
+        738
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-today-320-text100.jpg"
+    },
+    {
+      "family": "s02-explore",
+      "name": "s02-explore-390-text200",
+      "width": 390,
+      "scale": 200,
+      "actual": [
+        320,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s02-explore-390-text200.jpg"
+    },
+    {
+      "family": "s02-explore",
+      "name": "s02-explore-430-text200",
+      "width": 430,
+      "scale": 200,
+      "actual": [
+        320,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s02-explore-430-text200.jpg"
+    },
+    {
+      "family": "s02-explore",
+      "name": "s02-explore-768-text200",
+      "width": 768,
+      "scale": 200,
+      "actual": [
+        320,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s02-explore-768-text200.jpg"
+    },
+    {
+      "family": "s08-student-thread",
+      "name": "s08-student-thread-320-text100",
+      "width": 320,
+      "scale": 100,
+      "actual": [
+        320,
+        738
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s08-student-thread-320-text100.jpg"
+    },
+    {
+      "family": "s08-student-thread",
+      "name": "s08-student-thread-430-text100",
+      "width": 430,
+      "scale": 100,
+      "actual": [
+        390,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s08-student-thread-430-text100.jpg"
+    },
+    {
+      "family": "s08-student-thread",
+      "name": "s08-student-thread-1440-text200",
+      "width": 1440,
+      "scale": 200,
+      "actual": [
+        768,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s08-student-thread-1440-text200.jpg"
+    },
+    {
+      "family": "s11-ai",
+      "name": "s11-ai-768-text100",
+      "width": 768,
+      "scale": 100,
+      "actual": [
+        430,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s11-ai-768-text100.jpg"
+    },
+    {
+      "family": "s11-ai",
+      "name": "s11-ai-1440-text100",
+      "width": 1440,
+      "scale": 100,
+      "actual": [
+        430,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s11-ai-1440-text100.jpg"
+    },
+    {
+      "family": "s11-ai",
+      "name": "s11-ai-320-text200",
+      "width": 320,
+      "scale": 200,
+      "actual": [
+        320,
+        670
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s11-ai-320-text200.jpg"
+    },
+    {
+      "family": "s11-ai",
+      "name": "s11-ai-390-text200",
+      "width": 390,
+      "scale": 200,
+      "actual": [
+        390,
+        816
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s11-ai-390-text200.jpg"
+    },
+    {
+      "family": "s14-students",
+      "name": "s14-students-390-text200",
+      "width": 390,
+      "scale": 200,
+      "actual": [
+        320,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s14-students-390-text200.jpg"
+    },
+    {
+      "family": "s14-students",
+      "name": "s14-students-430-text200",
+      "width": 430,
+      "scale": 200,
+      "actual": [
+        320,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s14-students-430-text200.jpg"
+    },
+    {
+      "family": "s14-students",
+      "name": "s14-students-768-text200",
+      "width": 768,
+      "scale": 200,
+      "actual": [
+        430,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s14-students-768-text200.jpg"
+    },
+    {
+      "family": "s14-students",
+      "name": "s14-students-1440-text200",
+      "width": 1440,
+      "scale": 200,
+      "actual": [
+        430,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s14-students-1440-text200.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-320-text100",
+      "width": 320,
+      "scale": 100,
+      "actual": [
+        320,
+        738
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-320-text100.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-430-text100",
+      "width": 430,
+      "scale": 100,
+      "actual": [
+        390,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-430-text100.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-768-text100",
+      "width": 768,
+      "scale": 100,
+      "actual": [
+        390,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-768-text100.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-1440-text100",
+      "width": 1440,
+      "scale": 100,
+      "actual": [
+        390,
+        900
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-1440-text100.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-320-text200",
+      "width": 320,
+      "scale": 200,
+      "actual": [
+        320,
+        200
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-320-text200.jpg"
+    },
+    {
+      "family": "s01-current-plan",
+      "name": "s01-current-plan-390-text200",
+      "width": 390,
+      "scale": 200,
+      "actual": [
+        390,
+        244
+      ],
+      "excluded_path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/screenshots/s01-current-plan-390-text200.jpg"
+    }
+  ]
+}

@@ -1,0 +1,2930 @@
+{
+  "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+  "normal_variants": 22,
+  "ordinary_flat_text_failures": [],
+  "decorative_separators_excluded": [
+    {
+      "family": "s15-review",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "dot-sep",
+      "color": "rgb(196, 203, 199)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "below_threshold",
+      "opacity": 1,
+      "ratio": 1.4744422000175856,
+      "tag": "SPAN",
+      "text": "·",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s15-review",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "dot-sep",
+      "color": "rgb(196, 203, 199)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "below_threshold",
+      "opacity": 1,
+      "ratio": 1.4744422000175856,
+      "tag": "SPAN",
+      "text": "·",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s15-edit",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "dot-sep",
+      "color": "rgb(196, 203, 199)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "below_threshold",
+      "opacity": 1,
+      "ratio": 1.4744422000175856,
+      "tag": "SPAN",
+      "text": "·",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s15-edit",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "dot-sep",
+      "color": "rgb(196, 203, 199)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "below_threshold",
+      "opacity": 1,
+      "ratio": 1.4744422000175856,
+      "tag": "SPAN",
+      "text": "·",
+      "threshold": 4.5,
+      "weight": 400
+    }
+  ],
+  "photo_translucent_or_disabled_not_numerically_certified": [
+    {
+      "family": "s01-today",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "hero-kicker",
+      "color": "rgba(241, 240, 234, 0.82)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "今天 · 10月24日 周六",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s01-today",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "hero-meta num",
+      "color": "rgba(241, 240, 234, 0.78)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "约 32 分钟 · 4 个动作 · 12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s01-today",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "hero-progress-text num",
+      "color": "rgba(241, 240, 234, 0.86)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "已完成 3 / 12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s01-today",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s02-explore",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "featured-badge",
+      "color": "rgb(241, 240, 234)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "Nerae 训练内容 · 免费",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s02-explore",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "plan-kicker",
+      "color": "rgba(241, 240, 234, 0.8)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "Nerae 训练内容 · 免费 · 每周 2 次",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "plan-title",
+      "color": "rgb(241, 240, 234)",
+      "fontSize": 28,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H1",
+      "text": "上肢拉力与划船",
+      "threshold": 3,
+      "weight": 600
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "plan-meta num",
+      "color": "rgba(241, 240, 234, 0.8)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "5 个动作 · 30 分钟 · 器械",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 16,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "适用与条件",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "适合：想加强背部与上臂拉力",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "需要：高位下拉器、坐姿划船器、哑铃",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "建议两次训练间隔 48 小时",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s03-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s04-training",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(169, 184, 189)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "range-tab",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "近 8 周",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "range-tab",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "近 12 周",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "最近点评",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "feedback-text",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "卧推最后一组比上次稳，落杠速度控制住了。下次保持 12.5 kg，先把次数补齐，不用急着加重量。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "feedback-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "顾言 · 10月22日 21:10 · 力量基础 · 版本 6",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "link-btn",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "查看原记录",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "最近训练",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-date",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月22日 周四",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "上肢力量",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-meta num",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-date",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月21日 周三",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "核心稳定",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-meta num",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "8 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-date",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月20日 周二",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "下肢力量",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-meta num",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-date",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月16日 周五",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "上肢力量",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "recent-meta num",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "record-feedback-title",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "顾言 · 10月22日 21:10",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "卧推最后一组比上次稳，落杠速度控制住了。下次保持 12.5 kg，先把次数补齐，不用急着加重量。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "tag",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "补记",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s05-records",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-name",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 17,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "江遥",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-price num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "¥159 起",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-title",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "耐力与体能基础",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-focus",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "耐力 · 体能基础 · 训练节奏",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "线上计划 · 文字反馈 · 上海线下 · 48 小时内回复",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "coach-packages",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "2 个服务包 · 暂无足够评价",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s06-coaches",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(39, 111, 83)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "你的当前约定：力量基础 · 月度计划 · ¥699 / 月 · 4 周（2026-10-02 确认）。 服务说明或价格之后变化，不会改写已确认的约定。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 16,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "服务确认与授权",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "服务确认由双方明确完成，不会因咨询自动建立关系",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "健康内容授权另行确认，可单独撤回",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "平台内不收款；服务约定由双方在站内确认",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s07-coach-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-student-list",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-kind",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "训练",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-label",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月22日 · 上肢力量",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "12 组已记录",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-kind",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "计划",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-label",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "版本 7 · 力量基础",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "4 处调整 · 尚未采用",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-student-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-coach-list",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-kind",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "训练",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-label",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "10月22日 · 上肢力量",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "12 组已记录",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-kind",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "计划",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-label",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "版本 7 · 力量基础",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "ref-meta",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "4 处调整 · 尚未采用",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s08-coach-thread",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s09-incoming",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s10-own-plan",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "btn",
+      "color": "rgb(255, 255, 255)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 0.45,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "已保存",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s10-own-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 16,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "相对上次保存",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s10-own-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-copy",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "与上次保存一致。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s10-own-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s11-ai",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "template-name",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "把卧推目标改为 8 次",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s11-ai",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "template-note",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "这周卧推想做得稳一点，不想加重量。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s11-ai",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "status-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "候选已准备好",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s11-ai",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "status-text",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "候选来自已有模板，内容固定，可先核对改动。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s11-ai",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s12-diet",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "这里只有可读的原则与示例，没有实际食物记录、份量或确认摄入；不会给出热量或营养估算，也不把一次自评当成身体结论。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s12-diet",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "已处理",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-copy",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "还没有标记已处理的事项。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-note",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "标记已处理只改变队列状态，不会删除学员记录、消息或已交付计划。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "今天的上下文",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "在读学员",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "2 位",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "待确认",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "1 位",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "已结束",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "1 位",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-note",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "按当前服务关系统计；已结束关系不计入在读。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s13-todo",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s14-students",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "pending-title",
+      "color": "rgb(128, 92, 34)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "未完成工作",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "pending-text",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "回复 10月22日训练反馈",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "link-btn",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "继续处理",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "服务与授权",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "服务",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "力量基础 · 月度计划",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "关系",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "服务进行中",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "计划",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "现用版本 6  · 已交付版本 7",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "最近事实",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "10月22日 · 上肢力量完成 12 组",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "grant-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "健康内容已授权",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "计划与服务记录：可见",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "训练记录：可见",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "饮食观察：可见",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "grant-note",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "教练不能代替学员开启或恢复授权；只能看到被授权的范围。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "回复上下文",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-copy",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "回复会带入这位学员与当前服务，并保留最近训练引用。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s14-student-detail",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s15-review",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "btn btn--ghost",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "保存",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s15-review",
+      "background": [
+        201,
+        120,
+        87,
+        1
+      ],
+      "class": "btn btn--accent",
+      "color": "rgb(13, 27, 33)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 0.45,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "已发布版本 7",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s15-review",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s15-edit",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "btn btn--ghost",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "保存",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s15-edit",
+      "background": [
+        201,
+        120,
+        87,
+        1
+      ],
+      "class": "btn btn--accent",
+      "color": "rgb(13, 27, 33)",
+      "fontSize": 15,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 0.45,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "已发布版本 7",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s15-edit",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "visibility-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "学员是否能看到这个服务包",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "visibility-note",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "隐藏只影响新的浏览；已确认的服务约定保持不变。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        25,
+        47,
+        57,
+        1
+      ],
+      "class": "btn",
+      "color": "rgb(255, 255, 255)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 0.45,
+      "ratio": null,
+      "tag": "BUTTON",
+      "text": "保存服务内容",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "已有约定",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "agreement-name",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "林澈 · 力量基础 · 月度计划",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "确认价格",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "¥699 / 月",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "服务周期",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "4 周",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "确认时间",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "2026-10-02",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DT",
+      "text": "约定服务版本",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "num",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 14,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "DD",
+      "text": "版本 2",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-note",
+      "color": "rgb(39, 111, 83)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "修改服务说明或价格不会改写这份约定；新价格只影响之后的咨询与确认。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "学员看到什么",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-copy",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "预览会展示服务内容、周期、价格语境与响应约定；不会创建关系、收款或发送消息。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "side-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 15,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "H2",
+      "text": "边界",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "平台内不收款，续费不在站内自动发生",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "是否展示由“学员可见”控制；保存不会自动成交",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": false,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "LI",
+      "text": "服务确认与健康授权分开",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s16-services",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    },
+    {
+      "family": "s01-current-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "banner-title",
+      "color": "rgb(25, 47, 57)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "收到版本 7，尚未采用",
+      "threshold": 4.5,
+      "weight": 600
+    },
+    {
+      "family": "s01-current-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "banner-body",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 13,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "P",
+      "text": "现用安排仍是版本 6。教练的新版本不会自动替换；你可以先看具体变化再决定。",
+      "threshold": 4.5,
+      "weight": 400
+    },
+    {
+      "family": "s01-current-plan",
+      "background": [
+        243,
+        242,
+        238,
+        1
+      ],
+      "class": "",
+      "color": "rgb(94, 107, 112)",
+      "fontSize": 12,
+      "inViewport": true,
+      "numericCheck": "needs_visual_review",
+      "opacity": 1,
+      "ratio": null,
+      "tag": "SPAN",
+      "text": "预览",
+      "threshold": 4.5,
+      "weight": 500
+    }
+  ],
+  "scope": "Flat opaque text only; screenshot review covers photos and low-opacity disabled controls. Not universal accessibility certification."
+}

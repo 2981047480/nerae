@@ -36,9 +36,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G02",
@@ -57,9 +63,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G03",
@@ -75,9 +92,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G04",
@@ -94,9 +118,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G05",
@@ -111,9 +146,14 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G06",
@@ -129,9 +169,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "G07",
@@ -148,9 +199,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "N01",
@@ -172,9 +232,19 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "N02",
@@ -194,9 +264,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "N03",
@@ -216,9 +297,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L01",
@@ -254,9 +344,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L02",
@@ -275,9 +374,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L03",
@@ -298,9 +405,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L04",
@@ -332,9 +448,27 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L05",
@@ -364,9 +498,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L06",
@@ -390,9 +530,24 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L07",
@@ -423,9 +578,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/copy-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L08",
@@ -461,9 +622,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "L09",
@@ -486,9 +654,23 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C01",
@@ -507,9 +689,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C02",
@@ -528,9 +716,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C03",
@@ -548,9 +743,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C04",
@@ -569,9 +770,21 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C05",
@@ -592,9 +805,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C06",
@@ -614,9 +834,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C07",
@@ -637,9 +866,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "C08",
@@ -659,9 +896,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "B01",
@@ -684,9 +932,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "B02",
@@ -705,9 +962,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "B03",
@@ -726,9 +994,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "B04",
@@ -747,9 +1026,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "B05",
@@ -780,9 +1068,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V01",
@@ -813,9 +1109,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V02",
@@ -847,9 +1150,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V03",
@@ -880,9 +1190,14 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V04",
@@ -914,9 +1229,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/contrast/review-summary.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V05",
@@ -947,9 +1268,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V06",
@@ -971,9 +1300,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "design/prototype/ASSETS.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/missing-image-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V07",
@@ -1004,9 +1340,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/short-modal-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "V08",
@@ -1037,9 +1380,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T01",
@@ -1059,9 +1408,19 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T02",
@@ -1080,9 +1439,20 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T03",
@@ -1100,9 +1470,14 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T04",
@@ -1123,9 +1498,19 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T05",
@@ -1145,9 +1530,18 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "T06",
@@ -1178,9 +1572,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": ""
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json"
+      ],
+      "scope_note": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。"
     },
     {
       "id": "H01",
@@ -1197,9 +1598,15 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "设计假设已体现，不代表用户研究验证"
     },
     {
       "id": "H02",
@@ -1217,9 +1624,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "设计假设已体现，不代表用户研究验证"
     },
     {
       "id": "H03",
@@ -1237,9 +1652,14 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "设计假设已体现，不代表用户研究验证"
     },
     {
       "id": "H04",
@@ -1260,9 +1680,16 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json"
+      ],
+      "scope_note": "设计假设已体现，不代表用户研究验证"
     },
     {
       "id": "H05",
@@ -1293,9 +1720,17 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "设计假设已体现，不代表用户研究验证"
     },
     {
       "id": "Q01",
@@ -1328,9 +1763,27 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f06-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-share-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f07-final-diet-results.json"
+      ],
+      "scope_note": "Lead走查与本地样机接受，不代表真实用户或生产"
     },
     {
       "id": "Q02",
@@ -1361,9 +1814,21 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f01-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/f01-multiday-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f05-final-results.json"
+      ],
+      "scope_note": "Lead走查与本地样机接受，不代表真实用户或生产"
     },
     {
       "id": "Q03",
@@ -1395,9 +1860,19 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/VISUAL_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/matrix-results-pixel-verified.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/pixel-final-audit.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/end-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/MOTION_REVIEW.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/motion-probes.jsonl",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/motion-probes.jsonl"
+      ],
+      "scope_note": "Lead走查与本地样机接受，不代表真实用户或生产"
     },
     {
       "id": "Q04",
@@ -1428,9 +1903,21 @@
       ],
       "build_spec": "05_UI_BUILD_SPEC.md",
       "acceptance": "07_ACCEPTANCE.md",
-      "status": "documented",
-      "evidence": [],
-      "scope_note": "研究原则/假设的落实不等于已完成真实用户研究"
+      "status": "lead-reviewed",
+      "evidence": [
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/FINAL_QA.md",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/source-change-scope.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/state-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/ea37-targeted-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f02-final-rest-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/motion/training-motion-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/three-stage-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-10/code/identity-seams.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/f04-final-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/flows/retention-results.json",
+        "docs/evidence/D01/round-03/lead/expansion/frozen-09/states/message-own-send-supplements.json"
+      ],
+      "scope_note": "Lead走查与本地样机接受，不代表真实用户或生产"
     }
   ]
 }

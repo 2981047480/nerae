@@ -1,0 +1,25 @@
+[
+  {
+    "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+    "published8": true,
+    "current6": true,
+    "savedAndReloaded": true,
+    "queueToDraftNavigations": 2,
+    "scope": "Local UI sample, no server or real professional review"
+  },
+  {
+    "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+    "old7SnapshotRetained": true,
+    "lastCoachWasZhou": true,
+    "coldReloadRetained": true,
+    "returnedToMessageComposer": true
+  },
+  {
+    "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+    "canceledBeforeConfirmation": true,
+    "adopted8": true,
+    "reloadRetained": true,
+    "originalThreeSetsPreserved": true,
+    "historicalValuesRetained": true
+  }
+]

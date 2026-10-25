@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
 import PreviewControl from './components/PreviewControl.vue'
 import BaseSheet from './components/BaseSheet.vue'
 import TodayView from './views/TodayView.vue'
 import ExploreView from './views/ExploreView.vue'
+import PlanDetailView from './views/PlanDetailView.vue'
 import TrainingView from './views/TrainingView.vue'
+import RecordsView from './views/RecordsView.vue'
+import MessagesView from './views/MessagesView.vue'
+import IncomingPlanView from './views/IncomingPlanView.vue'
+import MyPlanView from './views/MyPlanView.vue'
+import StudentPlanView from './views/StudentPlanView.vue'
+import AiAssistView from './views/AiAssistView.vue'
+import DietView from './views/DietView.vue'
+import CoachDetailView from './views/CoachDetailView.vue'
+import CoachTodoView from './views/CoachTodoView.vue'
+import CoachStudentsView from './views/CoachStudentsView.vue'
+import CoachStudentDetailView from './views/CoachStudentDetailView.vue'
+import CoachServicesView from './views/CoachServicesView.vue'
 import CoachReviewView from './views/CoachReviewView.vue'
 import {
   closeSheet,
@@ -16,9 +29,34 @@ import {
   recordsForSheet,
   state,
   ui,
+  cancelAccess,
+  completeLocalSignIn,
+  confirmAdultAccess,
+  declareMinor,
 } from './state/store'
 import { formatTime, setValueLabel } from './utils/format'
 import { CheckCircle2 } from '@lucide/vue'
+
+const viewMap = {
+  today: TodayView,
+  explore: ExploreView,
+  planDetail: PlanDetailView,
+  records: RecordsView,
+  messages: MessagesView,
+  incomingPlan: IncomingPlanView,
+  myPlan: MyPlanView,
+  studentPlan: StudentPlanView,
+  aiAssist: AiAssistView,
+  diet: DietView,
+  coachDetail: CoachDetailView,
+  coachTodo: CoachTodoView,
+  coachStudents: CoachStudentsView,
+  coachStudentDetail: CoachStudentDetailView,
+  coachServices: CoachServicesView,
+  coachPlan: CoachReviewView,
+} as const
+
+const currentView = computed(() => viewMap[state.screen as keyof typeof viewMap] ?? TodayView)
 
 function restoreScroll(): void {
   if (typeof window === 'undefined') return
@@ -49,7 +87,52 @@ function applyDocumentTextScale(scale: 1 | 2): void {
 }
 
 function removeFocusGhosts(): void {
-  document.querySelectorAll('.session-focus-ghost').forEach((ghost) => ghost.remove())
+  document.querySelectorAll('.session-focus-ghost, .plan-focus-ghost').forEach((ghost) => ghost.remove())
+}
+
+let planBridgeToken = 0
+
+function runPlanBridge(origin: { x: number; y: number; width: number; height: number; text: string; image?: string }): void {
+  if (typeof document === 'undefined' || motionReduced.value || !origin.image) return
+  const target = document.querySelector<HTMLElement>('[data-plan-hero]')
+  if (!target) return
+  const to = target.getBoundingClientRect()
+  if (!to.width || !to.height) return
+  const ghost = document.createElement('div')
+  ghost.className = 'plan-focus-ghost'
+  ghost.dataset.bridge = 'plan'
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.style.left = `${origin.x}px`
+  ghost.style.top = `${origin.y}px`
+  ghost.style.width = `${origin.width}px`
+  ghost.style.height = `${origin.height}px`
+  ghost.style.backgroundImage = `url(${origin.image})`
+  document.body.appendChild(ghost)
+  if (typeof ghost.animate !== 'function') {
+    ghost.remove()
+    return
+  }
+  const animation = ghost.animate(
+    [
+      {
+        left: `${origin.x}px`,
+        top: `${origin.y}px`,
+        width: `${origin.width}px`,
+        height: `${origin.height}px`,
+        opacity: 1,
+      },
+      {
+        left: `${to.left}px`,
+        top: `${to.top}px`,
+        width: `${to.width}px`,
+        height: `${to.height}px`,
+        opacity: 0,
+      },
+    ],
+    { duration: 280, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' },
+  )
+  animation.onfinish = () => ghost.remove()
+  window.setTimeout(() => ghost.remove(), 520)
 }
 
 watch(
@@ -123,12 +206,29 @@ watch(
         requestAnimationFrame(() => runFocusBridge(origin))
       })
     }
+    planBridgeToken += 1
+    if (screen === 'planDetail' && previous && !motionReduced.value && origin?.image) {
+      const token = planBridgeToken
+      const started = performance.now()
+      const waitForHero = (): void => {
+        if (token !== planBridgeToken || state.screen !== 'planDetail' || motionReduced.value) return
+        if (document.querySelector('[data-plan-hero]')) {
+          runPlanBridge(origin)
+          return
+        }
+        if (performance.now() - started < 600) requestAnimationFrame(waitForHero)
+      }
+      nextTick(() => requestAnimationFrame(waitForHero))
+    }
   },
 )
 
-const isTraining = () => state.screen === 'training'
-const isCoach = () => state.actor === 'coach'
-const isStudentShell = () => !isTraining() && !isCoach()
+const isTraining = computed(() => state.screen === 'training')
+const isCoach = computed(() => state.actor === 'coach')
+const showTabbar = computed(() =>
+  state.screen === 'messages' ||
+  ['today', 'explore', 'records', 'coachTodo', 'coachStudents', 'coachServices'].includes(state.screen),
+)
 </script>
 
 <template>
@@ -136,26 +236,24 @@ const isStudentShell = () => !isTraining() && !isCoach()
   <div
     class="app-root"
     :data-motion="motionReduced ? 'reduced' : 'full'"
-    :data-focus-screen="isTraining() ? 'true' : 'false'"
+    :data-focus-screen="isTraining ? 'true' : 'false'"
   >
-    <template v-if="isTraining()">
+    <template v-if="isTraining">
       <Transition name="focus" appear>
         <TrainingView :key="state.screen" />
       </Transition>
     </template>
     <template v-else>
       <AppHeader />
-      <main id="main" tabindex="-1" :class="isStudentShell() ? 'student-main' : 'coach-main'">
+      <main id="main" tabindex="-1" :class="isCoach ? 'coach-main' : 'student-main'">
         <Transition name="view" mode="out-in" appear>
-          <TodayView v-if="state.screen === 'today'" key="today" />
-          <ExploreView v-else-if="state.screen === 'explore'" key="explore" />
-          <CoachReviewView v-else-if="state.screen === 'coachPlan'" key="coachPlan" />
+          <component :is="currentView" :key="state.screen" />
         </Transition>
       </main>
-      <TabBar v-if="isStudentShell() && (state.screen === 'today' || state.screen === 'explore')" />
+      <TabBar v-if="showTabbar" />
     </template>
 
-    <PreviewControl :dark="isTraining()" />
+    <PreviewControl :dark="isTraining" />
 
     <BaseSheet :open="ui.sheet === 'records'" title="本次记录" @close="closeSheet">
       <div class="record-sheet">
@@ -187,6 +285,49 @@ const isStudentShell = () => !isTraining() && !isCoach()
         </p>
       </div>
     </BaseSheet>
+
+    <BaseSheet
+      :open="ui.sheet === 'access'"
+      :title="ui.accessStep === 'signin' ? '登录后开始训练' : ui.accessStep === 'age' ? '确认年龄' : '暂不能开始训练'"
+      @close="cancelAccess"
+    >
+      <template v-if="ui.accessStep === 'signin'">
+        <p class="access-copy">开始训练需要登录。取消会回到同一份内容与同一训练日，不会创建训练或副本。</p>
+        <p class="access-copy access-copy--muted">登录只用于本次开始；已保存的浏览位置与筛选不会丢失。</p>
+      </template>
+      <template v-else-if="ui.accessStep === 'age'">
+        <p class="access-copy">Nerae 不向未满 18 岁的人提供训练服务。请确认你的年龄；这一步不能通过换一份内容跳过。</p>
+      </template>
+      <template v-else>
+        <p class="access-copy">未满 18 岁不能开始训练或建立服务关系。你仍可以继续浏览免费内容，已保存的收藏与筛选保留。</p>
+      </template>
+      <template #footer>
+        <div v-if="ui.accessStep === 'signin'" class="access-actions">
+          <button type="button" class="btn btn--ghost" @click="cancelAccess">取消</button>
+          <button type="button" class="btn btn--accent" @click="completeLocalSignIn">使用样例身份继续</button>
+        </div>
+        <div v-else-if="ui.accessStep === 'age'" class="access-actions">
+          <button type="button" class="btn btn--ghost" @click="cancelAccess">取消</button>
+          <button type="button" class="btn btn--ghost" @click="declareMinor">未满 18 岁</button>
+          <button type="button" class="btn btn--accent" @click="confirmAdultAccess">已满 18 岁，继续</button>
+        </div>
+        <div v-else class="access-actions">
+          <button type="button" class="btn" @click="cancelAccess">继续浏览</button>
+        </div>
+      </template>
+    </BaseSheet>
+
+    <Transition name="notice">
+      <p
+        v-if="ui.saveNote"
+        class="app-notice"
+        :class="`app-notice--${ui.saveNoteTone ?? 'neutral'}`"
+        role="status"
+        aria-live="polite"
+      >
+        {{ ui.saveNote }}
+      </p>
+    </Transition>
   </div>
 </template>
 
@@ -196,6 +337,7 @@ const isStudentShell = () => !isTraining() && !isCoach()
   left: 12px;
   top: 0;
   z-index: 200;
+  min-height: 44px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
   background: var(--ink);
@@ -211,6 +353,53 @@ const isStudentShell = () => !isTraining() && !isCoach()
 
 .coach-main {
   padding-bottom: var(--sp-6);
+}
+
+.access-copy {
+  font-size: var(--text-14);
+  line-height: 1.7;
+}
+
+.access-copy--muted {
+  margin-top: var(--sp-2);
+  color: var(--muted);
+  font-size: var(--text-13);
+}
+
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.app-notice {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(92vw, 560px);
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(14, 27, 32, 0.14);
+  color: var(--ink);
+  font-size: var(--text-13);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.app-notice--error {
+  border-color: rgba(162, 63, 61, 0.45);
+  color: var(--error);
+}
+
+.app-notice--positive {
+  border-color: rgba(39, 111, 83, 0.4);
+  color: var(--positive);
 }
 
 .record-sheet-head {
@@ -294,5 +483,29 @@ const isStudentShell = () => !isTraining() && !isCoach()
   margin-top: var(--sp-4);
   color: var(--muted);
   font-size: var(--text-12);
+}
+
+@media (min-width: 768px) {
+  .access-copy {
+  font-size: var(--text-14);
+  line-height: 1.7;
+}
+
+.access-copy--muted {
+  margin-top: var(--sp-2);
+  color: var(--muted);
+  font-size: var(--text-13);
+}
+
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.app-notice {
+    bottom: 24px;
+  }
 }
 </style>

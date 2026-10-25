@@ -1,0 +1,16 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "actualCompletedGroups": 8,
+  "birdRegion": "鸟狗式\n近 4 周 · 1 次记录 · 最高值\n10\n11\n次/侧\n10\n10/24\n\n只有一次记录，暂不判断趋势。\n\n来源：已确认组记录 · 最高次数（每侧） · 只比较同一动作与同一记录方式；不同方式保留在明细中。",
+  "birdSvg": {
+    "axis": "次/侧",
+    "lines": 0,
+    "points": []
+  },
+  "sideSvg": {
+    "axis": "秒/侧"
+  },
+  "legacyRawZeroKgRetained": true,
+  "qaCorrection": "SVG number and unit are separate nodes. Assert numeric point count and axis unit independently, not one contiguous text string.",
+  "scope": "Actual local UI dose confirmation; no physical training or health outcome"
+}

@@ -1,0 +1,2135 @@
+{
+  "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+  "observations": 152,
+  "invalid": [],
+  "rows": [
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/pixel-captures.jsonl",
+      "name": "m09-full-range-units",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/screenshots/m09-full-range-units.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/pixel-captures.jsonl",
+      "name": "m09-reduced-range-units",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/motion/screenshots/m09-reduced-range-units.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/pixel-captures.jsonl",
+      "name": "short-320-568-text200-login",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/short-320-568-text200-login.jpg",
+      "actual": [
+        320,
+        568
+      ],
+      "expected": [
+        320,
+        568
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/pixel-captures.jsonl",
+      "name": "end-320-568-text200-s01-today",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s01-today.jpg",
+      "actual": [
+        320,
+        568
+      ],
+      "expected": [
+        320,
+        568
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/pixel-captures.jsonl",
+      "name": "end-320-568-text200-s10-own-plan",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s10-own-plan.jpg",
+      "actual": [
+        320,
+        568
+      ],
+      "expected": [
+        320,
+        568
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/pixel-captures.jsonl",
+      "name": "end-320-568-text200-s12-diet",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s12-diet.jpg",
+      "actual": [
+        320,
+        568
+      ],
+      "expected": [
+        320,
+        568
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/pixel-captures.jsonl",
+      "name": "end-320-568-text200-s16-services",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s16-services.jpg",
+      "actual": [
+        320,
+        568
+      ],
+      "expected": [
+        320,
+        568
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s01-07",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s01-07.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s02-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s02-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s02-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s02-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s02-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s02-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s02-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s02-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s02-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s02-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s03-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s03-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s03-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s03-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s03-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s03-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s03-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s03-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s03-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s03-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s04-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s04-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s05-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s05-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s05-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s05-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s05-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s05-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s05-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s05-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s05-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s05-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s06-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s06-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s06-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s06-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s06-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s06-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s06-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s06-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s06-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s06-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s07-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s07-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s07-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s07-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s09-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s09-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s09-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s09-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s09-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s09-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s09-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s09-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s09-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s09-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s10-07",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s10-07.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s11-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s11-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s12-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s12-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s13-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s13-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s13-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s13-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-list-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-list-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-list-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-list-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-list-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-list-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-list-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-list-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-list-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-list-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s14-detail-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s14-detail-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s15-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s15-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s16-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s16-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s16-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s16-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s16-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s16-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s16-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s16-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-student-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-student-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-00",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-00.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-01",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-01.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-02",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-02.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-03",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-03.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-04",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-04.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-05",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-05.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/states/pixel-captures.jsonl",
+      "name": "state-s08-coach-06",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/states/screenshots/state-s08-coach-06.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/pixel-captures.jsonl",
+      "name": "missing-s01-today-390",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s01-today-390.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/pixel-captures.jsonl",
+      "name": "missing-s02-explore-390",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s02-explore-390.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/pixel-captures.jsonl",
+      "name": "missing-s03-plan-390",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s03-plan-390.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/pixel-captures.jsonl",
+      "name": "missing-s04-training-390",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s04-training-390.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-fourth-real-twenty-by-five",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-fourth-real-twenty-by-five.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-duration-1",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-duration-1.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-duration-2",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-duration-2.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-today-complete-twelve",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-today-complete-twelve.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-fixed-real-pair-summary-and-detail",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-fixed-real-pair-summary-and-detail.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-weight-per-side-summary",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-weight-per-side-summary.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-1",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-1.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-2",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-2.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-3",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-3.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-4",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-4.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-5",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-5.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-6",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-6.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-7",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-7.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-core-8",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-core-8.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-body-per-side-summary-and-single-point",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-body-per-side-summary-and-single-point.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-legacy-zero-kg-not-migrated",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-legacy-zero-kg-not-migrated.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-duration-per-side-summary",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-duration-per-side-summary.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "breath-zero-rejected-without-kg",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/breath-zero-rejected-without-kg.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "breath-conflict-count-not-seconds-or-kg",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/breath-conflict-count-not-seconds-or-kg.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "breath-conflict-resolved-once",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/breath-conflict-resolved-once.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "mobility-dose-2",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/mobility-dose-2.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "mobility-dose-3",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/mobility-dose-3.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "mobility-dose-4",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/mobility-dose-4.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "mobility-dose-5",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/mobility-dose-5.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "mobility-dose-6",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/mobility-dose-6.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/flow-captures.jsonl",
+      "name": "ea37-breath-eight-real-summary",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/ea37-breath-eight-real-summary.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/pixel-captures.jsonl",
+      "name": "f01-final-day-b-thirteen-detail",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/f01-final-day-b-thirteen-detail.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/pixel-captures.jsonl",
+      "name": "f01-final-day-b-starts-high-pull",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/f01-final-day-b-starts-high-pull.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/pixel-captures.jsonl",
+      "name": "f01-final-day-b-cold-same-session",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/flows/screenshots/f01-final-day-b-cold-same-session.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-lin-eight-saved",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-lin-eight-saved.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-lin-eight-reloaded",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-lin-eight-reloaded.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-lin-eight-publish-review",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-lin-eight-publish-review.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-lin-eight-publish-canceled",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-lin-eight-publish-canceled.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-lin-eight-published-current-six",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-lin-eight-published-current-six.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-last-coach-context-zhou",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-last-coach-context-zhou.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-student-old-seven-after-eight",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-student-old-seven-after-eight.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-student-old-seven-cold",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-student-old-seven-cold.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-old-seven-back-to-gu",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-old-seven-back-to-gu.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-student-new-eight-full-content",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-student-new-eight-full-content.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-adopt-eight-impact-review",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-adopt-eight-impact-review.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-adopt-eight-canceled",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-adopt-eight-canceled.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-adopt-eight-confirmed",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-adopt-eight-confirmed.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-adopt-eight-reloaded",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-adopt-eight-reloaded.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-after-adoption-original-three-preserved",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-after-adoption-original-three-preserved.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    },
+    {
+      "capture_log": "docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/pixel-captures.jsonl",
+      "name": "f03-after-adoption-history-retained",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/reference-flow/screenshots/f03-after-adoption-history-retained.jpg",
+      "actual": [
+        390,
+        900
+      ],
+      "expected": [
+        390,
+        900
+      ],
+      "valid": true
+    }
+  ]
+}

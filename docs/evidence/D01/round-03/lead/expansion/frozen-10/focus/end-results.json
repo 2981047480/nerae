@@ -1,0 +1,98 @@
+{
+  "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+  "rows": [
+    {
+      "family": "s01-today",
+      "fixedNav": [
+        {
+          "bottom": 568,
+          "height": 85,
+          "top": 483
+        }
+      ],
+      "focused": "main",
+      "maxScroll": 2918,
+      "scrollY": 2918,
+      "tail": {
+        "box": {
+          "bottom": 417.9765625,
+          "height": 97.9921875,
+          "top": 319.984375
+        },
+        "text": "饮食自评今天还没有自评"
+      },
+      "viewport": {
+        "height": 568,
+        "width": 320
+      },
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s01-today.jpg"
+    },
+    {
+      "family": "s10-own-plan",
+      "fixedNav": [],
+      "focused": "main",
+      "maxScroll": 3661,
+      "scrollY": 3661.5,
+      "tail": {
+        "box": {
+          "bottom": 362.171875,
+          "height": 1,
+          "top": 361.171875
+        },
+        "text": "我的计划"
+      },
+      "viewport": {
+        "height": 568,
+        "width": 320
+      },
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s10-own-plan.jpg"
+    },
+    {
+      "family": "s12-diet",
+      "fixedNav": [],
+      "focused": "main",
+      "maxScroll": 2642,
+      "scrollY": 2642.5,
+      "tail": {
+        "box": {
+          "bottom": 362.015625,
+          "height": 111.5859375,
+          "top": 250.4296875
+        },
+        "text": "Nerae 饮食内容 · 免费 · 不作为个人营养评估或医疗建议。"
+      },
+      "viewport": {
+        "height": 568,
+        "width": 320
+      },
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s12-diet.jpg"
+    },
+    {
+      "family": "s16-services",
+      "fixedNav": [
+        {
+          "bottom": 568,
+          "height": 85,
+          "top": 483
+        }
+      ],
+      "focused": "main",
+      "maxScroll": 3354,
+      "scrollY": 3354.5,
+      "tail": {
+        "box": {
+          "bottom": 431.09375,
+          "height": 80,
+          "top": 351.09375
+        },
+        "text": "服务确认与健康授权分开"
+      },
+      "viewport": {
+        "height": 568,
+        "width": 320
+      },
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/focus/screenshots/end-320-568-text200-s16-services.jpg"
+    }
+  ],
+  "OSKeyboardSimulated": false
+}

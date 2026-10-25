@@ -1,0 +1,310 @@
+{
+  "full": {
+    "samples": [
+      {
+        "t": 169,
+        "rect": {
+          "left": 20,
+          "top": -45.53125,
+          "right": 370,
+          "bottom": 197.609375,
+          "width": 350,
+          "height": 243.140625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 182,
+        "rect": {
+          "left": 20,
+          "top": -28.375,
+          "right": 370,
+          "bottom": 237.28125,
+          "width": 350,
+          "height": 265.65625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 201,
+        "rect": {
+          "left": 20,
+          "top": -15.09375,
+          "right": 370,
+          "bottom": 268,
+          "width": 350,
+          "height": 283.09375
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 220,
+        "rect": {
+          "left": 20,
+          "top": -6.296875,
+          "right": 370,
+          "bottom": 288.359375,
+          "width": 350,
+          "height": 294.65625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 240,
+        "rect": {
+          "left": 20,
+          "top": -0.484375,
+          "right": 370,
+          "bottom": 301.796875,
+          "width": 350,
+          "height": 302.28125
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 260,
+        "rect": {
+          "left": 20,
+          "top": 3.453125,
+          "right": 370,
+          "bottom": 310.921875,
+          "width": 350,
+          "height": 307.46875
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 281,
+        "rect": {
+          "left": 20,
+          "top": 8.203125,
+          "right": 370,
+          "bottom": 321.921875,
+          "width": 350,
+          "height": 313.71875
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 300,
+        "rect": {
+          "left": 20,
+          "top": 9.640625,
+          "right": 370,
+          "bottom": 325.234375,
+          "width": 350,
+          "height": 315.59375
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 321,
+        "rect": {
+          "left": 20,
+          "top": 10.703125,
+          "right": 370,
+          "bottom": 327.703125,
+          "width": 350,
+          "height": 317
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 341,
+        "rect": {
+          "left": 20,
+          "top": 11.484375,
+          "right": 370,
+          "bottom": 329.5,
+          "width": 350,
+          "height": 318.015625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 361,
+        "rect": {
+          "left": 20,
+          "top": 12.046875,
+          "right": 370,
+          "bottom": 330.8125,
+          "width": 350,
+          "height": 318.765625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 381,
+        "rect": {
+          "left": 20,
+          "top": 12.71875,
+          "right": 370,
+          "bottom": 332.359375,
+          "width": 350,
+          "height": 319.640625
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 401,
+        "rect": {
+          "left": 20,
+          "top": 12.890625,
+          "right": 370,
+          "bottom": 332.75,
+          "width": 350,
+          "height": 319.859375
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      },
+      {
+        "t": 421,
+        "rect": {
+          "left": 20,
+          "top": 12.96875,
+          "right": 370,
+          "bottom": 332.9375,
+          "width": 350,
+          "height": 319.96875
+        },
+        "inViewport": true,
+        "position": "fixed",
+        "pointerEvents": "none",
+        "zIndex": "150",
+        "backgroundSize": "cover",
+        "backgroundPosition": "50% 50%",
+        "durations": [
+          280
+        ]
+      }
+    ],
+    "target": {
+      "left": 20,
+      "top": 64,
+      "width": 350,
+      "height": 320
+    },
+    "ghostAfter": false
+  },
+  "afterFastBack": {
+    "screen": "explore",
+    "ghost": false
+  },
+  "reenter": {
+    "screen": "planDetail",
+    "ghost": true,
+    "position": "fixed",
+    "inViewport": true,
+    "top": 255.875
+  },
+  "reduce": {
+    "reduceMotion": true,
+    "ghost": false,
+    "screen": "planDetail",
+    "focus": "MAIN"
+  }
+}

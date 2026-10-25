@@ -12,7 +12,7 @@
 
 - 已有：PRD v1.10、ER v1.2、OpenAPI 1.2.0（99 路径）、Python 契约回归、APP_FLOW、UI_SPEC、37 个路线图工作包 + 25 张执行卡的单一 DAG 与只读任务包工具
 - 不存在 / 未接受：Go 服务、正式 uni-app 应用、数据库迁移、真实 HTTP 权限/并发、MiMo 真实调用、微信真机、生产部署；本地Git仅为UI隔离准备，工程工具链尚未完整接受
-- 任务状态以 tasks.json / plan.py 为准。第三轮 UI 已明确授权，新增 D01-01/02/03/I，先55项文稿，再指定 DeepSeek 实现四种代表情境和全量16界面族，Lead验收。正式U01–U07仍待工程与已接受设计基线；未细拆工作包不能直接派发。
+- 任务状态以 tasks.json / plan.py 为准。第三轮55项文稿与首批四情境已接受；指定 DeepSeek 的16族完整UI候选已通过Lead复核并原样导入，正在集成验收。正式U01–U07仍待工程；未细拆工作包不能直接派发。
 
 详细现状见 [CURRENT_STATE](docs/CURRENT_STATE.md)，本轮任务细化与验证见 [PLAN_REFINEMENT](docs/PLAN_REFINEMENT.md)；此前契约/流程修复快照见 [修复对照 v1.2](docs/方案修复对照-v1.2.md)。
 
@@ -52,7 +52,7 @@
 | [成本与资质](docs/小程序上线成本与资质.md) | 资质口径、三档 AI 成本、供应商事实 |
 | [市场事实清单](docs/市场事实清单.md) · [海外对标](docs/海外私教AI教练_事实清单.md) | 竞品、客单、监管与证据（历史材料） |
 
-设计状态：旧原型、备份、截图、token与生成简报已删除，不作新基线。[第三轮文稿与进度](docs/design/round-03/README.md)逐项落实设计意图，目标为高级质感、美观与配套动画；由用户指定 DeepSeek 实现，Lead验收，内部设计推理不得进入产品。当前尚无已接受的新UI。[旧清理清单](docs/design/UI_CLEANUP_20261024.json)保留实际删除校验。
+设计状态：旧原型、备份、截图、token与生成简报已删除，不作新基线。[第三轮文稿与进度](docs/design/round-03/README.md)逐项落实设计意图，目标为高级质感、美观与配套动画；由指定 DeepSeek 实现，Lead验收，内部设计推理不进入产品。当前源898e完整候选已导入，集成状态见[独立复核](docs/evidence/D01/round-03/lead/REVIEW_14.md)。design/prototype/README.md保留执行者早期交接快照，当前验收结果以Lead报告和tasks.json为准。[旧清理清单](docs/design/UI_CLEANUP_20261024.json)保留实际删除校验。
 
 交互图（Archify 历史快照，字段以当前 ER/OpenAPI 为准）：[架构](docs/diagrams/nerae-architecture.html) · [ERD](docs/diagrams/nerae-erd.html) · [信息架构](docs/diagrams/nerae-ia.html)。
 

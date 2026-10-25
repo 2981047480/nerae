@@ -1,0 +1,47 @@
+{
+  "checks": {
+    "studentOwnFailed": {
+      "bodyHas": true,
+      "retryButtons": [
+        "重试",
+        "删除",
+        "重试",
+        "删除"
+      ]
+    },
+    "coachList": {
+      "bodyHasFailed": false,
+      "last": [
+        "新版计划发给你了：高位下拉从 12 次改成 10 次、备注写清了这周…",
+        "这周先按周二、周四的耐力安排走，强度以能说完整句子为准。"
+      ],
+      "unread": null
+    },
+    "coachThread": {
+      "bodyHasFailed": false,
+      "retryButtons": 0,
+      "failedBubbles": 0,
+      "bubbles": [
+        "右肩这两天有点紧，推举时不太舒服，需要停一下吗？",
+        "这周先不做过头推举，卧推保持现在的重量；如果疼到影响日常活动，先找专业人员看一下。下周我再看你的反馈。",
+        "新版计划发给你了：高位下拉从 12 次改成 10 次、备注写清了这周的调整，划船加到 4 组，平板支撑 50 秒。共 4 处调整，你看完整内容后再决定是否采用。"
+      ]
+    },
+    "studentDraft": {
+      "value": "只属于学员的未发送草稿"
+    },
+    "coachDraftFirst": {
+      "value": "",
+      "studentDraft": "只属于学员的未发送草稿"
+    },
+    "coachDraftSet": {
+      "value": "教练自己的草稿",
+      "studentDraft": "只属于学员的未发送草稿",
+      "coachDraft": "教练自己的草稿"
+    },
+    "studentDraftRestored": {
+      "value": "只属于学员的未发送草稿",
+      "coachDraft": "教练自己的草稿"
+    }
+  }
+}

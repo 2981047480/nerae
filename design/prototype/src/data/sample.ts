@@ -7,7 +7,7 @@ import type {
   SessionSet,
   SessionState,
 } from '../types'
-import { sanitizePlan, serializePlan } from '../utils/plan'
+import { daysFromContents, sanitizePlan, serializePlan } from '../utils/plan'
 
 export const PREVIEW_DATE_LABEL = '10月24日 周六'
 export const PREVIEW_WEEK_LABEL = '10月19日–25日'
@@ -123,15 +123,19 @@ function createExercises(): SessionExercise[] {
 export function createSeedSession(): SessionState {
   return {
     id: 'session-20261024-strength',
+    planId: 'plan-upper-pull',
+    dayId: 'day-a',
     planVersion: 6,
     planTitle: '力量基础',
     dayTitle: '上肢力量',
     dateLabel: PREVIEW_DATE_LABEL,
     startedAt: STARTED_AT,
+    durationMin: 32,
     status: 'in_progress',
     completedAt: null,
     exercises: createExercises(),
     rest: null,
+    conflicts: [],
   }
 }
 
@@ -235,6 +239,12 @@ export function createSeedDraft(): PlanContent {
 
 export function createSeedCoachState(): CoachState {
   const draft = createSeedDraft()
+  const delivery = {
+    version: 7,
+    content: structuredClone(draft),
+    deliveredAt: '2026-10-23T21:40:00+08:00',
+    coachName: COACH_NAME,
+  }
   return {
     published: SEED_PUBLISHED_PLAN,
     publishedVersion: 6,
@@ -243,9 +253,7 @@ export function createSeedCoachState(): CoachState {
     draftVersion: 7,
     savedContent: serializePlan(draft),
     savedAt: '2026-10-23T21:40:00+08:00',
-    deliveredVersion: null,
-    deliveredAt: null,
-    deliveries: [],
+    deliveries: [delivery],
   }
 }
 
@@ -282,7 +290,11 @@ export const DIET_GOALS = [
   { value: 'rest', label: '休息日' },
 ]
 
-export const EXPLORE_ITEMS: ExploreItem[] = [
+const SEED_EXPLORE_ITEMS: Array<
+  Omit<ExploreItem, 'status' | 'adultRequired' | 'author' | 'days'> & {
+    days?: NonNullable<ExploreItem['days']>
+  }
+> = [
   {
     id: 'plan-upper-pull',
     type: 'training',
@@ -394,6 +406,53 @@ export const EXPLORE_ITEMS: ExploreItem[] = [
     ],
   },
   {
+    id: 'plan-weekly-base',
+    type: 'training',
+    title: '一周两练 · 力量基础',
+    image: '/assets/hero-today.webp',
+    imageAlt: '训练者在健身房完成上肢推举动作',
+    goal: 'strength',
+    equipment: 'dumbbell',
+    durationMin: 40,
+    perWeek: '每周 2 次',
+    countLabel: '2 个训练日 · 8 个动作',
+    source: 'Nerae 训练内容 · 免费',
+    summary: '明确分成推与核心、拉与下肢两个训练日；每周按这两个训练日各完成一次，动作与组次固定。',
+    fit: ['适合：每周能安排两次完整训练的人', '需要：一对哑铃、平凳、高位下拉器', '两个训练日之间至少间隔一天'],
+    contents: [
+      { name: '哑铃卧推', detail: '4 组 × 10 次 · 组间 90 秒' },
+      { name: '坐姿肩推', detail: '3 组 × 10 次 · 组间 75 秒' },
+      { name: '平板支撑', detail: '2 组 × 45 秒 · 组间 60 秒' },
+      { name: '死虫式', detail: '2 组 × 40 秒 · 组间 45 秒' },
+      { name: '高位下拉', detail: '3 组 × 12 次 · 组间 75 秒' },
+      { name: '单臂哑铃划船', detail: '3 组 × 12 次/侧 · 组间 60 秒' },
+      { name: '高脚杯深蹲', detail: '4 组 × 10 次 · 组间 90 秒' },
+      { name: '罗马尼亚硬拉', detail: '3 组 × 10 次 · 组间 90 秒' },
+    ],
+    days: [
+      {
+        id: 'plan-weekly-base-day-a',
+        title: '训练日 A · 推与核心',
+        exercises: [
+          { id: 'weekly-a1', name: '哑铃卧推', sets: '4', target: '10 次', restSeconds: '90', note: '保留 2 次余力，下放控制两秒' },
+          { id: 'weekly-a2', name: '坐姿肩推', sets: '3', target: '10 次', restSeconds: '75', note: '肩部不适时跳过，不勉强完成' },
+          { id: 'weekly-a3', name: '平板支撑', sets: '2', target: '45 秒', restSeconds: '60', note: '保持骨盆中立，正常呼吸' },
+          { id: 'weekly-a4', name: '死虫式', sets: '2', target: '40 秒', restSeconds: '45', note: '腰部贴地，动作放慢' },
+        ],
+      },
+      {
+        id: 'plan-weekly-base-day-b',
+        title: '训练日 B · 拉与下肢',
+        exercises: [
+          { id: 'weekly-b1', name: '高位下拉', sets: '3', target: '12 次', restSeconds: '75', note: '先沉肩，再把横杆拉向锁骨' },
+          { id: 'weekly-b2', name: '单臂哑铃划船', sets: '3', target: '12 次/侧', restSeconds: '60', note: '髋部保持稳定，肘部贴近身体' },
+          { id: 'weekly-b3', name: '高脚杯深蹲', sets: '4', target: '10 次', restSeconds: '90', note: '膝盖朝脚尖方向' },
+          { id: 'weekly-b4', name: '罗马尼亚硬拉', sets: '3', target: '10 次', restSeconds: '90', note: '髋部后移，背部保持中立' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'diet-training-day',
     type: 'diet',
     title: '训练日三餐 · 分配原则',
@@ -454,6 +513,22 @@ export const EXPLORE_ITEMS: ExploreItem[] = [
     ],
   },
 ]
+
+export const EXPLORE_ITEMS: ExploreItem[] = SEED_EXPLORE_ITEMS.map((item) => ({
+  ...item,
+  status: 'published',
+  adultRequired: item.id === 'plan-machine',
+  author: item.type === 'training' ? 'Nerae 训练内容' : 'Nerae 饮食内容',
+  days:
+    item.type === 'training'
+      ? item.days ??
+        daysFromContents({
+          id: item.id,
+          title: item.title,
+          contents: item.contents,
+        })
+      : [],
+}))
 
 export function matchesTrainingFilters(item: ExploreItem, filters: ExploreFilters): boolean {
   if (item.type !== 'training') return false

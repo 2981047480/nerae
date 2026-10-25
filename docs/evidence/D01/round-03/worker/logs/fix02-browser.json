@@ -1,0 +1,155 @@
+{
+  "oldV7": {
+    "screen": "incomingPlan",
+    "history": 7,
+    "version": 7,
+    "title": "收到新版计划",
+    "hasV8Note": false,
+    "hasBanner": true,
+    "adoptButtons": 0,
+    "deliveredText": [
+      "版本 7 · 交付于 10月23日 21:40"
+    ]
+  },
+  "coachZhou": {
+    "screen": "incomingPlan",
+    "readOnly": true,
+    "student": "zhou-lan",
+    "version": 5,
+    "title": "教练查看交付版本",
+    "hasLinCurrent": false,
+    "hasAdopt": false,
+    "content": true
+  },
+  "missing": {
+    "missing": true,
+    "view": null,
+    "label": "引用不可用",
+    "hasLatest": false,
+    "hasUnavailable": true
+  },
+  "training": {
+    "screen": "records",
+    "focus": "record-20261022",
+    "explicit": true,
+    "expanded": [
+      "10月22日 周四上肢力量 12.5 kg × 10 次 · 4 组收起"
+    ],
+    "body": true
+  },
+  "quote": {
+    "body": "跳到主要内容\n\n消息\n\n林澈 · 10月24日 周六\n\n顾言\n\n力量基础 · 月度计划 · 咨询 查看服务\n\n服务进行中\n服务与授权\n力量基础 · 月度计划 · 已授权查看健康内容\n当前服务\n力量基础 · 月度计划 · ¥759 / 月 尚未确认\n已有约定\n力量基础 · 月度计划 · ¥699 / 月 · 4 周 已于 10-02 确认，保持不变\n健康内容\n已授权查看健康内容\n撤回授权\n还没有消息。可以从具体服务或训练发起咨询，已知内容会带入。\n写消息\n\n发送失败会保留原文，重试不会新增一条消息。\n\n今天\n发现\n记录\n消息\n预览\n\n服务说明与价格已保存；已有服务约定的价格不变。",
+    "hasConfirmed": false,
+    "hasPending": true,
+    "has699": true,
+    "has759": true,
+    "relation": 2,
+    "pack": 3
+  },
+  "recordsEmpty": {
+    "rows": 0,
+    "points": 0,
+    "count": 0,
+    "chartSvg": false,
+    "feedback": false,
+    "zero": true
+  },
+  "recordsSingle": {
+    "rows": 1,
+    "points": 1,
+    "count": 1,
+    "delta": null,
+    "tip": true
+  },
+  "coachEmpty": {
+    "coaches": 0,
+    "cards": 0,
+    "count": [
+      "0 位教练"
+    ],
+    "empty": true
+  },
+  "dayB": {
+    "session": "训练日 B · 拉与下肢",
+    "duration": 40,
+    "count": 4,
+    "equipment": [
+      "高位下拉器",
+      "哑铃 · 平凳",
+      "哑铃",
+      "哑铃"
+    ],
+    "bodyHasDuration": false,
+    "bodyHas32": false
+  },
+  "dayBToday": {
+    "hero": "今天 · 10月24日 周六\n\n训练日 B · 拉与下肢\n\n约 40 分钟 · 4 个动作 · 13 组\n\n已完成 0 / 13 组\n\n继续\n高位下拉\n· 第 1 组",
+    "session": "训练日 B · 拉与下肢",
+    "duration": 40,
+    "count": 4,
+    "equipment": [
+      "· 高位下拉器",
+      "· 哑铃 · 平凳",
+      "· 哑铃",
+      "· 哑铃"
+    ]
+  },
+  "zhouWork": {
+    "status": "已交付版本 5，等待学员采用",
+    "todo": true,
+    "bodyHasOld": false,
+    "bodyHasDelivered": true
+  },
+  "revoke": {
+    "hasWrong": false,
+    "hasRight": true
+  },
+  "today320": {
+    "scrollWidth": 320,
+    "innerWidth": 320,
+    "overflow": false,
+    "planLinks": [
+      {
+        "left": 16,
+        "right": 304
+      },
+      {
+        "left": 16,
+        "right": 304
+      },
+      {
+        "left": 16,
+        "right": 304
+      },
+      {
+        "left": 16,
+        "right": 304
+      }
+    ]
+  },
+  "plan320": {
+    "scrollWidth": 320,
+    "innerWidth": 320,
+    "overflow": false,
+    "img": {
+      "top": 104.390625,
+      "bottom": 364.390625
+    },
+    "text": {
+      "top": 364.390625,
+      "bottom": 717.109375
+    },
+    "overlap": false
+  },
+  "missingImage": {
+    "fallback": {
+      "top": 112,
+      "bottom": 131.5
+    },
+    "kicker": {
+      "top": 284.0625,
+      "bottom": 303.5625
+    },
+    "overlap": false
+  }
+}

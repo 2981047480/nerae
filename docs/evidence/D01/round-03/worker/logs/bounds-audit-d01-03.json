@@ -1,0 +1,351 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "capturedAt": "2026-10-24T06:08:34.046Z",
+  "screens": [
+    {
+      "screen": "today",
+      "title": "Nerae",
+      "count": 16,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "explore",
+      "title": "Nerae",
+      "count": 34,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "planDetail",
+      "title": "Nerae",
+      "count": 10,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "training",
+      "title": "Nerae",
+      "count": 11,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        },
+        {
+          "tag": "input",
+          "role": null,
+          "label": "重量，千克",
+          "cls": "metric-input num",
+          "width": 116.7,
+          "height": 43.1,
+          "visible": true
+        },
+        {
+          "tag": "input",
+          "role": null,
+          "label": "完成次数",
+          "cls": "metric-input num",
+          "width": 118.7,
+          "height": 43.1,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "records",
+      "title": "Nerae",
+      "count": 23,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "messages",
+      "title": "Nerae",
+      "count": 21,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "incomingPlan",
+      "title": "Nerae",
+      "count": 10,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "myPlan",
+      "title": "Nerae",
+      "count": 35,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "studentPlan",
+      "title": "Nerae",
+      "count": 8,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "aiAssist",
+      "title": "Nerae",
+      "count": 13,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "diet",
+      "title": "Nerae",
+      "count": 14,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachDetail",
+      "title": "Nerae",
+      "count": 11,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachTodo",
+      "title": "Nerae",
+      "count": 21,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachStudents",
+      "title": "Nerae",
+      "count": 15,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachStudentDetail",
+      "title": "Nerae",
+      "count": 11,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachServices",
+      "title": "Nerae",
+      "count": 24,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "coachPlan",
+      "title": "Nerae",
+      "count": 15,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "screen": "previewPanel",
+      "title": "Nerae",
+      "count": 53,
+      "small": [
+        {
+          "tag": "a",
+          "role": null,
+          "label": "跳到主要内容",
+          "cls": "skip-link",
+          "width": 107.6,
+          "height": 41.4,
+          "visible": true
+        },
+        {
+          "tag": "a",
+          "role": null,
+          "label": "Nenad Stojkovic",
+          "cls": "",
+          "width": 94.5,
+          "height": 17,
+          "visible": true
+        },
+        {
+          "tag": "a",
+          "role": null,
+          "label": "Shixart1985",
+          "cls": "",
+          "width": 67.9,
+          "height": 17,
+          "visible": true
+        },
+        {
+          "tag": "a",
+          "role": null,
+          "label": "Ella Olsson",
+          "cls": "",
+          "width": 64.8,
+          "height": 17,
+          "visible": true
+        },
+        {
+          "tag": "a",
+          "role": null,
+          "label": "Federica Diliberto",
+          "cls": "",
+          "width": 103.5,
+          "height": 17,
+          "visible": true
+        }
+      ]
+    }
+  ]
+}

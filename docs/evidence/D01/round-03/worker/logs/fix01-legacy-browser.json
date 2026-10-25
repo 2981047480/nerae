@@ -1,0 +1,31 @@
+{
+  "before": {
+    "relations": [
+      "rel-gu-yan",
+      "rel-jiang-yao",
+      "rel-he-an",
+      "rel-zhou-lan"
+    ],
+    "conversations": [
+      "conv-gu-yan",
+      "conv-jiang-yao",
+      "conv-he-an",
+      "conv-zhou-lan"
+    ],
+    "zhouConv": "conv-zhou-lan",
+    "planVersion": 3,
+    "relation": {
+      "needsReview": true,
+      "priceKnown": false,
+      "packageId": ""
+    }
+  },
+  "after": {
+    "screen": "messages",
+    "convId": "conv-zhou-lan",
+    "studentId": "zhou-lan",
+    "title": "周岚",
+    "note": [],
+    "planVersion": 3
+  }
+}

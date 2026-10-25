@@ -1,0 +1,10 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "scope": "Local disposable UI; no real message service",
+  "observations": [
+    "Student failed send invisible to coach; separate coach draft retained",
+    "Student retry arrives once and coach reply arrives once",
+    "Coach failed send hidden, retry received exactly once, actual own sending feedback visible and hidden from student",
+    "Revoke cancel preserves access; confirm keeps owner history and hides coach thread, cold reload, todo, list and student profile"
+  ]
+}

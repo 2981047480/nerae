@@ -1,0 +1,88 @@
+{
+  "task": "D01-03-fix08",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "git_head": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "source_state": "fix08 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-25T17:44:47.854786+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4186/4188/4189/4190/4191/4192 frozen previews untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix08-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix08-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix08-test.log",
+      "result": "4 files / 113 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix08-source-sha256.txt",
+    "manifest_sha256": "d6371f3ca8913d8f40d08d7ac4becaf5dcc8be402e07422351b9bf8a855276b2",
+    "file_count": 60,
+    "key_files": {
+      "src/state/store.ts": "c773fc18e42fb76a790798f8790eaca59d2e567f7bb37d7563d936aabed9d423",
+      "src/tests/expansion.test.ts": "dbde9b6735a75a16a26116bf6cae02bbb8ac92eb9508aa8b21fb08dbefee6ec5"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix08-evidence-sha256.txt",
+    "manifest_sha256": "e8c67d4be153ad4e4f87a65da6b0d3034a1f729155688b1a391ab6478780c843",
+    "screenshots": 3,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "C06 messages preview retention",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "applyPreviewState(messages/normal etc) 不再 filter 整个 conversations；仅从各会话删除 id=preview-pending 的占位消息。真实 conversation id、历史消息、双方草稿、其他会话均保留；failed/sending 仍显示占位，normal 后移除。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "113/113 vitest",
+      "failed→normal/no-placeholder preserves Gu conversation, 4 messages, both drafts, Jiang unchanged"
+    ],
+    "real_browser": [
+      "390 Gu draft → failed placeholder 5 → normal 4 messages/drafts/textarea retained → reload retained; other conversations unchanged"
+    ],
+    "not_tested": [
+      "Lead full 16-family/55-item/5-width/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app device",
+      "coach-authored sending/failed preview (requires actual send by coach, not expanded)"
+    ]
+  },
+  "retained": [
+    "fix07 series/S16",
+    "fix06 latest reference/units",
+    "fix05 M02/M12/V04/copy",
+    "fix04 migration/records"
+  ],
+  "unresolved": [
+    "No known code defect against fix08 scope.",
+    "Lead final integration not done; candidate not accepted."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser only; no full matrix.",
+    "Dev log excluded."
+  ]
+}

@@ -1,0 +1,279 @@
+{
+  "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
+  "dom_files": 220,
+  "pattern": "设计意图|验收|DeepSeek|Harness|Codex|QPS|operationId|数据表|低认知|设计基因|token|TODO|placeholder",
+  "hits": [],
+  "scope": "Visible text and placeholder values scanned; snapshot field names excluded; Lead sentence review separately recorded.",
+  "serializer_key_matches_excluded": [
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-list-1440-text100.txt",
+      "line": 63,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-390-text200.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-390-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-320-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-430-text100.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-430-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-390-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-1440-text100.txt",
+      "line": 31,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-320-text100.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-430-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-320-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-768-text200.txt",
+      "line": 47,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-768-text200.txt",
+      "line": 47,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-1440-text100.txt",
+      "line": 43,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-768-text200.txt",
+      "line": 43,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-430-text200.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-320-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-430-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-390-text100.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-list-1440-text200.txt",
+      "line": 63,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-390-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-430-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-320-text200.txt",
+      "line": 38,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-320-text200.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-390-text100.txt",
+      "line": 42,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-1440-text200.txt",
+      "line": 31,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-768-text100.txt",
+      "line": 47,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-768-text100.txt",
+      "line": 47,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-768-text100.txt",
+      "line": 43,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s12-diet-1440-text200.txt",
+      "line": 43,
+      "text": "      - /placeholder: 例如：晚餐蔬菜偏少，其他按计划"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-430-text200.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-390-text100.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-1440-text200.txt",
+      "line": 63,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-768-text100.txt",
+      "line": 68,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-320-text200.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-1440-text100.txt",
+      "line": 69,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-1440-text100.txt",
+      "line": 68,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-430-text200.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-390-text100.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-768-text100.txt",
+      "line": 31,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-320-text200.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-list-1440-text200.txt",
+      "line": 57,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-390-text200.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-430-text100.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-thread-1440-text200.txt",
+      "line": 69,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-1440-text200.txt",
+      "line": 68,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-768-text200.txt",
+      "line": 68,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-coach-thread-1440-text100.txt",
+      "line": 63,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-320-text100.txt",
+      "line": 26,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-390-text200.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-430-text100.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s08-student-list-1440-text100.txt",
+      "line": 57,
+      "text": "      - /placeholder: 写一条消息"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s11-ai-768-text200.txt",
+      "line": 31,
+      "text": "      - /placeholder: 例如：这周想做得稳一点"
+    },
+    {
+      "path": "docs/evidence/D01/round-03/lead/expansion/frozen-10/ui/dom-text/s10-own-plan-320-text100.txt",
+      "line": 63,
+      "text": "    - /placeholder: 例如肩部不适时避免哪些动作"
+    }
+  ]
+}

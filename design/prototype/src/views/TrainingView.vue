@@ -27,6 +27,8 @@ import {
   restNextLabel,
   restRemainingMs,
   resumeRest,
+  activeConflict,
+  resolveSetConflict,
   sessionGroups,
   setInputValue,
   skipRest,
@@ -40,7 +42,13 @@ import {
   hasErrors,
   referenceText,
 } from '../utils/training'
-import { formatTime, setValueLabel } from '../utils/format'
+import {
+  formatTime,
+  isBodyweightKind,
+  isDurationKind,
+  isPerSideKind,
+  setValueLabel,
+} from '../utils/format'
 
 const detailsOpen = ref(false)
 
@@ -76,6 +84,11 @@ const restPercent = computed(() => {
 })
 
 const restPaused = computed(() => Boolean(rest.value?.paused))
+
+const noHistory = computed(() => state.preview.training === 'no-history')
+const syncPending = computed(() => state.preview.training === 'sync-pending')
+const syncFailed = computed(() => state.preview.training === 'sync-failed' || !storageState.ok)
+const hasConflict = computed(() => Boolean(activeConflict.value))
 
 const completionFacts = computed(() => {
   const completed = state.session.exercises.reduce(
@@ -124,6 +137,36 @@ const focus = computed(() => {
     exerciseIndex: state.session.exercises.findIndex((item) => item.id === value.exercise.id) + 1,
     doneCount: state.inputs[value.set.id] ? value.exercise.sets.filter((item) => item.status === 'done').length : 0,
   }
+})
+
+const usesDuration = computed(() =>
+  focus.value ? isDurationKind(focus.value.exercise.kind) : false,
+)
+const usesWeight = computed(() =>
+  focus.value
+    ? !isDurationKind(focus.value.exercise.kind) &&
+      !isBodyweightKind(focus.value.exercise.kind)
+    : false,
+)
+const usesReps = computed(() =>
+  focus.value ? !isDurationKind(focus.value.exercise.kind) : false,
+)
+const repSide = computed(() =>
+  focus.value ? isPerSideKind(focus.value.exercise.kind) : false,
+)
+const repLabel = computed(() =>
+  focus.value?.exercise.kind === 'breath' ? '呼吸次数' : '次数',
+)
+
+const exerciseImage = computed(() => {
+  const equipment = focus.value?.exercise.equipment ?? ''
+  if (equipment.includes('高位下拉') || equipment.includes('划船器') || equipment.includes('龙门架')) {
+    return { src: '/assets/explore-featured.webp', alt: '训练者用弹力带完成上肢拉力动作' }
+  }
+  if (equipment.includes('瑜伽垫')) {
+    return { src: '/assets/explore-plank.webp', alt: '训练者在瑜伽垫上完成核心动作' }
+  }
+  return { src: '/assets/training-dumbbells.webp', alt: '训练用的哑铃' }
 })
 
 const focusExerciseNumber = computed(() => {
@@ -207,7 +250,11 @@ const focusExerciseNumber = computed(() => {
           <p class="rest-next">
             下一组 · <strong>{{ restNextLabel }}</strong>
           </p>
-          <p v-if="lastCompleted" class="rest-recorded num">
+          <p
+            v-if="lastCompleted"
+            class="rest-recorded num"
+            :class="{ 'rest-recorded--just': ui.justCompletedSetId === lastCompleted.set.id }"
+          >
             <Check :size="14" aria-hidden="true" />
             {{ lastCompleted.exercise.name }} 第 {{ lastCompleted.set.index }} 组已记录 · {{ formatSetSummary() }}
           </p>
@@ -251,6 +298,30 @@ const focusExerciseNumber = computed(() => {
       </template>
 
       <template v-else>
+        <section v-if="hasConflict && activeConflict" class="conflict-block" aria-labelledby="conflict-title">
+          <p class="focus-kicker">同一组有两条记录</p>
+          <h2 id="conflict-title" class="conflict-title">先确认保留哪一条</h2>
+          <p class="conflict-text">
+            {{ activeConflict.exerciseName }} 第 {{ activeConflict.setIndex }} 组：本机是
+            <strong class="num">{{ activeConflict.localText }}</strong>，
+            另一台设备在 {{ activeConflict.remoteAt }} 记录为
+            <strong class="num">{{ activeConflict.remoteText }}</strong>。
+          </p>
+          <p class="conflict-note">确认后这一组只记录一次，不会新增一组；另一条不会留在本次记录里。</p>
+          <div class="conflict-actions">
+            <button type="button" class="btn btn--accent" @click="resolveSetConflict('local')">保留本机记录</button>
+            <button type="button" class="btn btn--ghost" @click="resolveSetConflict('remote')">采用另一台设备的记录</button>
+          </div>
+        </section>
+
+        <div v-if="syncPending || syncFailed" class="sync-block" :class="{ 'sync-block--error': syncFailed }" role="status">
+          <p class="sync-title">{{ syncFailed ? '已记录，但还没有保存到本机' : '已记录，待保存' }}</p>
+          <p class="sync-text">
+            这一组的事实已经在本次记录中；保存失败不会自动新增一组。可以重试保存，已输入的数值保留。
+          </p>
+          <button type="button" class="storage-retry" @click="retryPersist()">重试保存</button>
+        </div>
+
         <section v-if="focus" class="focus-block" aria-labelledby="exercise-title">
           <p class="focus-kicker num">
             动作 {{ focusExerciseNumber }} / {{ state.session.exercises.length }} · 第 {{ focus.set.index }} 组
@@ -258,18 +329,19 @@ const focusExerciseNumber = computed(() => {
           <div class="focus-head">
             <div class="focus-heading">
               <h1 id="exercise-title" class="focus-title">{{ focus.exercise.name }}</h1>
-              <p class="focus-reference num">{{ referenceText(focus.exercise) }}</p>
+              <p v-if="!noHistory" class="focus-reference num">{{ referenceText(focus.exercise) }}</p>
+              <p v-else class="focus-reference">第一次记录这个动作，没有上次参考。</p>
               <p class="focus-target num">
                 目标 {{ focus.exercise.targetText }} · 休息 {{ focus.exercise.restSeconds }} 秒
               </p>
             </div>
             <figure class="focus-photo">
-              <PhotoFrame src="/assets/training-dumbbells.webp" alt="训练用的哑铃" />
+              <PhotoFrame :src="exerciseImage.src" :alt="exerciseImage.alt" />
             </figure>
           </div>
 
-          <div class="metrics" :class="{ 'metrics--single': focus.exercise.kind === 'duration' }">
-            <div v-if="focus.exercise.kind !== 'duration'" class="metric">
+          <div class="metrics" :class="{ 'metrics--single': usesDuration || !usesWeight }">
+            <div v-if="usesWeight" class="metric">
               <div class="metric-head">
                 <span class="metric-label">重量</span>
                 <span class="metric-hint">kg</span>
@@ -296,10 +368,10 @@ const focusExerciseNumber = computed(() => {
               </div>
             </div>
 
-            <div v-if="focus.exercise.kind !== 'duration'" class="metric">
+            <div v-if="usesReps" class="metric">
               <div class="metric-head">
-                <span class="metric-label">次数<template v-if="focus.exercise.kind === 'perSide'">（每侧）</template></span>
-                <span class="metric-hint">次</span>
+                <span class="metric-label">{{ repLabel }}<template v-if="repSide">（每侧）</template></span>
+                <span class="metric-hint">{{ focus.exercise.kind === 'breath' ? '次呼吸' : '次' }}</span>
               </div>
               <div class="metric-value-row">
                 <input
@@ -323,7 +395,7 @@ const focusExerciseNumber = computed(() => {
               </div>
             </div>
 
-            <div v-if="focus.exercise.kind === 'duration'" class="metric metric--duration">
+            <div v-if="usesDuration" class="metric metric--duration">
               <div class="metric-head">
                 <span class="metric-label">完成时长</span>
                 <span class="metric-hint">秒</span>
@@ -355,11 +427,12 @@ const focusExerciseNumber = computed(() => {
             <p>{{ errorList[0] }}</p>
           </div>
 
-          <button class="btn btn--accent complete-cta" type="button" :aria-disabled="hasError" @click="submitSet">
+          <button class="btn btn--accent complete-cta" type="button" :aria-disabled="hasError || hasConflict" :disabled="hasConflict" @click="submitSet">
             <Check :size="18" aria-hidden="true" />
             完成第 {{ focus.set.index }} 组
           </button>
           <p class="save-hint">记录会保存在本机，退出后可从这里继续。</p>
+          <p v-if="syncPending" class="sync-inline">本组已记录，等待保存；重试不会增加组数。</p>
           <div v-if="!storageState.ok" class="storage-alert" role="alert">
             <p>{{ storageState.message }}</p>
             <button type="button" class="storage-retry" @click="retryPersist()">重试保存</button>
@@ -610,6 +683,7 @@ const focusExerciseNumber = computed(() => {
 }
 
 .metric-input {
+  min-height: 44px;
   width: 100%;
   min-width: 0;
   padding: 0;
@@ -861,6 +935,10 @@ const focusExerciseNumber = computed(() => {
   font-weight: 600;
 }
 
+.rest-recorded--just {
+  animation: set-confirm 160ms var(--ease-out);
+}
+
 .rest-recorded {
   display: inline-flex;
   align-items: center;
@@ -1011,5 +1089,80 @@ const focusExerciseNumber = computed(() => {
     min-width: 220px;
   }
 
+}
+
+.conflict-block {
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid rgba(128, 92, 34, 0.45);
+  border-radius: var(--radius-md);
+  background: rgba(128, 92, 34, 0.08);
+}
+
+.conflict-title {
+  margin-top: 2px;
+  font-size: var(--text-18);
+  font-weight: 600;
+}
+
+.conflict-text {
+  margin-top: var(--sp-2);
+  color: var(--focus-text);
+  font-size: var(--text-14);
+  line-height: 1.65;
+}
+
+.conflict-note {
+  margin-top: var(--sp-2);
+  color: var(--focus-muted);
+  font-size: var(--text-12);
+  line-height: 1.55;
+}
+
+.conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.sync-block {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border: 1px solid var(--focus-line);
+  border-radius: var(--radius-md);
+  background: var(--focus-surface);
+}
+
+.sync-block--error {
+  border-color: var(--error-on-dark);
+}
+
+.sync-title {
+  color: var(--focus-text);
+  font-size: var(--text-14);
+  font-weight: 600;
+}
+
+.sync-text {
+  margin-top: 2px;
+  color: var(--focus-muted);
+  font-size: var(--text-12);
+  line-height: 1.55;
+}
+
+.sync-block .storage-retry {
+  margin-top: var(--sp-2);
+}
+
+.sync-inline {
+  margin-top: 4px;
+  color: var(--focus-muted);
+  font-size: var(--text-12);
+  line-height: 1.5;
+}
+
+.sync-block {
+  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
 }
 </style>

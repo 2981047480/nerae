@@ -1,0 +1,275 @@
+{
+  "task": "D01-03",
+  "title": "全量 16 族 UI 候选（冻结源码 6dba）",
+  "status": "candidate",
+  "acceptance": "pending_lead_independent_recheck",
+  "accepted": false,
+  "candidate_commit": "6dba9b6085c9a7f0b2ac84cf0fa8f290d4a7871d",
+  "candidate_tree": "c8f84ef126e0c140e100600738eb703936fbd349",
+  "base_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-24T15:40:58.449912+08:00",
+  "session": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
+  "runtime": {
+    "provider": "OpenCode Go",
+    "model": "opencode-go/deepseek-v4.1-flash",
+    "reasoning": "Medium",
+    "lead_selected": true
+  },
+  "transport_failure": {
+    "occurred": true,
+    "turn": 336,
+    "error": "TRANSPORT Connection error",
+    "internal_retries": "5/5 failed",
+    "normal_completion": false,
+    "recovery": "Lead froze existing files at 6dba; this recovery only writes worker docs."
+  },
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "bind": "127.0.0.1",
+    "listener_pid": 64273,
+    "state": "kept running, not restarted/stopped",
+    "dev_log": "docs/evidence/D01/round-03/worker/logs/d01-03-dev-4187.log",
+    "dev_log_note": "持续写入的开发日志不作为不可变证据；未计入证据散列。"
+  },
+  "implementation_map": {
+    "path": "docs/evidence/D01/round-03/worker/implementation-map.json",
+    "sha256": "8a6097fa44335e5f218f45928365579a37b1c86e91c70c8bd11c567e9f9b7ba0",
+    "items": 55,
+    "families": 16,
+    "flows": 7,
+    "motions": 12
+  },
+  "source_hashes": {
+    "commit": true,
+    "tree": "c8f84ef126e0c140e100600738eb703936fbd349",
+    "file_count": 60,
+    "manifest_path": "docs/evidence/D01/round-03/worker/logs/d01-03-source-sha256-frozen.txt",
+    "manifest_sha256": "02cc9625cdab20460c7dd054d2cadfa7a918026fe09e63eb114e039cf7ff01da",
+    "key_files": {
+      "design/prototype/src/state/store.ts": "bc9abfae5d38be39f2265145d16899da345631a947e5158d789f388cf291e43c",
+      "design/prototype/src/App.vue": "30e31362e991af631a3e7b18ec7af9b91d04b1c4ca5dd99673522ca2fac81dea",
+      "design/prototype/src/views/IncomingPlanView.vue": "4439146536e4d5cab1a54aebd698707846f22afafd626d9dbe2ef3755581b135",
+      "design/prototype/src/views/CoachServicesView.vue": "c18e3a6ed024303c27bfb591ee5a4a60f0153105e8aa0806f0b8147bd021aada",
+      "design/prototype/src/views/MyPlanView.vue": "79c7f3b14bff5997c14ccb0fbf7bfaa0f5012300027df3d9b63e3f6de7947ef6",
+      "design/prototype/src/styles/base.css": "e4d17164076550f94b380b25d7de808f3bc43adc302ec54ce85226d244ff06de"
+    }
+  },
+  "evidence_hashes": {
+    "manifest_path": "docs/evidence/D01/round-03/worker/logs/d01-03-evidence-sha256-frozen.txt",
+    "manifest_sha256": "69bf71d02a691d27743ace7244fe200adf0eca34bc80413952038dfb81331d13",
+    "screenshots": 58,
+    "note": "不含持续写入 dev 日志；含 320/390/430/768/1440 截图、390/320 bounds、最新三份命令日志、implementation-map、progress。"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-typecheck-candidate.log",
+      "sha256": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-build-candidate.log",
+      "sha256": "c46e73dbcb5f33fca55785ebb51ec7d7c239e1e3050668288536379e361715e1",
+      "artifacts": [
+        "dist/index.html 0.85kB",
+        "dist/assets/index-cjaV1nDA.css 131.27kB",
+        "dist/assets/index-CutKKUY-.js 397.46kB"
+      ]
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-test-candidate.log",
+      "sha256": "29a34b1f04ea325a2d2ff83ec9ee1e4a1f28c317d82df4652c65428a2fd18a63",
+      "result": "4 files / 75 tests passed"
+    }
+  ],
+  "feedback": [
+    {
+      "id": "EA01",
+      "subject": "内容按动作数量猜训练日",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：去掉按动作数推断；所有内容保留完整训练单元，另手写「一周两练·力量基础」两个训练日；Lead 复验待做。"
+    },
+    {
+      "id": "EA02",
+      "subject": "教练交付与学员收到事实统一",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：删除重复交付字段，coach.deliveries 为唯一快照源；student.incoming/消息/版本展示同源；同版发布幂等。"
+    },
+    {
+      "id": "EA03",
+      "subject": "刷新保留非默认当前对象",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：selection/当前对象持久化并在冷加载恢复；模块冷重载通过；真实浏览器冻结版待 Lead。"
+    },
+    {
+      "id": "EA04",
+      "subject": "替换保留已确认组",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：替换归档当前会话，已确认组写入历史，未完成不伪称完成；同一次完成不重放。"
+    },
+    {
+      "id": "EA05",
+      "subject": "非默认消息人物和收件人同源",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：会话标题/服务/收件人读取同一 conversation 对象；无硬编码林澈。"
+    },
+    {
+      "id": "EA06",
+      "subject": "产品不出现实现与验收解释",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：清掉布局理由、样例/认证重复免责、排除项自述与内部状态枚举；保留用户适用条件；Lead 文案复验待做。"
+    },
+    {
+      "id": "EA07",
+      "subject": "所选训练日与开始会话同源",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：selectedDayFor/startPlanNow 使用所选 dayId；刷新保留；同计划同训练日幂等。"
+    },
+    {
+      "id": "EA08",
+      "subject": "重复开始与新一次会话身份分开",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：session/archive id 含 dayId+sessionSequence；明确替换后再次开始唯一；12×8 与 17×9 回归保留。"
+    },
+    {
+      "id": "EA09",
+      "subject": "不同学员草稿证据和交付对象隔离",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：coachSnapshots+activeCoachStudentId；周岚计划/证据/发布/收件人独立，切回林澈恢复 v6/v7；列表/详情区分现用与已交付。"
+    },
+    {
+      "id": "EA10",
+      "subject": "未授权/结束关系不露健康事实",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：周岚训练证据/最近事实/详情隐藏；计划与服务保留；关系结束只读且不露健康正文。"
+    },
+    {
+      "id": "EA11",
+      "subject": "公开审阅包含全部公开字段",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：分享预览显示组数/目标/组间休息/非空公开备注；健康备注排除；提交=待审核。"
+    },
+    {
+      "id": "EA12",
+      "subject": "匿名取消登录与未成年服务边界",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed（仅本地状态）：匿名浏览→开始触发本地登录→年龄确认；取消回原内容/训练日且不建训练；未成年停止服务但可浏览；未知年龄不能换内容绕过；不接真实登录/短信。"
+    },
+    {
+      "id": "EA13",
+      "subject": "服务保存全部公开字段同步",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：saveServices 同步 summary/scope/includes/goals/response/price/unit/cycle；load 用已保存 services 重建 coaches 公开投影；旧约定用独立快照；只改变化包版本。follow-up 已覆盖。"
+    },
+    {
+      "id": "EA14",
+      "subject": "无效价格不静默改成免费",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：保留原始 priceInput；0–9999 整数校验；负数/空/非法就近报错且禁止保存；0 可明确用；不再 clamp 成免费。"
+    },
+    {
+      "id": "EA15",
+      "subject": "完成今日训练后更换未来安排须确认",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：存在未来安排/已完成会话时先替换确认；取消不改 planVersion/schedule/session/历史；确认后才归档并建新未来。"
+    },
+    {
+      "id": "EA16",
+      "subject": "旧合法服务快照补字段并冷启动",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：load 按包补 priceInput/priceUnit/scope/goals/response；priceInput 由有效 priceYuan 转换；不删存储/不换 key/不 reset；旧约定从匹配服务版本恢复；空字段明确需核对。"
+    },
+    {
+      "id": "VR01",
+      "subject": "真实触达尺寸最低44",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：共享控件/文本按钮/开关/预览入口补 ≥44；390×900 与 320×900 共 18 屏 DOM 审计 0 个小目标。430/768/1440 仅截图，未逐项 bounds。"
+    },
+    {
+      "id": "VR02",
+      "subject": "今天现用计划与自有内容对象不串",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：今天「现用安排」→StudentPlan（教练计划详情）；独立「我的内容」→MyPlan；版本/标题/落地分离。"
+    },
+    {
+      "id": "VR03",
+      "subject": "消息先支持交流再按需看上下文",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：移除规则说明/渠道自述；服务与授权折叠；当前服务与已有约定分列；输入保持 sticky。"
+    },
+    {
+      "id": "VR04",
+      "subject": "记录动作选项与图表时间单位有意义",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：动作按业务名归一；图表按真实日期间距并带 kg/秒刻度；未练显示「本次未记录这个动作」。"
+    },
+    {
+      "id": "VR05",
+      "subject": "当前咨询包与既有约定区分并保留包选择",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：当前服务（¥199/次 尚未确认）与既有约定（699/月·4周）分开；查看服务带回 packageId；不硬编码 /月。"
+    },
+    {
+      "id": "VR06",
+      "subject": "清理布局解释与重复免责",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：移除「价格与服务范围一起说明」等布局理由和重复样例/热量免责；AI ready 改成可用帮助；饮食「今天是否按计划」前移并保留一次来源/非医疗边界。"
+    },
+    {
+      "id": "VR07",
+      "subject": "服务计价单位时区和开关语义一致",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：预览显示计价单位+周期；详情同步；保存时间用 formatDateTime 本地格式；switch 稳定名「学员可见」与 checked 同义。"
+    },
+    {
+      "id": "VR08",
+      "subject": "动作条不能在无导航页遮住正文",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "fixed：采用动作条改为内容流末尾静态块，不再 sticky/fixed；390×900 top1446、首条正文749–805，不遮挡；320×900 同样不遮挡；桌面保持层级。"
+    }
+  ],
+  "verification": {
+    "executor_checks": [
+      "typecheck/build/test above",
+      "58 screenshots at 320/390/430/768/1440",
+      "390x900 and 320x900 18-screen visible-control DOM audit: 0 targets <44",
+      "VR08 geometry 390: action top1446 below viewport; first content 749-805 not covered",
+      "200% text screenshots: records, my plan; new layouts stack"
+    ],
+    "real_browser": "Yes for screenshots/DOM geometry (Chrome for Testing via CDP) at listed widths; no real device/browser matrix beyond these.",
+    "module_substitute": "Vitest/jsdom and fixed sample data; not real UI? It mounts Vue App for view/mount tests but no real browser.",
+    "not_run": [
+      "Lead frozen-version five-width/200%/motion acceptance",
+      "430/768/1440 per-control bounds audit",
+      "200% all 18 screens",
+      "real legacy localStorage cold reload in browser after projection fix (jsdom mount + store regression only)",
+      "real login/SMS/age/health authorization/server permission",
+      "real Go API/DB/OpenAPI/WeChat/uni-app/real device/keyboard/safe-area/system font",
+      "real AI/message/payment",
+      "user research/professional review"
+    ]
+  },
+  "unresolved": [
+    "No known code defect outstanding against the 24-item index as of the frozen candidate.",
+    "Lead independent acceptance is not done; candidate is not accepted.",
+    "Transport failure means the executor did not produce a normal final completion; checks were run minutes before freeze and not re-run on the frozen commit.",
+    "Visual/accessibility gaps outside measured widths/200% screens may remain; Lead will report in next round."
+  ],
+  "limits": [
+    "Fixed sample data, local-only preview; no real service/health/auth conclusions.",
+    "Screenshots/full-page captures include fixed tabbar at viewport bottom; geometry audit is authoritative for VR08.",
+    "Dev log is continuously appended and excluded from immutable evidence hash.",
+    "No production schema/API/permission change."
+  ],
+  "handback": {
+    "path": "docs/evidence/D01/round-03/worker/D01-03-report.md",
+    "json": "docs/evidence/D01/round-03/worker/D01-03-report.json",
+    "next": "Lead runs frozen independent acceptance; same session next round for fixes."
+  }
+}

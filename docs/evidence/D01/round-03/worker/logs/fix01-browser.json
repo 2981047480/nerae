@@ -1,0 +1,71 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 900,
+    "dpr": 1
+  },
+  "checks": {
+    "zhouReply": {
+      "screen": "messages",
+      "actor": "coach",
+      "convId": "conv-zhou-lan",
+      "studentId": "zhou-lan",
+      "relationId": "rel-zhou-lan",
+      "title": "周岚",
+      "note": []
+    },
+    "coachUnreadBefore": {
+      "screen": "messages",
+      "unreadText": "1",
+      "names": [
+        "林澈",
+        "周岚"
+      ],
+      "last": [
+        "周六的训练可以晚半小时开始吗",
+        "这周先按周二、周四的耐力安排走，强度以能说完整句子为准。"
+      ],
+      "coachUnread": 1,
+      "studentUnread": 0
+    },
+    "coachAfterOpen": {
+      "coachUnread": 0,
+      "studentUnread": 0,
+      "unreadDom": null
+    },
+    "time": {
+      "has1538": true,
+      "has0738": false
+    },
+    "revokeOpen": true,
+    "revokeSheet": {
+      "sheet": true,
+      "buttons": [
+        "",
+        "取消",
+        "确认撤回健康授权"
+      ]
+    },
+    "studentAfterRevoke": {
+      "relationHealth": false,
+      "textRetained": "右肩这两天有点紧，推举时不太舒服，需要停一下吗？",
+      "studentDomHasShoulder": true,
+      "revokedBanner": true
+    },
+    "coachThread": {
+      "healthVisible": false,
+      "hasShoulder": false,
+      "hasOverhead": false,
+      "placeholderCount": 3,
+      "plainFeedbackVisible": false,
+      "refCards": 1
+    },
+    "coachDetail": {
+      "evidenceCount": 1,
+      "hasTraining": false,
+      "hasDiet": false,
+      "hasHealthAuth": false,
+      "banner": "健康内容不可见\n\n健康内容未授权：只能查看计划与服务记录，健康记录和饮食观察不可见。"
+    }
+  }
+}

@@ -414,6 +414,18 @@ a {
   }
 }
 
+/* 发现卡片到计划详情的封面接续：动态节点挂在 body，必须用全局规则 */
+.plan-focus-ghost {
+  position: fixed;
+  z-index: 150;
+  pointer-events: none;
+  border-radius: var(--radius-lg);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  will-change: left, top, width, height, opacity;
+}
+
 /* 同一会话从今天进入专注执行时，标题的真实位置接续 */
 .session-focus-ghost {
   position: fixed;
@@ -694,4 +706,129 @@ html[data-text-scale='200'] .coach-context > span {
 html[data-text-scale='200'] .version-row dd {
   overflow-wrap: normal;
   word-break: keep-all;
+}
+
+/* 200% 文本：全量情境的换行与网格降级 */
+html[data-text-scale='200'] .group-head {
+  flex-wrap: wrap;
+}
+
+html[data-text-scale='200'] .kv {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-text-scale='200'] .kv dt {
+  margin-top: 6px;
+}
+
+html[data-text-scale='200'] .record-head,
+html[data-text-scale='200'] .evidence-head,
+html[data-text-scale='200'] .thread-head,
+html[data-text-scale='200'] .student-hero,
+html[data-text-scale='200'] .conversation,
+html[data-text-scale='200'] .stack-row,
+html[data-text-scale='200'] .relation-row {
+  flex-wrap: wrap;
+}
+
+html[data-text-scale='200'] .record-date,
+html[data-text-scale='200'] .evidence-kind,
+html[data-text-scale='200'] .relation-key {
+  width: auto;
+  flex: 1 1 100%;
+}
+
+html[data-text-scale='200'] .recent-list li,
+html[data-text-scale='200'] .schedule-list li {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+html[data-text-scale='200'] .set-line {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+html[data-text-scale='200'] .chart text {
+  font-size: 13px;
+}
+
+html[data-text-scale='200'] .range-tabs {
+  flex-wrap: wrap;
+}
+
+html[data-text-scale='200'] .relation-summary {
+  flex-wrap: wrap;
+}
+
+html[data-text-scale='200'] .relation-summary-meta {
+  flex: 1 1 100%;
+  text-align: left;
+}
+
+/* VR11 / VR12：窄屏 200% 与缺图占位 */
+html[data-text-scale='200'] .today-side,
+html[data-text-scale='200'] .plan-links,
+html[data-text-scale='200'] .plan-link,
+html[data-text-scale='200'] .side-section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+html[data-text-scale='200'] .plan-link {
+  width: 100%;
+}
+
+html[data-text-scale='200'] .plan-link-label,
+html[data-text-scale='200'] .plan-link-meta {
+  overflow-wrap: anywhere;
+}
+
+/* 图片加载失败时，提示放在素材左上角，避免压住底部标题、日期和主操作 */
+.hero-media .photo-fallback,
+.plan-hero-media .photo-fallback {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 14px;
+  text-align: left;
+}
+
+.hero-media .photo-fallback span,
+.plan-hero-media .photo-fallback span {
+  max-width: 180px;
+}
+
+html[data-text-scale='200'] .plan-hero-media {
+  min-height: 0;
+  height: auto;
+}
+
+html[data-text-scale='200'] .plan-hero-media .photo,
+html[data-text-scale='200'] .plan-hero-media img {
+  height: 260px;
+}
+
+html[data-text-scale='200'] .plan-hero-scrim {
+  display: none;
+}
+
+html[data-text-scale='200'] .plan-hero-text {
+  position: static;
+  padding: 20px;
+}
+
+/* VR14：320/200 审阅标题与对照说明叠排 */
+html[data-text-scale='200'] .change-summary-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+html[data-text-scale='200'] .change-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html[data-text-scale='200'] .change-sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

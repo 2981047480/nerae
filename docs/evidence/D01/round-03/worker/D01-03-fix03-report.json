@@ -1,0 +1,112 @@
+{
+  "task": "D01-03-fix03",
+  "status": "candidate",
+  "acceptance": "pending_lead_frozen_recheck",
+  "accepted": false,
+  "parent_freeze": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "git_head": "a289b090b5b172cf027b37dd0d5535659dd68364",
+  "source_state": "fix03 changes uncommitted; HEAD unchanged",
+  "branch": "ui/full-round-three",
+  "workspace": "/private/tmp/nerae-ui-complete",
+  "generated_at": "2026-10-24T22:15:49.344144+08:00",
+  "preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "running": true,
+    "note": "4188 Lead fixed build and 4186 first-batch preview untouched"
+  },
+  "commands": [
+    {
+      "name": "vue-tsc --noEmit",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-typecheck.log"
+    },
+    {
+      "name": "vue-tsc --noEmit && vite build",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-build.log"
+    },
+    {
+      "name": "vitest run",
+      "exit": 0,
+      "log": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-test.log",
+      "result": "4 files / 97 tests passed"
+    }
+  ],
+  "source_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-source-sha256.txt",
+    "manifest_sha256": "28702e8f18e1f0642ed0501bfe74ae5d1df5dd9befc67664194ca3b83ff033f6",
+    "file_count": 60,
+    "key_files": {
+      "src/App.vue": "546743816314925f84154b18865dc7904c8277003e55951a86aa1ce220ac70c4",
+      "src/state/store.ts": "d60a009e6c096af89f99ed5be24b68b346df314dabd7b1f26b48591db8d1b3a5",
+      "src/views/TrainingView.vue": "bb091b15955c8dd89016a1485e6d43fc493eb3fecfe201be7557b5f6107a6d5e",
+      "src/styles/base.css": "42d5118e95abfb2c54181b7a6ec8d82adf1de4fc3cf1babebf4a66c28d0e08a1"
+    }
+  },
+  "evidence_hashes": {
+    "manifest": "docs/evidence/D01/round-03/worker/logs/d01-03-fix03-evidence-sha256.txt",
+    "manifest_sha256": "bfff816860fd72b5647e4a4bf88b581166be1c3826d04b925dd14e1c6e35725d",
+    "screenshots": 11,
+    "dev_log_excluded": true
+  },
+  "feedback": [
+    {
+      "id": "EA28/EA29",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "SelectionState 持久化 actor 与 incoming 引用上下文（studentId/version/readOnly/refMissing）+ recordsFocus；共享 messages/incomingPlan 导航和 goBack 保留当前读者角色；冷加载恢复引用而非默认林澈 latest。教练周岚旧交付 open→reload→back 始终教练周岚只读；学员林澈旧7 reload/back 始终学员林澈；缺失引用 reload 仍不可用；训练引用 reload 仍展开原记录。只读/历史入口 openAdoptSheet/confirmAdoption 拒绝采用。"
+    },
+    {
+      "id": "VR13",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "新增 coach-messages 预览情境；教练角色第二个“消息”进入教练列表/会话，不切学员；学生消息入口保留。"
+    },
+    {
+      "id": "VR14",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "320/200 .change-summary-head 纵向叠排，标题与“对照现用版本”合理换行；实测宽214/高37.5，非51×225竖排；不缩字号/不截字。"
+    },
+    {
+      "id": "M05",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "resumeRest 先同步 clock.now 再设 deadline/启动 ticker；暂停 5.5s 后继续首帧不增大，1.3s 后真实递减；模块正反例 + 390 实际 01:30→暂停→01:30→01:29。"
+    },
+    {
+      "id": "M04",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "完成组立即进入休息时，可见 .rest-recorded--just 在休息反馈上执行 160ms set-confirm；实际 42.5×11 后 marker=true、animation duration 160，不延迟落盘。"
+    },
+    {
+      "id": "M02",
+      "status": "fixed_pending_lead_recheck",
+      "detail": "plan bridge 等待 out-in 后 data-plan-hero 挂载，rAF 轮询至 600ms；实际首次 ghost 162ms、动画 280ms；快速返回/Reduce Motion 无 ghost。"
+    }
+  ],
+  "verification": {
+    "module": [
+      "95/95 vitest",
+      "EA28/29 reload+back for student/coach/missing/training; adoption gate; coach preview; persistence fields",
+      "M05 resume 5.5s + M04 justCompleted 100ms"
+    ],
+    "real_browser": [
+      "390x900 open→reload→back for student v7, coach Zhou old, missing ref, training ref; coach messages preview; 320x900/200 review title",
+      "M02 ghost duration 280ms, M04 160ms marker, M05 01:30→01:30→01:29"
+    ],
+    "not_tested": [
+      "Lead full 16-family/5-width/200/motion matrix",
+      "real backend auth/message/health permission",
+      "WeChat/uni-app/device/keyboard/safe-area",
+      "real AI/payment/user research"
+    ]
+  },
+  "unresolved": [
+    "No known code defect against fix03 scope.",
+    "Lead independent acceptance not done; candidate not accepted.",
+    "Reference context uses persisted local selection; corrupted/unknown legacy references are shown unavailable, no recovery UI."
+  ],
+  "limits": [
+    "Local fixed sample; not server permissions.",
+    "Targeted browser checks only.",
+    "Dev log excluded from immutable hashes."
+  ]
+}

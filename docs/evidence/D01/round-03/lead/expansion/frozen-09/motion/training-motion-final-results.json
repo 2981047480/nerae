@@ -1,0 +1,28 @@
+{
+  "sourceRevision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
+  "rows": [
+    {
+      "mode": "full",
+      "paused": "01:30\n已暂停",
+      "cold": "01:30\n已暂停",
+      "before": "01:30",
+      "after": "01:29\n已暂停",
+      "clockMeasurementMillis": 4830,
+      "retryClearsFailure": true,
+      "fixtureThreeRetained": true,
+      "actualFourthConfirmedInSeparateM04": true
+    },
+    {
+      "mode": "reduced",
+      "paused": "01:30\n已暂停",
+      "cold": "01:30\n已暂停",
+      "before": "01:30",
+      "after": "01:29\n已暂停",
+      "clockMeasurementMillis": 3687,
+      "retryClearsFailure": true,
+      "fixtureThreeRetained": true,
+      "actualFourthConfirmedInSeparateM04": true
+    }
+  ],
+  "scope": "Browser Preview failure fixture starts3; true storage failure retention separately tested with isolated module fake window. No browser storage fault injection."
+}

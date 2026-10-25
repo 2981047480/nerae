@@ -1,0 +1,8 @@
+{
+  "sourceRevision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "coachFailed": "../flows/f04-coach-real-send-failed.txt",
+  "coachSending": "../flows/f04-coach-own-message-sending.txt",
+  "failedAndPendingHiddenFromPeer": true,
+  "scope": "Actual sender UI actions with preview mode holding sending/failure; not real provider failure",
+  "qaMethod": "Pending state is visible paragraph, not an invented message--sending CSS class"
+}

@@ -1,0 +1,117 @@
+{
+  "sourceRevision": "898e3546363cf7348b6599601b2570597a14820c",
+  "server": "http://127.0.0.1:4195/",
+  "sameFrozenDist": "/private/tmp/nerae-frozen-898e-gedkgp7b/dist",
+  "onlyRasterHTTP404": true,
+  "sourceAndStateInjection": false,
+  "rows": [
+    {
+      "family": "s01-today",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s01-today-390.jpg",
+      "buttons": [
+        "继续 哑铃卧推· 第 4 组",
+        "现用安排 · 版本 6力量基础 · 2 个训练日",
+        "我的内容 · 版本 3我的一周安排 · 只属于自己",
+        "收到新版计划版本 7 · 尚未采用",
+        "饮食自评今天还没有自评"
+      ],
+      "fallbacks": [
+        {
+          "height": 436.796875,
+          "label": "训练者在健身房完成上肢推举动作（训练图片暂不可用）",
+          "width": 350
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "family": "s02-explore",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s02-explore-390.jpg",
+      "buttons": [
+        "",
+        "筛选",
+        "训练",
+        "饮食",
+        "教练",
+        ""
+      ],
+      "fallbacks": [
+        {
+          "height": 218.75,
+          "label": "训练者在健身房用弹力带完成上肢拉力动作（内容图片暂不可用）",
+          "width": 350
+        },
+        {
+          "height": 92,
+          "label": "训练者在家中的瑜伽垫上完成平板支撑（图片暂不可用）",
+          "width": 92
+        },
+        {
+          "height": 92,
+          "label": "训练者在健身房地面完成腿后侧伸展（图片暂不可用）",
+          "width": 92
+        },
+        {
+          "height": 92,
+          "label": "训练者在哑铃架前完成哑铃弯举（图片暂不可用）",
+          "width": 92
+        },
+        {
+          "height": 92,
+          "label": "器械齐全的健身房训练区域（图片暂不可用）",
+          "width": 92
+        },
+        {
+          "height": 92,
+          "label": "训练者在健身房完成上肢推举动作（图片暂不可用）",
+          "width": 92
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "family": "s03-plan",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s03-plan-390.jpg",
+      "buttons": [
+        "收藏",
+        "分享",
+        "动作说明",
+        "动作说明",
+        "动作说明",
+        "动作说明"
+      ],
+      "fallbacks": [
+        {
+          "height": 320,
+          "label": "训练者在健身房用弹力带完成上肢拉力动作（训练图片暂不可用）",
+          "width": 350
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "family": "s04-training",
+      "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/expansion/frozen-10/assets/screenshots/missing-s04-training-390.jpg",
+      "buttons": [
+        "",
+        "",
+        "",
+        "",
+        "完成第 4 组",
+        "动作说明 · 哑铃 · 平凳"
+      ],
+      "fallbacks": [
+        {
+          "height": 64,
+          "label": "训练用的哑铃（图片暂不可用）",
+          "width": 64
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    }
+  ]
+}

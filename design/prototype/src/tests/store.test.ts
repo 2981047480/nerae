@@ -129,23 +129,24 @@ describe('草稿版本与不可变交付快照', () => {
     store.requestPublish()
     store.confirmPublish()
 
-    expect(store.state.coach.deliveredVersion).toBe(8)
+    expect(store.state.coach.deliveries.some((item) => item.version === 8)).toBe(true)
     expect(store.state.coach.activeStudentVersion).toBe(6)
     expect(store.state.coach.published.days[0]!.exercises[0]!.sets).toBe('4')
-    expect(store.state.coach.deliveries).toHaveLength(1)
-    expect(store.state.coach.deliveries[0]!.version).toBe(8)
-    expect(store.state.coach.deliveries[0]!.content.days[0]!.exercises[0]!.sets).toBe('5')
+    expect(store.state.coach.deliveries).toHaveLength(2)
+    const delivered = store.state.coach.deliveries.find((item) => item.version === 8)!
+    expect(delivered).toBeTruthy()
+    expect(delivered.content.days[0]!.exercises[0]!.sets).toBe('5')
 
     store.updatePlanField('day-a', 'a1', 'sets', '6')
     expect(store.saveDraft()).toBe(true)
     expect(store.state.coach.draftVersion).toBe(9)
-    expect(store.state.coach.deliveries[0]!.content.days[0]!.exercises[0]!.sets).toBe('5')
+    expect(store.state.coach.deliveries.find((item) => item.version === 8)!.content.days[0]!.exercises[0]!.sets).toBe('5')
     expect(store.state.coach.published.days[0]!.exercises[0]!.sets).toBe('4')
     expect(store.state.coach.activeStudentVersion).toBe(6)
     console.info(
       '[fix-evidence] versions',
       JSON.stringify({
-        deliveredVersion: store.state.coach.deliveredVersion,
+        deliveredVersion: store.state.coach.deliveries[store.state.coach.deliveries.length - 1]?.version,
         draftVersion: store.state.coach.draftVersion,
         activeStudentVersion: store.state.coach.activeStudentVersion,
         publishedFirstSets: store.state.coach.published.days[0]!.exercises[0]!.sets,

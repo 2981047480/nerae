@@ -3917,7 +3917,7 @@
       "id": "D01-03",
       "title": "指定DeepSeek扩展全量情境与状态",
       "batch": "foundation",
-      "status": "active",
+      "status": "review",
       "depends_on": [
         "D01-02"
       ],
@@ -3996,8 +3996,8 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "fix06 normal round13 frozen54b74c;Lead109/type/build/27pass; actual F03/adoption+Core/breath/staleerror pass; new28th mixed-unit trend fails; sameHarnessfix07round14running; full goal active",
-      "candidate_revision": "54b74c86b93e80967b84d9fff4cba95fd0be9ba1"
+      "execution_state": "fix09 normal16m59/1014;Lead116/type/build/30pass;220pixelverified+96states+actualunits/F03/focus passed;finalreviews/integrationpending",
+      "candidate_revision": "898e3546363cf7348b6599601b2570597a14820c"
     },
     {
       "id": "D01-I",

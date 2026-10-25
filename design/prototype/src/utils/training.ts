@@ -7,7 +7,13 @@ import type {
   SetInput,
   SetInputErrors,
 } from '../types'
-import { formatWeight, lastReferenceLabel } from './format'
+import {
+  formatWeight,
+  isBodyweightKind,
+  isDurationKind,
+  isPerSideKind,
+  lastReferenceLabel,
+} from './format'
 
 export interface SetEntry {
   exercise: SessionExercise
@@ -56,8 +62,11 @@ export function inputFromValues(
   values: { weightKg?: number | null; reps?: number | null; seconds?: number | null } | null,
 ): SetInput {
   if (!values) return emptyInput()
-  if (kind === 'duration') {
+  if (isDurationKind(kind)) {
     return { weightKg: '', reps: '', seconds: values.seconds == null ? '' : String(values.seconds) }
+  }
+  if (isBodyweightKind(kind)) {
+    return { weightKg: '', reps: values.reps == null ? '' : String(values.reps), seconds: '' }
   }
   return {
     weightKg: values.weightKg == null ? '' : String(values.weightKg),
@@ -99,7 +108,7 @@ export function parseNumber(raw: string): number {
 
 export function validateSetInput(kind: LoadKind, input: SetInput): SetInputErrors {
   const errors: SetInputErrors = {}
-  if (kind === 'duration') {
+  if (isDurationKind(kind)) {
     const seconds = parseNumber(input.seconds)
     if (!input.seconds.trim()) errors.seconds = '请输入实际完成的秒数'
     else if (!Number.isFinite(seconds) || !Number.isInteger(seconds)) {
@@ -109,17 +118,19 @@ export function validateSetInput(kind: LoadKind, input: SetInput): SetInputError
     return errors
   }
 
-  const rawWeight = input.weightKg.trim().replace(',', '.')
-  const weight = parseNumber(rawWeight)
-  const decimals = rawWeight.includes('.') ? rawWeight.split('.')[1]?.length ?? 0 : 0
-  if (!input.weightKg.trim()) errors.weightKg = '请输入本次使用的重量'
-  else if (!Number.isFinite(weight)) errors.weightKg = '重量需要是数字'
-  else if (weight <= 0) errors.weightKg = '重量要大于 0'
-  else if (weight > 300) errors.weightKg = '重量看起来过大，请核对'
-  else if (decimals > 2) errors.weightKg = '重量最多保留两位小数'
+  if (!isBodyweightKind(kind)) {
+    const rawWeight = input.weightKg.trim().replace(',', '.')
+    const weight = parseNumber(rawWeight)
+    const decimals = rawWeight.includes('.') ? rawWeight.split('.')[1]?.length ?? 0 : 0
+    if (!input.weightKg.trim()) errors.weightKg = '请输入本次使用的重量'
+    else if (!Number.isFinite(weight)) errors.weightKg = '重量需要是数字'
+    else if (weight <= 0) errors.weightKg = '重量要大于 0'
+    else if (weight > 300) errors.weightKg = '重量看起来过大，请核对'
+    else if (decimals > 2) errors.weightKg = '重量最多保留两位小数'
+  }
 
   const reps = parseNumber(input.reps)
-  if (!input.reps.trim()) errors.reps = '请输入完成的次数'
+  if (!input.reps.trim()) errors.reps = kind === 'breath' ? '请输入完成的呼吸次数' : '请输入完成的次数'
   else if (!Number.isFinite(reps) || !Number.isInteger(reps)) errors.reps = '次数需要是整数'
   else if (reps < 1) errors.reps = '次数至少为 1'
   else if (reps > 100) errors.reps = '次数不能超过 100'
@@ -135,8 +146,11 @@ export function appliedValues(
   kind: LoadKind,
   input: SetInput,
 ): { weightKg: number | null; reps: number | null; seconds: number | null } {
-  if (kind === 'duration') {
+  if (isDurationKind(kind)) {
     return { weightKg: null, reps: null, seconds: Math.round(parseNumber(input.seconds)) }
+  }
+  if (isBodyweightKind(kind)) {
+    return { weightKg: null, reps: Math.round(parseNumber(input.reps)), seconds: null }
   }
   return {
     weightKg: Math.round(parseNumber(input.weightKg) * 100) / 100,
@@ -146,7 +160,10 @@ export function appliedValues(
 }
 
 export function referenceText(exercise: SessionExercise): string {
-  return `上次 · ${exercise.lastRef.dateLabel} · ${lastReferenceLabel(exercise.lastRef)}`
+  if (exercise.lastRef.dateLabel === '暂无可比较参考') {
+    return '暂无可比较的参考记录'
+  }
+  return `上次 · ${exercise.lastRef.dateLabel} · ${lastReferenceLabel(exercise.lastRef, exercise.kind)}`
 }
 
 export function latestEventAt(session: SessionState): string | null {
@@ -175,8 +192,16 @@ export function nextEventTime(session: SessionState, restSeconds: number): strin
 
 export function setAriaLabel(kind: LoadKind, set: SessionSet): string {
   if (set.status === 'pending') return `第 ${set.index} 组，待记录`
-  if (kind === 'duration') return `第 ${set.index} 组，已记录 ${set.seconds ?? 0} 秒`
+  const side = isPerSideKind(kind) ? '，每侧' : ''
+  if (isDurationKind(kind)) {
+    return `第 ${set.index} 组，已记录 ${set.seconds ?? 0} 秒${side}`
+  }
+  if (kind === 'breath') {
+    return `第 ${set.index} 组，已记录 ${set.reps ?? 0} 次呼吸`
+  }
+  if (isBodyweightKind(kind)) {
+    return `第 ${set.index} 组，已记录自重 ${set.reps ?? 0} 次${side}`
+  }
   const weight = set.weightKg === null ? '' : `${formatWeight(set.weightKg)} 千克`
-  const side = kind === 'perSide' ? '，每侧' : ''
   return `第 ${set.index} 组，已记录 ${weight} ${set.reps ?? 0} 次${side}`
 }

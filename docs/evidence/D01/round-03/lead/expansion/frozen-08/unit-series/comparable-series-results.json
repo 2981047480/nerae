@@ -1,0 +1,10 @@
+{
+  "sourceRevision": "29bddb694e1498549aaa20cbc24511c9d45a515e",
+  "coreEightActualConfirmations": true,
+  "noFakeLegacyReference": true,
+  "birdSingleCountPoint": true,
+  "falseDeltaRemoved": true,
+  "legacyZeroWeightRetained": true,
+  "sideUsesSecondsPerSide": true,
+  "scope": "Actual local UI sample"
+}

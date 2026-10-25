@@ -584,6 +584,48 @@ try {
    for(const old of originalRecords)assert.deepEqual(plain(s.state.records.find(x=>x.id===old.id)),old,'Chart normalization rewrote a confirmed historical record')
    e.originalFactsRetained=true
  })
+ await check('returning message preview to normal removes only the fixture and preserves actual conversation drafts',async e=>{
+   s.goToConversation('conv-gu-yan')
+   s.setMessageDraft('conv-gu-yan','这条草稿切换状态后应保留。')
+   const originalIds=s.state.conversations.map(x=>x.id)
+   const before=plain(s.state.conversations.find(x=>x.id==='conv-gu-yan'))
+   s.applyPreviewState('messages','failed')
+   s.applyPreviewState('messages','normal')
+   const after=s.state.conversations.find(x=>x.id==='conv-gu-yan')
+   e.beforeConversationIds=originalIds;e.afterConversationIds=s.state.conversations.map(x=>x.id)
+   assert.ok(after,'Normal preview removed the whole Gu conversation')
+   assert.deepEqual(e.afterConversationIds,originalIds,'Normal preview removed an existing conversation')
+   assert.deepEqual(plain(after.messages),before.messages,'Normal preview rewrote actual conversation messages')
+   assert.deepEqual(plain(after.drafts),before.drafts,'Normal preview lost a private draft')
+   e.existingMessagesAndDraftsRetained=true
+ })
+ await check('collapsed record summaries describe an actual set with its unit, independent of input order',async e=>{
+   const f=await server.ssrLoadModule('/src/utils/format.ts')
+   const fixtures=[
+     ['weight',[{weightKg:12.5,reps:10},{weightKg:20,reps:5},{weightKg:20,reps:4}],['12.5 kg × 10 次','20 kg × 5 次','20 kg × 4 次']],
+     ['perSide',[{weightKg:0,reps:10},{weightKg:10,reps:5}],['0 kg × 10 次/侧','10 kg × 5 次/侧']],
+     ['duration',[{seconds:40},{seconds:35}],['40 秒','35 秒']],
+     ['durationPerSide',[{seconds:30},{seconds:25}],['30 秒/侧','25 秒/侧']],
+     ['bodyweight',[{reps:10},{reps:8}],['自重 × 10 次','自重 × 8 次']],
+     ['bodyweightPerSide',[{reps:10},{reps:8}],['自重 × 10 次/侧','自重 × 8 次/侧']],
+     ['breath',[{reps:8},{reps:6}],['8 次呼吸','6 次呼吸']],
+   ]
+   e.kinds=[]
+   for(const [kind,values,actualLabels] of fixtures){
+     const sets=values.map(v=>({kind,weightKg:null,reps:null,seconds:null,...v}))
+     const before=JSON.stringify(sets)
+     for(const order of [sets,[...sets].reverse(),[...sets.slice(1),sets[0]]]){
+       const text=f.summarizeRecordSets(order)
+       assert.ok(actualLabels.some(label=>text===`${label} · ${sets.length} 组`),`Summary is not one actual set: ${kind}: ${text}`)
+     }
+     assert.equal(JSON.stringify(sets),before,'Summarization mutated confirmed facts')
+     e.kinds.push(kind)
+   }
+   assert.equal(f.summarizeRecordSets([]),'')
+   const mixed=[{kind:'perSide',weightKg:0,reps:10,seconds:null},{kind:'bodyweightPerSide',weightKg:null,reps:10,seconds:null}]
+   assert.equal(f.summarizeRecordSets(mixed),'多种记录方式 · 查看明细')
+   e.actualPairAndUnitPreservedAcrossOrders=true;e.confirmedFactsUnmodified=true
+ })
  report.status=report.checks.every(x=>x.status==='passed')?'passed':'failed'
 } catch(error) {report.status='failed';report.error=String(error?.stack??error);process.exitCode=1}
 finally {
