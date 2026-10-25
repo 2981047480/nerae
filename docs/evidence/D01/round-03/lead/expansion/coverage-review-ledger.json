@@ -6,7 +6,7 @@
     "03_VISUAL_AND_MOTION.md",
     "04_TRADEOFFS_AND_VALIDATION.md"
   ],
-  "status": "55 Lead-reviewed UI meanings; integration acceptance separate",
+  "status": "55 Lead-reviewed meanings accepted for exact integrated local UI; not user research",
   "worker_map_is_evidence_not_spec": true,
   "semantic_mismatches_in_old_worker_map": [
     "L07",
@@ -45,7 +45,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "匿名读完整条件后才在开始处登录/成年；筛选取消回退保持。"
+      "observed": "匿名读完整条件后才在开始处登录/成年；筛选取消回退保持。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G02",
@@ -82,7 +83,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "免费Core8与Mobility6可独立完成并进入记录，不须先选教练。"
+      "observed": "免费Core8与Mobility6可独立完成并进入记录，不须先选教练。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G03",
@@ -111,7 +113,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "选包带入咨询而不自动发送；新759/项不重写699/月旧约定。"
+      "observed": "选包带入咨询而不自动发送；新759/项不重写699/月旧约定。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G04",
@@ -146,7 +149,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "旧7消息保留原快照，点评回具体记录，新8须本人决定采用。"
+      "observed": "旧7消息保留原快照，点评回具体记录，新8须本人决定采用。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G05",
@@ -171,7 +175,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "固定模板来源、差异与确认清楚，个人草稿变8而当前3/12不动。"
+      "observed": "固定模板来源、差异与确认清楚，个人草稿变8而当前3/12不动。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G06",
@@ -205,7 +210,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "未成年开始受阻；授权撤回本人历史保留，教练读面裁剪；资质未知据实。"
+      "observed": "未成年开始受阻；授权撤回本人历史保留，教练读面裁剪；资质未知据实。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "G07",
@@ -238,7 +244,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "B日13组不猜拆；新8采用不改今日3组与历史，冷恢复保留对象。"
+      "observed": "B日13组不猜拆；新8采用不改今日3组与历史，冷恢复保留对象。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "N01",
@@ -278,7 +285,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "登录/替换/采用/候选/公开确认可取消；咨询私稿可改。"
+      "observed": "登录/替换/采用/候选/公开确认可取消；咨询私稿可改。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "N02",
@@ -316,7 +324,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "每侧/秒/呼吸值可合法确认，单一可比点不制造趋势，摘要不拼组。"
+      "observed": "每侧/秒/呼吸值可合法确认，单一可比点不制造趋势，摘要不拼组。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "N03",
@@ -351,7 +360,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "人类作者/时间/引用与固定模板分明，双方私稿及失败可见性隔离。"
+      "observed": "人类作者/时间/引用与固定模板分明，双方私稿及失败可见性隔离。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L01",
@@ -403,7 +413,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "自助完成与真人服务均有独立价值入口，原图语境为训练而非营销后台。"
+      "observed": "自助完成与真人服务均有独立价值入口，原图语境为训练而非营销后台。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L02",
@@ -436,7 +447,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "探索摄影和对比、训练深色主操作、审阅平面差异、消息正文优先。"
+      "observed": "探索摄影和对比、训练深色主操作、审阅平面差异、消息正文优先。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L03",
@@ -473,7 +485,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "开始前给适用条件、服务前给包/样例/价格，未知认证评价不伪造。"
+      "observed": "开始前给适用条件、服务前给包/样例/价格，未知认证评价不伪造。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L04",
@@ -534,7 +547,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "今天一步继续、队列两次导航到草稿、咨询预填包和已知时间。"
+      "observed": "今天一步继续、队列两次导航到草稿、咨询预填包和已知时间。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L05",
@@ -576,7 +590,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "首要标题/当前事实/主动作优先，96状态仍给具体恢复与去向。"
+      "observed": "首要标题/当前事实/主动作优先，96状态仍给具体恢复与去向。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L06",
@@ -625,7 +640,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "App接管对象带入保存恢复，用户保留完成值与采用/服务/授权/公开决定。"
+      "observed": "App接管对象带入保存恢复，用户保留完成值与采用/服务/授权/公开决定。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L07",
@@ -668,7 +684,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "220 DOM逐段审查，未出现设计与验收工具词；预览样例边界明确。"
+      "observed": "220 DOM逐段审查，未出现设计与验收工具词；预览样例边界明确。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L08",
@@ -717,7 +734,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "同材质字体图标与稳定排版，22构图五宽双字号及有效像素接受。"
+      "observed": "同材质字体图标与稳定排版，22构图五宽双字号及有效像素接受。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "L09",
@@ -761,7 +779,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "12因果动效真实触发；reduced保留正文、数值、对象、焦点与重试结果。"
+      "observed": "12因果动效真实触发；reduced保留正文、数值、对象、焦点与重试结果。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C01",
@@ -791,7 +810,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "匿名条件比较、登录/年龄/替换取消与B日冷恢复均实际走查。"
+      "observed": "匿名条件比较、登录/年龄/替换取消与B日冷恢复均实际走查。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C02",
@@ -823,7 +843,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "今天主动作继续当前第4组，暂停与冷恢复保留计时和输入。"
+      "observed": "今天主动作继续当前第4组，暂停与冷恢复保留计时和输入。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C03",
@@ -852,7 +873,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "实际12/Core8/Mobility6覆盖负重每侧秒自重呼吸，冲突仅一次，模块覆盖故障恢复。"
+      "observed": "实际12/Core8/Mobility6覆盖负重每侧秒自重呼吸，冲突仅一次，模块覆盖故障恢复。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C04",
@@ -890,7 +912,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "真实摘要只取同一组，0kg旧事实保留，范围/单位同图同源；补记不冒充准时。"
+      "observed": "真实摘要只取同一组，0kg旧事实保留，范围/单位同图同源；补记不冒充准时。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C05",
@@ -924,7 +947,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "包、周期、响应、交付样例邻近，咨询带选包和私稿，新价与旧约定分开。"
+      "observed": "包、周期、响应、交付样例邻近，咨询带选包和私稿，新价与旧约定分开。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C06",
@@ -959,7 +983,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "双方失败不对方可见，重试一次；旧7与新8可识别，采用取消/确认保持现用。"
+      "observed": "双方失败不对方可见，重试一次；旧7与新8可识别，采用取消/确认保持现用。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C07",
@@ -994,7 +1019,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "队列接续完整草稿，保存/差异/发布分步，未授权与关系结束不显示健康材料。"
+      "observed": "队列接续完整草稿，保存/差异/发布分步，未授权与关系结束不显示健康材料。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "C08",
@@ -1032,7 +1058,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "今天暂停/休息/周期结束分开；关系结束只读，历史不清零或羞辱。"
+      "observed": "今天暂停/休息/周期结束分开；关系结束只读，历史不清零或羞辱。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "B01",
@@ -1071,7 +1098,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "完整版动作组次、版本差异与采用影响均可读，未用空摘要冒充专业。"
+      "observed": "完整版动作组次、版本差异与采用影响均可读，未用空摘要冒充专业。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "B02",
@@ -1108,7 +1136,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "内容摄影吸引与执行收拢相配；已记录160ms反馈跟真实4/12。"
+      "observed": "内容摄影吸引与执行收拢相配；已记录160ms反馈跟真实4/12。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "B03",
@@ -1145,7 +1174,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "姓名字标、署名时间与具体引用，未虚构教练人像、认证、在线或评分。"
+      "observed": "姓名字标、署名时间与具体引用，未虚构教练人像、认证、在线或评分。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "B04",
@@ -1179,7 +1209,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "图表仅同方式已确认记录；只有一次不推断趋势，自评不推断营养或身体结果。"
+      "observed": "图表仅同方式已确认记录；只有一次不推断趋势，自评不推断营养或身体结果。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "B05",
@@ -1224,7 +1255,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "暖白深墨陶色、系统中文与同套线性图标；任务密度有区别。"
+      "observed": "暖白深墨陶色、系统中文与同套线性图标；任务密度有区别。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V01",
@@ -1268,7 +1300,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "中文层级与单位可读，五宽200%无挤压标题或字段裁切标记。"
+      "observed": "中文层级与单位可读，五宽200%无挤压标题或字段裁切标记。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V02",
@@ -1313,7 +1346,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "校准220尺寸与320×568长页End证明末尾可达，固定动作不盖尾文。"
+      "observed": "校准220尺寸与320×568长页End证明末尾可达，固定动作不盖尾文。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V03",
@@ -1354,7 +1388,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "行、平面、说明区和强调面按关系编排，消息正文优先而非套卡堆叠。"
+      "observed": "行、平面、说明区和强调面按关系编排，消息正文优先而非套卡堆叠。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V04",
@@ -1398,7 +1433,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "22普通构图平面文字阈值通过；装饰圆点排除，照片和禁用另看原图。"
+      "observed": "22普通构图平面文字阈值通过；装饰圆点排除，照片和禁用另看原图。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V05",
@@ -1444,7 +1480,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "44触达、轮廓/错误文字/禁用均检查；短屏弹层焦点闭环和返回通过。"
+      "observed": "44触达、轮廓/错误文字/禁用均检查；短屏弹层焦点闭环和返回通过。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V06",
@@ -1479,7 +1516,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "10本地素材附来源记录，404保留尺寸替代文本；教练用姓名字标。"
+      "observed": "10本地素材附来源记录，404保留尺寸替代文本；教练用姓名字标。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V07",
@@ -1523,7 +1561,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "同套lucide，图标动作有可访问名称，重要动作有文字。"
+      "observed": "同套lucide，图标动作有可访问名称，重要动作有文字。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "V08",
@@ -1565,7 +1604,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "M01–M12实际双模式；无假声或震动，未冒称FPS或硬件测量。"
+      "observed": "M01–M12实际双模式；无假声或震动，未冒称FPS或硬件测量。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T01",
@@ -1602,7 +1642,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "免费独立完整训练与服务咨询稳定可达，执行中不插促销。"
+      "observed": "免费独立完整训练与服务咨询稳定可达，执行中不插促销。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T02",
@@ -1639,7 +1680,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "筛选回退、选B日冷恢复、原记录引用与私稿保持，重复使用不靠记忆。"
+      "observed": "筛选回退、选B日冷恢复、原记录引用与私稿保持，重复使用不靠记忆。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T03",
@@ -1667,7 +1709,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "两步接续草稿同时完整证据/差异/人工发布仍在，未自动确认安全。"
+      "observed": "两步接续草稿同时完整证据/差异/人工发布仍在，未自动确认安全。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T04",
@@ -1706,7 +1749,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "已知时间和选包预填、重大动作可取消，恢复减少重复输入。"
+      "observed": "已知时间和选包预填、重大动作可取消，恢复减少重复输入。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T05",
@@ -1742,7 +1786,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "只展示真实确认投入，暂停休息正常；无榜单清零或虚假身体成绩。"
+      "observed": "只展示真实确认投入，暂停休息正常；无榜单清零或虚假身体成绩。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "T06",
@@ -1786,7 +1831,8 @@
       ],
       "limits": "本地独立UI样机与Lead走查；不代表服务端、真机、专业审核、生产或真实用户偏好。",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "探索有图像节奏，审阅保留完整动作与事实，不以留白删除内容。"
+      "observed": "探索有图像节奏，审阅保留完整动作与事实，不以留白删除内容。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "H01",
@@ -1814,7 +1860,8 @@
       ],
       "limits": "设计假设已体现，不代表用户研究验证",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "条件摘要与完整内容替代路径已体现；没有招募真实用户证明偏好。"
+      "observed": "条件摘要与完整内容替代路径已体现；没有招募真实用户证明偏好。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "H02",
@@ -1846,7 +1893,8 @@
       ],
       "limits": "设计假设已体现，不代表用户研究验证",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "保存/恢复与稳定入口已体现；没有留存提升证据。"
+      "observed": "保存/恢复与稳定入口已体现；没有留存提升证据。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "H03",
@@ -1874,7 +1922,8 @@
       ],
       "limits": "设计假设已体现，不代表用户研究验证",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "具体服务包/样例/响应已体现；样例不证明真实服务效果。"
+      "observed": "具体服务包/样例/响应已体现；样例不证明真实服务效果。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "H04",
@@ -1908,7 +1957,8 @@
       ],
       "limits": "设计假设已体现，不代表用户研究验证",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "正常休息/暂停/回归已体现；没有动力或健康效果实证。"
+      "observed": "正常休息/暂停/回归已体现；没有动力或健康效果实证。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "H05",
@@ -1953,7 +2003,8 @@
       ],
       "limits": "设计假设已体现，不代表用户研究验证",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "不同任务节奏共享语法，未做品牌辨认实验。"
+      "observed": "不同任务节奏共享语法，未做品牌辨认实验。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "Q01",
@@ -2015,7 +2066,8 @@
       ],
       "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "完成Lead实际任务走查，未把它称作真实行为访谈。"
+      "observed": "完成Lead实际任务走查，未把它称作真实行为访谈。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "Q02",
@@ -2066,7 +2118,8 @@
       ],
       "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "界面辨对象/版本/后果，无需复制ID或学习内部分类。"
+      "observed": "界面辨对象/版本/后果，无需复制ID或学习内部分类。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "Q03",
@@ -2115,7 +2168,8 @@
       ],
       "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "实际原图审美与可操作证据分别评议，构建不是喜欢程度证明。"
+      "observed": "实际原图审美与可操作证据分别评议，构建不是喜欢程度证明。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     },
     {
       "id": "Q04",
@@ -2166,9 +2220,11 @@
       ],
       "limits": "Lead走查与本地样机接受，不代表真实用户或生产",
       "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "observed": "96独立状态、冷恢复、重复阻止、失败重试和实际动画/焦点检查有记录。"
+      "observed": "96独立状态、冷恢复、重复阻止、失败重试和实际动画/焦点检查有记录。",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
     }
   ],
   "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-  "review_mode": "sequential product/UX/visual/QA roles by Lead independent of UI implementer"
+  "review_mode": "sequential product/UX/visual/QA roles by Lead independent of UI implementer",
+  "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
 }

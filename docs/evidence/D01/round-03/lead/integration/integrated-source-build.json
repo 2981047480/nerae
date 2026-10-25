@@ -1,0 +1,27 @@
+{
+  "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "worker_revision": "898e3546363cf7348b6599601b2570597a14820c",
+  "integrated_source_count": 60,
+  "source_all_equal": true,
+  "build_files": {
+    "assets/diet-breakfast.webp": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+    "assets/diet-featured.webp": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+    "assets/diet-mealprep.webp": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+    "assets/explore-dumbbell.webp": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+    "assets/explore-featured.webp": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+    "assets/explore-plank.webp": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+    "assets/explore-stretch.webp": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+    "assets/gym-interior.webp": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+    "assets/hero-today.webp": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+    "assets/index-C32NJ07w.js": "f1ddb5441d4f8aed0e19c8b0cd035cc17339c3e17a646d0d0209276da5c01664",
+    "assets/index-CMa-Q5Fy.css": "e344ffd774e01a0e46e8c24f7ed33481aa35d5d267a6ddb087f9d29c122ed70e",
+    "assets/training-dumbbells.webp": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+    "index.html": "03e372c1f8c0aa37a96fac373374600e620e4f6ce44a2edb4d4b9fbf001d4fb6"
+  },
+  "all_13_build_files_equal_frozen_candidate": true,
+  "typecheck_build_tests_exit_zero": true,
+  "identity_checks": 30,
+  "identity_status": "passed",
+  "UI_source_changed_during_checks": [],
+  "scope": "Lead exact import and integrated code/build verification; browser preview acceptance separately recorded"
+}

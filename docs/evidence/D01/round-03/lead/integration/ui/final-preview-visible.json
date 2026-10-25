@@ -1,0 +1,28 @@
+{
+  "sourceRevision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "tab": "18",
+  "browser": "2",
+  "visible": true,
+  "viewportOverrideReset": true,
+  "before": {
+    "dpr": 1,
+    "height": 900,
+    "motion": "full",
+    "textScale": "100",
+    "title": "上肢力量",
+    "url": "http://127.0.0.1:4187/",
+    "width": 390
+  },
+  "after": {
+    "dpr": 1,
+    "height": 900,
+    "width": 390
+  },
+  "encoded": {
+    "width": 390,
+    "height": 900,
+    "format": "jpg"
+  },
+  "path": "/Users/zephyr/Documents/项目/nerae/docs/evidence/D01/round-03/lead/integration/ui/screenshots/final-preview-0.jpg",
+  "snapshotFile": "final-preview-dom.txt"
+}

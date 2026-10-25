@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|---|
 | F01 | 可复现工程与隔离环境 | work_package / complete | F01-01, F01-02, F01-03, F01-04, F01-05, F01-I | — | 5.0–10 | planned |
 | F02 | 生成契约和统一 transport 边界 | work_package / complete | F01, F02-01, F02-02, F02-03, F02-I | — | 3.5–8.5 | planned |
-| D01 | 视觉基线与主路径可用性评审 | work_package / complete | D01-01, D01-02, D01-03, D01-I | — | 3.5–7 | planned |
+| D01 | 视觉基线与主路径可用性评审 | work_package / complete | D01-01, D01-02, D01-03, D01-I | — | 3.5–7 | accepted |
 | L01 | 取得上线、联络及数据处理依据 | work_package / complete | L01-01, L01-02, L01-03, L01-I | — | 3.0–6 | planned |
 | A01 | 身份、年龄与最小档案 | work_package / pending | F02 | — | 3–5 | planned |
 | A02 | 服务关系与即时撤权 | work_package / pending | A01 | — | 4–7 | planned |
@@ -63,6 +63,6 @@
 | I-B01 | 发布分享与申诉小批HTTP集成 | integration / I02 | V01, B01, B02, B05, O02 | — | 1–2 | planned |
 | I-B02 | 饮食证据与建议应用小批HTTP集成 | integration / I02 | B03, B04, S01-B, I-B01 | — | 1–2 | planned |
 | D01-01 | 设计逻辑逐项推导与开发文稿 | task / D01 | — | — | 0.5–1 | accepted |
-| D01-02 | 指定DeepSeek完成四种代表情境 | task / D01 | D01-01 | — | 1–2 | review |
-| D01-03 | 指定DeepSeek扩展全量情境与状态 | task / D01 | D01-02 | — | 1.5–3 | planned |
-| D01-I | 第三轮UI独立验收与集成 | integration / D01 | D01-03 | — | 0.5–1 | planned |
+| D01-02 | 指定DeepSeek完成四种代表情境 | task / D01 | D01-01 | — | 1–2 | accepted |
+| D01-03 | 指定DeepSeek扩展全量情境与状态 | task / D01 | D01-02 | — | 1.5–3 | accepted |
+| D01-I | 第三轮UI独立验收与集成 | integration / D01 | D01-03 | — | 0.5–1 | accepted |

@@ -1,0 +1,42 @@
+{
+  "accepted_UI_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "plan": {
+    "valid": true,
+    "work_packages": 37,
+    "execution_cards": 25,
+    "accepted": 5,
+    "ready": [
+      "F01-01",
+      "L01-01"
+    ]
+  },
+  "coverage": {
+    "valid": true,
+    "stage": "ui",
+    "items": 55,
+    "screen_families": 16,
+    "lead_reviewed": 55,
+    "ui_completion_proven": true
+  },
+  "checks": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 api/tests/.venv-py311/bin/python scripts/plan.py check",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/lead/integration/plan-final.log",
+      "sha256": "9f47d4a060930cf22b58062f50d09fa0ff33d5fe458b7d18aedb493ed33958af"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage ui",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/lead/integration/coverage-final.log",
+      "sha256": "aebefed89a5648b84a0f21266ce869ff7dcf7c2a1b2b0ef999e0d20d3d39909f"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 api/tests/.venv-py311/bin/python -m unittest discover -s scripts/tests -v",
+      "exit_code": 0,
+      "log": "docs/evidence/D01/round-03/lead/integration/plan-tests-final.log",
+      "sha256": "714caf47da80a167185c5c3e3ebe398e4b239a8ac2eccc3e8f5f35646eacff77"
+    }
+  ],
+  "scope": "Metadata/traceability and planning-tool regression; no backend or visual conclusions from these structural checks."
+}

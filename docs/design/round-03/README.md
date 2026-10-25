@@ -1,6 +1,6 @@
 # 第三轮设计与 UI 交付
 
-用户已授权逐项推导、形成开发文稿并交指定 DeepSeek 实现。入口为 [STATUS](STATUS.md)，当前接受情况以实际证据为准，不能把文稿覆盖当 UI 完成。
+用户已授权逐项推导、形成开发文稿并交指定 DeepSeek 实现。55项、16族、F01–F07与M01–M12已完成本地UI接受，接受源c33b581。先看[最终接受与预览](FINAL_ACCEPTANCE.md)，历史过程看[STATUS](STATUS.md)。
 
 | 顺序 | 文件 | 用途 |
 |---|---|---|
@@ -14,4 +14,4 @@
 | 7 | [主代理验收](07_ACCEPTANCE.md) | 高级感、美观、动效、状态与完成审计 |
 | 8 | [覆盖表](COVERAGE.md) / [数据](coverage.json) | 55个设计项的来源与层级追踪 |
 
-结构检查：`api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff`。`--stage ui` 在真实 UI 接受前应失败，不因结构检查通过而自动接受视觉。
+结构检查：`api/tests/.venv-py311/bin/python scripts/design/check_round03.py --stage handoff`。当前`--stage ui`为55/55通过；它只检查结构和文件存在，实际UI接受证据另见最终报告，不能用结构检查替代视觉。

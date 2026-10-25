@@ -1,0 +1,297 @@
+{
+  "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "method": "Lead heuristic walkthrough, not user research or timed empirical measurement",
+  "cognitive_dimensions": [
+    "internal_concepts",
+    "options",
+    "remember_state",
+    "interpret_status",
+    "find_next",
+    "manual_error_recovery",
+    "visual_priority"
+  ],
+  "execution_dimensions": [
+    "manual_input",
+    "classification_setup",
+    "repeat_steps",
+    "transfer_data",
+    "start_background_work",
+    "verify_system_work",
+    "missing_defaults"
+  ],
+  "rows": [
+    {
+      "flow": "F01",
+      "cognitive_dimensions": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "execution_dimensions": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 1,
+      "execution_total": 0,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        1,
+        0,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F02",
+      "cognitive_dimensions": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "execution_dimensions": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 1,
+      "execution_total": 1,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F03",
+      "cognitive_dimensions": [
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "execution_dimensions": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      "cognitive_total": 3,
+      "execution_total": 3,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        2,
+        1,
+        4,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F04",
+      "cognitive_dimensions": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "execution_dimensions": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 1,
+      "execution_total": 1,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        0,
+        1,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F05",
+      "cognitive_dimensions": [
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "execution_dimensions": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 2,
+      "execution_total": 1,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F06",
+      "cognitive_dimensions": [
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "execution_dimensions": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 3,
+      "execution_total": 0,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        1,
+        0,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "flow": "F07",
+      "cognitive_dimensions": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "execution_dimensions": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cognitive_total": 2,
+      "execution_total": 1,
+      "action_categories": [
+        "decisions",
+        "inputs",
+        "navigation",
+        "confirmations",
+        "explicit_waits",
+        "error_recoveries"
+      ],
+      "actions": [
+        1,
+        "1–3",
+        0,
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

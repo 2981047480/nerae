@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "as_of": "2026-10-24",
+  "as_of": "2026-10-25",
   "status_semantics": "工作包与可派发执行卡在同一DAG；ready只列未暂缓、依赖已accepted的task/integration。planned不代表实施。",
   "model_policies": {
     "judgment": {
@@ -210,7 +210,7 @@
       "id": "D01",
       "title": "视觉基线与主路径可用性评审",
       "batch": "foundation",
-      "status": "planned",
+      "status": "accepted",
       "depends_on": [
         "D01-01",
         "D01-02",
@@ -219,7 +219,7 @@
       ],
       "role": "product-designer",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "Codex Project Lead",
       "write_allowlist": [
         "design/reviews/",
         "docs/UI_SPEC.md",
@@ -277,12 +277,117 @@
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+          "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
+          "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+          "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+          "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
+          "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
+          "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
+          "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+          "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+          "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
       "acceptance_requires": [],
-      "breakdown": "complete"
+      "breakdown": "complete",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_at": "2026-10-25T12:21:55.858392+00:00",
+      "reviewed_by": "Codex Project Lead",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "独立本地UI样机未修改OpenAPI/ER，未连接真实HTTP消费者；正式wire contract及后端联调仍由后续工程卡验收。"
+        },
+        "privacy": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地对象/作者/撤权读面隔离；不是服务端鉴权证明。"
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地草稿/输入/冷恢复/同ID重试；未宣称DB事务、队列或跨设备生产恢复。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+            "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+            "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md"
+          ]
+        }
+      },
+      "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
+      "actual_reasoning": "Native session setting not exposed",
+      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "review_mode": "sequential_role_review",
+      "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed."
     },
     {
       "id": "L01",
@@ -3917,7 +4022,7 @@
       "id": "D01-03",
       "title": "指定DeepSeek扩展全量情境与状态",
       "batch": "foundation",
-      "status": "review",
+      "status": "accepted",
       "depends_on": [
         "D01-02"
       ],
@@ -3973,7 +4078,53 @@
         "设计推理不得写进产品；不得自动换模型、发真实消息或部署",
         "Lead证据域仅Lead可写，不扩大指定Harness执行者的源码/worker写域"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+          "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
+          "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+          "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+          "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
+          "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
+          "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
+          "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+          "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+          "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -3996,20 +4147,76 @@
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
-      "execution_state": "fix09 normal16m59/1014;Lead116/type/build/30pass;220pixelverified+96states+actualunits/F03/focus passed;finalreviews/integrationpending",
-      "candidate_revision": "898e3546363cf7348b6599601b2570597a14820c"
+      "execution_state": "normal worker handback; exact integration and independent Lead review accepted",
+      "candidate_revision": "898e3546363cf7348b6599601b2570597a14820c",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_at": "2026-10-25T12:21:55.858392+00:00",
+      "reviewed_by": "Codex Project Lead",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "独立本地UI样机未修改OpenAPI/ER，未连接真实HTTP消费者；正式wire contract及后端联调仍由后续工程卡验收。"
+        },
+        "privacy": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地对象/作者/撤权读面隔离；不是服务端鉴权证明。"
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地草稿/输入/冷恢复/同ID重试；未宣称DB事务、队列或跨设备生产恢复。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+            "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+            "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md"
+          ]
+        }
+      },
+      "review_mode": "independent",
+      "worker_source_revision": "898e3546363cf7348b6599601b2570597a14820c"
     },
     {
       "id": "D01-I",
       "title": "第三轮UI独立验收与集成",
       "batch": "foundation",
-      "status": "planned",
+      "status": "accepted",
       "depends_on": [
         "D01-03"
       ],
       "role": "qa-verifier",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "Codex Project Lead",
       "write_allowlist": [
         "design/prototype/",
         "docs/design/round-03/",
@@ -4062,13 +4269,136 @@
         "不得把测试替身、示例界面或生成接口当作真实联调完成",
         "设计推理不得写进产品；不得自动换模型、发真实消息或部署"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+          "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
+          "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+          "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+          "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
+          "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
+          "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
+          "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+          "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        {
+          "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+          "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "D01",
-      "kind": "integration"
+      "kind": "integration",
+      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_at": "2026-10-25T12:21:55.858392+00:00",
+      "reviewed_by": "Codex Project Lead",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "独立本地UI样机未修改OpenAPI/ER，未连接真实HTTP消费者；正式wire contract及后端联调仍由后续工程卡验收。"
+        },
+        "privacy": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地对象/作者/撤权读面隔离；不是服务端鉴权证明。"
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+            "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json"
+          ],
+          "scope": "本地草稿/输入/冷恢复/同ID重试；未宣称DB事务、队列或跨设备生产恢复。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md",
+            "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
+            "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D01/round-03/lead/REVIEW_14.md",
+            "docs/evidence/D01/round-03/lead/integration/REPORT.md"
+          ]
+        }
+      },
+      "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
+      "actual_reasoning": "Native session setting not exposed",
+      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "review_mode": "sequential_role_review",
+      "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed.",
+      "workspace": "/Users/zephyr/Documents/项目/nerae",
+      "branch": "main",
+      "preview_port": 4187,
+      "integration_result": {
+        "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+        "covered_tasks": [
+          "D01-03"
+        ],
+        "dependency_acceptances": {
+          "D01-03": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+        },
+        "evidence": [
+          "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
+          "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
+          "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
+          "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json"
+        ]
+      }
     }
   ],
   "deferred_packages": {

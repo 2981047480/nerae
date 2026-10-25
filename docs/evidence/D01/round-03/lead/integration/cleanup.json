@@ -1,0 +1,24 @@
+{
+  "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "retained_preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 11903,
+    "exec_session": 45011,
+    "tab": "18"
+  },
+  "closed_owned_old_tabs": 7,
+  "stopped_owned_pids": [
+    74496,
+    71684,
+    16344,
+    35435,
+    54860,
+    66632,
+    76458,
+    98575,
+    8106
+  ],
+  "stopped_prior_worker_dev_pid": 64273,
+  "verified_only_listening_port_in_4186_4195": 4187,
+  "preserved": "All Git history, source worktrees, docs and evidence retained."
+}

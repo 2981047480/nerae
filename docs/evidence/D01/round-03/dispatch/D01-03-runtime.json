@@ -1,6 +1,6 @@
 {
   "task": "D01-03",
-  "state": "fix09 normalround16 frozen898e; Lead116/type/build/30pass; EA37actual12/Core8/Mobility6 pass; final220pixelverified/96states pass; focus/End pass; integrationpending",
+  "state": "accepted local UI at c33b581; final preview4187/IAB18 visible; full goal complete in UI scope",
   "runtime": "DeepSeek Harness.app",
   "provider": "opencode-go",
   "model": "deepseek-v4.1-flash",
@@ -20,7 +20,7 @@
   "submission_proof": "D01-03-submitted.txt",
   "running_proof": "D01-03-running.txt",
   "model_proof": "D01-03-model-menu.txt",
-  "progress": "normal handback16m59/1014steps19:05; no active worker",
+  "progress": "worker idle normal16m59/1014; integrated116/type/build/30pass;55/16/7/12 and final preview accepted",
   "persistence_reminder": {
     "sent_once": true,
     "mechanism": "排队发送 then 插话发送 into same round1",
@@ -53,7 +53,7 @@
   "accepted_preview": {
     "url": "http://127.0.0.1:4186/",
     "tab": "8",
-    "visible": true,
+    "visible": false,
     "observed_viewport_css": [
       515,
       629
@@ -61,7 +61,8 @@
     "observed_dpr": 2.4000000953674316,
     "scope": "accepted first batch only",
     "old_tab": "7 no longer in inventory; created8 after verifying empty IAB tabs; old QA contexts must not be reused",
-    "visibility_note": "retained Deliverable tab8; old visible=true is a prior observation, not reasserted foreground"
+    "visibility_note": "retained Deliverable tab8; old visible=true is a prior observation, not reasserted foreground",
+    "status": "historical first batch superseded; tab8 closed and4186 stopped after final full preview passed"
   },
   "copy_context_review": {
     "feedback": "D01-03-copy-and-context-review.md",
@@ -78,15 +79,15 @@
   },
   "full_preview": {
     "url": "http://127.0.0.1:4187/",
-    "pid": 64273,
-    "workspace": "/private/tmp/nerae-ui-complete/design/prototype",
-    "tab": "11",
-    "visibility": "background",
-    "mark": "handoff",
-    "candidate_source_id": "8e5251943ce06ec85f98fcc99769bf019a845f30 + running fix06 changes",
-    "viewport_control": "browser capability affects selected tab only; tab11 selected/320x900 DPR1 verified; tab9 preserved but not viewport target",
-    "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
-    "candidate_note": "mutable candidate not accepted; use immutable4190 for8e525 evidence"
+    "pid": 11903,
+    "exec_session": 45011,
+    "tab": "18",
+    "visible": true,
+    "mark": "deliverable",
+    "scope": "accepted complete local UI only",
+    "source_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+    "dist": "/Users/zephyr/Documents/项目/nerae/design/prototype/dist",
+    "proof": "../lead/integration/ui/final-preview-visible.json"
   },
   "first_live_ui_review": {
     "feedback": "D01-03-ui-review-01.md",
@@ -464,7 +465,8 @@
     "exec_session": 90051,
     "tab": "18",
     "dist": "/private/tmp/nerae-frozen-898e-gedkgp7b/dist",
-    "proof": "../lead/expansion/frozen-10/frozen-static-preview.json"
+    "proof": "../lead/expansion/frozen-10/frozen-static-preview.json",
+    "status": "completed; tab18 repointed to accepted4187 and4194 test server stopped"
   },
   "lead_qa_preparation": {
     "source_revision": "8e5251943ce06ec85f98fcc99769bf019a845f30",
@@ -514,7 +516,7 @@
     "base_revision": "70803d1e03dfdbcea524d9f9f5152b22e2f3d102",
     "submission_proof": "D01-03-fix09-submitted-confirmed.txt",
     "normal_handback": true,
-    "accepted": false,
+    "accepted": true,
     "scope": "S05 record summary, pure format helper/tests only",
     "submission_method_note": "AX setValue produced no text/bubble; click plus paste verified populated native composer before Return; actual user bubble observed18:48; no duplicate prompt",
     "normal_handback_proof": "../lead/expansion/frozen-10/native-handback.txt",
@@ -522,6 +524,20 @@
     "native_steps": 1014,
     "native_duration": "16m59s",
     "source_revision": "898e3546363cf7348b6599601b2570597a14820c",
-    "lead_checks": "../lead/expansion/frozen-10/code/code-checks.json"
+    "lead_checks": "../lead/expansion/frozen-10/code/code-checks.json",
+    "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+  },
+  "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "historical_worker_preview": {
+    "url": "http://127.0.0.1:4187/",
+    "pid": 64273,
+    "workspace": "/private/tmp/nerae-ui-complete/design/prototype",
+    "tab": "11",
+    "visibility": "background",
+    "mark": "handoff",
+    "candidate_source_id": "8e5251943ce06ec85f98fcc99769bf019a845f30 + running fix06 changes",
+    "viewport_control": "browser capability affects selected tab only; tab11 selected/320x900 DPR1 verified; tab9 preserved but not viewport target",
+    "pid_verified_at_local": "2026-10-24 15:52 Asia/Shanghai",
+    "candidate_note": "mutable candidate not accepted; use immutable4190 for8e525 evidence"
   }
 }

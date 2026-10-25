@@ -1,0 +1,15 @@
+{
+  "integratedRevision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+  "url": "http://127.0.0.1:4187/",
+  "trainingUnconfirmedInputColdRetained": true,
+  "originalConfirmedCountThree": true,
+  "messageModeNormalRetainsConversationAndDraft": true,
+  "oppositePrivateDraftIsolated": true,
+  "failedNotReceived": true,
+  "sameIDRetryReceivedOnce": true,
+  "coachReplyReceivedOnce": true,
+  "revokeOwnerRetained": true,
+  "revokeCoachColdHidden": true,
+  "nondefaultCoachStudent": "周岚",
+  "scope": "Actual integrated local browser UI; no backend, real messages or production permissions"
+}
