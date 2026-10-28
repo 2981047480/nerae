@@ -92,7 +92,8 @@
         "docs/evidence/F01/F01-I/",
         "apps/client/src/pages/index/index.vue",
         "apps/client/src/env.d.ts",
-        "apps/client/index.html"
+        "apps/client/index.html",
+        "scripts/quality/"
       ],
       "inputs": [
         "AGENTS.md",
@@ -2999,7 +3000,8 @@
         "apps/api/.golangci.yml",
         "docs/engineering/ci-gates.md",
         "docs/evidence/F01/F01-05/",
-        "package.json"
+        "package.json",
+        "scripts/quality/"
       ],
       "inputs": [
         "AGENTS.md",
