@@ -6424,7 +6424,7 @@
       "id": "Q02-02",
       "title": "区分工作包汇总写域与执行卡冲突",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "Q02-01"
       ],
@@ -6474,7 +6474,29 @@
         "不得用 acceptance_requires 豁免实际并发写域冲突",
         "不得篡改任何既有 accepted_revision 和证据摘要"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "scripts/plan.py",
+          "sha256": "b4ba59ad2af68c2b31c8a0dd8bd1231be67caca502fd9b649055ce1c407564eb",
+          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+        },
+        {
+          "path": "scripts/tests/test_plan.py",
+          "sha256": "5589148e5b19ff5cfcf351552e372215656449cf922c8e990eb7caa34a411dab",
+          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+        },
+        {
+          "path": "docs/tasks/tasks.json",
+          "sha256": "e2fec2865660216df6840e565ad1d3f06d0526f0d2fd1822f446a0ba0503afbe",
+          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+        },
+        {
+          "path": "docs/evidence/Q02/Q02-02/report.md",
+          "sha256": "d0182fc3011062327ebd40adc5866ce25d3e11829402a2ecdfc7ac0436d9e30c",
+          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
+          "source_revision": "a29bb89b3bba07ccdd5d91210ae254ae8667a2b7"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
       "external_prerequisites": [],
@@ -6483,7 +6505,52 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "ebe136b8b3f14e5283d2a9593996b9b67dd392ea"
+      "base_revision": "ebe136b8b3f14e5283d2a9593996b9b67dd392ea",
+      "accepted_revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests",
+      "review_summary": "独立 reviewer 在集成提交复跑 51 项任务图测试和 plan check；真实写冲突与最终接受门槛均保留。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "scripts/plan.py",
+            "docs/tasks/tasks.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "scripts/tests/test_plan.py",
+            "docs/evidence/Q02/Q02-02/report.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡仅修改调度检查器和任务图，不改变业务 wire contract。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "检查器只读项目任务图及合成测试仓库，不处理真实用户数据。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡没有业务持久化、迁移或恢复过程；原历史证据失败路径仍有测试。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/Q02/Q02-02/report.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/Q02/Q02-02/report.md",
+            "scripts/tests/test_plan.py"
+          ]
+        }
+      }
     }
   ],
   "deferred_packages": {
