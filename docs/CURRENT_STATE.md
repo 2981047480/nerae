@@ -15,6 +15,6 @@
 - 保留：免费训练/饮食广场、自主定价、AI 分层、平台内不收款、18+、健康采集同意和关系授权分开。技术仍为目标 uni-app Vue3/TS + Go 模块化单体。
 - 未实现/未验收：Go 业务服务、正式 uni-app、真实 HTTP/DB 权限和并发、迁移、MiMo 真调用、小程序及 iOS/Android App 真机、签名发布与生产部署。F01 工作包尚未完整接受；静态契约测试不能替代这些验证。
 - 主体、类目与允许的后续联系渠道尚未注册或核定，仍为 L01/V02 上线前置任务，不因样机交付关闭。
-- 工程规划及 ready 以 tasks.json / scripts/plan.py 为准；F01-01、K01-01、F01-02 与 F01-03 已接受；客户端及后台仅为工程壳，API/worker 仅为进程与健康检查骨架，worker 尚无任务处理器。F01-04、L01-01、D02-01 和 P02-01 进行中；真实健康数据库、原生安装和真机尚未验证。D02 正在整理 [三端实施索引](UI_SPEC.md)，账号关联/注销仍缺正式画面。D01 的历史 accepted 不等于 R04/R05 或正式 U01–U08 已通过。R04 的历史合同缺口见 [INTEGRATION](design/round-04/INTEGRATION.md)，当前修订见 K01-01 报告；F01/F02 与业务卡仍依赖实际接受证据。
+- 工程规划及 ready 以 tasks.json / scripts/plan.py 为准；F01-01、K01-01、F01-02 与 F01-03 已接受；客户端及后台仅为工程壳，API/worker 仅为进程与健康检查骨架，worker 尚无任务处理器。P02-01 已完成三端资源与平台条件探针；F01-04、L01-01、D02-01 进行中。真实健康数据库、原生安装和真机尚未验证。D02 正在整理 [三端实施索引](UI_SPEC.md)，账号关联/注销仍缺正式画面。D01 的历史 accepted 不等于 R04/R05 或正式 U01–U08 已通过。R04 的历史合同缺口见 [INTEGRATION](design/round-04/INTEGRATION.md)，当前修订见 K01-01 报告；F01/F02 与业务卡仍依赖实际接受证据。
 
 当前文档：PRD、APP_FLOW、UI_SPEC、DECISION_LOG；旧轮次/旧证据原样保留作历史，不回写旧检查结果。当前 Appllama 参考见 design/round-05/references/manifest.json；此前初查留在原项目目录 docs/design/research/2026-10-27-appllama，用户最新要求优先。

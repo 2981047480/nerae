@@ -5348,7 +5348,7 @@
       "id": "P02-01",
       "title": "App 编译、打包路径与平台缺口探针",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "F01-03"
       ],
@@ -5394,7 +5394,23 @@
         "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
         "不得发送真实客户消息、向外部提交证书或部署生产"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/P02/P02-01/report.md",
+          "sha256": "42533906a3f7cb83746b4994bc2060a30e10992e4e470586249af0d2c84d54ce",
+          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+        },
+        {
+          "path": "docs/plans/app/P02-01-platform-checklist.md",
+          "sha256": "4f36775220659ed14f25578ac52a2377621c1e50b6f2623cb6050ed5f168125e",
+          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+        },
+        {
+          "path": "infra/app/P02-01-tooling-inventory.md",
+          "sha256": "0318e33bbc495f1eb4ba12cb1133526661d2d4d3db2afff0286bab11ddb5cf04",
+          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -5403,7 +5419,56 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "4d15f5b39ca9f976a251c167cc3cdfbe9ff69d67"
+      "base_revision": "4d15f5b39ca9f976a251c167cc3cdfbe9ff69d67",
+      "accepted_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "reviewed_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "review_summary": "独立复核在集成提交干净归档复跑冻结安装、peer 和三端资源构建并检查产物；Lead 对模拟器受沙箱限制作受控只读复核。原生安装、签名和真机仍未验证。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/P02/P02-01/report.md",
+            "docs/plans/app/P02-01-platform-checklist.md",
+            "infra/app/P02-01-tooling-inventory.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/P02/P02-01/report.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡仅探查资源构建和工具条件，不改业务协议或消费者。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "只读工具盘点不使用账号、证书或用户数据；平台授权与用户隐私负例由实际功能和设备验收负责。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡未实现业务状态或恢复逻辑；平台生命周期和断网恢复仍由后续真机任务验证。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/P02/P02-01/report.md",
+            "docs/plans/app/P02-01-platform-checklist.md",
+            "infra/app/P02-01-tooling-inventory.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/P02/P02-01/report.md",
+            "docs/plans/app/P02-01-platform-checklist.md",
+            "infra/app/P02-01-tooling-inventory.md"
+          ]
+        }
+      }
     },
     {
       "id": "Q01",
