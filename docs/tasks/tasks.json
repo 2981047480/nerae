@@ -146,7 +146,8 @@
         "F02-01",
         "F02-02",
         "F02-03",
-        "F02-I"
+        "F02-I",
+        "F02-00"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -168,7 +169,8 @@
         "docs/evidence/F02/F02-I/",
         "apps/api/go.mod",
         "apps/api/go.sum",
-        "pnpm-lock.yaml"
+        "pnpm-lock.yaml",
+        "api/oapi-codegen.yaml"
       ],
       "inputs": [
         "AGENTS.md",
@@ -191,8 +193,8 @@
         "生成器兼容与旧依赖安全检查；授权不能只靠 schema"
       ],
       "effort_days": [
-        3.5,
-        8.5
+        4,
+        9.5
       ],
       "flow_ids": [
         "F01",
@@ -3110,6 +3112,71 @@
       "kind": "integration"
     },
     {
+      "id": "F02-00",
+      "title": "共享 Go 生成配置的可空语义审查",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-01",
+        "K01-01",
+        "Q02-02"
+      ],
+      "role": "architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/oapi-codegen.yaml",
+        "docs/evidence/F02/F02-00/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "api/openapi.yaml",
+        "api/oapi-codegen.yaml",
+        "docs/evidence/K01/K01-01/codegen-integration.md",
+        "api/tests/codegen/oapi-codegen-probe.yaml",
+        "api/tests/codegen/recording_types_test.go",
+        "api/tests/codegen/schema_validation_test.go"
+      ],
+      "deliverables": "Lead 串行审核共享 Go 生成配置，保留有业务含义的可选 nullable 三态；盘点全部 nullable 字段并用当前合同快照验证生成行为。",
+      "acceptance": [
+        "正式配置启用经评估的 nullable 语义，生成不改变 OpenAPI 及 operationId",
+        "训练结束字段的省略/null/具体值解码和精确编码有真实生成模型测试；必填 nullable 的字段缺失由 schema 校验拒绝",
+        "盘点所有组件及内联 nullable 字段与潜在消费者；合同最终接受后重新生成复验",
+        "K01 尚未接受时本卡保持 active，不能把当前快照测试当作最终接受或运行时 HTTP 证据"
+      ],
+      "verification_commands": [
+        "以锁定生成器和正式配置生成临时 Go 模型并运行编解码/Schema 正反例",
+        "python3 scripts/plan.py check"
+      ],
+      "risks": [
+        "nullable 配置会影响身份、分页、预约等多模块生成类型；生成器输出不代替请求与响应的运行时校验。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "不得修改共享 OpenAPI 契约或业务语义",
+        "不得将静态类型检查视为授权、HTTP 或数据库验收",
+        "共享生成配置由 Lead 单 owner 串行处理"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
+      "external_prerequisites": [],
+      "acceptance_requires": [
+        "K01"
+      ],
+      "parent": "F02",
+      "kind": "task"
+    },
+    {
       "id": "F02-01",
       "title": "固定契约生成及可复现验证",
       "batch": "foundation",
@@ -3185,7 +3252,8 @@
       "external_prerequisites": [],
       "acceptance_requires": [
         "F01",
-        "K01"
+        "K01",
+        "F02-00"
       ],
       "parent": "F02",
       "kind": "task",
