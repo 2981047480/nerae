@@ -6242,11 +6242,12 @@
         "docs/tasks/tasks.json",
         "scripts/plan.py"
       ],
-      "deliverables": "让任务图按实际接受版本核验历史证据，允许后续修改共享文件；保留原接受版本、证据归档提交和原摘要，不虚构复核结果。",
+      "deliverables": "让任务图按实际接受版本核验历史证据，允许后续修改共享文件；保留原接受版本、证据归档提交和原摘要，不虚构复核结果；准确区分工作包汇总写域与执行卡并发写冲突。",
       "acceptance": [
         "接受版本与证据来源均是当前集成历史中的真实 Git 提交，历史文件从来源提交的普通文件 blob 验证 SHA-256",
         "原先与接受版本不同步归档的历史证据来源明确且可复现；证据所验证的集成版本仍保持不变",
-        "缺失或伪造提交、摘要错误、路径越界、符号链接、非祖先分支及工作树变化均有正反例；不得静默降级为当前文件哈希"
+        "缺失或伪造提交、摘要错误、路径越界、符号链接、非祖先分支及工作树变化均有正反例；不得静默降级为当前文件哈希",
+        "工作包不执行写入；无序执行卡仍必须因写域重叠而被拒绝。"
       ],
       "verification_commands": [
         "python3.11 -m unittest discover -s scripts/tests -v",
@@ -6257,8 +6258,8 @@
         "证据哈希和提交关系不证明测试内容真实、运行时安全或复核结论正确；无 Git 历史时应失败并报告，不得伪造通过。"
       ],
       "effort_days": [
-        1,
-        2
+        1.5,
+        3
       ],
       "flow_ids": [
         "F01"
@@ -6276,7 +6277,8 @@
       "id": "Q02",
       "status": "planned",
       "depends_on": [
-        "Q02-01"
+        "Q02-01",
+        "Q02-02"
       ],
       "owner": null,
       "breakdown": "complete"
@@ -6410,6 +6412,68 @@
           ]
         }
       }
+    },
+    {
+      "id": "Q02-02",
+      "title": "区分工作包汇总写域与执行卡冲突",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "Q02-01"
+      ],
+      "role": "toolsmith",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "scripts/plan.py",
+        "scripts/tests/",
+        "docs/tasks/tasks.json",
+        "docs/evidence/Q02/Q02-02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/tasks/tasks.json",
+        "scripts/plan.py",
+        "scripts/tests/test_plan.py"
+      ],
+      "deliverables": "仅对可派发 task/integration 检查无序写域冲突，继续校验子卡写域属于父工作包；分离 F02-01 开始条件与最终验收条件，保留 F01/K01 的最终验收前置。",
+      "acceptance": [
+        "汇总工作包即使包含相同路径也不能因此阻止互不冲突的执行卡；真实无序执行卡写域重叠必须失败",
+        "acceptance_requires 仅约束最终接受，不能代替执行顺序或允许并发写冲突",
+        "F02-01 在已接受基础子卡后可开始，但 F01、K01 整包未接受时仍不得接受；最终必须按已接受合同重新生成并复测",
+        "既有依赖环、证据、子卡越界与其他任务图反例继续通过；不改历史接受记录"
+      ],
+      "verification_commands": [
+        "python3 scripts/plan.py check",
+        "python3 -m unittest discover -s scripts/tests -v",
+        "python3 scripts/plan.py ready"
+      ],
+      "risks": [
+        "共享 OpenAPI 和依赖锁可能在早期生成后变化；集成及最终接受须按最终合同重跑，Lead 串行处理共享写入。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04"
+      ],
+      "forbidden": [
+        "禁止将路线图工作包作为可执行任务派发",
+        "不得用 acceptance_requires 豁免实际并发写域冲突",
+        "不得篡改任何既有 accepted_revision 和证据摘要"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "Q02",
+      "kind": "task"
     }
   ],
   "deferred_packages": {
