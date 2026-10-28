@@ -2657,7 +2657,7 @@
       "id": "F01-03",
       "title": "客户端和后台构建骨架",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "F01-01"
       ],
@@ -2718,7 +2718,38 @@
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "apps/client/vite.config.ts",
+          "sha256": "3add394bdd8e79ba36334fdb4fc490353acda91c2ae2927df15acd6b74ce497a",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        },
+        {
+          "path": "apps/client/index.html",
+          "sha256": "1beef966181ffe5b2553fd381bf44573a1938727b67310fcf16dd9fee03fb6f9",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        },
+        {
+          "path": "apps/client/src/manifest.json",
+          "sha256": "435090945ff22d94c69368868784c09e7e21697931cd5234023196ec8ec729b1",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        },
+        {
+          "path": "apps/admin/src/main.ts",
+          "sha256": "9f3aa00dcb444d739ab72b1677254ed62372825d55bb718420358ada2cd79fd0",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "sha256": "b0a4cee8c2dc9aec7c91dbd8af096a21a89d87645d585c5090653889a1115167",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        },
+        {
+          "path": "docs/evidence/F01/F01-03/report.md",
+          "sha256": "9bca75be16c163bcced4041e52820cf8a7785ad1ad0cf35db6a331298287fed2",
+          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -2727,7 +2758,55 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb"
+      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
+      "accepted_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "review_mode": "independent",
+      "reviewed_by": "/root (Codex Lead; gpt-6.1-terra, max)",
+      "reviewed_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "review_summary": "Lead 独立审阅修复并从该提交的全新归档执行 frozen install、peer、两端类型检查、三端资源与后台构建，验证关键产物非空；不代表原生包或业务验收。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "apps/client/vite.config.ts",
+            "apps/client/index.html",
+            "pnpm-lock.yaml"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-03/report.md",
+            "pnpm-lock.yaml"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡仅创建构建工程壳，未实现或修改业务 API 和 wire contract。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "工程壳不采集或处理用户数据，也不实现登录、授权或缓存；相关负例由业务卡完成。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡无持久化、事务、迁移或业务恢复状态。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-03/report.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-03/report.md",
+            "apps/client/vite.config.ts",
+            "apps/client/src/manifest.json"
+          ]
+        }
+      }
     },
     {
       "id": "F01-04",
