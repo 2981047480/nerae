@@ -2591,13 +2591,13 @@
       "id": "F01-02",
       "title": "Go进程、配置与可验证健康检查骨架",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "apps/api/go.mod",
         "apps/api/go.sum",
@@ -2645,19 +2645,22 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "F01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb"
     },
     {
       "id": "F01-03",
       "title": "客户端和后台构建骨架",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "/root/foundation_review",
       "write_allowlist": [
         "apps/client/package.json",
         "apps/client/vite.config.ts",
@@ -2714,7 +2717,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "F01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6-luna",
+      "actual_reasoning": "medium",
+      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb"
     },
     {
       "id": "F01-04",
