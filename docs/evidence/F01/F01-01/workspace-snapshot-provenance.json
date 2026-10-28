@@ -1,0 +1,930 @@
+{
+  "initial_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+  "snapshot_revision": "e3de84312ceabb11202dbd723972d82d4c25bbda",
+  "description": "Path hashes compare preflight to the exact immutable snapshot; category is task ownership, not a claim that other work is accepted.",
+  "counts": {
+    "preexisting_unchanged": 145,
+    "f01_new": 19,
+    "preexisting_updated_by_lead": 7,
+    "other_authorized_work": 11
+  },
+  "files": {
+    ".gitignore": {
+      "sha256": "7429715c619e3dd808c224ff2cb18efee63eb91cb6c366f9ae8229f4129b3039",
+      "size": 210,
+      "category": "preexisting_unchanged"
+    },
+    ".go-version": {
+      "sha256": "55a45ba2851dc159876cb8854f80bf67b9eae781e67ce179708ea2e4f990fcd8",
+      "size": 7,
+      "category": "f01_new"
+    },
+    ".node-version": {
+      "sha256": "e8e8584c09cc1d8fbb12fbf9c0f6f84053223ab8a236a5230c3c9b20ff1a017a",
+      "size": 7,
+      "category": "f01_new"
+    },
+    "AGENTS.md": {
+      "sha256": "399ed6fada951af93f7ac6f43048a828e8005f7b76f7a63eb01e3e155aa9d294",
+      "size": 5797,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "7b70fc833806b5094a99c0fdbde26e25edd404df019ea276b2096ca0af439c75"
+    },
+    "RETRO.md": {
+      "sha256": "ca6b35c9e35061e6664f3bc01d57dd9b7b2d332d454683ef6ddf1cca1be4d8d9",
+      "size": 2537,
+      "category": "preexisting_unchanged"
+    },
+    "api/openapi.yaml": {
+      "sha256": "476fa7e74020541067965598f66cadca7a8e2ff3741db203a153d2fac8e4c994",
+      "size": 294654,
+      "category": "other_authorized_work"
+    },
+    "api/tests/operation_ids.json": {
+      "sha256": "d2f56b2a003c140437bab3b3025b2c841a5ee0a17ff2c7c1debc0a42d028a25c",
+      "size": 5578,
+      "category": "other_authorized_work"
+    },
+    "api/tests/test_recording_contract.py": {
+      "sha256": "af424d5e907c63000d2dcbe4c3b090062fb8649c28ba7e721baac596681d9524",
+      "size": 8441,
+      "category": "other_authorized_work"
+    },
+    "design/prototype/src/App.vue": {
+      "sha256": "ac336312018e1b9a66844f29b9e3fdc9a9af1f00f5fdf4f30a06673e2985b8b6",
+      "size": 11007,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/components/AppHeader.vue": {
+      "sha256": "16c40b98d245711cea25b0f792a05220f0f99316b0d26b27402414e76a5b4941",
+      "size": 6446,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/components/ContentCard.vue": {
+      "sha256": "713c87ca8a091f2db3e33bce4e906cae13ae97d457152eefd02f01cb19ff0a88",
+      "size": 1538,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/components/PhotoFrame.vue": {
+      "sha256": "d0ed4addb16dba322eda7739bd4a81b707ada6b0c2b01d07c05440f29484d2ca",
+      "size": 1506,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/components/PreviewControl.vue": {
+      "sha256": "810f6f1de1a217cecfb7c05f5d5c466bd682dedc654858937385eb11f0a2631f",
+      "size": 14171,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/data/sample.ts": {
+      "sha256": "f65a64c4147e5a598442931a72f39de676eb50e05b013d0166a4e2d1d8386611",
+      "size": 20868,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/main.ts": {
+      "sha256": "59c60ada4489e160334a428f56a05145ec4592810ab3890c7eb3a75ac03c92f7",
+      "size": 314,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/state/palette.ts": {
+      "sha256": "9de753ba355fd1587251f917faba8b4c4fc93b508d109cf92daaa0d7a769570d",
+      "size": 2189,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/state/store.ts": {
+      "sha256": "8f2b72c22cb44c1d02fb7794d1fde10f14e07f59c35a1ceb2db7ee328b53bd86",
+      "size": 155192,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/styles/base.css": {
+      "sha256": "b57b19a6d562920e5ccbc67b798bdaddc8a8aa906dc7fea99fb45b3b4f08cb64",
+      "size": 15563,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/styles/round-five.css": {
+      "sha256": "82b940179fac62fc2e466e59a3b80c08ac5e29f236357fbe21fda4fb7d87cc92",
+      "size": 25421,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/styles/round-four.css": {
+      "sha256": "a8db8bedc1a18616b55e6be90bc45e46639dc42c387bb6da55d7112595e8fd4c",
+      "size": 27539,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/styles/screens.css": {
+      "sha256": "e16920b3f0b83278a70dd8089307d90c988957ee489b6f15dafcccacda5d274e",
+      "size": 10195,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/styles/tokens.css": {
+      "sha256": "f7e0b62cccb8073ee14d3f02dc0e3e998768d2970de5652a4c82c3fe20e69b9c",
+      "size": 1569,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/tests/expansion.test.ts": {
+      "sha256": "fdc68bc35fb296dfe653a401d908a97280c0424aa58114737e2018c6e151a1a8",
+      "size": 79375,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/tests/recording.test.ts": {
+      "sha256": "263886ba8f8d118153e421b8d627506de68471334a432cb09f001eee712bd399",
+      "size": 13336,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/tests/studio.test.ts": {
+      "sha256": "7e40539dd8b77b701ae69553f4a4e7792c2de67ea7c7dc88dfc038eb87818a01",
+      "size": 4965,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/tests/ui.test.ts": {
+      "sha256": "6d063d69dbd5c2fee603e636da02c809ac8bf5b48aaa1242dc8944373f41b0e1",
+      "size": 12222,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/types.ts": {
+      "sha256": "58432a4351da96458402ffb55529c7ee9d7439860ef838664b7a1d63a35f0bbf",
+      "size": 15105,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/AiAssistView.vue": {
+      "sha256": "aef3be0712e008121c78d9512a9922bc49cba7ef3be1bfd82f331dc0f32621a5",
+      "size": 13856,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachDetailView.vue": {
+      "sha256": "bc75f57980c856c4556ed14ced4967d2ecc23db2b225b40a7c711b34bbc723bc",
+      "size": 14319,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachReviewView.vue": {
+      "sha256": "4c1e956c14b2811df537f1417274a1b4aa14eed2de5a21139a5a51fa373ee5fa",
+      "size": 41221,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachServicesView.vue": {
+      "sha256": "d1ab8481651caa3ec3c6d7ea52260e78f0e5efc1f0c12d2aa9e8f5d22371ea38",
+      "size": 16815,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachStudentDetailView.vue": {
+      "sha256": "ea72a09ec21624376ce43fc3abb047c1629dd897077dd833eb9565378d869f95",
+      "size": 13362,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachStudentsView.vue": {
+      "sha256": "c926dc2868e1ddfd0d4df8a3b68fbc79d3b12a55cbc1a6bb12bd85bab0efda70",
+      "size": 5836,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/CoachTodoView.vue": {
+      "sha256": "9fc02aea140752b311403cba1993ce9958b9ab51b5a620735e5557bc761c0f77",
+      "size": 3381,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/DietView.vue": {
+      "sha256": "5b1485233526f064a4000e9fcbb0ab436d6af2f246921897ae32070e0d4948b0",
+      "size": 10521,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/ExploreView.vue": {
+      "sha256": "1040823da24ad50c58299e7737c87541b2b9f59f04a486fddf3220884c4c28c9",
+      "size": 6843,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/MessagesView.vue": {
+      "sha256": "41d0d57b4777e13b8e5e1703694d30aedf3b69903f809066a807c8d5b92caa3a",
+      "size": 27314,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/MyPlanView.vue": {
+      "sha256": "2a1d1dc3e2e7ea97441cdddb13cb0bdacd538f38fb7bc137a49b2d8bc0202c14",
+      "size": 24146,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/PlanDetailView.vue": {
+      "sha256": "34406ab371acc8f34eeb3dc9685eba2b673598d5a79a0d29361fc5c9c19e8432",
+      "size": 16812,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/RecordsView.vue": {
+      "sha256": "2669ba1fa0dd772d43d7e0de33e77d331e56a783a65a227c15002c62b5d78976",
+      "size": 20894,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/TodayView.vue": {
+      "sha256": "d7ca545917de89d5ddf468a9744681638cf776f51203fad45284bc0efcf9d0fb",
+      "size": 9346,
+      "category": "preexisting_unchanged"
+    },
+    "design/prototype/src/views/TrainingView.vue": {
+      "sha256": "2692f702420a1d125bcd24bd3c9bfcee633f64ee8a2c6fbd2ba198f6857e3c8d",
+      "size": 13947,
+      "category": "preexisting_unchanged"
+    },
+    "docs/APP_FLOW.md": {
+      "sha256": "44d649416b6183e537ffad2381e563bd0da37f0795e7e10ed52e7fe18cfd17c2",
+      "size": 12999,
+      "category": "preexisting_unchanged"
+    },
+    "docs/CURRENT_STATE.md": {
+      "sha256": "8ed086fc2493f81dd134c88699dd6a295a518dc2a86e0d47c8439b456ddad25d",
+      "size": 4741,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "e8c660f6a1b1296175f55e99dab84dc22daed58b3b546c41fc8a14b8c106e10f"
+    },
+    "docs/DECISION_LOG.md": {
+      "sha256": "f0dee3fbb7c674aba2d16b52b84d0ba9b529ac97e2658098f768ebef71e746d0",
+      "size": 8889,
+      "category": "preexisting_unchanged"
+    },
+    "docs/DEFINITION_OF_DONE.md": {
+      "sha256": "514bb74368bda2834c22f3c8f001bf1d86bcffb2bfbb4eafc49fddede6ce733a",
+      "size": 5482,
+      "category": "preexisting_unchanged"
+    },
+    "docs/ENGINEERING_STANDARDS.md": {
+      "sha256": "4702eaee951d74c837461ecc871c313be3769249009bca81bf89673214dee119",
+      "size": 9040,
+      "category": "preexisting_unchanged"
+    },
+    "docs/IMPLEMENTATION_PLAN.md": {
+      "sha256": "17b11b310dc072d2c8b3f56da6ae7683152a95dedfe9e19b90619790bd2a789f",
+      "size": 16010,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "836687cb8970fda77821bc61ca959f500ba6bac022853a82d9472c656010f217"
+    },
+    "docs/PLAN_REFINEMENT.md": {
+      "sha256": "a2e01d9805262153390936277a1e3c131fc5bde9b080a785a4c21542c760b5d8",
+      "size": 6904,
+      "category": "preexisting_unchanged"
+    },
+    "docs/PRD.md": {
+      "sha256": "2e7d953c054083275cf08e532860574b8f3a667cffbc4238b3b92bf82b3f2ab2",
+      "size": 75528,
+      "category": "preexisting_unchanged"
+    },
+    "docs/RELEASE_GATES.md": {
+      "sha256": "ad3a097fbcb583dc07e51837c360217ba5ff1541b77160be0ec916af33a1724e",
+      "size": 6481,
+      "category": "preexisting_unchanged"
+    },
+    "docs/UI_SPEC.md": {
+      "sha256": "9688f3055c282d178ee99e628f75a55d774479c8c83fb7f209931c94ea56fb58",
+      "size": 3813,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "00fc1c2f2e8537adcff4ef2a90ba3e1037572edb69ec478f1e3ef1a9c76ecb60"
+    },
+    "docs/VALIDATION_PLAN.md": {
+      "sha256": "8e50af0cbf201d547fc79dc1c71cf48d94baa7f4aea7fb8326f542acad522547",
+      "size": 9819,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/BRIEF.md": {
+      "sha256": "6176720b894198660b414c294d2a53ee853dee3ae8e67f7ec9bcc407faba9e9e",
+      "size": 2774,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/INTEGRATION.md": {
+      "sha256": "a5a5d0ea3abbf20b05877042417ec515fba34f881e5d4b6379f5f3a5249d0668",
+      "size": 2617,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "05a402ead7b4aee77803f9205aba58d1d8930fc3036b514facaa90cd3ffad58d"
+    },
+    "docs/design/round-04/VERIFICATION.md": {
+      "sha256": "e2fcebc02d6b0350fa5a243e235ed7c40458919070f6e8b4e2d3d39e4335a1de",
+      "size": 5485,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/browser-smoke.json": {
+      "sha256": "72c3fcea0d2f419fdf23b544df151f6e5c59ef15e67e67c325f84be1f06bf7af",
+      "size": 4028,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/build-manifest.json": {
+      "sha256": "9369145183693369ff10cde1a29297791da9443b2fe0acc60e590e65bc211baa",
+      "size": 2252,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/build.log": {
+      "sha256": "349ebf2f947efb97d7c12dff29e979b4637b58fb4b0ac6b51f6155e66c7bdd46",
+      "size": 352,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/contract-summary.json": {
+      "sha256": "70fa5c3fa66d5d4be8936ad28f65e23a537cfd143a51e5c72f55da514ce4fe0a",
+      "size": 355,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/original-build.log": {
+      "sha256": "372320e284fdba2b0038afc229849745ea4eaa1d0006000ca2865f0c0f6a7f87",
+      "size": 352,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/source-manifest.json": {
+      "sha256": "a81bb4b6a43bd6804ed451b0c82987cee9ded879cec617828831d75011d77131",
+      "size": 7541,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/evidence/vitest.log": {
+      "sha256": "75d56f3b4c3eed8abac366e3589bb709dbeae6a2820293b1d0f5c08b7774a44d",
+      "size": 5311,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/README.md": {
+      "sha256": "37657285d6fde656801895b5513b0263bb1026a9d4912846e56ce4cf9419454a",
+      "size": 3926,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/browser-values.json": {
+      "sha256": "a1dd14b94ef424984bf31d8a7bc1131bdfc9a352ffadbaca37d22c30b3d93646",
+      "size": 19482,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/build.log": {
+      "sha256": "af340dc592d77a4e5834338e7c58d281a509673af01455a21015461b3f6b0c78",
+      "size": 352,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/contrast.json": {
+      "sha256": "fdefeb461e6d6f102f519a486f8f113dd32947f33b50a5cb75b531bba626bd66",
+      "size": 7332,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/lilac-record-mobile.jpg": {
+      "sha256": "854229030319eb0b6e105da0ee07b547ae62d64294dfebcae8829b420b4ccd68",
+      "size": 23121,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/lilac-today-desktop.jpg": {
+      "sha256": "8f8376c2c16fd6aac12d989302813bf3174f5b320f1e7a8550f92eda2a8f4cac",
+      "size": 38283,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/manifest.json": {
+      "sha256": "0cd49e8052e38d2f6a12e346d5e8f7d0559608d3ccfb0240862baf9b36e58f81",
+      "size": 13753,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/mulberry-record-mobile.jpg": {
+      "sha256": "4636170bb7b4dca05913277fdeea4277275fa302fadb49365e2dcf96c75629e9",
+      "size": 23933,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/mulberry-today-desktop.jpg": {
+      "sha256": "b2a842bdcaad956470fb2c263f26f8b179101b0e5b80c2228dd577e29c7be2ad",
+      "size": 38930,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/pine-explore-mobile.jpg": {
+      "sha256": "14e6cc85bedb2f74167db3de805d0e758ec99889eca3fbbc43aac257aa3a9839",
+      "size": 27867,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/pine-messages-mobile.jpg": {
+      "sha256": "872b0265f733bb6d5c89a4e1a66a6852c7dc5634db87cc37f8ff01ee5a33b00e",
+      "size": 34717,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/pine-per-set-mobile.jpg": {
+      "sha256": "72118f73524a6e2e56a3855882d72a3c81546aab9bfdad03a3c069332067c5af",
+      "size": 25251,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/pine-record-mobile.jpg": {
+      "sha256": "ddebea254e00fae4735d3adf748995eca0ccd09ebca8eda04e60d7701f0d4e33",
+      "size": 22444,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/pine-today-desktop.jpg": {
+      "sha256": "64a372f8e9da6ed71d078b6cf6cbbd4618b3a74185e39cb322033b21ac4a3fa7",
+      "size": 39867,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/palettes/vitest.log": {
+      "sha256": "54ee72eb9858739d1ad64987cc886c7c17e5e6951cef0b0b06d0071c31f0a13e",
+      "size": 5311,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/references/hevy.webp": {
+      "sha256": "9787e1b7e502961465bc247cd637cc253b14783b526e12c7a1f31874893ed1e7",
+      "size": 431680,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/references/manifest.json": {
+      "sha256": "67fce2a1596af168119da989ec3f106b20274ecc0a78371200ffddaa81ce85d0",
+      "size": 1223,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/references/strong.webp": {
+      "sha256": "80dede298421751775df291d6be204d4e6308a1f8590b9234554ae4e13794d98",
+      "size": 512152,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/capture-metadata.json": {
+      "sha256": "bc095ac37911b02f9cafde7c7c934811c15373cbe899818dac73548082ae99cc",
+      "size": 3436,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/coach-review-mobile.jpg": {
+      "sha256": "342e8ed94a79019523d6737eea4e0927c61a171d021b5b56a2ba5d2a2878d44a",
+      "size": 32961,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/coach-todo-mobile.jpg": {
+      "sha256": "1474f5d86f1b944d0d31922bb1644ec0f7b4220a8495fafefbb1e9246aa62583",
+      "size": 23860,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/explore-mobile.jpg": {
+      "sha256": "01da98bc4547d8a1b1e2f45a8a3813a70d2385c9aa1631d88890d14098ab830b",
+      "size": 27477,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/manifest.json": {
+      "sha256": "50ef18214b1e1ccfb79056f48dc43377ecde072bc6a1401785c94d410f064a9d",
+      "size": 6891,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/messages-mobile.jpg": {
+      "sha256": "5a99fe96fee877f2014002c75672c153494bfc6c1b84054f0bbabc149a7f7960",
+      "size": 32359,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/plan-detail-mobile.jpg": {
+      "sha256": "3d7c1d828d6b95a21096cc8c549887ae6596beb7a273ec1e7c2f0b01a68c06ef",
+      "size": 29225,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-after-desktop.jpg": {
+      "sha256": "55eb564ffd43d8a8596dd1222faef0ccda28a8b5695e1bc1b0997bc3852c2c48",
+      "size": 27620,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-after-mobile.jpg": {
+      "sha256": "6f497912f8c23f52f302a895ea64bb47db5248fcd816082f26622a249014a35e",
+      "size": 23515,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-incomplete-mobile.jpg": {
+      "sha256": "d370ec19bae0838a21cbb2726242bfd89ff73d6d18b56c78435cbf3dfa6ea081",
+      "size": 22703,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-saved-mobile.jpg": {
+      "sha256": "0de3518dfebaf60fdc167b99d00318be8e4deff4b8650474cd5493b0847bc249",
+      "size": 23514,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-set-320.jpg": {
+      "sha256": "fb60100e8ea633d19980d1808e0b1a679da7e1c0c89b629f8828fbdde5f3030d",
+      "size": 20768,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-set-large-text-fields.jpg": {
+      "sha256": "2baf458cab8d3c4eb95090e65d6dabbc1fe98bdf0a8a25ba736f03f7621140e3",
+      "size": 33299,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-set-large-text.jpg": {
+      "sha256": "4c5a378d3f050b93eab0975697fbf66d4a80a7ba8b47137e2427c0703bcb31e0",
+      "size": 36876,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/record-set-mobile.jpg": {
+      "sha256": "b699eb015d808e3d481c1871fd58574f9124326a0aab8283d36b087e841bf088",
+      "size": 26055,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/records-mobile.jpg": {
+      "sha256": "6a8305bc0dc2d8c32bafc970e48e91a537fbba7fbfb4b9b2935ba53009a1aeda",
+      "size": 28632,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/today-desktop.jpg": {
+      "sha256": "84d9ba40e6ad228a2e282b3fad9c6908026c45f04434b4b38fbc34a1ef938fa7",
+      "size": 37952,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-04/screens/today-mobile.jpg": {
+      "sha256": "d61d0d48f7e4743b3ff1a91093fd98a9e06a5d7bf629a1c0fe722886b01c41b1",
+      "size": 24501,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/BRIEF.md": {
+      "sha256": "c3c39e126f4072ef204f6954d6d6f72af84744b47d0cf75ff62adf52285409de",
+      "size": 2680,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/VERIFICATION.md": {
+      "sha256": "5754ded595b67a586de1a6afcc792251fcc1a81fd7c1ac9cf112872928fffab2",
+      "size": 5104,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/01-discover.png": {
+      "sha256": "9fe45b4a33454bef94b3a94098aab9192042a2e6e6f36be855641c9bc2890471",
+      "size": 1934667,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/02-service.png": {
+      "sha256": "4f8532224e8442feeff8114b46ebfab6dc83b6d869d41c9dd75040011439da79",
+      "size": 1748296,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/03-recording.jpg": {
+      "sha256": "1076b7573a0f1c027c0f5ca8335a0dcf354554100c688c29ddf2d12fe6420085",
+      "size": 167796,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/03-recording.source.html": {
+      "sha256": "362f77f525e8f1fdc8c24e40ba5151af25ad35ff006b2b3ca45ccdf5a9f1aa35",
+      "size": 15858,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/04-diet-ai.png": {
+      "sha256": "0b20624c3b2545e5cd937669fb3f726ac2c9ea6b87f1763aa36a781816e09aae",
+      "size": 1932389,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/05-coach.png": {
+      "sha256": "4b0892417c58f933a2ef3be1445e3ac80e6db89ab589ac3a6395888e611cff81",
+      "size": 1772379,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/06-entry-recovery.png": {
+      "sha256": "35b24225bb03cdb7e7ea71859e5dabc3c478d51fc1770e62849f88901444e683",
+      "size": 1702179,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/BRIEF.md": {
+      "sha256": "ab8d31348d7a9ae28bd7e886dfac9e65b421aa9a7c731bf54375da9867139e54",
+      "size": 1197,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/Nerae-App-flow-preview.zip": {
+      "sha256": "732c9408c4b3d4f59863202a90d0620167e1210bc053adb19d12ac84d923a050",
+      "size": 8580951,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/README.md": {
+      "sha256": "bc471028a6fe980f536154b1f587c2a78deb5a7148d9c133ee927c62201e8276",
+      "size": 2593,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/index.html": {
+      "sha256": "49ba457c61210388f9d77c67bab0e69e2525fe282cdea1a8cd5155fcda7b9504",
+      "size": 4515,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/manifest.json": {
+      "sha256": "d579c4f671991e14c931d44571060cf1b01a983474861443d4ebe17067b8af5e",
+      "size": 2060,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/app-storyboards/prompts.json": {
+      "sha256": "f838f6679ad48ddb0cd6e54cf7cf7567e55893912615a7b0240ea7172bffdc16",
+      "size": 46796,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/before-today.jpg": {
+      "sha256": "52bef1af5f75638930f1e7053c891bd07c71d796a4dbcd18094887fc896a03a8",
+      "size": 38931,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/browser-captures.json": {
+      "sha256": "75c986f2a15b3ee0e490e41d6855a711ee37a01e3fb3194f077a97a79637ebd7",
+      "size": 5258,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/browser-checks.json": {
+      "sha256": "7ecb842a55964fe9d472d262cfc97e98583a2681c67b28b1ea82888512b34041",
+      "size": 6829,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/browser-errors.json": {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "size": 2,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/build.log": {
+      "sha256": "3ab210b4ed20721bf3de61ae3543f26345bd4387b45355581b719543304a0b60",
+      "size": 352,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coach-detail-desktop.jpg": {
+      "sha256": "1565d33062ec0a14c53a99de60b5efa1374b201dc5d845704cbc2b60ad5f9b0b",
+      "size": 68386,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coach-detail-mobile-200.jpg": {
+      "sha256": "e516743f8ec85c2b03995ec51cfb0a4e27109f0e4b87368ca6c1c57ce67a0a90",
+      "size": 40844,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coach-detail-mobile.jpg": {
+      "sha256": "ee06d96affdc2bd5770f11783800848fe07b6161818a688f3a7863cba6c5859f",
+      "size": 35748,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coach-service-selection-desktop.jpg": {
+      "sha256": "46c5049a63be2313b1b2ca3c7e50f3237f4514b8c607494be031d1c157614e10",
+      "size": 66737,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coaches-desktop.jpg": {
+      "sha256": "76aa9f1e776591b8e0990bf2737c9e4441e4010bdfe7d6bcdef90ea51878cc99",
+      "size": 77404,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/coaches-mobile.jpg": {
+      "sha256": "0a1d15f5a14dc293efbd60c065dd29bb0f6fc96d0f012c74a33938698eb1b4b2",
+      "size": 34700,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/contrast-samples.json": {
+      "sha256": "4595bc37049dbb35d1b8a51a5691e00bdefd8f76cd64fa6fd8744306cbd48d94",
+      "size": 1961,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/explore-desktop.jpg": {
+      "sha256": "293f19a28679d9c25452da7add49e681e1f6a74bbafad1baae28d296ed481c49",
+      "size": 56151,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/explore-error-mobile.jpg": {
+      "sha256": "d0cb91749139095f5b8824ce5943dbcc7d2bb6840dc541c4f412b97b9d8a8544",
+      "size": 22443,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/explore-mobile-200.jpg": {
+      "sha256": "227ffe0a2a6c5051d4f639045d416473a521aab78ef91fb7bdacb5e61850a726",
+      "size": 41891,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/explore-mobile.jpg": {
+      "sha256": "bfae35f06879eeede08bd6ac3c115f0f2763d0903115358c8fa95c779d0050d8",
+      "size": 32446,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/original-build.log": {
+      "sha256": "5859d821d34a517eff7aca470b317052e5148af761c949dd4b61b05be2085325",
+      "size": 352,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/plan-detail-mobile.jpg": {
+      "sha256": "1da97e89a98ff4cdd69a20c53af5435899bd6c8b9256960f69787f6a9441374a",
+      "size": 37188,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/recording-mode-check.json": {
+      "sha256": "46ff859c146ce997a1dc30e39a89a3f961617cb7b97193e64cb84aece16fe7c7",
+      "size": 5334,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/recording-per-set-mobile.jpg": {
+      "sha256": "488eacd15ddda0865e78693e3c53bcad669190b1f0f71744713aade46ced5443",
+      "size": 26224,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/records-desktop.jpg": {
+      "sha256": "e4b598e1738c70876fb99c14930183e2d5f6f7a25e5b62377c034e2242b55e06",
+      "size": 47133,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/records-empty-mobile.jpg": {
+      "sha256": "9f0a4c6d4dc295a67cb3e9485d2b9f4457fb9d69ae44473de1890608d86b32be",
+      "size": 27663,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/records-mobile.jpg": {
+      "sha256": "8e47270215c383b66e6ab63672bd34a46a4e2391f81c94335f569a0a7a2cb52c",
+      "size": 29463,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/sync-check.json": {
+      "sha256": "53c6fd8c5681bf48e61553f263acd0fc7b56ebe0ef49d23704a8011265883efa",
+      "size": 281,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/today-desktop-full.jpg": {
+      "sha256": "4ed92b0de9809c7ac7448c54e48d8c96156ef75a337d28adb7c935a95eb0a5ff",
+      "size": 189632,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/today-desktop.jpg": {
+      "sha256": "30aeaaa600725dd919e3ab6bbe9ae1fa18237a6d4932b5667a281b04ea505ba5",
+      "size": 63880,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/today-mobile-200.jpg": {
+      "sha256": "3c33abcc6029334208a4f32d6fdf79b27307adae47bd6192dda50c71b23b7b7d",
+      "size": 36013,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/today-mobile.jpg": {
+      "sha256": "9a5f2318b6f6a98f0aad7521a4358032077ba97f84ab17f0a356c3b7be222b81",
+      "size": 36631,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/evidence/vitest.log": {
+      "sha256": "8e3fba34c300168a72fdf1b4c6fd781370c30e643abc768809ce3034d55dd6c3",
+      "size": 5334,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/implementation/account-control.md": {
+      "sha256": "4677fa1585bc3555c7122975cd3ad5b712cfd8e39ed5548745da7811c764bd4c",
+      "size": 3785,
+      "category": "other_authorized_work"
+    },
+    "docs/design/round-05/implementation/interaction-spec.md": {
+      "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
+      "size": 5667,
+      "category": "other_authorized_work"
+    },
+    "docs/design/round-05/implementation/screen-map.md": {
+      "sha256": "207265ee338c96ff4d78eb8ea8deb5b6193ba32899a9bd1aa9f83d2449f8008f",
+      "size": 6428,
+      "category": "other_authorized_work"
+    },
+    "docs/design/round-05/manifest.json": {
+      "sha256": "b589af77fc42d9594fe6a5c7b265dfdfe14865cb71e8ec36102ef8caffb27a29",
+      "size": 18052,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/1273867416-oth_jhmls.webp": {
+      "sha256": "90352c5e2140b419085b24ca895e0dbaa69040ecdcc0a3cb874c233b2d80e2f5",
+      "size": 785982,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/1273867416-oth_pfz55.webp": {
+      "sha256": "f9e8c98c157eb152f254e812f82d0d2ac4adc13f6a6e879b8f57322eaae5cd1b",
+      "size": 1370162,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/401626263-oth_bhsic.webp": {
+      "sha256": "081a5f3aeb3f7f68a0a370fdf159c2e3b8838da7f08fea1d3ef9ea475aaaa92e",
+      "size": 1371434,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/401626263-oth_fo64p.webp": {
+      "sha256": "ed68ae826e8873cca5be8185474e407f226e03c5af4cb0a04b63dcdf0c4600d9",
+      "size": 1434714,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/401626263-oth_ub321.webp": {
+      "sha256": "036f3e3011c2033d9e2f4fb85bd7aae7a7a56e07d2414bf88b63fa12d622131a",
+      "size": 791056,
+      "category": "preexisting_unchanged"
+    },
+    "docs/design/round-05/references/manifest.json": {
+      "sha256": "cf22d345a53f62cc77cb758bbc8c00f2bb14e84ba3aa4144c948628656152f06",
+      "size": 2704,
+      "category": "preexisting_unchanged"
+    },
+    "docs/engineering/toolchain.md": {
+      "sha256": "b53a5586ca9308dec3ae6ff21c4f5b2114c79493ac99e20a9a2244b813b71bed",
+      "size": 2141,
+      "category": "f01_new"
+    },
+    "docs/evidence/D02/D02-01/report.md": {
+      "sha256": "e2e368702a455de69c7970dd016e260bc66fa2eea300c555d274223cfa048928",
+      "size": 2090,
+      "category": "other_authorized_work"
+    },
+    "docs/evidence/F01/F01-01/go-probe/go.mod": {
+      "sha256": "c66e8f9cb1c7faa7fcaa0b41549feb61f8820a87441dd79c53439fe483d58fb9",
+      "size": 44,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/go-probe/probe_test.go": {
+      "sha256": "8544a39501f9d23ced1c8765581815e1b8a424b5b19e40859cd8151e5970aceb",
+      "size": 111,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/preflight.json": {
+      "sha256": "3fc6a34e28dcb3ec8bbda322db33f316e6a7cb26e9f315a7999e2c5f9d7cc236",
+      "size": 18335,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/index.html": {
+      "sha256": "5afbf16156ff4ce18d9348d26ba7225321fbc13ec4a6b283a5aacbe08595084c",
+      "size": 213,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/package.json": {
+      "sha256": "ceeaf46f9d9469d1e878f100de1ec58dffe061f728f92848b6ad5732de82d875",
+      "size": 700,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/pnpm-lock.yaml": {
+      "sha256": "c87a8662b651b2ecae7a3301cefa38dafda31275a15cef15543ef67096efd298",
+      "size": 191765,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/src/App.vue": {
+      "sha256": "e58629376b2961d027e501056440e879229a68855740dbf5b8e93524b04a7097",
+      "size": 51,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/src/main.js": {
+      "sha256": "62617f058fb056b649294fa486ab91d829200f722bea0498aa9a512a5289e3e3",
+      "size": 129,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/src/manifest.json": {
+      "sha256": "676b4c2d651172a74d0467886040f2071fb4c5f94bae01a892b3c167a95b79a6",
+      "size": 166,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/src/pages.json": {
+      "sha256": "4b5c60549440c80fa392f3befeb7401e694aa5f905271b4378c9db3618e9fa8e",
+      "size": 98,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/src/pages/index/index.vue": {
+      "sha256": "2c521c59ba418519d8c0d7b7aa2eb0e4a30b079affa634321bca2a072c9c783a",
+      "size": 46,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/probe/vite.config.js": {
+      "sha256": "18658de9f2aecdec998852d915fab8bd3b787212b869c41af2b1d94a75393fa2",
+      "size": 172,
+      "category": "f01_new"
+    },
+    "docs/evidence/F01/F01-01/report.md": {
+      "sha256": "ef27d45acc41a01b7e1eb7885c86e7ffbe8a2fc34c7ebaf4d33d6bfa09c75a33",
+      "size": 4604,
+      "category": "f01_new"
+    },
+    "docs/evidence/K01/K01-01/report.md": {
+      "sha256": "47f2a0880bdc986b268cd559c6dacc15fe08ca776b5630091abdc2127a8d249d",
+      "size": 2601,
+      "category": "other_authorized_work"
+    },
+    "docs/evidence/K01/K01-01/runtime-cases.md": {
+      "sha256": "ba272566aa72295cc3ce165190b59ed6bf29473080064c14d6a94c4643f202a6",
+      "size": 3628,
+      "category": "other_authorized_work"
+    },
+    "docs/evidence/L01/L01-01/report.md": {
+      "sha256": "72896e48a7ee0e08131a20469da4075b23b03fe7ea1111e55cc1094be57dedaf",
+      "size": 4309,
+      "category": "other_authorized_work"
+    },
+    "docs/tasks/README.md": {
+      "sha256": "7bcffea32af10ace6174eab5d2d179329fc13825b2427c700abf27363cbe4009",
+      "size": 9192,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "ce881ede42af775f07feb28a97811d4e335040b4f94e4dea7be71506bd3e25e5"
+    },
+    "docs/tasks/tasks.json": {
+      "sha256": "59f4ed5b566b69ab788281b2fb791513a8e140e115cd9ba249d213e46701e266",
+      "size": 216179,
+      "category": "preexisting_updated_by_lead",
+      "preflight_sha256": "fa3fe8ff8f7107e7a98202ba1eb9ff64908d95a463be1faf8b671773c5642d34"
+    },
+    "docs/小程序上线成本与资质.md": {
+      "sha256": "9f1f193a8b3e3c9028c2bbe83f00b1f7fd680564b6f07d316c99ac500c149dd7",
+      "size": 6664,
+      "category": "preexisting_unchanged"
+    },
+    "docs/数据模型与ER设计.md": {
+      "sha256": "28aa6c7006e90fe2552ff8c2e3c0e57b219b84797a1c6f95d7bc4c841928286b",
+      "size": 77738,
+      "category": "other_authorized_work"
+    },
+    "docs/系统架构与技术选型.md": {
+      "sha256": "9f70053a5a2b5d63b4459a562ce7aa371a60fb6d124871779c434e5b641c20fe",
+      "size": 22755,
+      "category": "preexisting_unchanged"
+    },
+    "package.json": {
+      "sha256": "3e4e578b2f6dedd2efe014bcd96c8b50b6be112e761c0f53a4de9354943f3487",
+      "size": 581,
+      "category": "f01_new"
+    },
+    "pnpm-lock.yaml": {
+      "sha256": "c87a8662b651b2ecae7a3301cefa38dafda31275a15cef15543ef67096efd298",
+      "size": 191765,
+      "category": "f01_new"
+    },
+    "pnpm-workspace.yaml": {
+      "sha256": "253208fa7c1b64372c219b9e19cef15ed70ca93b66a4d5c4c4d2297a5aff8880",
+      "size": 36,
+      "category": "f01_new"
+    },
+    "scripts/plan.py": {
+      "sha256": "8fefc2dd805df61411ea7271216bfac04a2c6d8bc957b6a82b11ea9a4e138f44",
+      "size": 17144,
+      "category": "preexisting_unchanged"
+    },
+    "scripts/tests/test_plan.py": {
+      "sha256": "9c2fdcc7066c7c23a6384b83d62065dac75066e0a76b5dbaa243b04972d0bb59",
+      "size": 13986,
+      "category": "preexisting_unchanged"
+    }
+  }
+}
