@@ -5242,13 +5242,13 @@
       "id": "P02-01",
       "title": "App 编译、打包路径与平台缺口探针",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-03"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "/root/foundation_review",
       "write_allowlist": [
         "docs/plans/app/",
         "infra/app/",
@@ -5294,7 +5294,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "P02",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6-luna",
+      "actual_reasoning": "medium",
+      "base_revision": "4d15f5b39ca9f976a251c167cc3cdfbe9ff69d67"
     },
     {
       "id": "Q01",

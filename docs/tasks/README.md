@@ -74,7 +74,7 @@
 | D02 | 第五轮三端设计实施规格 | work_package / complete | D02-01, D02-I | — | 2–3.5 | planned |
 | D02-01 | 整理 R05 三端组件与状态规格 | task / D02 | D01 | — | 1.5–2.5 | active |
 | D02-I | R05 设计实施规格复核 | integration / D02 | D02-01 | — | 0.5–1 | planned |
-| P02-01 | App 编译、打包路径与平台缺口探针 | task / P02 | F01-03 | — | 1–3 | planned |
+| P02-01 | App 编译、打包路径与平台缺口探针 | task / P02 | F01-03 | — | 1–3 | active |
 | Q01 | 陌生执行者任务包上手验证 | work_package / complete / 暂缓 | Q01-01 | — | 0.5–1 | planned |
 | Q01-01 | F02-01 任务包冷启动试验 | task / Q01 | F02-01 | — | 0.5–1 | planned |
 | L01-04 | AI 供应商数据处理与预算依据 | task / L01 | L01-01 | — | 1–2 | planned |
