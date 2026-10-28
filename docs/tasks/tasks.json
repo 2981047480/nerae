@@ -5016,7 +5016,7 @@
       "id": "K01-02",
       "title": "小程序与 App 身份及安全关联合同",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "K01-01",
         "L01-01",
@@ -5024,7 +5024,7 @@
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "api/openapi.yaml",
         "docs/数据模型与ER设计.md",
@@ -5082,7 +5082,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "K01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
     },
     {
       "id": "K01-03",
@@ -5212,14 +5215,14 @@
       "id": "D02",
       "title": "第五轮三端设计实施规格",
       "batch": "foundation",
-      "status": "planned",
+      "status": "accepted",
       "depends_on": [
         "D02-01",
         "D02-I"
       ],
       "role": "product-designer",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "docs/UI_SPEC.md",
         "docs/design/round-05/implementation/",
@@ -5265,12 +5268,101 @@
         "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
         "不得发送真实客户消息、向外部提交证书或部署生产"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D02/D02-I/report.md",
+          "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/UI_SPEC.md",
+          "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/design/round-05/implementation/screen-map.md",
+          "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/design/round-05/implementation/interaction-spec.md",
+          "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/design/round-05/implementation/account-control.md",
+          "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/design/round-05/implementation/platform-state-matrix.md",
+          "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        },
+        {
+          "path": "docs/design/round-05/implementation/asset-ledger.md",
+          "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
       "external_prerequisites": [],
       "acceptance_requires": [],
-      "breakdown": "complete"
+      "breakdown": "complete",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "review_summary": "D02-01 和 D02-I 已在集成版本复核；接受范围仅为三端文字设计规格，不代表 UI、素材权利或真机通过。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md",
+            "docs/UI_SPEC.md",
+            "docs/design/round-05/implementation/screen-map.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md",
+            "docs/design/round-05/implementation/screen-map.md",
+            "docs/design/round-05/implementation/platform-state-matrix.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "该设计规格集成卡未修改业务 wire contract；身份与注销合同由 K01 后续卡验收。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "该设计规格只描述授权与数据最小化，不实现真实对象权限；运行时撤权负例由业务/集成卡验收。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "该设计规格未实现注销、同步或备份恢复；对应运行时验证留给后续任务。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/UI_SPEC.md",
+            "docs/design/round-05/implementation/account-control.md",
+            "docs/design/round-05/implementation/platform-state-matrix.md",
+            "docs/design/round-05/implementation/asset-ledger.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md"
+          ]
+        }
+      }
     },
     {
       "id": "D02-01",
@@ -5432,7 +5524,7 @@
       "id": "D02-I",
       "title": "R05 设计实施规格复核",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "D02-01"
       ],
@@ -5482,7 +5574,13 @@
         "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
         "不得发送真实客户消息、向外部提交证书或部署生产"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/D02/D02-I/report.md",
+          "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
+          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -5491,7 +5589,59 @@
       "kind": "integration",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+      "base_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
+      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "review_summary": "独立复核同一集成提交、D02-01 证据哈希、30 屏任务映射、三端状态与素材边界；正式 UI、真实素材及设备仍未验收。",
+      "integration_result": {
+        "integrated_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+        "covered_tasks": [
+          "D02-01"
+        ],
+        "evidence": [
+          "docs/evidence/D02/D02-I/report.md"
+        ]
+      },
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "该设计规格集成卡未修改业务 wire contract；身份与注销合同由 K01 后续卡验收。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "该设计规格只描述授权与数据最小化，不实现真实对象权限；运行时撤权负例由业务/集成卡验收。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "该设计规格未实现注销、同步或备份恢复；对应运行时验证留给后续任务。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/D02/D02-I/report.md"
+          ]
+        }
+      }
     },
     {
       "id": "P02-01",
