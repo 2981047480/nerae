@@ -2915,13 +2915,13 @@
       "id": "F01-04",
       "title": "双工作区数据隔离与迁移执行器",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-02"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "scripts/dev/",
         "infra/compose/",
@@ -2966,7 +2966,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "F01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
     },
     {
       "id": "F01-05",
