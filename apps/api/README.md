@@ -29,6 +29,7 @@ Both processes respond to SIGINT/SIGTERM. The API drains HTTP requests up to the
 ```sh
 # From the repository root, after building the API and worker binaries:
 python3 docs/evidence/F01/F01-02/smoke.py --api /path/to/api --worker /path/to/worker
+python3 docs/evidence/F01/F01-02/drain_smoke.py --api /path/to/api
 ```
 
-Real healthy MySQL/Redis connectivity, isolated databases, migrations, worker jobs, dependency security review, and production settings are verified by later tasks. No source code or test should rely on a developer's local credentials.
+The drain test uses a deliberately stalled loopback connection to exercise graceful shutdown and its deadline; it does not impersonate a healthy MySQL server. Real healthy MySQL/Redis connectivity, isolated databases, migrations, worker jobs, dependency security review, and production settings are verified by later tasks. No source code or test should rely on a developer's local credentials.
