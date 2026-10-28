@@ -1,6 +1,6 @@
 # Q02-01 历史验收证据校验
 
-状态：review，未接受。Lead 当前 GPT-6 会话实施；工具未报告具体模型和推理档位。基线 `839e242a6357895c86cd4990bb3163f7b6b5c921`。任务修复 K01-02 修改共享 OpenAPI、ER 与探针后，任务图对 K01-01 的历史证据误报哈希冲突的问题。
+状态：success，待 Lead 集成接受。Lead 当前 GPT-6 会话实施；工具未报告具体模型和推理档位。基线 `839e242a6357895c86cd4990bb3163f7b6b5c921`。任务修复 K01-02 修改共享 OpenAPI、ER 与探针后，任务图对 K01-01 的历史证据误报哈希冲突的问题。
 
 检查器以任务的 `accepted_revision` 为被验证版本，以 `source_revision` 为证据文件实际进入 Git 的版本，后者缺省为前者。它验证完整 commit、祖先关系、受控仓库根、普通文件 blob 和 SHA-256；不执行 shell，不接受符号链接、子模块、其他历史分支或 Git 环境变量重定向。代码更新不会使过去接受时的文件内容发生变化；当下集成仍必须独立复验，Git 对象与哈希不证明运行命令或 reviewer 判断真实性。
 
@@ -11,3 +11,5 @@
 2026-10-29 当前工作树运行 `PYTHONDONTWRITEBYTECODE=1 "$NERAE_TEST_PYTHON" -m unittest discover -s scripts/tests -v`：46 项通过；`PYTHONDONTWRITEBYTECODE=1 "$NERAE_TEST_PYTHON" scripts/plan.py check`：退出码 0；`git diff --check`：退出码 0。独立只读复核指出非字符串路径、未提交修改、Git pathspec 与未合并后代提交的测试缺口，已补充对应处理与反例；独立 reviewer 与最终集成版本复跑仍需登记。实际 Python 使用 `/Users/zephyr/Documents/项目/nerae/api/tests/.venv-py311/bin/python`。
 
 独立复核：`/root/contract_tests` 对历史来源、提交关系、输入路径和测试作两轮只读检查；第二轮未发现阻断级问题，并实际复跑 46 项测试和任务图检查通过。`/root/foundation_review` 检查规范及可维护性，提出目录同步和工作树、未合并分支反例，均已补齐。工具未返回子代理实际型号和推理档位，不作猜测。
+
+2026-10-29 集成候选 `eb5ad03fbeba521269bb5a01fe7342b4c2e7e037` 工作树干净；Lead 与独立 reviewer `/root/contract_tests` 在该同一版本分别复跑任务图单元测试 46/46 和 `scripts/plan.py check`（退出 0）。该版本还通过 97 项合同静态测试、OpenAPI 校验及 TS/Go 生成探针。K01-01 原接受提交 `aa551c21ef26d136448cdff6926e37c343c32298` 的 OpenAPI blob 摘要 `dc38a60d86634bfb6f573caf49c0d7f71eddc9aaa837d801372e3aef56092957` 未更改；当前合同摘要为 `8ee8e9af3a5cfaef4d38dad19b70629ca1c162990c29eb12e77a25c6257b46e6`。未执行真实身份服务或设备验证。
