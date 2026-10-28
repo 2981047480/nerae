@@ -326,18 +326,24 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 | plan_id / plan_version / plan_day_id | bigint unsigned? / int unsigned? / bigint unsigned? | source=plan 时三项均非空；复合定位 plan_version，day 必须属于该版且计划归本人；free 时三项均空 |
 | date / time_zone | date / varchar(64) | 业务日期与有效 IANA 时区；按 API 默认或明确输入冻结，不替代创建时间 |
 | status / version | varchar(16) / int unsigned | in_progress / completed / skipped；修改令牌 >=1 |
-| duration_min / rpe | smallint unsigned? / decimal(3,1)? | RPE 为主观评分，范围服从具名 API，不用作疾病判断 |
+| duration_min / rpe | smallint unsigned? / decimal(3,1)? | 仅接受用户实际提供的总时长，未知为 NULL；RPE 为主观评分，范围服从具名 API，不用作疾病判断 |
 | note_enc / key_id | blob? / varchar(64)? | 主观感受，按 training scope 访问 |
 | client_event_id | varchar(64) | API 长度 8–64，**UK(user_id,client_event_id)**，区分大小写；不是全局唯一 |
 | creation_request_hash | char(64) | 开始事件规范化摘要，识别同事件异内容 |
-| started_at / completed_at | datetime(3) / datetime(3)? | 通用时间列另存 |
+| started_at / recorded_at | datetime(3)? / datetime(3)? | `started_at` 仅在存在可证明的实际开始事实时使用，补记不造值；`recorded_at` 为最近一次保存确认的服务端接收时间，不代表训练结束或各组完成时刻。`created_at/updated_at` 为服务端记录创建与变更时间 |
 
-同用户同 client_event_id、同创建摘要重放只返回已有会话；异摘要冲突。不同用户可各用 `"event-0001"`，不能碰撞（旧审核中的 `"1"` 反例已由新输入长度限制拒绝，但仍必须采用用户域唯一键）。离线恢复不得把历史会话重新指向当前计划版本；组记录和完成更新仍需会话 expectedVersion。计划改版/回滚不改变会话引用。
+同用户同 client_event_id、同创建摘要重放只返回已有会话；异摘要冲突。不同用户可各用 `"event-0001"`，不能碰撞（旧审核中的 `"1"` 反例已由新输入长度限制拒绝，但仍必须采用用户域唯一键）。离线恢复不得把历史会话重新指向当前计划版本；组记录和完成更新仍需会话 expectedVersion。计划改版/回滚不改变会话引用。训练后记录与逐组确认共享同一会话和组键；补记按实际 `date` 归档，不调用训练开始流程来制造开始事实。`in_progress` 在记录流程中也表示可编辑草稿，不能据此断言用户此刻正在训练。
 
 | 实体 | 字段、类型与约束 |
 |---|---|
-| `set_record` | `id PK`；`session_id ID REF workout_session`；`record_key varchar(64)`（对应必填 recordKey，区分大小写）；`exercise_id ID REF exercise_library`；`set_index smallint unsigned >0`（仅为编排顺序，不作为去重身份）；`weight_kg decimal(8,2)? >=0`；`reps smallint unsigned >=0`；`rpe decimal(3,1)?`；`completed boolean`；`created_at/updated_at datetime(3)`；`UK(session_id,record_key)`；同动作重复段落各有独立 recordKey，不能因动作和组序号相同而误合并 |
+| `workout_exercise` | `session_id ID REF workout_session`、`exercise_entry_key varchar(64)`，二者复合唯一且区分大小写；`source catalog/custom`；`exercise_id ID? REF exercise_library`；`exercise_version int unsigned?`；`name_snapshot_enc blob`、`key_id varchar(64)`；`created_at/updated_at datetime(3)`。库动作冻结有权访问的版本与名称；自定义动作由本人输入名称，不写入共享动作库。同一会话的同一键固定动作身份和名称，同一库动作的不同编排段使用不同键。仅有已删除组的条目不出现在普通记录读模型；按会话及 L01-03 的已批准策略清理。 |
+| `set_record` | `id PK`；`session_id ID REF workout_session`；`record_key varchar(64)`（对应必填 recordKey，区分大小写）；`exercise_entry_key varchar(64)` 与 session_id 复合 REF workout_exercise；`set_index smallint unsigned >0`（仅为编排顺序，不作为去重身份）；`kind varchar(24)`（weight/perSide/bodyweight/bodyweightPerSide/duration/durationPerSide/breath）；`weight_kg decimal(8,2)?`；`reps smallint unsigned?`；`seconds smallint unsigned?`；`rpe decimal(3,1)?`；`created_at/updated_at datetime(3)`；`UK(session_id,record_key)`。仅存已确认实际组；kind 和测量值组合及范围遵循 OpenAPI，空白计划组和未确认组不写入。每侧值表示每侧输入，不推算两侧之和或各侧不同值；秒数为手填值，不产生计时器。API 的 resolvedExerciseName 从对应条目的冻结名称投影，不能信任客户端提供值。 |
+| `set_record_key` | `session_id ID REF workout_session`、`record_key varchar(64)`（二者复合唯一且区分大小写）；`exercise_entry_key varchar(64)`；`state active/deleted`；`created_at/deleted_at datetime(3)?`。保留组键及其动作条目身份供显式撤销删除；删除后从普通读模型和统计中立即移除组值，键注册不得保存已删除的重量、次数、时长、备注或动作内容。组键随所属会话清理，备份与审计保留例外以 L01-03 核定策略为准。 |
 | `body_metric` | `id PK`；`user_id ID REF user`；`date date`；`weight_kg decimal(6,2)? >0`、`body_fat_pct decimal(5,2)?`（0–100）、`waist_cm decimal(6,2)? >0`、`sleep_hours decimal(4,2)?`（0–24）；`version int unsigned`；至少一个测量值非空；`UK(user_id,date)`；健康数据保护/访问按 body scope，范围只是数据有效性检查 |
+
+组批次按稳定键显式增改或删除，未列出的组保持不变。服务端在同一事务内鉴权、校验批内唯一键及恢复键归属、比较会话版本、变更实际组与键注册并更新统计；删除和更新同键、重复组键、恢复键不属于本批更新或不属于本会话均拒绝且不部分提交。新建组不得复用已删除键；明确撤销须携带 `restoreRecordKeys` 和完整组数据，验证已删除状态后恢复同一身份。`skipped` 会话不可包含实际组；历史上曾保存后撤回全部组的接收时间可保留，不代表这次被跳过的训练已完成。请求重放与 412 的顺序和范围以 OpenAPI 为准，不以静态 schema 声称并发与幂等已实现。
+
+已保存会话允许修订和删除组；删除最后一个实际组使会话回到 `in_progress` 草稿，关联事项的完成投影、逾期标记与统计必须在同事务或一致性机制中更新，原计划与原安排日期不可覆盖。保存要求至少一组实际数据；改训练日时重新计算完成投影且拒绝会话时区下的未来日期。组删除确认、短时撤销及未同步输入由客户端负责，不自动把旧参考值填入事实。
 
 ### 8.2 `diet_checkin`、修订与可选观察
 
@@ -458,7 +464,7 @@ stateDiagram-v2
 |---|---|---|
 | 授权 | 无记录(v0) → 非空/空范围(v1)；任意当前范围(vN) → 新范围(vN+1) | 本学员 + expectedVersion + 关系状态校验；终态只能由终结事务保持撤回，不得再授权 |
 | 交付计划 | 创建 draft → 教练确认某版后 active；active 编辑新草稿但保留旧 published_version；active/draft → archived | relation 有效；编辑/发布按版本比较；未确认新稿对学员不可见 |
-| 训练会话 | in_progress → completed 或 skipped | 本人 + 会话版本；计划引用三元组从创建起不可变；重复完成不能重复累计统计 |
+| 训练会话 | in_progress → completed 或 skipped；completed 修订后可保持 completed，删除最后一组回到 in_progress | 本人 + 会话版本；计划引用三元组从创建起不可变；重复完成不能重复累计统计；最后组删除时同步撤回完成投影，不删除原安排及其审计历史 |
 
 ### 11.3 发布草稿与公开版本
 
@@ -497,7 +503,7 @@ stateDiagram-v2
 | 公开模板详情/另存/分享 | plan_template + template_version；确定公开版号、可见性与完整正文 |
 | 我的训练/饮食计划、编辑与回滚 | 同一 PlanContent 联合类型，独立完整 plan_version；新版本不覆写历史 |
 | 发布助手、草稿、确认、提交 | publication_draft/revision/confirmation → template_version；来源标签只读 |
-| 会话开始/组记录/完成 | workout_session 固定 planId/planVersion/planDayId；用户域 client_event_id |
+| 训练记录创建、回读、组写入与修订 | workout_session 固定 planId/planVersion/planDayId；workout_exercise 冻结动作条目，set_record 与 set_record_key 管理实际组与删除撤销；用户域 client_event_id、会话版本及幂等键防重 |
 | diary/饮食打卡/异常识别 | 自评与 observations 分离；rule/evidence 版本固定；信息不足显式结果 |
 | 会话/消息 | conversation 的咨询或关系互斥上下文；message 成员/附件授权 |
 | 后台审核与审计 | 具体 template_version、admin_account、moderation_task、audit_log |
@@ -518,6 +524,11 @@ stateDiagram-v2
 | AI 草稿已确认后改任意字段再发布 | revision/hash 不匹配，旧确认不可用；新最终版本必须绑定新确认 |
 | 用户伪造 coach 标签或漏掉估算路径 | 服务端拒绝/忽略不可写字段并按身份生成；估算字段不能被绕过 |
 | 两学员各提交 client_event_id=event-0001 | 两个合法会话；同学员同 ID 异内容冲突，同内容不重复 |
+| 两种记录方式切换，同一动作重复出现在两个条目 | 同一会话及已有组键不变；不同动作条目键分开，不按动作 ID 与组序号合并 |
+| 自定义动作写入两组，或库动作后来改名 | 自定义名称仅保存在该会话的加密快照；两组引用同一条目，旧记录继续使用冻结名称 |
+| 批次同时更新和删除同一组，或恢复另一个会话的组键 | 422 且所有记录、会话版本和统计保持不变；同幂等键异摘要为409 |
+| 删除已保存记录最后一组后撤销 | 完成投影先撤回并保留原安排历史；显式恢复原组键与完整值后仍须用户保存，重复请求不重复统计 |
+| 两设备按旧版本修改已保存组 | 每次原子比较版本，失败为412；读取新版本前保留本地输入，不静默覆盖 |
 | 三天 diary 自评摘要满分、所有餐次 followed，但无 observations | 不推算真实热量/蛋白摄入；相关维度为 insufficient_data |
 | AI 提取份量尚未确认，或个人过敏原 unknown | 不把推测当事实，不声称不存在过敏冲突；明确缺失证据/授权 |
 | 同一幂等键并发/宕机后重试 | 一个业务结果；无二次创建/发送；先核对提交事实，不盲重做 |

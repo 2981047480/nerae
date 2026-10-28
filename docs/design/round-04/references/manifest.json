@@ -1,0 +1,42 @@
+{
+  "source": "Appllama MCP",
+  "reviewed": "2026-10-27",
+  "screens": [
+    {
+      "screen_ref": "1458862350/oth_rbs7y",
+      "name": "Routine Exercise Editor",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "hevy.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "9787e1b7e502961465bc247cd637cc253b14783b526e12c7a1f31874893ed1e7",
+      "bytes": 431680,
+      "decision": "取动作下的组表格、添加组与动作的结构；不使用计时器和原视觉。"
+    },
+    {
+      "screen_ref": "464254577/oth_s9pyg",
+      "name": "Active Workout Log",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "strong.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "80dede298421751775df291d6be204d4e6308a1f8590b9234554ae4e13794d98",
+      "bytes": 512152,
+      "decision": "取动作下的组表格、添加组与动作的结构；不使用计时器和原视觉。"
+    }
+  ]
+}

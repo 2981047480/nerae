@@ -349,7 +349,7 @@ function save(): void {
 .package-tab--active {
   border-color: var(--ink);
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
 }
 
 .package-tab-state {
@@ -396,7 +396,7 @@ function save(): void {
   margin-top: var(--sp-4);
   padding: var(--sp-3);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
 }
 
 .visibility-title {
@@ -438,7 +438,7 @@ function save(): void {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   transition: transform 160ms var(--ease-out);
 }
 
@@ -474,7 +474,7 @@ function save(): void {
   padding: var(--sp-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .side-title {
@@ -517,7 +517,7 @@ function save(): void {
 .preview-card {
   padding: var(--sp-4);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.045);
+  background: rgba(var(--ink-rgb), 0.045);
 }
 
 .preview-kicker {

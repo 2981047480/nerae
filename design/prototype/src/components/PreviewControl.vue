@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { SlidersHorizontal } from '@lucide/vue'
 import BaseSheet from './BaseSheet.vue'
+import { paletteOptions, selectedPalette, setPalette } from '../state/palette'
 import {
   applyPreviewState,
   closeSheet,
@@ -74,6 +75,20 @@ const credits = [
 
     <BaseSheet :open="ui.sheet === 'preview'" title="预览" @close="closeSheet">
       <p class="preview-note">本地交互预览 · 人物与内容为样例，记录只保存在本机浏览器。</p>
+
+      <section v-if="paletteOptions.length > 1" class="preview-section palette-section">
+        <h3 class="preview-label">色彩方向</h3>
+        <p class="preview-help">切换配色，比较同一页面。记录和填写位置都会保留。</p>
+        <div class="palette-options" role="group" aria-label="色彩方向">
+          <button v-for="option in paletteOptions" :key="option.id" type="button" class="palette-option"
+            :aria-pressed="selectedPalette===option.id" :aria-label="option.title"
+            @click="setPalette(option.id);closeSheet()">
+            <span class="palette-swatches" aria-hidden="true"><i :style="{background:option.colors.canvas}"/><i :style="{background:option.colors.ink}"/><i :style="{background:option.colors.action}"/></span>
+            <span><strong>{{ option.title }}<small v-if="option.recommended">推荐</small></strong><span>{{ option.summary }}</span></span>
+            <span class="palette-check" aria-hidden="true">{{ selectedPalette===option.id?'✓':'' }}</span>
+          </button>
+        </div>
+      </section>
 
       <section class="preview-section">
         <h3 class="preview-label">角色</h3>
@@ -215,6 +230,17 @@ const credits = [
 </template>
 
 <style scoped>
+.palette-options { display:grid; gap:8px; margin-top:14px; }
+.palette-option { display:flex; align-items:center; gap:12px; padding:14px 12px; border:1px solid var(--line); border-radius:10px; text-align:left; min-height:76px; }
+.palette-option[aria-pressed=true] { border-color:var(--accent); background:var(--accent-soft); }
+.palette-swatches { display:flex; flex-shrink:0; border:1px solid var(--line-strong); border-radius:6px; overflow:hidden; }
+.palette-swatches i { width:16px; height:32px; }
+.palette-option > span:nth-child(2) { flex:1; min-width:0; }
+.palette-option strong { display:block; font-size:var(--text-14); font-weight:600; }
+.palette-option strong small { margin-left:8px; font-size:var(--text-12); font-weight:400; color:var(--accent); }
+.palette-option strong + span { display:block; margin-top:4px; color:var(--muted); font-size:var(--text-12); line-height:1.5; }
+.palette-check { width:18px; flex-shrink:0; color:var(--accent); }
+
 .preview-root {
   position: relative;
   z-index: 60;
@@ -289,7 +315,7 @@ const credits = [
 .role-btn--active {
   border-color: var(--ink);
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font-weight: 600;
 }
 
@@ -317,7 +343,7 @@ const credits = [
 
 .scenario:hover {
   border-color: var(--line-strong);
-  background: rgba(25, 47, 57, 0.035);
+  background: rgba(var(--ink-rgb), 0.035);
 }
 
 .scenario-title {
@@ -349,7 +375,7 @@ const credits = [
 
 .state-chip--active {
   border-color: var(--ink);
-  background: rgba(25, 47, 57, 0.07);
+  background: rgba(var(--ink-rgb), 0.07);
   color: var(--ink);
   font-weight: 600;
 }
@@ -389,7 +415,7 @@ const credits = [
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   transition: transform 160ms var(--ease-out);
 }
 

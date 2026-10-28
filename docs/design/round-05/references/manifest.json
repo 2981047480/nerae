@@ -1,0 +1,67 @@
+[
+  {
+    "app": {
+      "app_id": "1273867416",
+      "name": "MasterClass: Online Classes"
+    },
+    "screen_id": "oth_pfz55",
+    "name": "Home Content Discovery",
+    "media_url": "[redacted-reference-url]",
+    "width": 1170,
+    "height": 2532,
+    "path": "docs/design/round-05/references/1273867416-oth_pfz55.webp",
+    "sha256": "f9e8c98c157eb152f254e812f82d0d2ac4adc13f6a6e879b8f57322eaae5cd1b"
+  },
+  {
+    "app": {
+      "app_id": "1273867416",
+      "name": "MasterClass: Online Classes"
+    },
+    "screen_id": "oth_jhmls",
+    "name": "Course Details",
+    "media_url": "[redacted-reference-url]",
+    "width": 1170,
+    "height": 2532,
+    "path": "docs/design/round-05/references/1273867416-oth_jhmls.webp",
+    "sha256": "90352c5e2140b419085b24ca895e0dbaa69040ecdcc0a3cb874c233b2d80e2f5"
+  },
+  {
+    "app": {
+      "app_id": "401626263",
+      "name": "Airbnb"
+    },
+    "screen_id": "oth_fo64p",
+    "name": "Services Explore",
+    "media_url": "[redacted-reference-url]",
+    "width": 1170,
+    "height": 2532,
+    "path": "docs/design/round-05/references/401626263-oth_fo64p.webp",
+    "sha256": "ed68ae826e8873cca5be8185474e407f226e03c5af4cb0a04b63dcdf0c4600d9"
+  },
+  {
+    "app": {
+      "app_id": "401626263",
+      "name": "Airbnb"
+    },
+    "screen_id": "oth_bhsic",
+    "name": "Chef Service Overview",
+    "media_url": "[redacted-reference-url]",
+    "width": 1170,
+    "height": 2532,
+    "path": "docs/design/round-05/references/401626263-oth_bhsic.webp",
+    "sha256": "081a5f3aeb3f7f68a0a370fdf159c2e3b8838da7f08fea1d3ef9ea475aaaa92e"
+  },
+  {
+    "app": {
+      "app_id": "401626263",
+      "name": "Airbnb"
+    },
+    "screen_id": "oth_ub321",
+    "name": "Service Menu",
+    "media_url": "[redacted-reference-url]",
+    "width": 1170,
+    "height": 2532,
+    "path": "docs/design/round-05/references/401626263-oth_ub321.webp",
+    "sha256": "036f3e3011c2033d9e2f4fb85bd7aae7a7a56e07d2414bf88b63fa12d622131a"
+  }
+]

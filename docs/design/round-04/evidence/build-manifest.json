@@ -1,0 +1,67 @@
+[
+  {
+    "path": "design/prototype/dist/assets/diet-breakfast.webp",
+    "sha256": "478b3a892e19adb55b3e5722ec26d589452b1808ee9fcbabe99d5e84e0711dc9",
+    "bytes": 137740
+  },
+  {
+    "path": "design/prototype/dist/assets/diet-featured.webp",
+    "sha256": "77464b5f264f6a9a102400b6c031abe7a2682354dec39af65b259a80e2f5e198",
+    "bytes": 220540
+  },
+  {
+    "path": "design/prototype/dist/assets/diet-mealprep.webp",
+    "sha256": "3e96e8042165bf0a8a46020f6c3c1472b51839b236c21e73386c3d2c61c2efc9",
+    "bytes": 115400
+  },
+  {
+    "path": "design/prototype/dist/assets/explore-dumbbell.webp",
+    "sha256": "06eabef7cee738d25bc0997aac30f92ed8e079d6a6d5680086e734406786f7f4",
+    "bytes": 25026
+  },
+  {
+    "path": "design/prototype/dist/assets/explore-featured.webp",
+    "sha256": "cdf90e4265a543a2de98bf660fa26b1defa985c047af097941b7f01c6d14ef52",
+    "bytes": 105426
+  },
+  {
+    "path": "design/prototype/dist/assets/explore-plank.webp",
+    "sha256": "8e5a2e4c720b748f20366698a578fd0b1bcee84e83594b65ab7cc971fc900a05",
+    "bytes": 44474
+  },
+  {
+    "path": "design/prototype/dist/assets/explore-stretch.webp",
+    "sha256": "4f4124d0e9364bcad6a0f23cafc0577432720d80ef230894674b707af96188dc",
+    "bytes": 68816
+  },
+  {
+    "path": "design/prototype/dist/assets/gym-interior.webp",
+    "sha256": "ce31a007e3a6abb10bb848a9ca1233aa5336649d3439dcfc78fdc5dadd893a15",
+    "bytes": 105720
+  },
+  {
+    "path": "design/prototype/dist/assets/hero-today.webp",
+    "sha256": "6040d1b1df4b1643763cb92db282f97bc271859e38c46828dd44261def314a96",
+    "bytes": 181446
+  },
+  {
+    "path": "design/prototype/dist/assets/index-BmYLwf7R.js",
+    "sha256": "a453327102581ecccc5b05563321c1ccfdff04ba0a146986d2796106e8eea9bd",
+    "bytes": 390870
+  },
+  {
+    "path": "design/prototype/dist/assets/index-vzW1Z1j-.css",
+    "sha256": "412bfe966fdfe9e5995c03befa2602a4b3ed2cff17eef73a33be646e3750ad31",
+    "bytes": 121732
+  },
+  {
+    "path": "design/prototype/dist/assets/training-dumbbells.webp",
+    "sha256": "a84808bc7c6bd7296ed087c42d666a8b7ebac57aa2f54ef876bd98c23c3545e7",
+    "bytes": 96658
+  },
+  {
+    "path": "design/prototype/dist/index.html",
+    "sha256": "6e15c65c1b8577663b6c9caf0f40701ddecbd6ec583c6989a175225fb48d87e5",
+    "bytes": 854
+  }
+]

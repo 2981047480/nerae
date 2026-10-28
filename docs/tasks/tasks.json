@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "as_of": "2026-10-25",
+  "as_of": "2026-10-28",
   "status_semantics": "工作包与可派发执行卡在同一DAG；ready只列未暂缓、依赖已accepted的task/integration。planned不代表实施。",
   "model_policies": {
     "judgment": {
@@ -97,9 +97,9 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "建立 Go/uni-app/admin 骨架和依赖锁；Git 初始化基线后才建 worktree；开发启动显式工作区、端口与独立测试库；文档列环境变量名称但无密钥。",
+      "deliverables": "建立 Go/uni-app/admin 工程和依赖锁；复用既有 Git 基线并核对未提交变更；三端构建路径、隔离环境和配置说明可复现。",
       "acceptance": [
-        "干净检出可安装并启动健康检查；小程序/H5均能构建",
+        "干净检出可安装并启动健康检查；小程序、H5 及 App 资源编译路径可复现；原生安装与真机另由 P02/V01 验证",
         "启动脚本不重置数据；两个 worktree 不共用端口/数据库；没有 .env/真实数据进 Git",
         "脚本列出的 lint/typecheck/test/build 是真实命令，缺模块不会假绿"
       ],
@@ -109,11 +109,12 @@
         "make build-client"
       ],
       "risks": [
-        "实际 uni-app 与 Node/Vite 兼容组合未知，需实测锁定；外网依赖可能受限"
+        "实际 uni-app 与 Node/Vite 兼容组合未知，需实测锁定；外网依赖可能受限",
+        "同时交付 iOS、Android 需验证具体编译、签名与目标平台工具链，不能只以 H5 代替"
       ],
       "effort_days": [
-        5.0,
-        10
+        6,
+        11
       ],
       "flow_ids": [
         "F01",
@@ -398,7 +399,8 @@
         "L01-01",
         "L01-02",
         "L01-03",
-        "L01-I"
+        "L01-I",
+        "L01-04"
       ],
       "role": "security-reviewer",
       "model_policy": "judgment",
@@ -421,11 +423,12 @@
         "docs/小程序上线成本与资质.md",
         "docs/APP_FLOW.md"
       ],
-      "deliverables": "取得实际主体/类目/允许联系渠道、资质、消息与健康数据留存、AI条款的真实证据；形成可配置放行记录；材料受限时明确未决。",
+      "deliverables": "取得微信小程序、iOS、Android 对应实际主体、平台账号、允许联系渠道、商店审核/账号删除、数据留存与 AI 条款的真实证据；材料缺失保持未决。",
       "acceptance": [
         "各结论对应实际主体/业务形态和官方答复/适当专业核定",
         "陌生双方联络脚本可执行且无绕行；通知拒绝/窗口过期有返回路径",
-        "未核定项保持关闭，禁止凭历史文档把状态改 approved"
+        "未核定项保持关闭，禁止凭历史文档把状态改 approved",
+        "三端服务/报价展示、外部联系、账号删除、签名与分发按各端实际规则和主体分别核定；不能借用其他平台结论"
       ],
       "verification_commands": [
         "按 RELEASE_GATES 的 L01 逐条人工核验并登记证据"
@@ -434,8 +437,8 @@
         "依赖主体材料、账号、平台答复；不估外部等待；本任务可能 blocked"
       ],
       "effort_days": [
-        3.0,
-        6
+        4.5,
+        9
       ],
       "flow_ids": [
         "F04",
@@ -478,11 +481,13 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "实现微信登录、会话失效、独立管理身份边界、18+声明、本人最小资料与可选采集同意。",
+      "deliverables": "实现多端登录主体、年龄门槛、最小档案、可撤销会话及经验证的账号关联；健康采集同意与教练授权分别管理。 负责账号注销请求的本人确认、会话失效和身份关联关闭，并调用 O03 的删除/保留执行边界。",
       "acceptance": [
         "角色切换不提升教练/后台权限",
         "登录回跳保留原意图；取消登录不产生资源",
-        "敏感资料省略/清除/撤回语义不同，日志不含正文"
+        "敏感资料省略/清除/撤回语义不同，日志不含正文",
+        "小程序/iOS/Android 在经确认绑定后指向同一主体；不同主体、绑定冲突、切号及注销不串数据；不假定 unionid 必然存在",
+        "注销请求与撤销会话、重复请求和跨端重登符合 K01-03；删除、留存和恢复处理由 O03 接续，不冒称全链路已通过。"
       ],
       "verification_commands": [
         "make test MODULE=auth,user",
@@ -624,7 +629,7 @@
     },
     {
       "id": "A04",
-      "title": "日历、开始训练与可靠组记录",
+      "title": "日历、训练记录与可靠组数据",
       "batch": "P0-A",
       "status": "planned",
       "depends_on": [
@@ -646,11 +651,12 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "实现固定日期领域服务、选择CAS、事项状态、原子start、版本会话/组记录、补录与完成率。",
+      "deliverables": "实现日历、计划采用、会话/稳定组记录、训练后与逐组共用一份记录、补录、修订与完成率；不模拟训练播放器或编造实际时长。",
       "acceptance": [
         "周中、休息、漏练、暂停、恢复、改期、切计划/时区和离线补录表驱动测试",
         "并发首次start只有一副本/安排/会话；失败回滚；幂等缓存过期也防重",
-        "定时提醒与首页同一计算；历史版不被新发布覆写"
+        "定时提醒与首页同一计算；历史版不被新发布覆写",
+        "记录两种方式切换保持相同会话/recordKey；空白组不计入、未知时长不造值、重复保存更新同一记录；跨端版本冲突不丢输入"
       ],
       "verification_commands": [
         "make test MODULE=schedule,workout",
@@ -660,8 +666,8 @@
         "MySQL并发、日界线与跨设备冲突是高风险，需专门review"
       ],
       "effort_days": [
-        5,
-        8
+        6,
+        10
       ],
       "flow_ids": [
         "F01",
@@ -734,10 +740,10 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [
-        "真实调用前须L01核定供应商数据条款并有授权费用范围"
+        "真实调用前须 L01-04 核定供应商数据条款、健康数据适用性并有已授权费用范围。"
       ],
       "acceptance_requires": [
-        "L01"
+        "L01-04"
       ]
     },
     {
@@ -876,18 +882,20 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "实现主页/服务包快照、认证状态、公开教练列表、预填咨询和成交自报；联络入口受L01配置控制。",
+      "deliverables": "实现主页/服务包快照、认证状态、公开教练列表、预填咨询和成交自报；联络入口受L01配置控制。 提供教练本人服务包创建、版本化编辑和下架，保留已确认的历史服务快照。",
       "acceptance": [
         "非认证教练不能冒充已审身份；套餐改价不改服务快照",
         "预填使用本人最新资料，用户可修改；重复提交不新建多单",
-        "自报不变支付事实；关闭后重新联系有新上下文；来源分组可追溯"
+        "自报不变支付事实；关闭后重新联系有新上下文；来源分组可追溯",
+        "服务包仅允许本人及合法身份创建、版本化编辑和下架；旧报价/条款快照不随编辑改变。"
       ],
       "verification_commands": [
         "make test MODULE=coach,plazacoach,appointment",
         "make test-integration MODULE=appointment"
       ],
       "risks": [
-        "公开陌生获客放行需L01/V02；私域测试不替代"
+        "公开陌生获客放行需L01/V02；私域测试不替代",
+        "原4–6人日估算未明确覆盖服务包管理完整路径，细拆卡前须重估。"
       ],
       "effort_days": [
         4,
@@ -976,7 +984,8 @@
       "status": "planned",
       "depends_on": [
         "F02",
-        "D01"
+        "D02",
+        "P02-01"
       ],
       "role": "ui-builder",
       "model_policy": "implementation",
@@ -995,13 +1004,18 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
       "deliverables": "把token/版式/组件转为uni-app实现；统一平台登录/存储/导航、错误中文映射与账号隔离；非页面业务不散落uni调用。",
       "acceptance": [
         "按钮/状态/表单/底部动作条全状态可视化",
         "320/390/430宽、桌面、200%文字及Reduce Motion等价",
-        "页面仅一主操作，底部安全区/键盘不遮控件；H5与微信真实构建"
+        "页面只有清晰主操作；键盘与安全区不遮控件；小程序、iOS 与 Android 三端分别构建及实际验收",
+        "正式接受前分别引用 P02-02 与 P02-03 的可安装制品与真机证据；可在证据缺失时先开展独立设计与实现。",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make typecheck-client",
@@ -1033,7 +1047,10 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": []
+      "acceptance_requires": [
+        "P02-02",
+        "P02-03"
+      ]
     },
     {
       "id": "U02",
@@ -1056,13 +1073,18 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
-      "deliverables": "实现今天/休息/暂停/未安排、自动开始、组记录、离线队列、恢复和完成反馈；采用冻结动作说明。",
+      "deliverables": "实现今天/休息/暂停/未安排、训练后记录与每组完成后记录、草稿恢复、受限离线同步和结果反馈；两模式共用同一记录，不实现计时器。",
       "acceptance": [
-        "已有计划≤2点击进入；登录回跳、双击、弱网、重启后不丢状态",
+        "训练后与逐组均可从今天进入；登录回跳、双击、弱网、重启后不丢状态；不自动开始训练",
         "冲突显示差异，换账号隔离缓存/待同步队列",
-        "无数据不用假图表；完成与待同步文案不同"
+        "无数据不用假图表；完成与待同步文案不同",
+        "小程序/iOS/Android 各端及跨端切换验证相同记录键、日期、实际组、重试与冲突反馈",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make test-client FEATURE=training,today",
@@ -1113,13 +1135,17 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
       "deliverables": "实现草稿恢复、AI差异/缺项/阻断、手动编辑和发布确认，授权分区与待办顺序。",
       "acceptance": [
         "另一设备可恢复；旧版冲突不静默覆盖",
         "AI ready/needs_input/block/503/额度耗尽界面齐全",
-        "发布前能看具体内容，学员新版本需主动采用"
+        "发布前能看具体内容，学员新版本需主动采用",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make test-client FEATURE=coachwork,delivery",
@@ -1168,13 +1194,17 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
       "deliverables": "实现咨询/关系独立线程、发送重试、未读、敏感不可见和结束只读；授权范围提示不泄漏内容。",
       "acceptance": [
         "消息不需计划即可回复；发送失败保留编辑内容",
         "撤权打开中的屏幕、历史分页和通知预览更新",
-        "拒绝订阅后站内流程仍完整；消息长文/键盘布局合格"
+        "拒绝订阅后站内流程仍完整；消息长文/键盘布局合格",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make test-client FEATURE=conversation,notifications",
@@ -1225,13 +1255,18 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
-      "deliverables": "实现发现与服务说明、咨询预填、条件联络入口、同条款确认与逐范围授权。",
+      "deliverables": "实现发现与服务说明、咨询预填、条件联络入口、同条款确认与逐范围授权。 实现教练服务包管理：创建、编辑、上下架与查看已确认的历史服务快照。",
       "acceptance": [
         "已有档案重复输入0；单个默认下一步",
         "渠道未核定/拒绝/失效明确可恢复；不伪显示成交",
-        "授权不默认勾选；退出/过期/被对方结束不会错误生效"
+        "授权不默认勾选；退出/过期/被对方结束不会错误生效",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。",
+        "教练可创建、编辑与下架自己的服务包；编辑不改变已确认关系的服务快照，非本人不可操作；不接入平台收款。"
       ],
       "verification_commands": [
         "make test-client FEATURE=coaches,consultations,relations",
@@ -1239,7 +1274,8 @@
         "make visual-ui FLOW=F05"
       ],
       "risks": [
-        "联络能力无证据保持关闭，页面可完成受限状态联调"
+        "联络能力无证据保持关闭，页面可完成受限状态联调",
+        "原4–6人日估算未明确覆盖三端教练服务管理，细拆卡前须结合实际范围重新估算。"
       ],
       "effort_days": [
         4,
@@ -1271,7 +1307,8 @@
         "U05",
         "I-A01",
         "I-A02",
-        "I-A03"
+        "I-A03",
+        "I-A04"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -1304,7 +1341,8 @@
       "acceptance": [
         "完整F01-F05内部交付可复跑；允许L01尚未开公开渠道但必须显示受限状态",
         "记录输入分支/提交、迁移、环境与依赖版本；集成后重跑权限/版本/幂等",
-        "任何模块不满足验收退回原owner，不在集成中大范围重写"
+        "任何模块不满足验收退回原owner，不在集成中大范围重写",
+        "M1 的 I-A04 记录、三端真实设备与用户试用已验收；整体验收仍须完整教练交付闭环。"
       ],
       "verification_commands": [
         "make migrate-test",
@@ -1315,8 +1353,8 @@
         "跨模块接缝与共享路由；集成不能只拼截图"
       ],
       "effort_days": [
-        3,
-        5
+        4.5,
+        10.5
       ],
       "flow_ids": [
         "F01",
@@ -1361,11 +1399,12 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "以真实HTTP/DB和微信体验版验证核心正常/空/错误/重复/边界路径，给基线截图、动作预算、可恢复故障清单。",
+      "deliverables": "以真实 HTTP/DB、小程序体验版及可安装 iOS/Android App 验证核心正常/空/失败/重复/边界路径，记录截图、实际设备、恢复与动作预算。",
       "acceptance": [
-        "微信iOS/Android与H5范围明确；真机缺失标partial",
+        "微信小程序在 iOS/Android 微信中与独立 iOS/Android App 分别真机验证；缺安装包、签名或设备则该端为 partial",
         "未授权/撤权/旧版/双击/离线/重启/时区反例有真实断言",
-        "至少一轮恢复数据库和失败重试；无P1未解决回归才能内部交付"
+        "至少一轮恢复数据库和失败重试；无P1未解决回归才能内部交付",
+        "同主体先在小程序记录、在 App 回读并修订及反向路径均正确；异主体、离线冲突与撤权不得串数据"
       ],
       "verification_commands": [
         "make e2e BATCH=P0-A",
@@ -1404,7 +1443,8 @@
       "status": "planned",
       "depends_on": [
         "V01",
-        "L01"
+        "L01",
+        "U08"
       ],
       "role": "qa-verifier",
       "model_policy": "verification",
@@ -1420,11 +1460,12 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "在允许的实际通道完成两名此前陌生参与者的咨询到外部约定再回站确认；记录拒绝与失效路径。",
+      "deliverables": "按各端实际获准的陌生联系能力，记录小程序与 App 所需证据，并由此前不认识的双方验证允许入口、授权、拒绝和失败路径；未核定的入口保持关闭。",
       "acceptance": [
         "双方此前无联系方式，来源/身份与同条款确认可追溯",
         "拒绝订阅、联络取消、未达成服务及重新联系分别通过",
-        "没有真实渠道/测试人则blocked，绝不用私域代替"
+        "没有真实渠道/测试人则blocked，绝不用私域代替",
+        "三端各自适用渠道、平台审核与联系限制有证据；不同能力不得借用其他端结论"
       ],
       "verification_commands": [
         "按 APP_FLOW F05 与 RELEASE_GATES G3 执行真实双端验收"
@@ -1747,13 +1788,17 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
-      "deliverables": "实现训练/饮食发现、内容详情、单一开始动作、来源说明、另存/分享、AI预填编辑与审核结果。",
+      "deliverables": "实现训练/饮食发现、内容详情、采用或记录的默认下一步、来源说明、另存/分享、AI预填编辑与审核结果。",
       "acceptance": [
         "新手默认官方/教练，学员分享需明确选择",
         "缺项/估算集中核对，公开范围清楚，草稿退出恢复",
-        "空/下架/分享失效/审核拒绝文案可行动，不给假内容"
+        "空/下架/分享失效/审核拒绝文案可行动，不给假内容",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make test-client FEATURE=plaza,publish",
@@ -1804,13 +1849,17 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
       ],
       "deliverables": "实现轻量自评、可选观察、信息不足状态、建议前后差异/确认/过期/采用新版提示。",
       "acceptance": [
         "不强填份量，未知不显示0摄入",
         "重要估算/授权确认不能默认勾选",
-        "改动被其他设备覆盖前给版本差异，已有安排不暗改"
+        "改动被其他设备覆盖前给版本差异，已有安排不暗改",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
       ],
       "verification_commands": [
         "make test-client FEATURE=diet,adjustments",
@@ -1926,7 +1975,7 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "交付结构化脱敏日志、SLO/费用/队列监控、备份恢复、删除导出、事件来源统计、配置开关与回滚手册。",
+      "deliverables": "交付结构化脱敏日志、SLO/费用/队列监控、备份恢复、删除导出、事件来源统计、配置开关与回滚手册。 与 A01 约定注销请求、会话失效、数据删除和备份恢复职责。",
       "acceptance": [
         "密钥/健康正文不进日志或通用埋点",
         "真实测试备份恢复到独立库并核对记录/授权；回滚兼容迁移",
@@ -1962,7 +2011,7 @@
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
       "acceptance_requires": [
-        "L01"
+        "L01-03"
       ]
     },
     {
@@ -2066,11 +2115,12 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "覆盖公开内容/分享/发布/饮食/建议及对P0-A回归，保存实际微信和H5截图、结构化断言、失败恢复。",
+      "deliverables": "覆盖公开内容/分享/发布/饮食/建议及对P0-A回归，保存实际微信和H5截图、结构化断言、失败恢复。；小程序、iOS 与 Android 均纳入内容、视觉、安全与真机验证。",
       "acceptance": [
         "来源/授权/旧版/内容hash/证据不足矩阵通过",
         "与UI规范比较并人工看长文、键盘、减少动态效果，不只算像素差",
-        "上批回归无P1；缺真机/供应商/内容专业证据明确partial"
+        "上批回归无P1；缺真机/供应商/内容专业证据明确partial",
+        "三端同一接受版本完成训练/饮食广场、AI 确认、授权撤回与错误恢复；端缺证据不得声明同步通过"
       ],
       "verification_commands": [
         "make e2e BATCH=P0-B",
@@ -2223,11 +2273,14 @@
     },
     {
       "id": "P02",
-      "title": "App 打包与跨端体验验证",
-      "batch": "P1",
+      "title": "iOS / Android App 能力与三端交付",
+      "batch": "P0/P1",
       "status": "planned",
       "depends_on": [
-        "V03"
+        "V03",
+        "P02-01",
+        "P02-02",
+        "P02-03"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -2244,22 +2297,23 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml"
       ],
-      "deliverables": "在实际需要App时验证打包、登录/推送/深链/隐私清单/商店要求，评估真实复用比例。",
+      "deliverables": "P02-01/02/03 前移资源探针与可安装开发包；逐批提供三端验证基础，完整平台能力和商店证据随业务细拆。",
       "acceptance": [
-        "从锁定工程打出可安装制品并真机运行主路径",
-        "商店手续与版本差异有证据；不承诺一套代码自动覆盖",
-        "不因App扩展引入A阶段支付"
+        "Android 与 iOS 从锁定工程生成可安装制品，并与小程序按同一功能范围完成真实主路径",
+        "登录、账号绑定/注销、权限、推送可拒绝、分享、键盘/安全区与商店规则按各平台证据验证",
+        "平台内仍不收款；各平台外部联系/上架条件缺证据时独立阻塞公开放行，不影响可完成的内部工程"
       ],
       "verification_commands": [
         "make build-app",
         "make e2e PLATFORM=app"
       ],
       "risks": [
-        "商店/付费SDK/签名证书与外部发布需另行批准"
+        "多平台登录与签名、审核和设备准备可能形成独立等待；仅生成 App 资源不等于可安装包",
+        "iOS 服务展示/付款政策需按真实业务与审核规则核定，不能推定通过"
       ],
       "effort_days": [
-        5,
-        10
+        6,
+        13
       ],
       "flow_ids": [
         "F01",
@@ -2275,7 +2329,8 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": []
+      "acceptance_requires": [],
+      "breakdown": "partial"
     },
     {
       "id": "M01",
@@ -2406,11 +2461,11 @@
       "id": "F01-01",
       "title": "Git基线、缓存忽略与工具链兼容锁定",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [],
       "role": "tech-architect",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         ".gitignore",
         ".node-version",
@@ -2427,11 +2482,11 @@
         "docs/DEFINITION_OF_DONE.md",
         "docs/CURRENT_STATE.md"
       ],
-      "deliverables": "由Lead本地建立真实Git基线，盘点并忽略缓存/密钥；实际验证Node/pnpm/Go/uni-app兼容组合后锁版本，记录干净检出命令。此卡完成前不启动并行worktree。",
+      "deliverables": "核对现有 Git 基线与未提交变化，保留现有隔离树；盘点忽略缓存/密钥，实际验证 Node/pnpm/Go/uni-app 三端兼容组合后锁版本。",
       "acceptance": [
         "先记录受保护文件与输入快照；git status中不含缓存、虚拟环境、环境密钥",
         "实际依赖解析与工具版本可复现；未验证组合不得写为兼容",
-        "形成首次提交与可供后续worktree使用的基线，保留原始审核证据"
+        "记录真实 Git 基线、受保护差异和可恢复路径；提交及隔离要求按实际证据完成，不能以现有样机基线代替完整工具链验收"
       ],
       "verification_commands": [
         "git status --short",
@@ -2460,7 +2515,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "F01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
     },
     {
       "id": "F01-02",
@@ -2557,22 +2615,22 @@
         "docs/DEFINITION_OF_DONE.md",
         "docs/IMPLEMENTATION_PLAN.md"
       ],
-      "deliverables": "建立uni-app与后台的安装/类型检查/构建入口，只做工程壳；页面、组件、颜色和视觉继续暂缓；当前只推导设计逻辑，用户明确恢复 UI 设计并选定基线后另行处理。依赖修改如需根锁文件，由Lead单owner协调。",
+      "deliverables": "建立 uni-app 与后台工程壳，验证微信小程序、H5、App 资源的安装、类型检查和构建入口；原生签名与安装探针见 P02-01；根锁单 owner 收口。",
       "acceptance": [
-        "干净检出可构建小程序/H5与后台；不引入业务演示或伪登录",
-        "TypeScript严格检查真实运行，空脚本/跳过不算通过",
-        "本卡不触碰现有design与UI_SPEC；不决定视觉取值"
+        "干净检出可构建微信小程序、H5、App 资源及后台；不引入伪登录/业务演示",
+        "TypeScript 严格检查与构建真实运行，空脚本/跳过不算通过；记录三类产物与工具版本",
+        "仅建立工程壳，不把 App 资源包当 iOS/Android 可安装制品；不修改现有设计样机"
       ],
       "verification_commands": [
-        "记录client小程序/H5实际构建命令与退出码",
-        "记录admin实际typecheck/build命令与退出码"
+        "记录 client 小程序、H5、App 资源实际构建命令及退出码",
+        "记录 admin 实际 typecheck/build 命令及退出码"
       ],
       "risks": [
         "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
       ],
       "effort_days": [
-        1,
-        2
+        2,
+        3
       ],
       "flow_ids": [
         "F01",
@@ -2736,7 +2794,7 @@
       ],
       "deliverables": "在合并后的同一提交复跑构建、隔离环境与CI入口；检查器不能覆盖缺项。只收口与验证，新增业务退回单独卡。",
       "acceptance": [
-        "从干净检出执行安装→双环境启动→构建→关闭；没有依赖本机临时文件",
+        "从干净检出执行安装、双环境启动及小程序/H5/App 资源构建；不依赖本机临时文件，实际安装包证据另行登记",
         "记录接受提交、所有入口退出码与失败恢复；验证可由另一角色复跑",
         "EG01-EG05按当前实施范围落地；F02范围明确待完成"
       ],
@@ -2772,11 +2830,12 @@
     },
     {
       "id": "F02-01",
-      "title": "固定契约生成与陌生agent上手验证",
+      "title": "固定契约生成及可复现验证",
       "batch": "foundation",
       "status": "planned",
       "depends_on": [
-        "F01"
+        "F01",
+        "K01"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -2797,16 +2856,15 @@
         "api/openapi.yaml",
         "api/oapi-codegen.yaml"
       ],
-      "deliverables": "从唯一OpenAPI生成TS/Go且可重现；此卡由未参与本方案的执行者做首次上手试验，只读取任务包必读及相关生成配置，不预加载聊天历史。",
+      "deliverables": "在 F01 与 K01 通过后，从唯一 OpenAPI 生成 TS/Go 且可重现；陌生执行者上手另由 Q01-01 负责，不阻塞合同生成。",
       "acceptance": [
         "生成两次无漂移；现有契约测试保持，生成物能编译",
-        "记录实际额外上下文请求、澄清、返工、越界、复跑结果；问题未解决不得接受",
-        "需要改共享契约或生成配置时提交Lead变更请求，不私自扩大写域"
+        "需要改共享契约或生成配置时提交 Lead 变更请求，不私自扩大写域",
+        "从任务列出的输入和锁定环境重跑生成及现有合同检查，登记真实命令与退出码"
       ],
       "verification_commands": [
         "make contract-check",
-        "make codegen-check",
-        "按DEFINITION_OF_DONE上手记录核验"
+        "make codegen-check"
       ],
       "risks": [
         "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
@@ -2831,8 +2889,7 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "F02",
-      "kind": "task",
-      "onboarding_probe": true
+      "kind": "task"
     },
     {
       "id": "F02-02",
@@ -3012,11 +3069,11 @@
       "id": "L01-01",
       "title": "外部材料缺口与责任清单",
       "batch": "external",
-      "status": "planned",
+      "status": "active",
       "depends_on": [],
       "role": "security-reviewer",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "docs/evidence/external/index/",
         "docs/evidence/L01/L01-01/"
@@ -3028,10 +3085,10 @@
         "docs/RELEASE_GATES.md",
         "docs/小程序上线成本与资质.md"
       ],
-      "deliverables": "盘点主体/账号/类目/联络/数据条款/留存证据；登记真实材料位置、缺口、角色与复核触发。此卡可完成缺口盘点，不代表取得许可。",
+      "deliverables": "盘点微信小程序、iOS App、Android App 的主体/账号/类目、签名与分发、联系渠道、AI 条款、账号注销及分类留存证据；登记缺口及责任角色。",
       "acceptance": [
-        "覆盖RELEASE_GATES要求，未注册/未核定清楚可见",
-        "缺证据项不填approved、不臆造主体或负责人姓名",
+        "覆盖各平台账户、联系/服务展示、账号删除、RELEASE_GATES 与三端提交材料；未注册/未核定清楚可见",
+        "缺证据项不填 approved，不臆造主体、具体渠道、审核结论或负责人姓名",
         "每项有下一步、责任角色与对应放行点，外部等待不计有效人日"
       ],
       "verification_commands": [
@@ -3060,7 +3117,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "L01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
     },
     {
       "id": "L01-02",
@@ -3084,9 +3144,9 @@
         "docs/RELEASE_GATES.md",
         "docs/APP_FLOW.md"
       ],
-      "deliverables": "依据实际主体/业务取得平台与必要专业核定证据；明确允许渠道和失败路径，实际双人应用验收另由V02完成。",
+      "deliverables": "依据实际主体和业务取得微信小程序、iOS App、Android 目标渠道的账号/类目/签名/联系与服务展示要求及适用核定证据；实际双人应用验收另由 V02 完成。",
       "acceptance": [
-        "来源对应实际账号/主体/类目，有原文、访问日、适用条件与限制",
+        "来源对应实际账号、主体、业务形态与目标渠道，有原文、访问日、适用条件和限制；三端分别记录",
         "不得用通用网页替代个案核定或把站内咨询存在当成获准导流",
         "资料或答复缺失保持partial/blocked，公开入口仍关闭"
       ],
@@ -3097,8 +3157,8 @@
         "实际主体/账号/提审材料与必要答复；本轮尚未具备。"
       ],
       "effort_days": [
-        1,
-        2
+        1.5,
+        3
       ],
       "flow_ids": [
         "F04",
@@ -3122,7 +3182,7 @@
     },
     {
       "id": "L01-03",
-      "title": "AI数据条款与分类留存依据",
+      "title": "分类留存、注销和恢复依据",
       "batch": "external",
       "status": "planned",
       "depends_on": [
@@ -3132,7 +3192,7 @@
       "model_policy": "judgment",
       "owner": null,
       "write_allowlist": [
-        "docs/evidence/external/data/",
+        "docs/evidence/external/privacy/",
         "docs/evidence/L01/L01-03/"
       ],
       "inputs": [
@@ -3142,17 +3202,16 @@
         "docs/RELEASE_GATES.md",
         "docs/小程序上线成本与资质.md"
       ],
-      "deliverables": "核定模型数据处理、地域/训练使用/日志，以及普通与健康消息、私有文件、备份的保留/删除/撤权边界；不默认永久保存。",
+      "deliverables": "核定普通与健康消息、私有文件、账号注销和备份的用途、访问、保留、删除、撤权及恢复边界。",
       "acceptance": [
-        "每类数据有用途、访问、期限/例外和恢复备份后的隔离规则",
-        "供应商条款覆盖实际账户/服务形态；未知项不得声称已安全",
-        "未获准发送的真实健康正文不用于供应商试验；签约/提交由用户决定"
+        "每类数据有用途、访问、期限或例外与恢复备份后的隔离规则",
+        "未知期限和例外不得声称已批准；需要专业核对的事项保留真实证据"
       ],
       "verification_commands": [
-        "按分类留存/供应商检查表人工核对证据"
+        "按分类留存、注销与恢复检查表人工核对证据"
       ],
       "risks": [
-        "实际供应商条款与适当隐私/专业复核记录。"
+        "留存依据未核定时 O03 和相关正式放行保持未接受，不填默认永久保存。"
       ],
       "effort_days": [
         1,
@@ -3172,7 +3231,7 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [
-        "实际供应商条款与适当隐私/专业复核记录。"
+        "实际数据分类、适当隐私及专业复核记录。"
       ],
       "acceptance_requires": [],
       "parent": "L01",
@@ -3185,7 +3244,8 @@
       "status": "planned",
       "depends_on": [
         "L01-02",
-        "L01-03"
+        "L01-03",
+        "L01-04"
       ],
       "role": "security-reviewer",
       "model_policy": "judgment",
@@ -3204,7 +3264,8 @@
       "acceptance": [
         "核定记录引用准确证据版本，所有未决项保持关闭",
         "L01通过不会自动等于G3通过；外部条件失效有复核与撤销触发",
-        "独立/顺序角色复核方式真实登记，禁止只有空模板"
+        "独立/顺序角色复核方式真实登记，禁止只有空模板",
+        "分别复核主体与联系、分类留存和 AI 数据条款证据，公共渠道未核定不得阻碍独立卡的已获证结论。"
       ],
       "verification_commands": [
         "人工比对批准记录、来源与RELEASE_GATES；关闭状态负例"
@@ -4399,16 +4460,1016 @@
           "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json"
         ]
       }
+    },
+    {
+      "id": "K01",
+      "title": "三端身份与训练记录合同收敛",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "K01-01",
+        "K01-02",
+        "K01-03",
+        "K01-I"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "api/tests/",
+        "docs/evidence/K01/",
+        "docs/DECISION_LOG.md",
+        "docs/APP_FLOW.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "docs/PRD.md",
+        "docs/design/round-04/INTEGRATION.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "对齐训练后/逐组记录、跨端同一主体与安全绑定、可发起注销的 OpenAPI/ER 合同；输出真实反例与复核，供 F02 生成消费。",
+      "acceptance": [
+        "缺省时长、不同动作测量、删除/修订、稳定 recordKey 与训练日期均可无歧义表达",
+        "多平台身份须验证凭据与双边确认后关联；重复绑定/主体冲突不得泄露或合并",
+        "注销可由 App 内发起，保留/删除规则由 L01 取得依据；不假称已实现"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "跨端认证、存储与历史版本相互影响；平台和留存证据仍待核定",
+        "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。"
+      ],
+      "effort_days": [
+        4.5,
+        9.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "K01-01",
+      "title": "训练后与逐组记录合同",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": [],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": "/root (Codex Lead)",
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "api/tests/",
+        "docs/evidence/K01/K01-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "docs/PRD.md",
+        "docs/design/round-04/INTEGRATION.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "串行修订记录合同：一会话一组稳定记录键；未知总时长可缺省；次数、秒数/每侧等度量需表达；明确删除、改日期、已结束记录修订、幂等及版本冲突。",
+      "acceptance": [
+        "训练后与逐组对同一 session/recordKey，无需伪造训练开始或 durationMin；空白组不计入实际",
+        "覆盖次数/实际秒数/每侧合法与非法组合、删除及已保存修订、日期与接收时间分离、重试与 412",
+        "OpenAPI、ER 与静态正反例一致；已用 operationId 不随意改名"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "现有 WorkoutFinish 必填 durationMin、SetRecord 必填 reps，删除/修订语义尚缺",
+        "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。"
+      ],
+      "effort_days": [
+        1.5,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "K01",
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+    },
+    {
+      "id": "K01-02",
+      "title": "小程序与 App 身份及安全关联合同",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "K01-01",
+        "L01-01",
+        "D01"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "api/tests/",
+        "docs/evidence/K01/K01-02/",
+        "docs/DECISION_LOG.md",
+        "docs/APP_FLOW.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/RELEASE_GATES.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "结合 L01-01 盘点，比较小程序与 iOS/Android 的可用登录和绑定方式，选定各端首批方案及失败恢复、适用官方规则、成本假设与凭据缺口后，定义稳定主体、会话及绑定/解绑合同。",
+      "acceptance": [
+        "登记每端选定的登录入口、用户旅程、绑定证明、取消/失败恢复与适用平台规则，记录候选和取舍；尚未决策时不得接受合同",
+        "同一已确认主体跨端可读取本人资源；未绑定身份、不同人、撞号、注销后重登和切换账号不得自动合并或串数据",
+        "绑定须证明两侧账号控制权并明确确认；不以昵称、单一手机号或假定 unionid 总存在做静默合并",
+        "供应商账号、实际资费、申请凭证与真机联调未具备时列为未验证；不凭一般网页宣布实际主体获准",
+        "首批登录与绑定选择记入 DECISION_LOG，并同步 APP_FLOW；如需更改共享边界由 Lead 串行收口。"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "现仅有 /auth/wechat-login 与 user.openid 唯一键；App 的登录和绑定缺合同",
+        "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。",
+        "如登录方式、成本或平台约束需要用户决策，应先形成可比较的建议；未选定不把合同标为 accepted。",
+        "D01 仅为已接受历史决策日志写入的串行顺序，不把旧 UI 当现行设计基线。"
+      ],
+      "effort_days": [
+        1.5,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "K01",
+      "kind": "task"
+    },
+    {
+      "id": "K01-03",
+      "title": "账号注销与撤权合同",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "K01-02"
+      ],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "api/tests/",
+        "docs/evidence/K01/K01-03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "docs/RELEASE_GATES.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "定义 App 内发起注销、本人确认、请求状态、停止后续访问与关联授权回收的合同；具体留存例外与时限由 L01 的真实依据确定。",
+      "acceptance": [
+        "注销发起、取消/确认、幂等重试及身份冒用均有正反例；跨端会话和待处理健康访问按政策失效",
+        "应删除及获准保留的数据分别说明；留存依据/时限未知不得设为已批准",
+        "设计与 Apple App Review 5.1.1(v) 一起核对，最终合规和实现以真实证据为准"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "当前 PRD 只有可申请注销，尚无公开接口；备份与法定保留边界未核定",
+        "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "K01",
+      "kind": "task"
+    },
+    {
+      "id": "K01-I",
+      "title": "训练、身份与注销合同复核",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "K01-01",
+        "K01-02",
+        "K01-03"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/K01/K01-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/VALIDATION_PLAN.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/IMPLEMENTATION_PLAN.md"
+      ],
+      "deliverables": "对同一集成版本检查三张合同卡及消费者路径，记录缺口、运行静态合同测试与独立或顺序角色复核。",
+      "acceptance": [
+        "直接依赖三张卡的接受证据均对应同一集成版本，权限与数据恢复反例完整",
+        "旧 operationId/消费者兼容、合同与 ER 一致；不能将静态测试称为真实 HTTP/DB"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "真实生成/数据库、上架审核和平台供应商不在本卡验收范围",
+        "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。"
+      ],
+      "effort_days": [
+        0.5,
+        1.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "K01",
+      "kind": "integration"
+    },
+    {
+      "id": "D02",
+      "title": "第五轮三端设计实施规格",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D02-01",
+        "D02-I"
+      ],
+      "role": "product-designer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/implementation/",
+        "docs/evidence/D02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
+      ],
+      "deliverables": "将用户初步认可的第五轮流程图和样机收敛为可执行的三端组件、状态与视觉规格；真实终端验收仍由 U/V 卡完成。",
+      "acceptance": [
+        "覆盖学员、教练主路径和正常/空/失败/恢复；图中文字与样例不自动成为数据合同",
+        "微信小程序与 iOS/Android 的导航、键盘、安全区、触达及无权限状态分别说明",
+        "保留两种记录方式、免费内容与真实服务交付，不加入计时器或付款"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py check",
+        "逐项人工对照 R05 图像、UI_SPEC 与 APP_FLOW 并记录证据"
+      ],
+      "risks": [
+        "效果图不保证逐像素可实现；小程序与 App 的系统控件和能力不同"
+      ],
+      "effort_days": [
+        2,
+        3.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "D02-01",
+      "title": "整理 R05 三端组件与状态规格",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": [
+        "D01"
+      ],
+      "role": "product-designer",
+      "model_policy": "judgment",
+      "owner": "/root (Codex Lead)",
+      "write_allowlist": [
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/implementation/",
+        "docs/evidence/D02/D02-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
+      ],
+      "deliverables": "以用户初步认可的 30 屏方向整理可落地组件、内容数据来源、主流程与三端差异；明确适配和视觉截图参照。 在 UI_SPEC 列出正式页面/状态到 D02 文件、参考图与素材的可追溯索引，供 U01–U08 拆卡时直接引用。",
+      "acceptance": [
+        "映射首页、发现、服务、计划、记录、饮食、AI 与教练端至真实任务和输入",
+        "标出缺图、模拟内容、真实素材权利及账户/授权边界；禁止把生成图中的虚构文字直接当事实",
+        "说明文字放大、键盘、安全区、空/失败/撤权、Reduce Motion；不将用户方向反馈扩成最终视觉验收",
+        "补齐账号绑定/注销入口、确认、状态、错误及恢复的三端设计规格；UI_SPEC 指向每份实际 D02 产出。"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py check",
+        "人工对照 APP_FLOW、PRD、R05 样机和 30 屏并记录缺项"
+      ],
+      "risks": [
+        "尚无三端正式工程与真机素材；截图是方向参考，不是已经合格的生产 UI"
+      ],
+      "effort_days": [
+        1.5,
+        2.5
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D02",
+      "kind": "task",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+    },
+    {
+      "id": "D02-I",
+      "title": "R05 设计实施规格复核",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "D02-01"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/D02/D02-I/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/DEFINITION_OF_DONE.md"
+      ],
+      "deliverables": "以产品、视觉、交互及技术角色顺序复核规格与用户任务；记录样例与真实素材/平台能力仍未确认的差距。",
+      "acceptance": [
+        "同一版本覆盖 D02-01 的主要路径和异常，未用第三轮 D01 接受冒充第五轮通过",
+        "记录实际 review 模式及剩余分歧，真实小程序/iOS/Android 截图留待 U/V 验收"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py check",
+        "复核任务、素材许可、三端适配和记录模式证据"
+      ],
+      "risks": [
+        "无独立复核者时明确顺序角色复核，不能假称独立审查"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F03",
+        "F04",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "D02",
+      "kind": "integration"
+    },
+    {
+      "id": "P02-01",
+      "title": "App 编译、打包路径与平台缺口探针",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "F01-03"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "docs/plans/app/",
+        "infra/app/",
+        "docs/evidence/P02/P02-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/RELEASE_GATES.md"
+      ],
+      "deliverables": "在 F01 客户端壳上验证小程序和 App 资源编译路径，登记 iOS/Android 安装包、签名、工具链、权限及登录差异；证书或设备未到位明确列缺口。",
+      "acceptance": [
+        "使用锁定配置复现三端编译/构建探针，记录确切命令/版本与产物；App 资源包不冒充 ipa/apk",
+        "有条件才实测原生安装包和设备；缺账号、签名或设备明确未验证，不把本探针当 V01 真机验收",
+        "明确三端身份、通知、键盘、安全区、退出恢复等适配清单，证书与真实私钥不进入库"
+      ],
+      "verification_commands": [
+        "按 F01-03 实测并登记的微信、H5、App 资源构建命令逐项复跑，记录具体命令、版本和退出码",
+        "有原生签名与设备时记录安装包及真机检查；缺失项如实标记未验证"
+      ],
+      "risks": [
+        "uni CLI 资源构建不等同原生签名安装包；外部账号和 iOS / Android 设备可能缺失"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F04"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "parent": "P02",
+      "kind": "task"
+    },
+    {
+      "id": "Q01",
+      "title": "陌生执行者任务包上手验证",
+      "batch": "process",
+      "status": "planned",
+      "depends_on": [
+        "Q01-01"
+      ],
+      "role": "reviewer",
+      "model_policy": "verification",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/Q01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "scripts/plan.py"
+      ],
+      "deliverables": "在真实陌生执行者可用时验证 F02-01 任务包的冷启动与复跑；该试验独立于工程业务关键路径。",
+      "acceptance": [
+        "由未参与方案的执行者留下真实冷启动、额外上下文、返工、越界与复跑记录",
+        "解决的边界违规数为 0；复跑及 review 证据可核对"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py check",
+        "按 Q01-01 记录的实际命令及结果复核"
+      ],
+      "risks": [
+        "陌生执行者或授权不可用时保持 planned；不得虚构试验或声称已授权并行。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "真实陌生执行者可用；如需原生子代理并行，须先获得用户授权。"
+      ],
+      "acceptance_requires": [],
+      "breakdown": "complete"
+    },
+    {
+      "id": "Q01-01",
+      "title": "F02-01 任务包冷启动试验",
+      "batch": "process",
+      "status": "planned",
+      "depends_on": [
+        "F02-01"
+      ],
+      "role": "reviewer",
+      "model_policy": "verification",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/Q01/Q01-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "scripts/plan.py",
+        "api/openapi.yaml",
+        "api/oapi-codegen.yaml"
+      ],
+      "deliverables": "将 F02-01 包交给未参与方案的真实执行者，在隔离临时环境复跑并记录上下文请求、返工、边界与结果；不改项目业务代码。",
+      "acceptance": [
+        "记录真实额外上下文请求、返工和边界违规数，解决后边界违规为 0",
+        "使用实际锁定环境及命令完成复跑，记录冷启动身份、复现证据和复核方式"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py check",
+        "按实际 F02-01 包及隔离环境记录的复跑命令核验"
+      ],
+      "risks": [
+        "无真实陌生执行者时保持 planned；仅在获授权时使用子代理，不影响 F02 接受。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "真实陌生执行者可用；原生子代理并行须用户授权。"
+      ],
+      "acceptance_requires": [],
+      "parent": "Q01",
+      "kind": "task",
+      "onboarding_probe": true
+    },
+    {
+      "id": "L01-04",
+      "title": "AI 供应商数据处理与预算依据",
+      "batch": "external",
+      "status": "planned",
+      "depends_on": [
+        "L01-01"
+      ],
+      "role": "security-reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/external/ai/",
+        "docs/evidence/L01/L01-04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/RELEASE_GATES.md",
+        "docs/小程序上线成本与资质.md"
+      ],
+      "deliverables": "核对拟使用的真实 AI 服务账号、数据地域、用途、训练使用、日志/留存与删除条款；取得实际费用范围和必要专业复核。",
+      "acceptance": [
+        "条款覆盖实际供应商、服务形态及健康数据用途；未知项不得声称已安全",
+        "未获准发送的真实健康正文不用于供应商试验；真实调用前有数据处理依据及已授权费用范围",
+        "以可验证资料登记供应商与条款，签约或提交由用户决定"
+      ],
+      "verification_commands": [
+        "按 AI 数据处理及费用检查表人工核对来源、适用对象与授权范围"
+      ],
+      "risks": [
+        "条款、预算或安全评测缺证据时真实 AI 联调保持未接受；不因公开联系渠道未核定阻塞独立 AI 准备。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F04",
+        "F05",
+        "F07"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "实际供应商与账户适用条款、隐私与专业复核、已授权费用范围。"
+      ],
+      "acceptance_requires": [],
+      "parent": "L01",
+      "kind": "task"
+    },
+    {
+      "id": "P02-02",
+      "title": "iOS 可安装开发包与真机链路",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "P02-01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "infra/app/ios/",
+        "docs/evidence/P02/P02-02/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/RELEASE_GATES.md"
+      ],
+      "deliverables": "为 iOS 建立可重复的开发构建、签名或适配方式、安装与启动路径，并在对应真机记录版本及可回滚环境。",
+      "acceptance": [
+        "锁定工程能生成可安装的 iOS 开发制品，记录确切构建命令、版本、制品和签名方式",
+        "在真实 iOS 设备安装、启动与重启；记录设备/系统/包版本及结果，非资源包或浏览器冒充",
+        "未具备相应签名、账号或设备时标记 partial/blocked，缺项不冒称通过；证书及私钥不进仓库"
+      ],
+      "verification_commands": [
+        "按选定实际工具链记录构建、安装及启动命令与退出码",
+        "在对应真实设备记录安装、启动、重启、设备/系统/制品版本"
+      ],
+      "risks": [
+        "外部账号、签名、打包服务或真机缺失时独立等待；不自动提交商店或发送证书。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F04"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "所选 iOS 开发签名方式、必要账号权限和真实设备。"
+      ],
+      "acceptance_requires": [],
+      "parent": "P02",
+      "kind": "task"
+    },
+    {
+      "id": "P02-03",
+      "title": "Android 可安装开发包与真机链路",
+      "batch": "foundation",
+      "status": "planned",
+      "depends_on": [
+        "P02-01"
+      ],
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "infra/app/android/",
+        "docs/evidence/P02/P02-03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/RELEASE_GATES.md"
+      ],
+      "deliverables": "为 Android 建立可重复的开发构建、签名或适配方式、安装与启动路径，并在对应真机记录版本及可回滚环境。",
+      "acceptance": [
+        "锁定工程能生成可安装的 Android 开发制品，记录确切构建命令、版本、制品和签名方式",
+        "在真实 Android 设备安装、启动与重启；记录设备/系统/包版本及结果，非资源包或浏览器冒充",
+        "未具备相应签名、账号或设备时标记 partial/blocked，缺项不冒称通过；证书及私钥不进仓库"
+      ],
+      "verification_commands": [
+        "按选定实际工具链记录构建、安装及启动命令与退出码",
+        "在对应真实设备记录安装、启动、重启、设备/系统/制品版本"
+      ],
+      "risks": [
+        "外部账号、签名、打包服务或真机缺失时独立等待；不自动提交商店或发送证书。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F04"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；OpenAPI、依赖锁与共享路由由 Lead 单 owner 串行收口",
+        "不得引入训练播放器、训练/休息倒计时或为满足接口编造训练时长",
+        "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
+        "不得发送真实客户消息、向外部提交证书或部署生产"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "所选 Android 开发签名方式、必要账号权限和真实设备。"
+      ],
+      "acceptance_requires": [],
+      "parent": "P02",
+      "kind": "task"
+    },
+    {
+      "id": "U08",
+      "title": "账号关联、注销与数据控制界面",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "A01",
+        "U01"
+      ],
+      "role": "ui-builder",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/account/",
+        "docs/evidence/U08/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-05/BRIEF.md",
+        "docs/design/round-05/app-storyboards/README.md"
+      ],
+      "deliverables": "实现三端安全关联与注销入口、本人确认、可见的处理状态和取消/失败恢复；调用 A01 与 O03 已定义的服务端职责。 提供按用途采集同意的说明、拒绝与撤回入口；采集同意与关系授权分别表达。",
+      "acceptance": [
+        "应用内可找到注销入口；确认、取消、重复请求、处理中、失败恢复和完成结果可见",
+        "本人身份确认与会话回收、其他端退出/重新登录、已获准保留与删除状态和备份恢复限制可核验",
+        "仅用户本人可操作，不以缓存证明授权；三端测试使用同一服务端合同和实际页面",
+        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。",
+        "健康信息按具体采集用途说明并取得明确同意；拒绝与撤回可操作，不以关系授权或总开关替代。"
+      ],
+      "verification_commands": [
+        "make test-client FEATURE=account",
+        "make e2e FLOW=account-deletion",
+        "make visual-ui FLOW=account-deletion"
+      ],
+      "risks": [
+        "真实留存与删除依据及 O03 未接受时不得宣称注销闭环已通过。",
+        "原2–4人日估算未明确覆盖三端按用途采集同意界面，细拆时须重估。"
+      ],
+      "effort_days": [
+        2,
+        4
+      ],
+      "flow_ids": [
+        "F04",
+        "F05"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [],
+      "acceptance_requires": [
+        "O03"
+      ]
+    },
+    {
+      "id": "I-A04",
+      "title": "三端训练记录与内部试用集成",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "I-A02",
+        "U01",
+        "U02",
+        "P02-02",
+        "P02-03"
+      ],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "scripts/integration/m1-recording/",
+        "tests/integration/batches/m1-recording/",
+        "docs/evidence/I01/I-A04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/ENGINEERING_STANDARDS.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/VALIDATION_PLAN.md",
+        "docs/APP_FLOW.md",
+        "docs/UI_SPEC.md",
+        "api/openapi.yaml"
+      ],
+      "deliverables": "在同一集成版本连通真实服务、小程序和可安装 iOS/Android 开发包，完成记录及跨端恢复，并组织获授权的目标用户内部试用。",
+      "acceptance": [
+        "两模式共用一份 session/recordKey，小程序到 App、App 到小程序均可保存、回看和修订；空白组、未知时长、幂等及 412 冲突有反例",
+        "iOS 微信、Android 微信、iOS App、Android App 分别在真机验证；断网重试、重启、账号切换及数据隔离有证据",
+        "至少一位同意参与的目标学员独立完成两种记录方式，记录动作/输入、失败点和结果；无人试用时用户可用性保持未通过",
+        "明确记录技术验证与用户试用证据对应的同一版本，未通过或不可用项不冒称 M1 已验收"
+      ],
+      "verification_commands": [
+        "make e2e FLOW=m1-recording",
+        "make visual-diff FLOW=m1-recording",
+        "记录各端真实设备、失败恢复和经同意的用户试用过程与结果"
+      ],
+      "risks": [
+        "真实签名、设备或愿意参与的目标用户缺失时，该卡及 M1 保持 partial；仍可继续不依赖它的工作。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "不改已确认产品边界，不发送真实客户消息或部署生产",
+        "不得把测试替身、示例界面或生成接口当作真实联调完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
+      "external_prerequisites": [
+        "P02-02/03 真机安装证据、可用的微信测试环境、经同意的目标用户试用。"
+      ],
+      "acceptance_requires": [],
+      "parent": "I01",
+      "kind": "integration"
     }
   ],
   "deferred_packages": {
-    "U01": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U02": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U03": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U04": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U05": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U06": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。",
-    "U07": "正式业务UI卡等待工程与第三轮已接受设计基线；当前D01独立UI样机不冒充本卡通过。"
+    "U01": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U02": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U03": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U04": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U05": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U06": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "U07": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
+    "Q01": "等待真实陌生执行者；需要并行子代理时先获得用户授权。本试验不阻塞 F02 或业务开发。",
+    "U08": "正式账号界面须按 D02、身份及三端依赖拆成不超过 3 人日的执行卡，证据通过后由 Lead 移除暂缓。"
   },
   "done_checks": {
     "scope": {

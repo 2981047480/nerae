@@ -1,0 +1,194 @@
+[
+  {
+    "name": "record-set-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "record-after-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "record-incomplete-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 218
+  },
+  {
+    "name": "record-saved-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "record-set-320",
+    "clientWidth": 305,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 740,
+    "innerWidth": 320,
+    "scrollWidth": 305,
+    "scrollY": 0
+  },
+  {
+    "name": "record-set-large-text",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "record-set-large-text-fields",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 468.5
+  },
+  {
+    "name": "today-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "今天"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "today-desktop",
+    "clientWidth": 1265,
+    "dpr": 2,
+    "headings": [
+      "今天"
+    ],
+    "innerHeight": 720,
+    "innerWidth": 1280,
+    "scrollWidth": 1265,
+    "scrollY": 0
+  },
+  {
+    "name": "explore-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "发现"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "plan-detail-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢拉力与划船"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "records-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "记录"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "messages-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "消息"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "coach-review-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "力量基础 · 第 4 周"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "coach-todo-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "待办"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0
+  },
+  {
+    "name": "record-after-desktop",
+    "clientWidth": 1265,
+    "dpr": 2,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 720,
+    "innerWidth": 1280,
+    "scrollWidth": 1265,
+    "scrollY": 0
+  }
+]

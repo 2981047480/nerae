@@ -1,0 +1,300 @@
+[
+  {
+    "name": "coach-desktop",
+    "checked": 8,
+    "duplicateIds": [],
+    "heading": "顾言",
+    "images": [
+      {
+        "alt": "哑铃与器械，训练内容示意",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 1265,
+    "width": 1265
+  },
+  {
+    "name": "records-mobile",
+    "checked": 13,
+    "duplicateIds": [],
+    "heading": "看见自己的训练积累",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "records-empty-mobile",
+    "checked": 7,
+    "duplicateIds": [],
+    "heading": "看见自己的训练积累",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "today-mobile-200",
+    "checked": 18,
+    "duplicateIds": [],
+    "heading": "林澈，今天练得如何？",
+    "images": [
+      {
+        "alt": "训练者完成上肢推举，训练内容示意",
+        "loaded": true
+      },
+      {
+        "alt": "蔬菜沙拉与水果，饮食内容示意",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房用弹力带完成上肢拉力动作",
+        "loaded": false
+      },
+      {
+        "alt": "训练者在家中的瑜伽垫上完成平板支撑",
+        "loaded": false
+      },
+      {
+        "alt": "训练者在健身房地面完成腿后侧伸展",
+        "loaded": false
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "coach-detail-mobile-200",
+    "checked": 8,
+    "duplicateIds": [],
+    "heading": "顾言",
+    "images": [
+      {
+        "alt": "哑铃与器械，训练内容示意",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "coaches-mobile",
+    "checked": 7,
+    "duplicateIds": [],
+    "heading": "找到愿意一起投入的教练。",
+    "images": [
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      },
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      },
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "explore-no-result-mobile",
+    "checked": 8,
+    "duplicateIds": [],
+    "heading": "找到适合自己的练法。",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 390,
+    "width": 390
+  },
+  {
+    "name": "explore-error-mobile",
+    "checked": 6,
+    "duplicateIds": [],
+    "heading": "找到适合自己的练法。",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 390,
+    "width": 390
+  },
+  {
+    "name": "plan-detail-mobile",
+    "checked": 8,
+    "duplicateIds": [],
+    "heading": "上肢拉力与划船",
+    "images": [
+      {
+        "alt": "上肢拉力与划船内容示意图，不代表服务场地",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "explore-mobile-200",
+    "checked": 23,
+    "duplicateIds": [],
+    "heading": "找到适合自己的练法。",
+    "images": [
+      {
+        "alt": "训练者在健身房用弹力带完成上肢拉力动作",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在家中的瑜伽垫上完成平板支撑",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房地面完成腿后侧伸展",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在哑铃架前完成哑铃弯举",
+        "loaded": true
+      },
+      {
+        "alt": "器械齐全的健身房训练区域",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房完成上肢推举动作",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "recording-per-set-mobile",
+    "checked": 35,
+    "duplicateIds": [],
+    "heading": "上肢力量",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "name": "today-desktop-final",
+    "checked": 20,
+    "duplicateIds": [],
+    "heading": "林澈，今天练得如何？",
+    "images": [
+      {
+        "alt": "训练者完成上肢推举，训练内容示意",
+        "loaded": true
+      },
+      {
+        "alt": "蔬菜沙拉与水果，饮食内容示意",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房用弹力带完成上肢拉力动作",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在家中的瑜伽垫上完成平板支撑",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房地面完成腿后侧伸展",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 1265,
+    "width": 1265
+  },
+  {
+    "name": "records-desktop-final",
+    "checked": 13,
+    "duplicateIds": [],
+    "heading": "看见自己的训练积累",
+    "images": [],
+    "outside": [],
+    "scrollWidth": 1265,
+    "width": 1265
+  },
+  {
+    "name": "explore-desktop-final",
+    "checked": 23,
+    "duplicateIds": [],
+    "heading": "找到适合自己的练法。",
+    "images": [
+      {
+        "alt": "训练者在健身房用弹力带完成上肢拉力动作",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在家中的瑜伽垫上完成平板支撑",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房地面完成腿后侧伸展",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在哑铃架前完成哑铃弯举",
+        "loaded": true
+      },
+      {
+        "alt": "器械齐全的健身房训练区域",
+        "loaded": true
+      },
+      {
+        "alt": "训练者在健身房完成上肢推举动作",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 1265,
+    "width": 1265
+  },
+  {
+    "name": "coaches-desktop-final",
+    "checked": 7,
+    "duplicateIds": [],
+    "heading": "找到愿意一起投入的教练。",
+    "images": [
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      },
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      },
+      {
+        "alt": "训练内容示意，不代表教练本人或服务场地",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 1265,
+    "width": 1265
+  },
+  {
+    "name": "coach-detail-mobile-final",
+    "checked": 8,
+    "duplicateIds": [],
+    "heading": "顾言",
+    "images": [
+      {
+        "alt": "哑铃与器械，训练内容示意",
+        "loaded": true
+      }
+    ],
+    "outside": [],
+    "scrollWidth": 375,
+    "width": 375
+  }
+]

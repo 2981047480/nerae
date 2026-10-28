@@ -1,0 +1,11 @@
+{
+  "contract": "/Users/zephyr/.codex/worktrees/nerae-recording-redesign/nerae/api/openapi.yaml",
+  "sha256": "c917575ee3ac8552e954809355c8eee18e3316d6daae934bbbb93a33d071e53e",
+  "testsRun": 72,
+  "failedTestMethods": 0,
+  "failureEventsIncludingSubtests": 0,
+  "errorEventsIncludingSubtests": 0,
+  "skipped": 0,
+  "successful": true,
+  "failures": {}
+}

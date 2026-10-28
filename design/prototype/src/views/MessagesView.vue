@@ -481,7 +481,7 @@ onMounted(() => {
 }
 
 .conversation--active {
-  background: rgba(25, 47, 57, 0.035);
+  background: rgba(var(--ink-rgb), 0.035);
 }
 
 .conversation-main {
@@ -748,7 +748,7 @@ onMounted(() => {
 .message--mine .message-bubble {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
 }
 
 .message-bubble--redacted {
@@ -757,7 +757,7 @@ onMounted(() => {
   gap: 5px;
   color: var(--muted);
   font-style: normal;
-  background: rgba(25, 47, 57, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
   border-style: dashed;
 }
 
@@ -781,7 +781,7 @@ onMounted(() => {
   padding: 8px 10px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
   text-align: left;
 }
 
@@ -879,7 +879,7 @@ onMounted(() => {
   flex: none;
   border-radius: var(--radius-md);
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
 }
 
 .send-btn:disabled {
@@ -897,7 +897,7 @@ onMounted(() => {
 .composer--disabled {
   padding: var(--sp-3);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
   color: var(--muted);
   font-size: var(--text-13);
 }

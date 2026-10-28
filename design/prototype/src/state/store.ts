@@ -58,6 +58,8 @@ import {
   hasErrors,
   inputFromValues,
   suggestedInput,
+  emptyInput,
+  referenceInput,
   totalSetCount,
   nextEventTime,
   validateSetInput,
@@ -73,7 +75,6 @@ import {
   validatePlan,
 } from '../utils/plan'
 import {
-  formatClock,
   formatDateTime,
   formatTime,
   isBodyweightKind,
@@ -132,7 +133,7 @@ function createSeedState(): PersistedState {
   const first = session.exercises[0]?.sets.find((set) => set.status === 'pending')
   const firstExercise = session.exercises[0]
   if (first && firstExercise) {
-    inputs[first.id] = suggestedInput(firstExercise)
+    inputs[first.id] = emptyInput()
   }
   const extended = createExtendedSeed()
   const coachSeed = createSeedCoachState()
@@ -143,6 +144,7 @@ function createSeedState(): PersistedState {
     screen: 'today',
     stack: [],
     sessionSequence: 1,
+    recordingMode: 'after',
     selection: {
       selectedPlanId: 'plan-upper-pull',
       planDayId: '',
@@ -426,6 +428,7 @@ function loadState(): PersistedState {
       screen: isScreen(parsed.screen) ? parsed.screen : 'today',
       stack: Array.isArray(parsed.stack) ? parsed.stack.filter(isScreen) : [],
       selection: { ...base.selection, ...(parsed.selection ?? {}) },
+      recordingMode: parsed.recordingMode === 'set' ? 'set' : 'after',
       sessionSequence: typeof parsed.sessionSequence === 'number' ? parsed.sessionSequence : 1,
       auth: parsed.auth ?? base.auth,
       inputs: parsed.inputs ?? base.inputs,
@@ -532,11 +535,9 @@ function loadState(): PersistedState {
     if (merged.coachSnapshots[activeCoachId]) {
       merged.coach = merged.coachSnapshots[activeCoachId]!
     }
-    if (merged.session.rest && !merged.session.rest.paused) {
-      if (merged.session.rest.endsAt !== null && Date.now() >= merged.session.rest.endsAt) {
-        merged.session.rest = null
-      }
-    }
+    // Discard obsolete timer state while preserving recorded sets and inputs.
+    delete (merged.session as unknown as { rest?: unknown }).rest
+    merged.session.trainingDate = merged.session.trainingDate || PREVIEW_TODAY
     return merged
   } catch {
     return createSeedState()
@@ -674,31 +675,6 @@ watch(state, schedulePersist, { deep: true })
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', persistNow)
 }
-
-export const clock = reactive({ now: Date.now() })
-let ticker: number | null = null
-
-function ensureTicker(): void {
-  if (typeof window === 'undefined' || ticker !== null) return
-  ticker = window.setInterval(() => {
-    clock.now = Date.now()
-    const rest = state.session.rest
-    if (rest && !rest.paused && rest.endsAt !== null && clock.now >= rest.endsAt) {
-      state.session.rest = null
-      stopTicker()
-      schedulePersist()
-    }
-  }, 250)
-}
-
-function stopTicker(): void {
-  if (ticker !== null && typeof window !== 'undefined') {
-    window.clearInterval(ticker)
-  }
-  ticker = null
-}
-
-if (state.session.rest && !state.session.rest.paused) ensureTicker()
 
 export const prefersReducedMotion = reactive({ value: false })
 if (typeof window !== 'undefined' && window.matchMedia) {
@@ -952,7 +928,6 @@ export function closeSheet(): void {
 
 export function resetPreview(): void {
   stateGeneration += 1
-  stopTicker()
   if (typeof window !== 'undefined') {
     if (persistTimer !== null) window.clearTimeout(persistTimer)
     if (completedTimer !== null) window.clearTimeout(completedTimer)
@@ -1083,8 +1058,8 @@ export const previewScenarios = computed(() => {
   const student = [
     { key: 'today', label: '今天', meta: todayModeLabel(state.todayMode) },
     { key: 'explore', label: '发现', meta: '训练 / 饮食 / 教练' },
-    { key: 'planDetail', label: '计划详情', meta: '开始与替换' },
-    { key: 'training', label: '训练', meta: `${doneSets.value} / ${totalSets.value} 组` },
+    { key: 'planDetail', label: '计划详情', meta: '采用与替换' },
+    { key: 'training', label: '训练记录', meta: `${doneSets.value} / ${totalSets.value} 组` },
     { key: 'records', label: '记录', meta: `${recordRows.value.length} 次训练记录` },
     { key: 'messages', label: '消息', meta: `${unreadTotal.value} 条未读` },
     { key: 'incomingPlan', label: '收到计划', meta: state.student.incoming ? `版本 ${state.student.incoming.version}` : '暂无' },
@@ -1271,10 +1246,10 @@ export function todayModeLabel(mode: TodayMode): string {
   return (
     {
       scheduled: '今天已安排',
-      in_progress: '训练进行中',
+      in_progress: '记录草稿',
       complete: '今天已完成',
       rest_day: '今天休息',
-      paused: '训练已暂停',
+      paused: '稍后填写',
       cycle_end: '本周期已结束',
       unscheduled: '今天未安排',
       offline: '内容暂不可用',
@@ -1296,28 +1271,11 @@ export const currentInput = computed<SetInput | null>(() => {
   const entry = currentEntry.value
   if (!entry) return null
   if (!state.inputs[entry.set.id]) {
-    state.inputs[entry.set.id] = suggestedInput(entry.exercise)
+    state.inputs[entry.set.id] = emptyInput()
   }
   return state.inputs[entry.set.id]
 })
 export const isComplete = computed(() => state.session.status === 'complete')
-export const restRemainingMs = computed(() => {
-  const rest = state.session.rest
-  if (!rest) return 0
-  if (rest.paused) return rest.remainingMs ?? 0
-  if (rest.endsAt === null) return 0
-  return Math.max(0, rest.endsAt - clock.now)
-})
-export const restClock = computed(() => formatClock(restRemainingMs.value))
-export const restNextLabel = computed(() => {
-  const rest = state.session.rest
-  if (!rest) return ''
-  for (const exercise of state.session.exercises) {
-    const set = exercise.sets.find((item) => item.id === rest.nextSetId)
-    if (set) return `${exercise.name} · 第 ${set.index} 组`
-  }
-  return ''
-})
 export const currentExerciseProgress = computed(() => {
   const entry = currentEntry.value
   return entry ? exerciseProgress(entry.exercise) : null
@@ -1325,16 +1283,19 @@ export const currentExerciseProgress = computed(() => {
 
 export const activeConflict = computed(() => state.session.conflicts[0] ?? null)
 
-function ensureInputFor(entry: SetEntry): void {
-  if (!state.inputs[entry.set.id]) {
-    state.inputs[entry.set.id] = suggestedInput(entry.exercise)
-  }
-}
-
 export function setInputValue(setId: string, field: keyof SetInput, value: string): void {
-  const input = state.inputs[setId] ?? inputFromValues('weight', null)
+  const row = findLogSet(setId)
+  const input = state.inputs[setId] ?? (row ? logInput(row.exercise, row.set) : emptyInput())
+  if (input[field] === value) return
   input[field] = value
   state.inputs[setId] = input
+  if (row) {
+    row.set.status = 'pending'
+    row.set.completedAt = null
+  }
+  state.session.status = 'in_progress'
+  state.session.completedAt = null
+  state.todayMode = 'in_progress'
   if (Object.keys(ui.trainingErrors).length) {
     const entry = currentEntry.value
     if (entry && entry.set.id === setId) {
@@ -1343,121 +1304,166 @@ export function setInputValue(setId: string, field: keyof SetInput, value: strin
   }
 }
 
-export function adjustInput(field: 'weightKg' | 'reps' | 'seconds', delta: number): void {
-  const entry = currentEntry.value
-  if (!entry) return
-  const input = state.inputs[entry.set.id] ?? suggestedInput(entry.exercise)
-  if (field === 'weightKg') {
-    const current = Number(input.weightKg.replace(',', '.')) || 0
-    const next = Math.min(300, Math.max(1.25, Math.round((current + delta) * 100) / 100))
-    input.weightKg = String(next)
-  } else if (field === 'reps') {
-    const current = Number(input.reps) || 0
-    input.reps = String(Math.min(100, Math.max(1, Math.round(current + delta))))
-  } else {
-    const current = Number(input.seconds) || 0
-    input.seconds = String(Math.min(600, Math.max(5, Math.round(current + delta))))
-  }
-  state.inputs[entry.set.id] = input
-  ui.trainingErrors = validateSetInput(entry.exercise.kind, input)
-}
-
-function startRest(seconds: number, nextSetId: string): void {
-  const now = Date.now()
-  const durationMs = seconds * 1000
-  state.session.rest = {
-    id: `rest-${nextSetId}-${now}`,
-    durationMs,
-    endsAt: now + durationMs,
-    remainingMs: null,
-    paused: false,
-    nextSetId,
-    startedAt: now,
-  }
-  clock.now = now
-  ensureTicker()
-  schedulePersist()
-}
-
+/** Compatibility entry for existing callers; no pacing or timer side effects. */
 export function completeCurrentSet(): boolean {
   const entry = currentEntry.value
-  if (!entry || isComplete.value || state.session.rest) return false
-  if (activeConflict.value) return false
-  const input = state.inputs[entry.set.id] ?? suggestedInput(entry.exercise)
-  const errors = validateSetInput(entry.exercise.kind, input)
-  ui.trainingErrors = errors
-  if (hasErrors(errors)) return false
+  return entry ? recordLogSet(entry.set.id) : false
+}
 
-  const values = appliedValues(entry.exercise.kind, input)
-  const eventTime = nextEventTime(state.session, entry.exercise.restSeconds)
-  entry.set.status = 'done'
-  entry.set.weightKg = values.weightKg
-  entry.set.reps = values.reps
-  entry.set.seconds = values.seconds
-  entry.set.completedAt = eventTime
-  ui.justCompletedSetId = entry.set.id
-  if (completedTimer !== null) window.clearTimeout(completedTimer)
-  completedTimer = window.setTimeout(() => {
-    ui.justCompletedSetId = null
-    completedTimer = null
-  }, 900)
+export const logErrors = reactive<Record<string, import('../types').SetInputErrors>>({})
+export const logMessage = reactive({ text: '', error: false })
 
-  const next = firstPendingEntry(state.session)
-  if (next) {
-    ensureInputFor(next)
-    startRest(entry.exercise.restSeconds, next.set.id)
-  } else {
-    state.session.status = 'complete'
-    state.session.completedAt = eventTime
-    state.session.rest = null
-    stopTicker()
+function findLogSet(id: string): SetEntry | null {
+  for (const exercise of state.session.exercises) {
+    const set = exercise.sets.find(item => item.id === id)
+    if (set) return { exercise, set }
   }
-  state.preview.training = state.session.status === 'complete' ? 'complete' : 'normal'
-  state.todayMode = state.session.status === 'complete' ? 'complete' : 'in_progress'
+  return null
+}
+
+export function localToday(): string {
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+}
+
+export function logInput(exercise: import('../types').SessionExercise, set: import('../types').SessionSet): SetInput {
+  return state.inputs[set.id] ?? (set.status === 'done' ? inputFromValues(exercise.kind, set) : emptyInput())
+}
+
+export function setRecordingMode(mode: 'after' | 'set'): void {
+  state.recordingMode = mode
+  logMessage.text = ''
+  persistNow()
+}
+
+export function setTrainingDate(value: string): boolean {
+  const candidate = new Date(value + 'T12:00:00')
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(candidate.getTime()) &&
+    `${candidate.getFullYear()}-${String(candidate.getMonth()+1).padStart(2,'0')}-${String(candidate.getDate()).padStart(2,'0')}` === value && value <= localToday()
+  if (!valid) {
+    logMessage.text = '请选择今天或更早的有效训练日期。'
+    logMessage.error = true
+    return false
+  }
+  if(state.session.trainingDate !== value) {
+    state.session.status = 'in_progress'
+    state.session.completedAt = null
+    state.todayMode = 'in_progress'
+  }
+  state.session.trainingDate = value
+  const date = new Date(value + 'T12:00:00')
+  state.session.dateLabel = date.toLocaleDateString('zh-CN', {month:'long',day:'numeric',weekday:'short'})
+  logMessage.text = ''
   schedulePersist()
   return true
 }
 
-export function pauseRest(): void {
-  const rest = state.session.rest
-  if (!rest || rest.paused) return
-  rest.remainingMs = Math.max(0, (rest.endsAt ?? Date.now()) - Date.now())
-  rest.endsAt = null
-  rest.paused = true
-  stopTicker()
-  schedulePersist()
+export function usePreviousLogSet(setId: string): void {
+  const row = findLogSet(setId)
+  if (!row) return
+  state.inputs[setId] = referenceInput(row.exercise.kind, row.exercise.lastRef)
+  delete logErrors[setId]
 }
 
-export function resumeRest(): void {
-  const rest = state.session.rest
-  if (!rest || !rest.paused) return
-  const now = Date.now()
-  clock.now = now
-  rest.endsAt = now + (rest.remainingMs ?? 0)
-  rest.remainingMs = null
-  rest.paused = false
-  ensureTicker()
-  schedulePersist()
+export function recordLogSet(setId: string): boolean {
+  const row = findLogSet(setId)
+  if (!row || activeConflict.value) return false
+  const input = logInput(row.exercise, row.set)
+  const errors = validateSetInput(row.exercise.kind, input)
+  logErrors[setId] = errors
+  ui.trainingErrors = errors
+  if (hasErrors(errors)) return false
+  const values = appliedValues(row.exercise.kind,input)
+  const unchanged = row.set.status === 'done' && Object.entries(values).every(([key,value]) => row.set[key as keyof typeof values] === value)
+  Object.assign(row.set,values,{status:'done',completedAt:unchanged ? row.set.completedAt : nowIso()})
+  state.inputs[setId] = { ...input }
+  state.session.status = 'in_progress'
+  state.session.completedAt = null
+  state.todayMode = 'in_progress'
+  logMessage.text = `${row.exercise.name} · 第 ${row.set.index} 组已记录`
+  logMessage.error = false
+  const saved = persistNow()
+  if (!saved) { logMessage.text = '未能保存到本机，输入仍保留。请重试。'; logMessage.error = true }
+  return saved
 }
 
-export function extendRest(seconds = 15): void {
-  const rest = state.session.rest
-  if (!rest) return
-  const extra = seconds * 1000
-  rest.durationMs += extra
-  if (rest.paused) {
-    rest.remainingMs = (rest.remainingMs ?? 0) + extra
-  } else if (rest.endsAt !== null) {
-    rest.endsAt += extra
+export function addLogSet(exerciseId: string): string | null {
+  const exercise = state.session.exercises.find(item => item.id === exerciseId)
+  if (!exercise || exercise.sets.length >= 30) return null
+  const id = `log-set-${++state.sessionSequence}-${Date.now()}`
+  exercise.sets.push({id,index:exercise.sets.length+1,status:'pending',weightKg:null,reps:null,seconds:null,completedAt:null})
+  state.inputs[id] = emptyInput()
+  state.session.status = 'in_progress'
+  logMessage.text = ''
+  return id
+}
+
+export function removeLogSet(setId: string): void {
+  const row = findLogSet(setId)
+  if (!row) return
+  if (state.session.conflicts.some(item => item.setId === setId)) { logMessage.text = '请先处理这组的记录冲突。'; logMessage.error = true; return }
+  row.exercise.sets = row.exercise.sets.filter(item => item.id !== setId)
+  row.exercise.sets.forEach((item,index) => { item.index = index+1 })
+  delete state.inputs[setId]
+  delete logErrors[setId]
+  state.session.status = 'in_progress'
+}
+
+export function addLogExercise(name: string, kind: LoadKind = 'weight'): string | null {
+  const trimmed = name.trim()
+  if (!trimmed || trimmed.length > 60 || state.session.exercises.length >= 30) return null
+  const id = `log-exercise-${++state.sessionSequence}-${Date.now()}`
+  state.session.exercises.push({id,name:trimmed,kind,equipment:'',cue:'',restSeconds:0,
+    targetText:'按实际完成填写',lastRef:{dateLabel:'暂无可比较参考'},sets:[]})
+  addLogSet(id)
+  return id
+}
+
+export function removeLogExercise(id: string): void {
+  const exercise = state.session.exercises.find(item => item.id === id)
+  if (exercise?.sets.some(set => state.session.conflicts.some(item => item.setId === set.id))) { logMessage.text = '请先处理这个动作的记录冲突。'; logMessage.error = true; return }
+  exercise?.sets.forEach(set => { delete state.inputs[set.id]; delete logErrors[set.id] })
+  state.session.exercises = state.session.exercises.filter(item => item.id !== id)
+  state.session.status = 'in_progress'
+}
+
+export function saveTrainingLog(): boolean {
+  logMessage.text = ''
+  logMessage.error = true
+  if (activeConflict.value) { logMessage.text = '请先处理记录冲突。'; return false }
+  if (!setTrainingDate(state.session.trainingDate ?? localToday())) return false
+  const rows = state.session.exercises.flatMap(exercise => exercise.sets.map(set => ({exercise,set})))
+  const filled = rows.filter(row => Object.values(logInput(row.exercise,row.set)).some(value => value.trim()))
+  if (!filled.length) { logMessage.text = '至少填写一组实际完成的数据。'; return false }
+  let invalid = false
+  Object.keys(logErrors).forEach(key => delete logErrors[key])
+  for (const row of filled) {
+    const errors = validateSetInput(row.exercise.kind,logInput(row.exercise,row.set))
+    logErrors[row.set.id] = errors
+    if (hasErrors(errors)) invalid = true
   }
-  schedulePersist()
-}
-
-export function skipRest(): void {
-  if (!state.session.rest) return
-  state.session.rest = null
-  stopTicker()
-  schedulePersist()
+  if (invalid) { logMessage.text = '还有填写不完整或需要核对的组，请检查标红位置。'; return false }
+  const recordedAt = nowIso()
+  for (const row of rows) {
+    if (!filled.includes(row)) {
+      Object.assign(row.set,{status:'pending',weightKg:null,reps:null,seconds:null,completedAt:null})
+      continue
+    }
+    const values = appliedValues(row.exercise.kind,logInput(row.exercise,row.set))
+    const unchanged = row.set.status === 'done' && Object.entries(values).every(([key,value]) => row.set[key as keyof typeof values] === value)
+    Object.assign(row.set,values,{status:'done',completedAt:unchanged ? row.set.completedAt : recordedAt})
+  }
+  state.session.status = 'complete'
+  state.session.completedAt = recordedAt
+  state.todayMode = 'complete'
+  state.preview.training = 'complete'
+  const record = sessionRecord()!
+  state.records = [record, ...state.records.filter(item => item.id !== record.id)]
+  const saved = persistNow()
+  logMessage.error = !saved
+  logMessage.text = saved ? `已保存 ${filled.length} 组，空白组未计入。` : '未能保存到本机，输入仍在当前页面。请重试保存。'
+  return saved
 }
 
 export function resumePausedTraining(): void {
@@ -1467,10 +1473,9 @@ export function resumePausedTraining(): void {
 }
 
 export function startScheduledTraining(): void {
-  resetSessionToPending(state.session)
+  // Opening a log never resets an existing draft.
   state.session.status = 'in_progress'
   state.session.completedAt = null
-  state.session.rest = null
   state.todayMode = 'in_progress'
   state.preview.today = 'in_progress'
   enterTraining()
@@ -1493,8 +1498,6 @@ export function resolveSetConflict(choice: 'local' | 'remote'): boolean {
   const exercise = state.session.exercises.find((item) => item.id === found!.exerciseId)
   const set = exercise?.sets.find((item) => item.id === conflict.setId)
   if (!exercise || !set) return false
-  set.status = 'done'
-  set.completedAt = nextEventTime(state.session, exercise.restSeconds)
   if (choice === 'remote') {
     const numbers = conflict.remoteText.match(/(\d+(?:\.\d+)?)/g) ?? []
     if (isDurationKind(exercise.kind)) {
@@ -1511,17 +1514,30 @@ export function resolveSetConflict(choice: 'local' | 'remote'): boolean {
       set.seconds = null
     }
   } else {
-    const input = state.inputs[set.id] ?? suggestedInput(exercise)
+    const input = logInput(exercise,set)
+    const errors = validateSetInput(exercise.kind,input)
+    if(hasErrors(errors)) {
+      logErrors[set.id] = errors
+      logMessage.text = '本机记录尚未填完整，请补齐或采用另一份记录。'
+      logMessage.error = true
+      return false
+    }
     const values = appliedValues(exercise.kind, input)
     set.weightKg = values.weightKg
     set.reps = values.reps
     set.seconds = values.seconds
   }
+  set.status = 'done'
+  set.completedAt = nowIso()
+  state.inputs[set.id] = inputFromValues(exercise.kind,set)
+  delete logErrors[set.id]
+  logMessage.text = ''
   state.session.conflicts = state.session.conflicts.filter((item) => item.setId !== conflict.setId)
+  state.session.status = 'in_progress'
+  state.session.completedAt = null
   state.preview.training = 'normal'
   ui.trainingErrors = {}
-  schedulePersist()
-  return true
+  return persistNow()
 }
 
 function resetSessionToPending(session: PersistedState['session']): void {
@@ -1535,7 +1551,6 @@ function resetSessionToPending(session: PersistedState['session']): void {
       delete state.inputs[set.id]
     }
   }
-  session.rest = null
   session.conflicts = []
 }
 
@@ -1553,7 +1568,6 @@ function completeAllForPreview(): void {
   }
   session.status = 'complete'
   session.completedAt = session.exercises[session.exercises.length - 1]?.sets.at(-1)?.completedAt ?? nowIso()
-  session.rest = null
   state.session = session
   state.inputs = {}
   ui.trainingErrors = {}
@@ -1602,12 +1616,14 @@ function sessionRecord(): import('../types').TrainingRecord | null {
   if (state.session.status !== 'complete') return null
   return {
     id: state.session.id,
-    date: PREVIEW_TODAY,
-    dateLabel: PREVIEW_DATE_LABEL,
+    date: state.session.trainingDate ?? PREVIEW_TODAY,
+    dateLabel: state.session.dateLabel,
     dayTitle: state.session.dayTitle,
     planVersion: state.session.planVersion,
     completedAt: state.session.completedAt ?? nowIso(),
-    lateRecorded: false,
+    lateRecorded: (state.session.trainingDate ?? PREVIEW_TODAY) < localToday(),
+    partial: doneSetCount(state.session) < totalSetCount(state.session),
+    partialNote: doneSetCount(state.session) < totalSetCount(state.session) ? '仅记录实际完成的组，空白组未计入。' : undefined,
     sets: state.session.exercises.flatMap((exercise) =>
       exercise.sets
         .filter((set) => set.status === 'done' && set.completedAt)
@@ -2183,22 +2199,30 @@ function archiveSessionBeforeReplace(): void {
       })),
   )
   if (!done.length) return
-  const id = `archived-${session.id}`
-  if (state.records.some((record) => record.id === id)) return
+  const id = session.id
+  const previous = state.records.find(record => record.id === id)
+  // A pending edit is a draft. Replacing the plan must retain its last saved
+  // value, while incorporating any newly confirmed sets from per-set logging.
+  const archivedSets = previous && session.status !== 'complete'
+    ? [...new Map([...previous.sets,...done].map(set=>[set.id,set])).values()]
+    : done
+  state.records = state.records.filter(record => record.id !== id && record.id !== `archived-${id}`)
   const complete = session.status === 'complete'
+  const partial = archivedSets.length < totalSetCount(session)
+  const archiveDate = !complete && previous ? previous.date : session.trainingDate ?? PREVIEW_TODAY
   state.records.push({
     id,
-    date: PREVIEW_TODAY,
-    dateLabel: PREVIEW_DATE_LABEL,
+    date: archiveDate,
+    dateLabel: !complete && previous ? previous.dateLabel : session.dateLabel,
     dayTitle: session.dayTitle,
     planVersion: session.planVersion,
     completedAt: session.completedAt ?? done[done.length - 1]!.completedAt,
-    lateRecorded: false,
-    partial: !complete,
+    lateRecorded: archiveDate < localToday(),
+    partial,
     partialNote: complete
-      ? undefined
-      : `开始其他安排时结束 · 已记录 ${done.length} / ${totalSetCount(session)} 组，历史保留`,
-    sets: done,
+      ? (partial ? '仅记录实际完成的组，空白组未计入。' : undefined)
+      : `开始其他安排时结束 · 已记录 ${archivedSets.length} / ${totalSetCount(session)} 组，历史保留`,
+    sets: archivedSets,
   })
 }
 
@@ -2233,7 +2257,6 @@ function startPlanNow(item: NonNullable<typeof selectedPlanItem.value>): StartPl
     return 'duplicate'
   }
   archiveSessionBeforeReplace()
-  stopTicker()
   state.sessionSequence += 1
   const sessionId = `session-${item.id}-${day.id}-20261024-${state.sessionSequence}`
   const exercises = day.exercises.map((exercise) => {
@@ -2273,14 +2296,14 @@ function startPlanNow(item: NonNullable<typeof selectedPlanItem.value>): StartPl
     status: 'in_progress',
     completedAt: null,
     exercises,
-    rest: null,
+    trainingDate: localToday(),
     conflicts: [],
   }
   state.session = session
   state.inputs = {}
   ui.trainingErrors = {}
   const first = exercises[0]
-  if (first?.sets[0]) state.inputs[first.sets[0].id] = suggestedInput(first)
+  if (first?.sets[0]) state.inputs[first.sets[0].id] = emptyInput()
   state.student.plan = {
     title: item.title,
     cycle: '本周',
@@ -2292,7 +2315,7 @@ function startPlanNow(item: NonNullable<typeof selectedPlanItem.value>): StartPl
   state.preview.today = 'in_progress'
   ui.sheet = null
   ui.confirmHash = null
-  noteSaved('已开始这次训练，并保存到我的计划。')
+  noteSaved('已准备记录，并保存到我的计划。')
   enterTraining()
   return 'started'
 }
@@ -4086,7 +4109,6 @@ export function reopenDietReport(): void {
 function applyTodayMode(mode: TodayMode): void {
   state.preview.today = mode
   state.todayMode = mode
-  stopTicker()
   if (mode === 'complete') {
     completeAllForPreview()
     return
@@ -4106,12 +4128,12 @@ function applyTodayMode(mode: TodayMode): void {
     state.session = session
     state.inputs = {}
     const first = session.exercises[0]?.sets[0]
-    if (first) state.inputs[first.id] = suggestedInput(session.exercises[0]!)
+    if (first) state.inputs[first.id] = emptyInput()
   } else {
     state.session = session
     state.inputs = {}
     const first = session.exercises[0]?.sets.find((set) => set.status === 'pending')
-    if (first) state.inputs[first.id] = suggestedInput(session.exercises[0]!)
+    if (first) state.inputs[first.id] = emptyInput()
   }
 }
 
@@ -4482,8 +4504,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     setRecordsExercise,
     setInputValue,
     completeCurrentSet,
-    pauseRest,
-    resumeRest,
+    setRecordingMode,
+    recordLogSet,
+    saveTrainingLog,
+    addLogExercise,
+    addLogSet,
     recordsFeedback,
     planWorkFor,
     openMessageRef,

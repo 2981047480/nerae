@@ -4,7 +4,7 @@
 
 先读 `docs/CURRENT_STATE.md`，再用 `docs/tasks/tasks.json` 的任务 ID 和 inputs 定界。若存在 `RETRO.md`，只读相关条目。用户最新指令优先于项目默认流程。项目当前处于契约修订与开发规划阶段，不把未来目录当作已存在应用。
 
-真源：PRD 定义产品边界；APP_FLOW 定义用户任务/日期/恢复规则；OpenAPI 定义 wire contract；ER 定义持久化和事务不变量；ENGINEERING_STANDARDS 定义工程规则、DEFINITION_OF_DONE 定义接受证据；UI_SPEC 指向当前第三轮规格，docs/design/round-03/ 是逐项设计决定与执行文稿，具体视觉接受以实际证据为准，旧稿不作基线；DECISION_LOG 记录取舍；tasks.json 定义依赖与写入范围。冲突先报告并收敛，不自行任选一份。旧审核、旧 diagrams、市场资料是历史证据，不覆盖当前规格。
+真源：PRD 定义产品边界；APP_FLOW 定义用户任务/日期/恢复规则；OpenAPI 定义 wire contract；ER 定义持久化和事务不变量；ENGINEERING_STANDARDS 定义工程规则、DEFINITION_OF_DONE 定义接受证据；UI_SPEC 指向当前第五轮价值呈现，docs/design/round-05/ 是当前范围与验证，round-04/ 的两种记录语义继续生效，其余旧视觉仅为历史，具体视觉接受以实际证据为准，旧稿不作基线；DECISION_LOG 记录取舍；tasks.json 定义依赖与写入范围。冲突先报告并收敛，不自行任选一份。旧审核、旧 diagrams、市场资料是历史证据，不覆盖当前规格。
 
 ## 产品与实现边界
 
@@ -16,7 +16,7 @@
 
 ## 委派与集成
 
-仅在用户授权并行执行时派发 agent。Lead 负责范围、最终产品/架构/安全/视觉判断、依赖、集成和验收；原生子代理只接有边界的任务包。当前规划没有自动启动开发。
+仅在用户授权并行执行时派发 agent。用户已授权本目标使用 GPT-6 Luna 子代理；Lead 负责范围、最终产品/架构/安全/视觉判断、依赖、集成和验收，原生子代理只接有边界的任务包。
 
 - `api/openapi.yaml`、生成配置、根依赖锁、共享路由/导航、设计 token 和全局迁移顺序为共享写入点，必须单 owner 串行。模块需要改共享接口时先交变更请求，再追加依赖明确的合同任务。
 - 一任务一隔离 worktree，先确认真实 Git 根与基线；业务工程前无 Git 时由 Lead 本地先完成 F01-01，不能假称已隔离。本次独立 UI 样机由 Lead 先建立最小 Git 基线与忽略保护后隔离；这不代表 F01-01 的完整工具链已接受，不启动数据库或业务工程。不同 worktree 使用不同端口、测试数据库、对象前缀和 Redis 命名空间。
@@ -24,7 +24,7 @@
 - 任务开始登记真实 owner/model/reasoning/base revision；不得声称使用不可用的模型。优先策略在 tasks.json，实际路由只用原生工具。
 - agent 返回 status、提交/文件、命令退出码、证据、风险和需决策项；独立 review 后才 accepted。Lead 串行集成并在合并后的同一版本重测接缝。
 
-工作包只用于路线图与最终接受；只有≤3有效人日的task/integration执行卡可派发。当前用户已明确授权第三轮逐项推导、详尽文稿与 UI 实现：D01 按小卡推进，执行者限定为现有 DeepSeek Harness / OpenCode Go / deepseek-v4.1-flash，Lead 负责判断与验收，不引入新 Router 或自动换模型；U01–U07 正式业务界面卡仍等待工程与设计基线。本轮设计推理不得进入产品。首批执行卡由ready计算，不将未细拆工作包直接分给agent。每小批有独立集成卡，七项完成清单、同一接受提交证据、真实review模式通过后才能accepted。详见docs/DEFINITION_OF_DONE.md。
+工作包只用于路线图与最终接受；只有≤3有效人日的task/integration执行卡可派发。用户已授权 Lead 直接实现并继续第五轮设计，覆盖第三轮的指定 DeepSeek 执行者限制；也允许本目标使用 GPT-6 Luna 子代理，实际委派须遵守写域和工作树规则。当前 R05 范围见 docs/design/round-05/BRIEF.md；保留 R04 默认训练后记录、可切换每组完成后记录，两模式共享记录，禁止训练播放器及任何训练/休息倒计时。U01–U08 正式业务界面卡仍等待工程与设计基线。本轮设计推理不得进入产品。首批执行卡由ready计算，不将未细拆工作包直接分给agent。每小批有独立集成卡，七项完成清单、同一接受提交证据、真实review模式通过后才能accepted。详见docs/DEFINITION_OF_DONE.md。
 
 ## 验证与上下文预算
 

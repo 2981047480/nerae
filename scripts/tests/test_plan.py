@@ -74,7 +74,7 @@ class PlanTests(unittest.TestCase):
 
     def test_ready_only_root_tasks_and_waves_cover_every_task_once(self):
         tasks={t['id']:t for t in self.doc['tasks']}
-        self.assertEqual(plan.ready_tasks(tasks, self.doc['deferred_packages']), ['D01-01','F01-01','L01-01'])
+        self.assertEqual(plan.ready_tasks(tasks, self.doc['deferred_packages']), ['D01-01','F01-01','K01-01','L01-01'])
         ordered=[k for group in plan.waves(tasks) for k in group]
         self.assertEqual(len(ordered),len(set(ordered)))
         for key,t in tasks.items():
@@ -130,12 +130,69 @@ class PlanTests(unittest.TestCase):
 
     def test_deferred_work_is_never_ready(self):
         tasks={t['id']:t for t in self.doc['tasks']}
-        self.assertEqual(plan.ready_tasks(tasks, {'F01':'test hold'}),['D01-01','L01-01'])
+        self.assertEqual(plan.ready_tasks(tasks, {'F01':'test hold'}),['D01-01','K01-01','L01-01'])
 
     def test_blocked_work_package_stops_its_ready_children(self):
         self.task('F01')['status']='blocked'
         tasks={t['id']:t for t in self.doc['tasks']}
-        self.assertEqual(plan.ready_tasks(tasks,self.doc['deferred_packages']),['D01-01','L01-01'])
+        self.assertEqual(plan.ready_tasks(tasks,self.doc['deferred_packages']),['D01-01','K01-01','L01-01'])
+
+    def test_contract_and_platform_gates_hold_downstream_work(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        # Even if foundation is ready, contract generation stays blocked until
+        # the record, identity and deletion contract package is accepted.
+        tasks['F01']['status']='accepted'
+        self.assertNotIn('F02-01', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        tasks['K01']['status']='accepted'
+        self.assertIn('F02-01', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        # Platform and current design must precede any future U01 execution.
+        self.assertTrue({'P02-01','D02'} <= plan.ancestors(tasks,'U01'))
+        self.assertIn('P02-01', plan.ancestors(tasks,'V01'))
+
+    def test_installed_app_builds_gate_acceptance_and_m1(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        builds={'P02-02','P02-03'}
+        self.assertTrue(builds <= set(tasks['U01']['acceptance_requires']))
+        self.assertTrue(builds | {'U01','U02','I-A02'} <= set(tasks['I-A04']['depends_on']))
+        for build in builds:
+            self.assertIn('P02-01',plan.ancestors(tasks,build))
+            self.assertNotIn('V03',plan.ancestors(tasks,build))
+
+    def test_external_requirements_block_only_the_relevant_acceptance(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        combined={k:dict(t,depends_on=list(set(t['depends_on']) | set(t.get('acceptance_requires',[])))) for k,t in tasks.items()}
+        self.assertIn('L01-04',plan.ancestors(combined,'A05'))
+        self.assertIn('L01-03',plan.ancestors(combined,'O03'))
+        self.assertNotIn('L01-02',plan.ancestors(combined,'A05'))
+        self.assertNotIn('L01-02',plan.ancestors(combined,'O03'))
+        self.assertTrue({'L01-02','U08','O03'} <= plan.ancestors(combined,'V02'))
+
+    def test_onboarding_is_independent_of_foundation_delivery(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        self.assertFalse(tasks['F02-01'].get('onboarding_probe'))
+        self.assertTrue(tasks['Q01-01'].get('onboarding_probe'))
+        self.assertIn('Q01',self.doc['deferred_packages'])
+        self.assertNotIn('Q01-01',plan.ancestors(tasks,'F02'))
+        tasks['F02-01']['status']='accepted'
+        self.assertNotIn('Q01-01',plan.ready_tasks(tasks,self.doc['deferred_packages']))
+
+    def test_ui_tasks_receive_current_design_and_deletion_has_owner(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        design={'docs/UI_SPEC.md','docs/design/round-05/BRIEF.md','docs/design/round-05/app-storyboards/README.md'}
+        for number in range(1,9):
+            task=tasks[f'U{number:02d}']
+            self.assertTrue(design <= set(task['inputs']),task['id'])
+        self.assertIn('apps/client/src/features/account/',tasks['U08']['write_allowlist'])
+        self.assertIn('O03',tasks['U08']['acceptance_requires'])
+        self.assertIn('L01-01',tasks['K01-02']['depends_on'])
+
+    def test_m1_estimate_matches_distinct_planned_work(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        ids=['F01','K01','D02','F02','P02-01','P02-02','P02-03','L01-01',
+             'A01','A02','I-A01','A03','A04','S01-A','I-A02','U01','U02','I-A04']
+        self.assertEqual(len(ids),len(set(ids)))
+        self.assertEqual([sum(tasks[k]['effort_days'][i] for k in ids) for i in (0,1)],[49,95])
+        self.assertIn('**49–95**',(ROOT/'docs/IMPLEMENTATION_PLAN.md').read_text())
 
     def test_partial_package_cannot_be_accepted(self):
         self.task('I01')['status']='accepted'
