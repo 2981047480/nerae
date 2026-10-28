@@ -1,6 +1,6 @@
 # F01-02 · Go 进程与健康检查
 
-状态：partial；服务骨架及本地测试已完成，尚待集成提交、独立复核和任务验收。Lead：`gpt-6.1-terra` / `max`；只读源码复核由 `gpt-6-luna` / `medium` 完成。基线 `c885515b58961e8738df2d63d5d6387d88e4b8eb`；任务状态由 Lead 在集成工作树登记。
+状态：success；服务进程骨架与本卡范围的测试已完成，任务接受状态和版本以 `docs/tasks/tasks.json` 为准。真实健康数据库、实际后台任务和业务仍待后续验证。Lead：`gpt-6.1-terra` / `max`；只读源码复核由 `gpt-6-luna` / `medium` 完成。基线 `c885515b58961e8738df2d63d5d6387d88e4b8eb`；任务状态由 Lead 在集成工作树登记。
 
 交付：Go/Gin API 进程、显式环境配置及错误脱敏；liveness 不依赖外部服务，readiness 实际 ping MySQL 与 Redis，失败/超时返回 503；SIGTERM 下关闭 HTTP 和客户端。worker 能校验配置并等待信号，但尚无 job handler、不会消费队列，不能当成真实后台任务能力。新增配置、健康检查单元测试和本机进程 smoke 脚本。
 
@@ -15,3 +15,5 @@
 ## 未完成
 
 本机没有可用的真实 MySQL/Redis 环境，尚未验证健康依赖时 readiness 200、数据库权限、迁移或实际队列；后续 F01-04 等卡必须使用隔离环境执行。API 没有业务接口或登录，worker 未处理任何任务；这不是正式应用、HTTP 业务联调、真机或上线验收。此报告的工作树证据仍须在集成提交上复跑并由 Lead 审阅。
+
+集成版本 `ffa7398485281b68b8b544600549cef5b5db888b` 的干净归档已重跑 Go build、race 测试、vet、API/worker 构建和本机进程 smoke；随后追加的请求进行中退出测试也已通过。正式接受提交须包含此记录与关闭测试，并在同版复跑。
