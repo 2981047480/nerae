@@ -17,3 +17,9 @@
 | `git check-ignore -v node_modules/ .review/ api/tests/.venv-py311/ .env.local` | 原 F01 探针报告记录退出 0，四项被忽略；现有 `.gitignore` 的更宽 `node_modules` 规则是预存变化，不能当作本卡新改动 |
 
 依赖锁和实际安装来自本机版本及临时缓存。uni-app 探针使用 `--ignore-scripts`，提示 Vue i18n 和 phin 依赖弃用，尚未完成依赖安全审计；Go 发行包当前仅安装在临时目录。F01-02 至 F01-05、F01-I 及后续三端真机/上线门槛仍须独立完成，不能由本报告放行。
+
+## 补充核对与操作偏差
+
+工程标准要求同时锁定生成器和测试镜像。已补入 `generator-probe/` 的 npm 与 Go 工具锁及实际离线生成/编译检查；`image-lock.json` 记录官方 MySQL 8.0.46 / Redis 7.4.12 多架构清单摘要。镜像尚未拉取或运行，真实双工作区数据库/迁移验证仍属 F01-04。F02 仍负责正式生成配置、依赖锁、全部消费者和真实项目合同验证。
+
+独立复核锁漂移时曾把一次 `pnpm install --offline --frozen-lockfile --ignore-scripts` 的工作目录误设为基础工程根，输出为 `Already up to date`；Git 跟踪文件状态仍干净，但执行前未记录被忽略的 `node_modules` 状态，无法证明它未被触碰。随后复核者在独立临时目录正确重跑漂移负测，得到预期的 `ERR_PNPM_OUTDATED_LOCKFILE`。没有删除或清理该工作树的缓存。

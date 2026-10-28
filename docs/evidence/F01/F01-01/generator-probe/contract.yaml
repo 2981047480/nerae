@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Toolchain Probe
+  version: 0.0.0
+paths:
+  /probe:
+    get:
+      operationId: getProbe
+      responses:
+        '200':
+          description: Probe response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probe'
+components:
+  schemas:
+    Probe:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]

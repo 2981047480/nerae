@@ -1,0 +1,47 @@
+{
+  "verified_at_utc": "2026-10-28T08:34:06.096400+00:00",
+  "source": "Docker Registry v2 official library image manifests",
+  "runtime_verified": false,
+  "images": [
+    {
+      "repository": "docker.io/library/mysql",
+      "version_tag": "8.0.46",
+      "index_digest": "sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b",
+      "floating_tag_observed": "8.0",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:62fb722c78b24245ddff1796a0fcee4a49cc5b87e0aaaf20c92d1da9e0a2497b",
+          "version": "8.0.46"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:213bbfaf699693a40a20a12bb4342d2589a15a3dc7153db698eaed252a92458e",
+          "version": "8.0.46"
+        }
+      ]
+    },
+    {
+      "repository": "docker.io/library/redis",
+      "version_tag": "7.4.12",
+      "index_digest": "sha256:b6b6e3dc0c0952737748e55d5d885272840c7e42ba41ab1d5489f693419882f5",
+      "floating_tag_observed": "7.4",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:a7aad82554197a54c653388bfded882a59d6b4a02468484bc31bae6772dcc42c",
+          "version": "7.4.12"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:70906c24c6bcde0712573cce29bb3d30331fec36aaefd503bc570c18ba431c26",
+          "version": "7.4.12"
+        }
+      ]
+    }
+  ]
+}
