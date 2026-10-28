@@ -91,7 +91,8 @@
         "docs/evidence/F01/F01-05/",
         "docs/evidence/F01/F01-I/",
         "apps/client/src/pages/index/index.vue",
-        "apps/client/src/env.d.ts"
+        "apps/client/src/env.d.ts",
+        "apps/client/index.html"
       ],
       "inputs": [
         "AGENTS.md",
@@ -2681,7 +2682,8 @@
         "docs/evidence/F01/F01-03/",
         "pnpm-lock.yaml",
         "apps/client/src/pages/index/index.vue",
-        "apps/client/src/env.d.ts"
+        "apps/client/src/env.d.ts",
+        "apps/client/index.html"
       ],
       "inputs": [
         "AGENTS.md",
