@@ -170,7 +170,9 @@
         "apps/api/go.mod",
         "apps/api/go.sum",
         "pnpm-lock.yaml",
-        "api/oapi-codegen.yaml"
+        "api/oapi-codegen.yaml",
+        "api/templates/",
+        "apps/api/internal/contractnullable/"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3126,7 +3128,9 @@
       "owner": "Project Lead",
       "write_allowlist": [
         "api/oapi-codegen.yaml",
-        "docs/evidence/F02/F02-00/"
+        "docs/evidence/F02/F02-00/",
+        "api/templates/",
+        "apps/api/internal/contractnullable/"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3138,19 +3142,21 @@
         "api/tests/codegen/recording_types_test.go",
         "api/tests/codegen/schema_validation_test.go"
       ],
-      "deliverables": "Lead 串行审核共享 Go 生成配置，保留有业务含义的可选 nullable 三态；盘点全部 nullable 字段并用当前合同快照验证生成行为。",
+      "deliverables": "Lead 串行审核共享 Go 生成配置，保留有业务含义的可选 nullable 三态；盘点全部 nullable 字段并用当前合同快照验证生成行为。 对必填 nullable 未初始化的编码设置失败保护。",
       "acceptance": [
         "正式配置启用经评估的 nullable 语义，生成不改变 OpenAPI 及 operationId",
         "训练结束字段的省略/null/具体值解码和精确编码有真实生成模型测试；必填 nullable 的字段缺失由 schema 校验拒绝",
         "盘点所有组件及内联 nullable 字段与潜在消费者；合同最终接受后重新生成复验",
-        "K01 尚未接受时本卡保持 active，不能把当前快照测试当作最终接受或运行时 HTTP 证据"
+        "K01 尚未接受时本卡保持 active，不能把当前快照测试当作最终接受或运行时 HTTP 证据",
+        "必填 nullable 未设置时不能被编码成 0/空字符串等伪造值；可选字段保留 omit/null/value；readOnly 必填字段由后续响应 schema 校验兜底。"
       ],
       "verification_commands": [
         "以锁定生成器和正式配置生成临时 Go 模型并运行编解码/Schema 正反例",
         "python3 scripts/plan.py check"
       ],
       "risks": [
-        "nullable 配置会影响身份、分页、预约等多模块生成类型；生成器输出不代替请求与响应的运行时校验。"
+        "nullable 配置会影响身份、分页、预约等多模块生成类型；生成器输出不代替请求与响应的运行时校验。",
+        "上游 nullable 默认将必填字段的未指定状态编码为类型零值；响应必须防止伪造值并验证必填 readOnly 字段。"
       ],
       "effort_days": [
         0.5,
@@ -3225,7 +3231,8 @@
         "需要改共享契约或生成配置时提交 Lead 变更请求，不私自扩大写域",
         "从任务列出的输入和锁定环境重跑生成及现有合同检查，登记真实命令与退出码",
         "使用正式配置对训练记录生成可构造的 TS/Go 类型；编译真实生成物并接入记录生成探针，不能只比较文件是否产生",
-        "Go 对有不同业务含义的省略、显式 null 和具体值保持三态；评估所有受影响 nullable 字段，并由 Lead 串行审核共享生成配置与依赖锁"
+        "Go 对有不同业务含义的省略、显式 null 和具体值保持三态；评估所有受影响 nullable 字段，并由 Lead 串行审核共享生成配置与依赖锁",
+        "正式生成模型对必填 nullable 未设置拒绝编码；记录可选字段仍保留省略、null 和具体值。"
       ],
       "verification_commands": [
         "make contract-check",
@@ -3292,7 +3299,8 @@
         "400/401/403/404/409/412/422/429/503采用约定错误映射，保留requestId而不泄漏上游原文",
         "错误参数、额外字段和伪造身份有负例；schema有效不被当作对象授权完成",
         "实现不依赖虚构业务端点或把占位JWT当真认证",
-        "实际请求/响应校验执行 schema 组合约束，拒绝伪造只读名称和非法度量；响应缺失必填服务端名称或时间不能被类型零值掩盖"
+        "实际请求/响应校验执行 schema 组合约束，拒绝伪造只读名称和非法度量；响应缺失必填服务端名称或时间不能被类型零值掩盖",
+        "响应编码及 schema 校验共同拒绝未指定的必填 nullable 值与遗漏的必填 readOnly 字段；不能把生成模型的零值当作用户或业务事实。"
       ],
       "verification_commands": [
         "make test MODULE=middleware",
