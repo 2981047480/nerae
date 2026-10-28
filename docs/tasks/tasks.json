@@ -89,7 +89,9 @@
         "docs/evidence/F01/F01-04/",
         "docs/engineering/ci-gates.md",
         "docs/evidence/F01/F01-05/",
-        "docs/evidence/F01/F01-I/"
+        "docs/evidence/F01/F01-I/",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/env.d.ts"
       ],
       "inputs": [
         "AGENTS.md",
@@ -2677,7 +2679,9 @@
         "apps/admin/src/main.ts",
         "apps/admin/README.md",
         "docs/evidence/F01/F01-03/",
-        "pnpm-lock.yaml"
+        "pnpm-lock.yaml",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/env.d.ts"
       ],
       "inputs": [
         "AGENTS.md",
@@ -2696,7 +2700,8 @@
         "记录 admin 实际 typecheck/build 命令及退出码"
       ],
       "risks": [
-        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。",
+        "uni-app 必须有独立页面入口；Vue SFC 严格检查依赖 vue-tsc，兼容组合和共享锁须由 Lead 验证。"
       ],
       "effort_days": [
         2,
