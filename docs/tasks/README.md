@@ -51,7 +51,7 @@
 | F02-02 | 统一错误、请求校验与身份上下文边界 | task / F02 | F02-01 | — | 1–2 | planned |
 | F02-03 | 持久化幂等、并发与失败恢复适配器 | task / F02 | F02-02 | — | 1–3 | planned |
 | F02-I | transport接线与CI门禁小批集成 | integration / F02 | F02-03 | — | 0.5–1.5 | planned |
-| L01-01 | 外部材料缺口与责任清单 | task / L01 | — | — | 0.5–1 | active |
+| L01-01 | 外部材料缺口与责任清单 | task / L01 | — | — | 0.5–1 | accepted |
 | L01-02 | 主体、类目、手续和允许联系渠道取证 | task / L01 | L01-01 | — | 1.5–3 | planned |
 | L01-03 | 分类留存、注销和恢复依据 | task / L01 | L01-01 | — | 1–2 | planned |
 | L01-I | 外部证据合并复核与受控放行配置 | integration / L01 | L01-02, L01-03, L01-04 | — | 0.5–1 | planned |
@@ -73,7 +73,7 @@
 | K01-I | 训练、身份与注销合同复核 | integration / K01 | K01-01, K01-02, K01-03 | — | 0.5–1.5 | planned |
 | D02 | 第五轮三端设计实施规格 | work_package / complete | D02-01, D02-I | — | 2–3.5 | planned |
 | D02-01 | 整理 R05 三端组件与状态规格 | task / D02 | D01 | — | 1.5–2.5 | accepted |
-| D02-I | R05 设计实施规格复核 | integration / D02 | D02-01 | — | 0.5–1 | planned |
+| D02-I | R05 设计实施规格复核 | integration / D02 | D02-01 | — | 0.5–1 | active |
 | P02-01 | App 编译、打包路径与平台缺口探针 | task / P02 | F01-03 | — | 1–3 | accepted |
 | Q01 | 陌生执行者任务包上手验证 | work_package / complete / 暂缓 | Q01-01 | — | 0.5–1 | planned |
 | Q01-01 | F02-01 任务包冷启动试验 | task / Q01 | F02-01 | — | 0.5–1 | planned |

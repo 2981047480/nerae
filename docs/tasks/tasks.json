@@ -3348,7 +3348,7 @@
       "id": "L01-01",
       "title": "外部材料缺口与责任清单",
       "batch": "external",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [],
       "role": "security-reviewer",
       "model_policy": "judgment",
@@ -3390,7 +3390,18 @@
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/L01/L01-01/report.md",
+          "sha256": "72896e48a7ee0e08131a20469da4075b23b03fe7ea1111e55cc1094be57dedaf",
+          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+        },
+        {
+          "path": "docs/evidence/L01/L01-01/continuation.md",
+          "sha256": "14b16300b7ed8551349c7f35fb7e7e64ab904646ab24ddc6bce231e24f210c62",
+          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -3399,7 +3410,54 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+      "accepted_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
+      "reviewed_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
+      "review_mode": "independent",
+      "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
+      "review_summary": "独立复核同一集成提交，确认三端主体/渠道/身份与六类留存、AI 条款和责任角色均登记为待取得证据；该盘点不代表任何平台或法律批准。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/L01/L01-01/report.md",
+            "docs/evidence/L01/L01-01/continuation.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/L01/L01-01/report.md",
+            "docs/evidence/L01/L01-01/continuation.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡只盘点外部材料和责任，不修改业务 wire contract。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "本卡未处理个人资料或实现访问控制；隐私规则与真实撤权负例由 L01-03、A02/O03 和集成卡验证。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡未实现注销、数据删除或备份恢复；分类依据和恢复演练仍由 L01-03/O03 验收。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/L01/L01-01/report.md",
+            "docs/evidence/L01/L01-01/continuation.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/L01/L01-01/report.md",
+            "docs/evidence/L01/L01-01/continuation.md"
+          ]
+        }
+      }
     },
     {
       "id": "L01-02",
@@ -5374,13 +5432,13 @@
       "id": "D02-I",
       "title": "R05 设计实施规格复核",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "D02-01"
       ],
       "role": "reviewer",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "/root (Codex Lead)",
       "write_allowlist": [
         "docs/evidence/D02/D02-I/"
       ],
@@ -5430,7 +5488,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "D02",
-      "kind": "integration"
+      "kind": "integration",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "max",
+      "base_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
     },
     {
       "id": "P02-01",
