@@ -2987,8 +2987,7 @@
       "status": "planned",
       "depends_on": [
         "F01-02",
-        "F01-03",
-        "F01-04"
+        "F01-03"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -3021,7 +3020,8 @@
         "检查命令缺失/违规import/类型错误的负向运行"
       ],
       "risks": [
-        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。",
+        "F01-04 尚未接受时可建设独立检查；隔离验收与未就绪命令必须保持失败，最终接受依赖 F01-04 的真实证据。"
       ],
       "effort_days": [
         1,
@@ -3040,7 +3040,9 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": [],
+      "acceptance_requires": [
+        "F01-04"
+      ],
       "parent": "F01",
       "kind": "task"
     },

@@ -260,6 +260,29 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(any('reproducible' in e for e in plan.validate(doc)))
 
 
+    def test_foundation_checks_can_start_but_not_accept_before_isolation(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        tasks['F01-02']['status']='accepted'
+        tasks['F01-03']['status']='accepted'
+        tasks['F01-04']['status']='active'
+        check=tasks['F01-05']
+        check['depends_on']=['F01-02','F01-03']
+        check['acceptance_requires']=['F01-04']
+        self.assertIn('F01-05',plan.ready_tasks(tasks,self.doc['deferred_packages']))
+        check.update(status='active',owner='fixture',actual_model='fixture',actual_reasoning='medium',base_revision='fixture')
+        self.assertFalse(any(e.startswith('F01-05: dependency not accepted') for e in plan.validate(self.doc)))
+        check['status']='accepted'
+        self.assertTrue(any(e.startswith('F01-05: acceptance dependency not accepted') for e in plan.validate(self.doc)))
+        check['status']='planned'
+        tasks['F01-04']['acceptance_requires']=['F01-05']
+        self.assertTrue(any('dependency cycle' in e for e in plan.validate(self.doc)))
+        tasks['F01-04']['acceptance_requires']=[]
+        for task in self.doc['tasks']:
+            task['status']='planned'
+        check['write_allowlist'].append('scripts/dev/collision.py')
+        self.assertTrue(any('F01-04/F01-05: unordered write overlap' in e for e in plan.validate(self.doc)))
+
+
 class GitEvidenceTests(unittest.TestCase):
     """History verification uses disposable repositories, never project data."""
 
