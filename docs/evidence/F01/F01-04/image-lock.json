@@ -1,0 +1,27 @@
+{
+  "verified_at_utc": "2026-10-28T11:12:30.857577+00:00",
+  "source": "Docker Registry v2 official library image manifests",
+  "runtime_verified": false,
+  "images": [
+    {
+      "repository": "docker.io/library/mysql",
+      "version_tag": "8.4.13",
+      "index_digest": "sha256:a0225d1ea6631c8bc2385dc4c2faba17bbf1834ecf369e1659a9a382bd8d5dd7",
+      "floating_tag_observed": "8.4",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:5cf1e1293ea42e077e6a22114e6773b9aae3bb8f9933a2acd5a9721518ff8f5b",
+          "version": "8.4.13"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:8ab2115abe8ca3d2745962f4e75f2f86fb8182ae19908773cd4cce811f3c106e",
+          "version": "8.4.13"
+        }
+      ]
+    }
+  ]
+}

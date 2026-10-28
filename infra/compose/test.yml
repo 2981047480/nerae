@@ -1,0 +1,37 @@
+# Local test infrastructure only. Started through scripts/dev/workspace.py.
+services:
+  mysql:
+    image: docker.io/library/mysql:8.4.13@sha256:a0225d1ea6631c8bc2385dc4c2faba17bbf1834ecf369e1659a9a382bd8d5dd7
+    environment:
+      MYSQL_DATABASE: ${NERAE_TEST_DATABASE:?test database required}
+      MYSQL_USER: nerae_app
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_app_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    secrets:
+      - mysql_app_password
+      - mysql_root_password
+    ports:
+      - target: 3306
+        published: ${NERAE_TEST_MYSQL_PORT:?test port required}
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - mysql_data:/var/lib/mysql
+  redis:
+    image: docker.io/library/redis:7.4.12@sha256:b6b6e3dc0c0952737748e55d5d885272840c7e42ba41ab1d5489f693419882f5
+    command: ["redis-server", "--appendonly", "yes", "--protected-mode", "no"]
+    ports:
+      - target: 6379
+        published: ${NERAE_TEST_REDIS_PORT:?test port required}
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - redis_data:/data
+volumes:
+  mysql_data: {}
+  redis_data: {}
+secrets:
+  mysql_app_password:
+    file: ${NERAE_TEST_MYSQL_APP_PASSWORD_FILE:?secret path required}
+  mysql_root_password:
+    file: ${NERAE_TEST_MYSQL_ROOT_PASSWORD_FILE:?secret path required}

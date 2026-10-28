@@ -1,0 +1,43 @@
+# 本地测试工作区与迁移
+
+本工具只面向没有真实用户资料的本地测试，不是生产部署工具。每个 Git 工作树根据其真实路径生成独立测试名称、数据库、Redis 前缀和对象前缀；MySQL 与 Redis 的端口由使用者为每个工作树明确指定。不要在不同工作树配置相同端口。对象前缀目前只是约定，尚无对象存储服务或隔离实测。
+
+## 建立环境
+
+安装 Docker Engine / Compose 并确保当前 Docker context 的 endpoint 是本机 Unix socket；不支持远程 context。准备充足磁盘空间。以下端口仅为示例，第二个工作区须选不同且空闲的端口：
+
+```sh
+python3 scripts/dev/workspace.py init --mysql-port 23306 --redis-port 26379
+python3 scripts/dev/workspace.py show
+python3 scripts/dev/workspace.py up
+```
+
+`init` 检查端口并在本工作树的 `.review/nerae-test-env/` 建立权限受限的配置与随机 MySQL 密码；该目录被 Git 忽略。相同端口重复初始化沿用原配置，不能以新端口覆盖已有状态。同一 Git 仓库的 worktree 在初始化和启动前会检查彼此已登记端口，并使用本机文件锁串行化检查；不同的独立 clone 不共享该登记。端口检查和容器实际绑定之间仍可能与其他进程发生竞争，Compose 启动失败时应查明占用，不自动释放别人的端口。Docker 启动只保留并使用该项目的持久卷，不执行删除、重置或自动迁移。各端口仅绑定 `127.0.0.1`；Redis 测试实例没有密码，因此仅适用于可信本机且不得放真实用户数据。
+
+工作树移动路径会产生新名称，旧卷不会自动迁移或删除；先备份并确认要保留的数据。MySQL 镜像升级不得假定已有数据卷可直接兼容；按数据库实际版本和升级路径另行验证。镜像版本是本地测试基线，不代表云数据库版本、安全审核或生产配置。
+
+## 清单与执行
+
+`scripts/dev/migrations.json` 是由集成 owner 串行维护的全局升序清单。每条记录包含从 1 连续递增的 `order`、`module`、`file`、`id`（`module/file`）和小写 `sha256`。迁移文件位于 `apps/api/migrations/<module>/<四位序号>_<名称>.up.sql`；其他任务创建业务迁移时，owner 必须将其登记进清单。当前清单为空，没有创建任何业务表。
+
+```sh
+cd apps/api
+go run ../../scripts/dev/migrate.go check
+go run ../../scripts/dev/migrate.go up
+```
+
+`check` 不连接数据库；它拒绝序号缺口、重复 ID、无效路径、符号链接、未登记文件和校验和变化。`up` 只连接当前工作树的 loopback 测试库；获取数据库级互斥锁后比较历史，匹配的已执行项会跳过。运行前先记录 dirty，成功后才清除。MySQL DDL 可能隐式提交，执行失败或连接中断不保证回滚；出现 dirty 时先检查实际数据库与迁移历史并制定恢复方案，不能靠反复重跑掩盖失败。当前执行器仅支持 up，不提供 down、生产运行、备份或自动恢复；这些能力需后续任务及真实数据库证据。
+
+## 清理
+
+默认只显示将受影响的当前测试命名空间，不执行删除：
+
+```sh
+python3 scripts/dev/workspace.py clean --namespace <show输出的完整namespace>
+```
+
+实际清理会删除该 Compose 项目的容器和持久卷，不能撤销；只有明确决定删除该测试环境时，才在上面的命令后追加 `--execute --confirm <同一个完整namespace>`。脚本校验当前工作树与命名空间一致，拒绝远程 Docker context；本地配置与密码文件保留。未执行清理前先确认其数据不再需要。该命令不处理对象存储，亦不提供生产数据清理能力。
+
+## 已知验证边界
+
+仓库里的脚本单元测试不能证明真实环境隔离。本机使用临时原生 MySQL 8.4.13 / Redis 7.4.12 已做双工作树同时启动、交叉读写、迁移重放及合成故障的 dirty 阻断；不代表 Docker Compose 配置、镜像运行、清理隔离或失败后的完整恢复已通过。此机器尚未发现 Docker 服务，正式接受 F01-04 前仍需补齐这些真实环境验收。两个测试镜像的使用和漏洞风险尚未经过生产安全审计。
