@@ -25,3 +25,5 @@
 - 路径保护与初始化回归测试连同既有测试共 19 项通过。前两次真实运行在初始化阶段分别因 `initial_defaults` 与 `socket_path` 未定义退出 1，未进入恢复验证；已完整检查并修复该段，增加初始化回归测试并检查未定义全局名。两次私有失败现场分别保留于 `/private/tmp/nerae-mysql-native-smoke-bwb2d89k` 与 `/private/tmp/nerae-mysql-native-smoke-c5pdmnht`。
 - 本次只证明合成测试数据的冷恢复路径，不是迁移器自带自动恢复，也不证明生产备份/恢复、Docker Compose 卷清理或对象存储隔离。端口归属检查与迁移 TCP 建连间仍有短暂竞态；脚本使用私有随机测试凭据和独立进程，不将这项检测写成绝对连接证明。F01-04 继续 active。
 - 独立 reviewer `/root/contract_tests` 对最新脚本作只读复核并复跑 6 项恢复路径单测：未发现 P1；仍提示上述端口检查到 TCP 连接之间的 P2 竞态。真实冒烟由 Lead 执行，reviewer 未重复启动数据库。
+
+- 2026-10-29 集成提交 `8fd2863035ea6273045b0da1acb3b0ba6233598a`：同一版本再次实际运行原生 MySQL/Redis 冒烟，退出 0，包含两实例隔离、迁移失败 dirty 阻断、冷备份恢复与修正后再次迁移；`scripts/dev/tests` 19 项通过，`scripts/plan.py check` 退出 0。冒烟脚本 SHA-256 `c8d4efa8d9cf7890447bf5ba01f03262ed2fcacc1ff96536e16cefd108836ce8`。独立 reviewer 的代码与 6 项恢复路径单测复核见上；没有把这次结果当作 Compose、对象存储或生产恢复验收。
