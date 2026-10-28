@@ -283,7 +283,10 @@ def validate(doc, root=ROOT):
     except ValueError as error:
         errors.append(str(error))
     if not any('dependency' in error for error in errors):
-        keys = sorted(tasks)
+        # Work packages only aggregate child ownership; they cannot execute.
+        # Check every executable card, including integration cards, against each
+        # other using start-order edges, never acceptance-only requirements.
+        keys = sorted(key for key, task in tasks.items() if kind(task) in EXECUTABLE)
         parents = {key: ancestors(tasks,key) for key in keys}
         for i,a in enumerate(keys):
             for b in keys[i+1:]:

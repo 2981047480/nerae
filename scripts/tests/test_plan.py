@@ -40,10 +40,22 @@ class PlanTests(unittest.TestCase):
         self.doc['tasks'].append(copy.deepcopy(self.doc['tasks'][0]))
         self.assertTrue(plan.validate(self.doc))
 
-    def test_parallel_owner_collision_rejected(self):
-        task = next(t for t in self.doc['tasks'] if t['id']=='D01')
-        task['write_allowlist'].append('apps/api/cmd/subpath/')
-        self.assertTrue(any('write overlap' in e for e in plan.validate(self.doc)))
+    def test_work_package_aggregate_paths_do_not_claim_execution(self):
+        package = next(t for t in self.doc['tasks'] if t['id']=='D01')
+        package['write_allowlist'].append('apps/api/cmd/subpath/')
+        self.assertEqual(plan.validate(self.doc), [])
+
+    def test_parallel_executable_owner_collision_rejected(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        tasks['D01']['write_allowlist'].append('apps/api/cmd/subpath/')
+        tasks['D01-01']['write_allowlist'].append('apps/api/cmd/subpath/')
+        self.assertTrue(any('D01-01/F01-02: unordered write overlap' in e for e in plan.validate(self.doc)))
+
+    def test_integration_card_still_claims_its_write_scope(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        tasks['D01']['write_allowlist'].append('tests/foundation/')
+        tasks['D01-01']['write_allowlist'].append('tests/foundation/')
+        self.assertTrue(any('D01-01/F01-I: unordered write overlap' in e for e in plan.validate(self.doc)))
 
     def test_unsafe_or_missing_context_rejected(self):
         for bad in ['/tmp/outside','../outside','docs/not-present.md']:
@@ -146,12 +158,14 @@ class PlanTests(unittest.TestCase):
 
     def test_contract_and_platform_gates_hold_downstream_work(self):
         tasks={t['id']:t for t in self.doc['tasks']}
-        # Even if foundation is ready, contract generation stays blocked until
-        # the record, identity and deletion contract package is accepted.
-        tasks['F01']['status']='accepted'
+        # Generation can start from the accepted recording contract baseline,
+        # but final acceptance still requires the complete foundation and contract packages.
+        for name in ('F01-01', 'F01-02', 'F01-03', 'Q02-02'):
+            tasks[name]['status']='accepted'
         self.assertNotIn('F02-01', plan.ready_tasks(tasks, self.doc['deferred_packages']))
-        tasks['K01']['status']='accepted'
+        tasks['K01-01']['status']='accepted'
         self.assertIn('F02-01', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        self.assertTrue({'F01', 'K01'} <= set(tasks['F02-01']['acceptance_requires']))
         # Platform and current design must precede any future U01 execution.
         self.assertTrue({'P02-01','D02'} <= plan.ancestors(tasks,'U01'))
         self.assertIn('P02-01', plan.ancestors(tasks,'V01'))
@@ -282,6 +296,28 @@ class PlanTests(unittest.TestCase):
         check['write_allowlist'].append('scripts/dev/collision.py')
         self.assertTrue(any('F01-04/F01-05: unordered write overlap' in e for e in plan.validate(self.doc)))
 
+
+    def test_codegen_can_start_early_without_weakening_final_acceptance(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        for name in ['F01-01', 'F01-02', 'F01-03', 'K01-01', 'Q02-02']:
+            tasks[name]['status'] = 'accepted'
+        codegen = tasks['F02-01']
+        self.assertIn('F02-01', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        codegen.update(status='accepted', owner='fixture', actual_model='fixture',
+                       actual_reasoning='high', base_revision='fixture')
+        self.assertTrue(any(e.startswith('F02-01: acceptance dependency not accepted')
+                            for e in plan.validate(self.doc)))
+        tasks['F01']['status'] = 'accepted'
+        tasks['K01']['status'] = 'accepted'
+        errors = plan.validate(self.doc)
+        self.assertTrue(any(e.startswith('F01: dependency not accepted') for e in errors))
+        self.assertTrue(any(e.startswith('K01: dependency not accepted') for e in errors))
+
+    def test_codegen_acceptance_only_dependency_never_orders_writers(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        tasks['F02-01']['write_allowlist'].append('api/tests/shared-fixture.py')
+        errors = plan.validate(self.doc)
+        self.assertTrue(any('F02-01/K01-02: unordered write overlap' in e for e in errors))
 
 class GitEvidenceTests(unittest.TestCase):
     """History verification uses disposable repositories, never project data."""

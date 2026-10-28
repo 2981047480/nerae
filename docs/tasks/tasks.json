@@ -3115,8 +3115,11 @@
       "batch": "foundation",
       "status": "planned",
       "depends_on": [
-        "F01",
-        "K01"
+        "F01-01",
+        "F01-02",
+        "F01-03",
+        "K01-01",
+        "Q02-02"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -3146,7 +3149,7 @@
         "api/tests/codegen/go-probe/go.mod",
         "api/tests/codegen/go-probe/go.sum"
       ],
-      "deliverables": "在 F01 与 K01 通过后，从唯一 OpenAPI 生成 TS/Go 且可重现；陌生执行者上手另由 Q01-01 负责，不阻塞合同生成。",
+      "deliverables": "在已接受的 F01-01/02/03、K01-01 与 Q02-02 基线上，按当前合同快照先构建可复现的 TS/Go 生成流程；最终须在 F01 与 K01 工作包接受后按最终合同重生成和复验。陌生执行者上手另由 Q01-01 负责，不阻塞合同生成。",
       "acceptance": [
         "生成两次无漂移；现有契约测试保持，生成物能编译",
         "需要改共享契约或生成配置时提交 Lead 变更请求，不私自扩大写域",
@@ -3159,7 +3162,8 @@
         "make codegen-check"
       ],
       "risks": [
-        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。",
+        "早期生成基于可变化的合同快照；最终按 K01 接受后的合同、同一集成提交重跑全部生成与消费者验收。"
       ],
       "effort_days": [
         1,
@@ -3179,7 +3183,10 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": [],
+      "acceptance_requires": [
+        "F01",
+        "K01"
+      ],
       "parent": "F02",
       "kind": "task"
     },
@@ -6417,13 +6424,13 @@
       "id": "Q02-02",
       "title": "区分工作包汇总写域与执行卡冲突",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "Q02-01"
       ],
       "role": "toolsmith",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "Project Lead",
       "write_allowlist": [
         "scripts/plan.py",
         "scripts/tests/",
@@ -6442,7 +6449,7 @@
       "acceptance": [
         "汇总工作包即使包含相同路径也不能因此阻止互不冲突的执行卡；真实无序执行卡写域重叠必须失败",
         "acceptance_requires 仅约束最终接受，不能代替执行顺序或允许并发写冲突",
-        "F02-01 在已接受基础子卡后可开始，但 F01、K01 整包未接受时仍不得接受；最终必须按已接受合同重新生成并复测",
+        "F02-01 在本卡和基础子卡接受后可开始，但 F01、K01 整包未接受时仍不得接受；最终必须按已接受合同重新生成并复测",
         "既有依赖环、证据、子卡越界与其他任务图反例继续通过；不改历史接受记录"
       ],
       "verification_commands": [
@@ -6473,7 +6480,10 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "parent": "Q02",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "ebe136b8b3f14e5283d2a9593996b9b67dd392ea"
     }
   ],
   "deferred_packages": {
