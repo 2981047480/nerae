@@ -2984,14 +2984,14 @@
       "id": "F01-05",
       "title": "统一Make入口、分层检查和CI失败语义",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-02",
         "F01-03"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "Project Lead",
       "write_allowlist": [
         "Makefile",
         ".github/workflows/",
@@ -3044,7 +3044,10 @@
         "F01-04"
       ],
       "parent": "F01",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "0106cf37cc6e804478e6b249612b6c041880d904"
     },
     {
       "id": "F01-I",
