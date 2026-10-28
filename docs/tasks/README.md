@@ -42,7 +42,7 @@
 | M01 | 维护节奏、依赖升级与恢复演练 | work_package / pending | V03 | — | 2–4 | planned |
 | S01 | 可交付种子内容与来源审核 | work_package / complete | S01-A, S01-B | — | 2–6 | planned |
 | F01-01 | Git基线、缓存忽略与工具链兼容锁定 | task / F01 | — | — | 0.5–1 | accepted |
-| F01-02 | Go进程、配置与可验证健康检查骨架 | task / F01 | F01-01 | — | 1–2 | active |
+| F01-02 | Go进程、配置与可验证健康检查骨架 | task / F01 | F01-01 | — | 1–2 | accepted |
 | F01-03 | 客户端和后台构建骨架 | task / F01 | F01-01 | — | 2–3 | accepted |
 | F01-04 | 双工作区数据隔离与迁移执行器 | task / F01 | F01-02 | — | 1–2 | planned |
 | F01-05 | 统一Make入口、分层检查和CI失败语义 | task / F01 | F01-02, F01-03, F01-04 | — | 1–2 | planned |

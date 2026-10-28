@@ -2594,7 +2594,7 @@
       "id": "F01-02",
       "title": "Go进程、配置与可验证健康检查骨架",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "F01-01"
       ],
@@ -2642,7 +2642,53 @@
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "apps/api/go.mod",
+          "sha256": "487e3c7e3d4c97bccad2157282cb67a6b4d169a762b627ebaa8f20f2979e9487",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "apps/api/go.sum",
+          "sha256": "5b435e519d710064b93a6775dbc4eaf7d84a73e4a7b4ffc61ef3f9fc4935fee6",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "apps/api/cmd/api/server.go",
+          "sha256": "006e4d1bbb7dd386779e6bfa9f3d605c538467fee97b7508e2199b9d20b6e28f",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "apps/api/cmd/api/server_test.go",
+          "sha256": "fb4eb8b78c5495867ff3e202959ed56e389f62a9d092439b054aea2e30b147ca",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "apps/api/internal/config/config_test.go",
+          "sha256": "85494adc062283ea5c846af9a09ac8aa4edee2d41ab2399ecc98b769170634d5",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "apps/api/README.md",
+          "sha256": "2ab73f9d79c81c6706ad001d7e01a8f114fe383ac01c6e3fb01c2a38e6437ebe",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "docs/evidence/F01/F01-02/report.md",
+          "sha256": "64ca4c09a9a79a32f6521f5b89ab58d8b11bc4ace1508ce78ea1f0904eb9df4f",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "docs/evidence/F01/F01-02/smoke.py",
+          "sha256": "a88d4be9e410a897ef258b0c41c07a47ac3c54476ca08fbc8a4a986796ddf9de",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        },
+        {
+          "path": "docs/evidence/F01/F01-02/drain_smoke.py",
+          "sha256": "9227e61855da536c2102f835d8f1a15aa2caf3987d825a1d7317deb2cfe2a84c",
+          "revision": "49b12005409b25828b364a9f3641311912799b03"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -2651,7 +2697,64 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb"
+      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
+      "accepted_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "reviewed_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "review_summary": "独立复核与 Lead 均在该提交干净归档运行 Go build、race、vet、API/worker 构建和两个本机进程测试；缺健康 MySQL/Redis 与实际队列仍交后续卡验证。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "apps/api/go.mod",
+            "apps/api/cmd/api/server.go",
+            "docs/evidence/F01/F01-02/report.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "apps/api/cmd/api/server_test.go",
+            "docs/evidence/F01/F01-02/report.md",
+            "docs/evidence/F01/F01-02/smoke.py",
+            "docs/evidence/F01/F01-02/drain_smoke.py"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡仅新增独立运维健康端点及进程基础，不实现或改动业务 wire contract。"
+        },
+        "privacy": {
+          "status": "pass",
+          "evidence": [
+            "apps/api/internal/config/config_test.go",
+            "docs/evidence/F01/F01-02/smoke.py"
+          ]
+        },
+        "recovery": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-02/smoke.py",
+            "docs/evidence/F01/F01-02/drain_smoke.py"
+          ]
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "apps/api/README.md",
+            "docs/evidence/F01/F01-02/report.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-02/report.md",
+            "docs/evidence/F01/F01-02/smoke.py",
+            "docs/evidence/F01/F01-02/drain_smoke.py"
+          ]
+        }
+      }
     },
     {
       "id": "F01-03",
