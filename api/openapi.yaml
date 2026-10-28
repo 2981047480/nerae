@@ -7896,47 +7896,42 @@ components:
       - createdAt
       - updatedAt
       - recordedAt
-      oneOf:
-      - properties:
-          status:
-            type: string
-            enum: [completed]
-          recordedAt:
-            type: string
-            format: date-time
-      - properties:
-          status:
-            type: string
-            enum: [in_progress]
-      - properties:
-          status:
-            type: string
-            enum: [skipped]
-          sets:
-            type: array
-            maxItems: 0
+      # 排除非法组合，同时保留可由 Go/TS 生成器构造的对象类型。
+      not:
+        anyOf:
+        - properties:
+            status:
+              type: string
+              enum: [completed]
+          not:
+            properties:
+              recordedAt:
+                type: string
+                format: date-time
+        - required: [sets]
+          properties:
+            status:
+              type: string
+              enum: [skipped]
+            sets:
+              type: array
+              minItems: 1
     WorkoutSessionDetail:
       description: 可恢复或处理冲突的完整记录，始终包含当前实际组；completed必须至少有一组。
       allOf:
       - $ref: '#/components/schemas/WorkoutSession'
       - type: object
         required: [sets]
-        oneOf:
-        - properties:
+        properties:
+          sets:
+            type: array
+            items:
+              $ref: '#/components/schemas/WorkoutSetRecord'
+        not:
+          properties:
             status:
               type: string
               enum: [completed]
-            sets:
-              type: array
-              minItems: 1
-        - properties:
-            status:
-              type: string
-              enum: [in_progress]
-        - properties:
-            status:
-              type: string
-              enum: [skipped]
             sets:
               type: array
               maxItems: 0
@@ -8011,57 +8006,69 @@ components:
           type: boolean
           enum:
           - true
-          default: true
           description: 此资源仅承载已确认的实际组；空白和未完成组保留在客户端草稿。
         recordKey:
           type: string
           minLength: 8
           maxLength: 64
-      oneOf:
-      - properties:
-          kind:
-            type: string
-            enum: [weight, perSide]
-        required: [weightKg, reps]
-        not:
-          required: [seconds]
-      - properties:
-          kind:
-            type: string
-            enum: [bodyweight, bodyweightPerSide, breath]
-        required: [reps]
-        not:
+      # 排除缺少/重复动作来源与每种类型的非法度量；运行时仍须校验整个请求。
+      not:
+        anyOf:
+        - not:
+            anyOf:
+            - required: [exerciseId]
+            - required: [exerciseName]
+        - required: [exerciseId, exerciseName]
+        - properties:
+            kind:
+              type: string
+              enum: [weight, perSide]
           anyOf:
+          - not:
+              required: [weightKg]
+          - not:
+              required: [reps]
+          - required: [seconds]
+        - properties:
+            kind:
+              type: string
+              enum: [bodyweight, bodyweightPerSide, breath]
+          anyOf:
+          - not:
+              required: [reps]
           - required: [weightKg]
           - required: [seconds]
-      - properties:
-          kind:
-            type: string
-            enum: [duration, durationPerSide]
-        required: [seconds]
-        not:
+        - properties:
+            kind:
+              type: string
+              enum: [duration, durationPerSide]
           anyOf:
+          - not:
+              required: [seconds]
           - required: [weightKg]
           - required: [reps]
-      allOf:
-      - oneOf:
-        - required: [exerciseId]
-          not:
-            required: [exerciseName]
-        - required: [exerciseName]
-          not:
-            required: [exerciseId]
     WorkoutSetRecord:
       description: 训练组读模型，必须包含服务端冻结的动作显示名称。
       allOf:
       - $ref: '#/components/schemas/SetRecord'
       - type: object
         required: [resolvedExerciseName]
+        properties:
+          resolvedExerciseName:
+            type: string
+            minLength: 1
+            maxLength: 128
+            readOnly: true
     SetRecordWrite:
       description: 训练组写模型；只读的resolvedExerciseName不得由客户端提交。
       allOf:
       - $ref: '#/components/schemas/SetRecord'
       - type: object
+        properties:
+          recordKey:
+            type: string
+            minLength: 8
+            maxLength: 64
         not:
           required: [resolvedExerciseName]
     BodyMetric:
@@ -9999,14 +10006,15 @@ components:
             maxLength: 64
       required:
       - expectedVersion
-      anyOf:
-      - required: [sets]
-      - required: [deleteRecordKeys]
-      allOf:
-      - anyOf:
+      not:
+        anyOf:
         - not:
-            required: [restoreRecordKeys]
-        - required: [sets]
+            anyOf:
+            - required: [sets]
+            - required: [deleteRecordKeys]
+        - required: [restoreRecordKeys]
+          not:
+            required: [sets]
     WorkoutFinish:
       type: object
       additionalProperties: false

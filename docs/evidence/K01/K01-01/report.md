@@ -8,6 +8,10 @@
 
 复核发现并保留为运行时验收：JSON Schema 无法比较批次中不同元素的 recordKey、检验更新/删除交集或恢复键是否属于 sets、计算两个数组总长度，无法检查 IANA 时区是否存在或未来日期，也不能证明事务、授权和幂等行为。服务端须按合同拒绝对应非法请求，具体正反例见 `runtime-cases.md`。`SetRecordWrite` 显式拒绝客户端提交服务端动作名称，已有静态反例；服务端仍须验证实际拒绝行为，不能只依赖 `readOnly` 注解。
 
-本轮测试：先在旧合同上运行新增正反例，出现预期失败；随后使用原项目 Python 3.11 环境运行 `api/tests/run_contract_tests.py --summary`，退出 0，78 个静态测试方法通过；测试的 OpenAPI 文件 SHA-256 为 `476fa7e74020541067965598f66cadca7a8e2ff3741db203a153d2fac8e4c994`。临时安装的 `openapi-spec-validator==0.7.2` 对当前 `api/openapi.yaml` 检查退出 0；`scripts/plan.py check` 和 35 项规划测试也通过。临时校验器不是已锁定的项目 CI 依赖，不能将这些结果当作真实 HTTP/数据库验证。
+本轮测试：先在旧合同上运行新增正反例，出现预期失败；随后使用原项目 Python 3.11 环境运行 `api/tests/run_contract_tests.py --summary`，退出 0，78 个静态测试方法通过；测试的 OpenAPI 文件 SHA-256 为 `dc38a60d86634bfb6f573caf49c0d7f71eddc9aaa837d801372e3aef56092957`。临时安装的 `openapi-spec-validator==0.7.2` 对当前 `api/openapi.yaml` 检查退出 0；`scripts/plan.py check` 和规划测试也通过。临时校验器不是已锁定的项目 CI 依赖，不能将这些结果当作真实 HTTP/数据库验证。
+
+实际代码生成发现原组合写法让 TypeScript 的记录类型无法构造、批次类型退化为 unknown，Go 类型也退化为原始 JSON。现以等价的约束结构修订合同；对修改前后 319 组记录、会话、批次样例比较，校验结论一致。`gpt-6-luna` 独立只读复核后，Lead 补充每种动作类型混入多余字段的反例。`api/tests/codegen/check.sh` 使用临时生成配置运行 TypeScript 编译、完整 Go/Gin 生成物编译、Go 三态序列化与 `kin-openapi` 正反例，退出 0；其固定探针依赖不代表生产依赖已锁定或审计。
+
+正式 `api/oapi-codegen.yaml` 仍未启用区分省略与 null 的选项；正式生成配置、所有旧消费者影响和请求/响应校验须由 F02 按 [集成请求](codegen-integration.md) 验证。生成类型不会代替组合约束和对象授权的服务端验证；跨行/事务等反例仍见 `runtime-cases.md`。
 
 上线前仍需 L01-03 核定已删除内容、键注册、备份和审计的留存策略；未获核定不得把当前草案解读为生产保留政策。

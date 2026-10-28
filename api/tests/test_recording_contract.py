@@ -12,11 +12,15 @@ class RecordingContractTests(ContractCase):
             self.assertValid(schema, dict(base, kind=kind, weightKg=12.5, reps=8))
             self.assertInvalid(schema, dict(base, kind=kind, reps=8))
             self.assertInvalid(schema, dict(base, kind=kind, weightKg=12.5))
+            self.assertInvalid(schema, dict(base, kind=kind, weightKg=12.5, reps=8, seconds=40))
         for kind in ('bodyweight', 'bodyweightPerSide', 'breath'):
             self.assertValid(schema, dict(base, kind=kind, reps=8))
+            self.assertInvalid(schema, dict(base, kind=kind))
             self.assertInvalid(schema, dict(base, kind=kind, reps=8, weightKg=12.5))
+            self.assertInvalid(schema, dict(base, kind=kind, reps=8, seconds=40))
         for kind in ('duration', 'durationPerSide'):
             self.assertValid(schema, dict(base, kind=kind, seconds=40))
+            self.assertInvalid(schema, dict(base, kind=kind))
             self.assertInvalid(schema, dict(base, kind=kind, seconds=40, reps=8))
             self.assertInvalid(schema, dict(base, kind=kind, seconds=40, weightKg=10))
 
