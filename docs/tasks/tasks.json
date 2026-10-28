@@ -3115,7 +3115,7 @@
       "id": "F02-00",
       "title": "共享 Go 生成配置的可空语义审查",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-01",
         "K01-01",
@@ -3123,7 +3123,7 @@
       ],
       "role": "architect",
       "model_policy": "judgment",
-      "owner": null,
+      "owner": "Project Lead",
       "write_allowlist": [
         "api/oapi-codegen.yaml",
         "docs/evidence/F02/F02-00/"
@@ -3174,7 +3174,10 @@
         "K01"
       ],
       "parent": "F02",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "7621f1cfc590616cc343bca72f23909b17d9bbfd"
     },
     {
       "id": "F02-01",
