@@ -20,7 +20,7 @@
 | docs | 必要README/配置名称/错误码/限制/变更与恢复说明更新 | pass |
 | review | reviewer检查diff和证据；剩余风险/取舍明确；接受理由真实 | pass |
 
-每个pass引用至少一个登记的证据path；证据同时含SHA-256和revision，revision必须与accepted_revision一致。不适用写reason。文件存在/hash一致只证明对应文件未变，不证明内容正确；Lead仍须审查。仅编译通过、空测试集、只生成接口或未执行命令不能报功能完成。低影响文案/规划变更只跑相应检查，不强行补业务测试。
+每个pass引用至少一个登记的证据path；证据同时含SHA-256和revision，revision必须与accepted_revision一致，表示被验证的集成版本。不适用写reason。检查器从Git中核验对应版本的普通文件blob，而不是将历史证据误绑定到以后会继续变动的工作树文件；没有可核验的Git历史时检查失败。少数报告在验证后才归档：须另登记实际`source_revision`，证明归档提交位于接受提交之后且属于当前集成历史；此字段不改变报告所验证的版本，也不代替复核。原第三轮D01报告的真实归档提交是`e4610a7e69fb926782200a1c89373b3ba427fc93`，历史接受版本保持原值。摘要与提交关系只能证明文件来源和字节，不能证明内容或验收结论正确；Lead仍须审查，新一轮集成仍须在其实际版本复跑。仅编译通过、空测试集、只生成接口或未执行命令不能报功能完成。低影响文案/规划变更只跑相应检查，不强行补业务测试。
 
 ## 3. 报告格式
 
@@ -33,7 +33,7 @@
   "accepted_revision": "实际集成提交",
   "review_mode": "independent",
   "reviewed_by": "实际复核者",
-  "evidence": [{"path": "任务白名单内证据路径", "sha256": "实际摘要", "revision": "实际集成提交"}],
+  "evidence": [{"path": "任务白名单内证据路径", "sha256": "实际摘要", "revision": "实际集成提交", "source_revision": "如后续归档则填实际归档提交，否则可省略"}],
   "completion": {"scope": {"status": "pass", "evidence": ["已登记路径"]}}
 }
 ```

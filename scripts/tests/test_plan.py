@@ -3,6 +3,10 @@ import copy
 import importlib.util
 import json
 import hashlib
+import os
+import subprocess
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 import unittest
 
@@ -62,7 +66,8 @@ class PlanTests(unittest.TestCase):
 
     def test_evidence_digest_must_match(self):
         task=self.doc['tasks'][0]
-        task.update(status='accepted',owner='test',actual_model='test',base_revision='test',reviewed_by='test',accepted_revision='test',evidence=[{'path':'README.md','sha256':'0'*64}])
+        rev=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'], text=True).strip()
+        task.update(status='accepted',owner='test',actual_model='test',base_revision='test',reviewed_by='test',accepted_revision=rev,evidence=[{'path':'README.md','sha256':'0'*64,'revision':rev}])
         self.assertTrue(any('hash mismatch' in e for e in plan.validate(self.doc)))
 
     def test_packet_contains_bounded_inputs_and_failure_protocol(self):
@@ -88,8 +93,10 @@ class PlanTests(unittest.TestCase):
         doc=copy.deepcopy(self.doc)
         child=copy.deepcopy(self.task('F01-01'))
         parent=copy.deepcopy(self.task('F01'))
-        child.update(kind=node_kind, depends_on=[], write_allowlist=['README.md'], inputs=['README.md'], status='accepted', owner='worker-fixture', actual_model='model-fixture', actual_reasoning='medium', base_revision='base-fixture', accepted_revision='merged-fixture', reviewed_by='reviewer-fixture', review_mode='independent')
-        child['evidence']=[{'path':'README.md','sha256':hashlib.sha256((ROOT/'README.md').read_bytes()).hexdigest(),'revision':'merged-fixture'}]
+        revision=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'], text=True).strip()
+        blob=subprocess.check_output(['git','-C',str(ROOT),'cat-file','blob',revision+':README.md'])
+        child.update(kind=node_kind, depends_on=[], write_allowlist=['README.md'], inputs=['README.md'], status='accepted', owner='worker-fixture', actual_model='model-fixture', actual_reasoning='medium', base_revision='base-fixture', accepted_revision=revision, reviewed_by='reviewer-fixture', review_mode='independent')
+        child['evidence']=[{'path':'README.md','sha256':hashlib.sha256(blob).hexdigest(),'revision':revision}]
         child['completion']={k:{'status':'pass','evidence':['README.md']} for k in doc['done_checks']}
         parent.update(depends_on=[child['id']],write_allowlist=['README.md'],inputs=['README.md'],effort_days=child['effort_days'])
         doc.update(tasks=[parent,child],deferred_packages={})
@@ -251,3 +258,128 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(plan.validate(doc),[])
         t['onboarding_result']['verification_reproducible']=False
         self.assertTrue(any('reproducible' in e for e in plan.validate(doc)))
+
+
+class GitEvidenceTests(unittest.TestCase):
+    """History verification uses disposable repositories, never project data."""
+
+    def setUp(self):
+        self.fixtures = PlanTests(methodName="test_current_plan_valid_and_not_marked_implemented")
+        self.fixtures.setUp()
+
+    def repository(self):
+        temp = tempfile.TemporaryDirectory(prefix='nerae-plan-evidence-test-')
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name).resolve()
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(root), '-c', 'user.name=Nerae Test',
+                                            '-c', 'user.email=nerae-test@example.invalid', *args],
+                                           stderr=subprocess.PIPE).decode().strip()
+        git('init', '-q')
+        (root / 'README.md').write_text('accepted evidence\n')
+        git('add', 'README.md')
+        git('commit', '-q', '-m', 'accept evidence')
+        accepted = git('rev-parse', 'HEAD')
+        doc, task = self.fixtures.accepted_fixture()
+        task['accepted_revision'] = accepted
+        task['evidence'][0].update(revision=accepted, sha256=hashlib.sha256(b'accepted evidence\n').hexdigest())
+        return root, git, doc, task, accepted
+
+    def test_historical_file_remains_valid_after_later_change(self):
+        root, git, doc, task, accepted = self.repository()
+        (root / 'README.md').write_text('later implementation\n')
+        git('add', 'README.md'); git('commit', '-q', '-m', 'later change')
+        self.assertEqual(plan.validate(doc, root), [])
+        self.assertEqual(task['accepted_revision'], accepted)
+
+    def test_historical_file_remains_valid_with_uncommitted_changes(self):
+        root, git, doc, _, _ = self.repository()
+        (root / 'README.md').write_text('uncommitted implementation\n')
+        self.assertEqual(plan.validate(doc, root), [])
+        git('add', 'README.md')
+        self.assertEqual(plan.validate(doc, root), [])
+
+    def test_later_archive_source_does_not_change_accepted_revision(self):
+        root, git, doc, task, accepted = self.repository()
+        (root / 'README.md').write_text('archived report\n')
+        git('add', 'README.md'); git('commit', '-q', '-m', 'archive report')
+        task['evidence'][0]['source_revision'] = git('rev-parse', 'HEAD')
+        task['evidence'][0]['sha256'] = hashlib.sha256(b'archived report\n').hexdigest()
+        self.assertEqual(plan.validate(doc, root), [])
+        self.assertEqual(task['accepted_revision'], accepted)
+
+    def test_invalid_missing_or_wrong_blob_are_rejected(self):
+        root, git, doc, task, accepted = self.repository()
+        for bad in ('merged-fixture', accepted[:12], '0' * 40):
+            with self.subTest(revision=bad):
+                changed = copy.deepcopy(doc)
+                t = next(t for t in changed['tasks'] if t['id'] == task['id'])
+                t['accepted_revision'] = bad; t['evidence'][0]['revision'] = bad
+                self.assertTrue(plan.validate(changed, root))
+        task['evidence'][0]['sha256'] = '0' * 64
+        self.assertTrue(any('hash mismatch' in e for e in plan.validate(doc, root)))
+        task['evidence'][0]['path'] = 'missing.md'
+        task['evidence'][0]['sha256'] = hashlib.sha256(b'accepted evidence\n').hexdigest()
+        task['write_allowlist'] = ['missing.md']; doc['tasks'][0]['write_allowlist'] = ['missing.md']
+        for check in task['completion'].values():
+            check['evidence'] = ['missing.md']
+        self.assertTrue(any('missing from source revision' in e for e in plan.validate(doc, root)))
+
+    def test_unrelated_archive_commit_is_rejected(self):
+        root, git, doc, task, accepted = self.repository()
+        tree = git('write-tree')
+        unrelated = git('commit-tree', tree, '-m', 'unrelated')
+        task['evidence'][0]['source_revision'] = unrelated
+        self.assertTrue(any('source' in e or 'history' in e for e in plan.validate(doc, root)))
+
+    def test_unintegrated_acceptance_commit_is_rejected(self):
+        root, git, doc, task, accepted = self.repository()
+        unrelated = git('commit-tree', git('write-tree'), '-m', 'unintegrated')
+        task['accepted_revision'] = unrelated
+        task['evidence'][0]['revision'] = unrelated
+        self.assertTrue(any('history' in e for e in plan.validate(doc, root)))
+
+    def test_unmerged_descendant_archive_is_rejected(self):
+        root, git, doc, task, accepted = self.repository()
+        unmerged = git('commit-tree', git('write-tree'), '-p', accepted, '-m', 'unmerged archive')
+        task['evidence'][0]['source_revision'] = unmerged
+        self.assertTrue(any('history' in e for e in plan.validate(doc, root)))
+
+    def test_invalid_evidence_paths_fail_closed(self):
+        root, _, doc, task, _ = self.repository()
+        for bad in ('../README.md', '/tmp/README.md', 1, ['README.md']):
+            with self.subTest(path=bad):
+                changed = copy.deepcopy(doc)
+                t = next(t for t in changed['tasks'] if t['id'] == task['id'])
+                t['evidence'][0]['path'] = bad
+                self.assertTrue(any('invalid evidence reference' in e for e in plan.validate(changed, root)))
+
+    def test_evidence_pathspec_is_treated_as_a_literal(self):
+        root, _, doc, task, _ = self.repository()
+        path = ':(glob)README.md'
+        task['evidence'][0]['path'] = path
+        task['write_allowlist'] = [path]; doc['tasks'][0]['write_allowlist'] = [path]
+        for check in task['completion'].values():
+            check['evidence'] = [path]
+        self.assertTrue(any('missing from source revision' in e for e in plan.validate(doc, root)))
+
+    def test_symlink_and_gitlink_evidence_are_rejected(self):
+        for mode in ('symlink', 'gitlink'):
+            with self.subTest(mode=mode):
+                root, git, doc, task, accepted = self.repository()
+                if mode == 'symlink':
+                    (root / 'README.md').unlink()
+                    os.symlink('/etc/passwd', root / 'README.md')
+                    git('add', 'README.md')
+                else:
+                    git('update-index', '--add', '--cacheinfo', '160000,' + accepted + ',README.md')
+                git('commit', '-q', '-m', mode)
+                revision = git('rev-parse', 'HEAD')
+                task['accepted_revision'] = revision
+                task['evidence'][0]['revision'] = revision
+                self.assertTrue(any('not a regular file' in e for e in plan.validate(doc, root)))
+
+    def test_git_environment_redirect_is_ignored(self):
+        root, git, doc, task, accepted = self.repository()
+        with patch.dict(os.environ, {'GIT_DIR': '/no-such-git-dir', 'GIT_WORK_TREE': '/no-such-worktree'}):
+            self.assertEqual(plan.validate(doc, root), [])

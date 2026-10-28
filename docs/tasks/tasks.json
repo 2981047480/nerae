@@ -285,47 +285,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4329,7 +4338,8 @@
             "revision": "b10c799295a091d2238f5d75995b66b154725442",
             "path": "design/prototype/README.md",
             "method": "git show; byte-identical immutable archive before full UI import"
-          }
+          },
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/worker/fix02-report.json",
@@ -4480,47 +4490,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4671,47 +4690,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
         }
       ],
       "decision_owner": "Project Lead",
@@ -6186,6 +6214,128 @@
       "acceptance_requires": [],
       "parent": "I01",
       "kind": "integration"
+    },
+    {
+      "title": "验收版本与历史证据完整性",
+      "batch": "foundation",
+      "role": "toolsmith",
+      "model_policy": "judgment",
+      "write_allowlist": [
+        "scripts/plan.py",
+        "scripts/tests/",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/evidence/Q02/",
+        "docs/tasks/tasks.json",
+        "docs/tasks/README.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/tasks/tasks.json",
+        "scripts/plan.py"
+      ],
+      "deliverables": "让任务图按实际接受版本核验历史证据，允许后续修改共享文件；保留原接受版本、证据归档提交和原摘要，不虚构复核结果。",
+      "acceptance": [
+        "接受版本与证据来源均是当前集成历史中的真实 Git 提交，历史文件从来源提交的普通文件 blob 验证 SHA-256",
+        "原先与接受版本不同步归档的历史证据来源明确且可复现；证据所验证的集成版本仍保持不变",
+        "缺失或伪造提交、摘要错误、路径越界、符号链接、非祖先分支及工作树变化均有正反例；不得静默降级为当前文件哈希"
+      ],
+      "verification_commands": [
+        "python3.11 -m unittest discover -s scripts/tests -v",
+        "python3.11 scripts/plan.py check",
+        "在共享文件后续修改和历史归档版本上验证"
+      ],
+      "risks": [
+        "证据哈希和提交关系不证明测试内容真实、运行时安全或复核结论正确；无 Git 历史时应失败并报告，不得伪造通过。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；共享任务图元数据由 Lead 串行收口",
+        "不得篡改既有 accepted_revision、证据摘要或历史审查结果",
+        "不得把静态检查作为真实应用验收或外部审核"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "id": "Q02",
+      "status": "planned",
+      "depends_on": [
+        "Q02-01"
+      ],
+      "owner": null,
+      "breakdown": "complete"
+    },
+    {
+      "title": "验收版本与历史证据完整性",
+      "batch": "foundation",
+      "role": "toolsmith",
+      "model_policy": "judgment",
+      "write_allowlist": [
+        "scripts/plan.py",
+        "scripts/tests/",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/evidence/Q02/",
+        "docs/tasks/tasks.json",
+        "docs/tasks/README.md"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/tasks/tasks.json",
+        "scripts/plan.py"
+      ],
+      "deliverables": "让任务图按实际接受版本核验历史证据，允许后续修改共享文件；保留原接受版本、证据归档提交和原摘要，不虚构复核结果。",
+      "acceptance": [
+        "接受版本与证据来源均是当前集成历史中的真实 Git 提交，历史文件从来源提交的普通文件 blob 验证 SHA-256",
+        "原先与接受版本不同步归档的历史证据来源明确且可复现；证据所验证的集成版本仍保持不变",
+        "缺失或伪造提交、摘要错误、路径越界、符号链接、非祖先分支及工作树变化均有正反例；不得静默降级为当前文件哈希"
+      ],
+      "verification_commands": [
+        "python3.11 -m unittest discover -s scripts/tests -v",
+        "python3.11 scripts/plan.py check",
+        "在共享文件后续修改和历史归档版本上验证"
+      ],
+      "risks": [
+        "证据哈希和提交关系不证明测试内容真实、运行时安全或复核结论正确；无 Git 历史时应失败并报告，不得伪造通过。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01"
+      ],
+      "forbidden": [
+        "仅在白名单内工作；共享任务图元数据由 Lead 串行收口",
+        "不得篡改既有 accepted_revision、证据摘要或历史审查结果",
+        "不得把静态检查作为真实应用验收或外部审核"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
+      "external_prerequisites": [],
+      "acceptance_requires": [],
+      "id": "Q02-01",
+      "parent": "Q02",
+      "kind": "task",
+      "status": "active",
+      "depends_on": [
+        "F01-01"
+      ],
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "839e242a6357895c86cd4990bb3163f7b6b5c921"
     }
   ],
   "deferred_packages": {

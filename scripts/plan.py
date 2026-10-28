@@ -3,7 +3,10 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +22,8 @@ def kind(task):
 def completion_errors(task, doc):
     """Check evidence structure; a human still judges its sufficiency."""
     errors = []
-    registered = {e.get('path') for e in task.get('evidence', []) if isinstance(e, dict)}
+    registered = {e['path'] for e in task.get('evidence', [])
+                  if isinstance(e, dict) and isinstance(e.get('path'), str)}
     checks = task.get('completion', {})
     rules = doc.get('done_checks', {})
     if not isinstance(checks, dict) or set(checks) != set(rules):
@@ -61,8 +65,88 @@ def completion_errors(task, doc):
 
 
 def local_path(value):
+    if not isinstance(value, str):
+        return False
     path = Path(value)
     return bool(value) and not path.is_absolute() and '..' not in path.parts and not any(c in value for c in '*?[')
+
+
+class EvidenceError(ValueError):
+    """A recorded acceptance artifact cannot be established from Git history."""
+
+
+class EvidenceRepository:
+    """Read immutable evidence blobs without trusting the mutable worktree."""
+
+    def __init__(self, root):
+        self.root = Path(root).resolve()
+        self.env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
+        self.env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
+                        GIT_NO_REPLACE_OBJECTS='1', GIT_TERMINAL_PROMPT='0')
+        self.commits = {}
+        self.ancestors = {}
+        self.blobs = {}
+        self._head = None
+
+    def run(self, *args, allowed=(0,)):
+        try:
+            result = subprocess.run(['git', '-C', str(self.root), '--literal-pathspecs', *args],
+                                    env=self.env, capture_output=True, timeout=10, check=False)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise EvidenceError(f'Git unavailable: {error}') from error
+        if result.returncode not in allowed:
+            raise EvidenceError('Git history or evidence object unavailable')
+        return result
+
+    def head(self):
+        if self._head is None:
+            top = self.run('rev-parse', '--show-toplevel').stdout.decode().strip()
+            if Path(top).resolve() != self.root:
+                raise EvidenceError('evidence root is not the Git worktree root')
+            self._head = self.run('rev-parse', '--verify', 'HEAD^{commit}').stdout.decode().strip()
+        return self._head
+
+    def commit(self, revision):
+        if not isinstance(revision, str) or not re.fullmatch(r'(?:[0-9a-f]{40}|[0-9a-f]{64})', revision):
+            raise EvidenceError('evidence revision must be a complete commit ID')
+        if revision not in self.commits:
+            resolved = self.run('rev-parse', '--verify', revision + '^{commit}').stdout.decode().strip()
+            if resolved != revision:
+                raise EvidenceError('evidence revision is not a commit')
+            self.commits[revision] = True
+        return revision
+
+    def is_ancestor(self, earlier, later):
+        key = (earlier, later)
+        if key not in self.ancestors:
+            self.ancestors[key] = self.run('merge-base', '--is-ancestor', earlier, later,
+                                           allowed=(0, 1)).returncode == 0
+        return self.ancestors[key]
+
+    def evidence_hash(self, accepted, source, path):
+        accepted, source = self.commit(accepted), self.commit(source)
+        if not self.is_ancestor(accepted, source) or not self.is_ancestor(source, self.head()):
+            raise EvidenceError('evidence source is outside the accepted integration history')
+        if (not isinstance(path, str) or not local_path(path) or '\\' in path
+                or any(ord(char) < 32 or ord(char) == 127 for char in path)
+                or Path(path).as_posix() != path):
+            raise EvidenceError('invalid evidence path')
+        key = (source, path)
+        if key not in self.blobs:
+            result = self.run('ls-tree', '-z', '--full-tree', source, '--', path)
+            entries = result.stdout.split(b'\0')
+            if len(entries) != 2 or not entries[0] or entries[1]:
+                raise EvidenceError('evidence missing from source revision')
+            try:
+                metadata, name = entries[0].split(b'\t', 1)
+                mode, object_type, object_id = metadata.split(b' ', 2)
+            except ValueError as error:
+                raise EvidenceError('invalid Git evidence entry') from error
+            if name != os.fsencode(path) or object_type != b'blob' or mode not in (b'100644', b'100755'):
+                raise EvidenceError('evidence is not a regular file in source revision')
+            blob = self.run('cat-file', 'blob', object_id.decode('ascii')).stdout
+            self.blobs[key] = hashlib.sha256(blob).hexdigest()
+        return self.blobs[key]
 
 
 def overlap(first, second):
@@ -97,6 +181,7 @@ def waves(tasks):
 
 def validate(doc, root=ROOT):
     errors = []
+    evidence_repository = EvidenceRepository(root)
     rows = doc.get('tasks', [])
     tasks = {row['id']: row for row in rows}
     if not rows or len(tasks) != len(rows):
@@ -179,11 +264,14 @@ def validate(doc, root=ROOT):
                 if not isinstance(evidence, dict) or not local_path(evidence.get('path','')):
                     errors.append(f'{key}: invalid evidence reference')
                     continue
-                path = root / evidence['path']
-                if not path.is_file() or not path.resolve().is_relative_to(root.resolve()):
-                    errors.append(f'{key}: evidence missing or outside root')
-                elif hashlib.sha256(path.read_bytes()).hexdigest() != evidence.get('sha256'):
-                    errors.append(f'{key}: evidence hash mismatch')
+                try:
+                    digest = evidence_repository.evidence_hash(
+                        task.get('accepted_revision'), evidence.get('source_revision', evidence.get('revision')),
+                        evidence['path'])
+                    if digest != evidence.get('sha256'):
+                        errors.append(f'{key}: evidence hash mismatch: {evidence["path"]}')
+                except EvidenceError as error:
+                    errors.append(f'{key}: evidence {evidence["path"]}: {error}')
                 if not any(Path(evidence['path']) == Path(p) or Path(p) in Path(evidence['path']).parents for p in task['write_allowlist']):
                     errors.append(f'{key}: evidence outside write allowlist')
                 if evidence.get('revision') != task.get('accepted_revision'):
