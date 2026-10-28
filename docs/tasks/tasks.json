@@ -3113,7 +3113,7 @@
       "id": "F02-01",
       "title": "固定契约生成及可复现验证",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-01",
         "F01-02",
@@ -3123,7 +3123,7 @@
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "Project Lead",
       "write_allowlist": [
         "packages/contracts/",
         "apps/api/internal/gen/",
@@ -3188,7 +3188,10 @@
         "K01"
       ],
       "parent": "F02",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "e4aede85c9e9e75584b2a83109f2a03d921bc506"
     },
     {
       "id": "F02-02",
