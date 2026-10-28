@@ -221,59 +221,94 @@ def stop_owned_redis(instance: dict[str, Any]) -> None:
             log.close()
 
 
-def initialize_instance(instance: dict[str, Any]) -> None:
-    datadir: Path = instance["datadir"]
-    datadir.mkdir(mode=0o700)
-    mysqld: Path = instance["mysqld_bin"]
-    basedir: Path = instance["mysql_basedir"]
-    socket_path: Path = instance["socket_path"]
-    pid_file: Path = instance["pid_file"]
-    port: int = instance["state"]["mysql_port"]
-    current_user = getpass.getuser()
-    common = [
-        str(mysqld),
-        "--no-defaults",
-        f"--basedir={basedir}",
-        f"--datadir={datadir}",
-        f"--user={current_user}",
-        "--skip-name-resolve",
-        "--mysqlx=0",
-        "--skip-log-bin",
-        "--innodb-buffer-pool-size=64M",
-        "--innodb-redo-log-capacity=16M",
+def mysql_common(instance: dict[str, Any]) -> list[str]:
+    return [
+        str(instance["mysqld_bin"]), "--no-defaults",
+        f"--basedir={instance['mysql_basedir']}",
+        f"--datadir={instance['datadir']}",
+        f"--user={getpass.getuser()}", "--skip-name-resolve", "--mysqlx=0",
+        "--skip-log-bin", "--innodb-buffer-pool-size=64M", "--innodb-redo-log-capacity=16M",
     ]
-    init = subprocess.run(
-        [*common, "--initialize-insecure"],
-        check=False,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=90,
-    )
-    if init.returncode != 0:
-        raise SmokeError(f"native MySQL initialize failed (exit {init.returncode}): {init.stderr[-800:]}")
 
-    log_handle = (instance["log_path"]).open("xb")
+
+def launch_mysql(instance: dict[str, Any], defaults_file: Path) -> None:
+    previous = instance.get("process")
+    if previous is not None and previous.poll() is None:
+        raise SmokeError("refusing to launch over a live MySQL child")
+    launch_number = instance.get("mysql_launches", 0)
+    log_path = instance["log_path"] if launch_number == 0 else instance["log_path"].with_name(f"mysqld-restart-{launch_number}.log")
+    log_handle = log_path.open("xb")
     instance["log_handle"] = log_handle
     process = subprocess.Popen(
-        [
-            *common,
-            "--console",
-            "--daemonize=0",
-            "--bind-address=127.0.0.1",
-            f"--port={port}",
-            f"--socket={socket_path}",
-            f"--pid-file={pid_file}",
-            "--local-infile=0",
-        ],
-        stdin=subprocess.DEVNULL,
-        stdout=log_handle,
-        stderr=subprocess.STDOUT,
+        [*mysql_common(instance), "--console", "--daemonize=0", "--bind-address=127.0.0.1",
+         f"--port={instance['state']['mysql_port']}", f"--socket={instance['socket_path']}",
+         f"--pid-file={instance['pid_file']}", "--local-infile=0"],
+        stdin=subprocess.DEVNULL, stdout=log_handle, stderr=subprocess.STDOUT,
         env={**os.environ, "MYSQL_PWD": ""},
     )
     instance["process"] = process
+    instance["mysql_launches"] = launch_number + 1
+    wait_for_mysql(instance["mysqladmin_bin"], defaults_file, process)
+    verify_mysql_tcp_owner(instance)
+
+
+def clean_shutdown_mysql(instance: dict[str, Any]) -> None:
+    verify_mysql_tcp_owner(instance)
+    process = instance["process"]
+    result = mysql_admin(instance["mysqladmin_bin"], instance["root_defaults"], "shutdown")
+    if result.returncode != 0:
+        raise SmokeError("private MySQL clean shutdown failed")
+    try:
+        exit_code = process.wait(timeout=30)
+    except subprocess.TimeoutExpired as error:
+        raise SmokeError("private MySQL did not exit after clean shutdown") from error
+    if exit_code != 0:
+        raise SmokeError(f"private MySQL exited with status {exit_code} during clean shutdown")
+    instance["log_handle"].close()
+    lsof = shutil.which("lsof")
+    if not lsof:
+        raise SmokeError("lsof is required to verify the MySQL port is closed")
+    port = instance["state"]["mysql_port"]
+    result = subprocess.run([lsof, "-nP", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"],
+                            check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+    if result.returncode != 1 or result.stdout.strip():
+        raise SmokeError("MySQL port remained in use after clean shutdown")
+
+
+def guarded_datadir(base: Path, instance: dict[str, Any]) -> Path:
+    # The only eligible data is mysql-1/data under this run's fresh private temp root.
+    if (base.is_symlink() or not base.is_dir() or base.resolve().parent != TEMP_PARENT
+            or base.stat().st_uid != os.getuid() or base.stat().st_mode & 0o077):
+        raise SmokeError("temporary base is not a private direct child of the temp parent")
+    parent = base / "mysql-1"
+    datadir = parent / "data"
+    if (instance.get("datadir") != datadir or parent.is_symlink() or not parent.is_dir()
+            or datadir.is_symlink() or not datadir.is_dir() or datadir.resolve().parent != parent.resolve()
+            or parent.stat().st_uid != os.getuid() or parent.stat().st_mode & 0o077
+            or datadir.stat().st_uid != os.getuid() or datadir.stat().st_mode & 0o077):
+        raise SmokeError("refusing to copy or move an unexpected MySQL datadir")
+    process = instance.get("process")
+    if process is None or process.poll() is None:
+        raise SmokeError("refusing to snapshot a live or unowned MySQL process")
+    for directory, dirs, files in os.walk(datadir, followlinks=False):
+        for name in dirs + files:
+            child = Path(directory) / name
+            if child.is_symlink() or not (child.is_file() or child.is_dir()):
+                raise SmokeError("refusing a symlink or special file in the MySQL datadir")
+    return datadir
+
+
+def initialize_instance(instance: dict[str, Any]) -> None:
+    datadir: Path = instance["datadir"]
+    datadir.mkdir(mode=0o700)
+    init = subprocess.run(
+        [*mysql_common(instance), "--initialize-insecure"],
+        check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=90,
+    )
+    if init.returncode != 0:
+        raise SmokeError(f"native MySQL initialize failed (exit {init.returncode}): {init.stderr[-800:]}")
     initial_defaults = instance["initial_defaults"]
-    wait_for_mysql(instance["mysqladmin_bin"], initial_defaults, process)
+    launch_mysql(instance, initial_defaults)
 
     # The freshly initialized server starts with only its local socket root account.
     password = instance["root_password"]
@@ -281,7 +316,7 @@ def initialize_instance(instance: dict[str, Any]) -> None:
         "ALTER USER 'root'@'localhost' IDENTIFIED BY " + sql_literal(password)
     )
     mysql_client(instance["mysql_bin"], initial_defaults, initial_sql)
-    write_mysql_defaults(instance["root_defaults"], password, socket_path)
+    write_mysql_defaults(instance["root_defaults"], password, instance["socket_path"])
     instance["root_config_ready"] = True
 
     database = instance["state"]["database"]
@@ -534,6 +569,16 @@ def run_smoke(args: argparse.Namespace) -> None:
         if visible_a != "1" or visible_b != "0":
             raise SmokeError("synthetic row crossed isolated MySQL instances")
 
+        # Only the script-created A instance is cold-snapshotted. B stays running.
+        clean_shutdown_mysql(instances[0])
+        datadir_a = guarded_datadir(base, instances[0])
+        backup_a = datadir_a.parent / "cold-backup"
+        failed_a = datadir_a.parent / "failed-data"
+        if backup_a.exists() or backup_a.is_symlink() or failed_a.exists() or failed_a.is_symlink():
+            raise SmokeError("unexpected pre-existing recovery path in private test directory")
+        shutil.copytree(datadir_a, backup_a, symlinks=False)
+        launch_mysql(instances[0], instances[0]["root_defaults"])
+
         # Cause a synthetic migration failure after one successful DDL statement.
         worktree_a = instances[0]["worktree"]
         failed_sql = "CREATE TABLE partial_smoke (id INT); INSERT INTO missing_smoke_table VALUES (1);\n"
@@ -562,11 +607,50 @@ def run_smoke(args: argparse.Namespace) -> None:
         if still_isolated != "0":
             raise SmokeError("dirty state crossed into the other test database")
 
+        # Restore the same private test instance from its pre-failure cold backup.
+        clean_shutdown_mysql(instances[0])
+        if guarded_datadir(base, instances[0]) != datadir_a:
+            raise SmokeError("test datadir changed before restore")
+        if backup_a.is_symlink() or not backup_a.is_dir() or backup_a.resolve().parent != datadir_a.parent.resolve():
+            raise SmokeError("cold backup is not the script-owned test backup")
+        if failed_a.exists() or failed_a.is_symlink():
+            raise SmokeError("unexpected failed-data path before restore")
+        datadir_a.rename(failed_a)
+        shutil.copytree(backup_a, datadir_a, symlinks=False)
+        launch_mysql(instances[0], instances[0]["root_defaults"])
+        restored = mysql_client(instances[0]["mysql_bin"], instances[0]["root_defaults"],
+                                f"SELECT COUNT(*) FROM {db_a}.nerae_schema_migrations WHERE dirty=1")
+        leftover = mysql_client(instances[0]["mysql_bin"], instances[0]["root_defaults"],
+                                f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{instances[0]['state']['database']}' AND table_name='partial_smoke'")
+        restored_row = mysql_client(instances[0]["mysql_bin"], instances[0]["root_defaults"],
+                                   f"SELECT COUNT(*) FROM {db_a}.runtime_smoke_data WHERE payload='only-instance-a'")
+        if restored != "0" or leftover != "0" or restored_row != "1":
+            raise SmokeError("restored test database differs from its clean pre-failure state")
+
+        fixed_sql = "CREATE TABLE recovered_smoke (id INT PRIMARY KEY); INSERT INTO recovered_smoke VALUES (7);\n"
+        (worktree_a / "apps/api/migrations/smoke" / failed_name).write_text(fixed_sql, encoding="utf-8")
+        manifest["migrations"][-1]["sha256"] = hashlib.sha256(fixed_sql.encode()).hexdigest()
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        verify_mysql_tcp_owner(instances[0])
+        recovered = run_migration(args.go, worktree_a, "up", go_env)
+        check_run(recovered, 0, "migration after test backup restore")
+        clean_rows = mysql_client(instances[0]["mysql_bin"], instances[0]["root_defaults"],
+                                  f"SELECT COUNT(*) FROM {db_a}.nerae_schema_migrations WHERE dirty=0")
+        recovered_row = mysql_client(instances[0]["mysql_bin"], instances[0]["root_defaults"],
+                                     f"SELECT COUNT(*) FROM {db_a}.recovered_smoke WHERE id=7")
+        other_tables = mysql_client(instances[1]["mysql_bin"], instances[1]["root_defaults"],
+                                    f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{instances[1]['state']['database']}' AND table_name IN ('partial_smoke','recovered_smoke')")
+        other_rows = mysql_client(instances[1]["mysql_bin"], instances[1]["root_defaults"],
+                                  f"SELECT COUNT(*) FROM {db_b}.nerae_schema_migrations WHERE dirty=0")
+        if clean_rows != "2" or recovered_row != "1" or other_tables != "0" or other_rows != "1":
+            raise SmokeError("recovered migration or second test instance isolation did not match")
+
         print("PASS: two private Git worktrees initialized with distinct test namespaces and ports")
         print("PASS: two MySQL and two Redis instances running simultaneously on distinct loopback ports")
         print("PASS: Redis worktree prefixes and cross-instance reads are isolated")
         print("PASS: empty database, first migration, repeat migration and data isolation")
         print("PASS: synthetic partially applied failing migration remains dirty and retry is rejected")
+        print("PASS: test-only cold backup restores pre-failure data and migration resumes without affecting the other instance")
         print("Credentials and server logs were not printed.")
         succeeded = True
     finally:
