@@ -41,7 +41,7 @@
 | P02 | iOS / Android App 能力与三端交付 | work_package / partial | V03, P02-01, P02-02, P02-03 | — | 6–13 | planned |
 | M01 | 维护节奏、依赖升级与恢复演练 | work_package / pending | V03 | — | 2–4 | planned |
 | S01 | 可交付种子内容与来源审核 | work_package / complete | S01-A, S01-B | — | 2–6 | planned |
-| F01-01 | Git基线、缓存忽略与工具链兼容锁定 | task / F01 | — | — | 0.5–1 | active |
+| F01-01 | Git基线、缓存忽略与工具链兼容锁定 | task / F01 | — | — | 0.5–1 | accepted |
 | F01-02 | Go进程、配置与可验证健康检查骨架 | task / F01 | F01-01 | — | 1–2 | planned |
 | F01-03 | 客户端和后台构建骨架 | task / F01 | F01-01 | — | 2–3 | planned |
 | F01-04 | 双工作区数据隔离与迁移执行器 | task / F01 | F01-02 | — | 1–2 | planned |
@@ -67,7 +67,7 @@
 | D01-03 | 指定DeepSeek扩展全量情境与状态 | task / D01 | D01-02 | — | 1.5–3 | accepted |
 | D01-I | 第三轮UI独立验收与集成 | integration / D01 | D01-03 | — | 0.5–1 | accepted |
 | K01 | 三端身份与训练记录合同收敛 | work_package / complete | K01-01, K01-02, K01-03, K01-I | — | 4.5–9.5 | planned |
-| K01-01 | 训练后与逐组记录合同 | task / K01 | — | — | 1.5–3 | active |
+| K01-01 | 训练后与逐组记录合同 | task / K01 | — | — | 1.5–3 | accepted |
 | K01-02 | 小程序与 App 身份及安全关联合同 | task / K01 | K01-01, L01-01, D01 | — | 1.5–3 | planned |
 | K01-03 | 账号注销与撤权合同 | task / K01 | K01-02 | — | 1–2 | planned |
 | K01-I | 训练、身份与注销合同复核 | integration / K01 | K01-01, K01-02, K01-03 | — | 0.5–1.5 | planned |

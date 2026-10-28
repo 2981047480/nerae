@@ -2461,7 +2461,7 @@
       "id": "F01-01",
       "title": "Git基线、缓存忽略与工具链兼容锁定",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -2509,7 +2509,28 @@
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/evidence/F01/F01-01/clean-checkout-20261028.md",
+          "sha256": "d9a020f26904569af148fc46a0de58e40d6b1bcc0010d08ee2a22b6e294dc4ba",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/evidence/F01/F01-01/workspace-snapshot-provenance.json",
+          "sha256": "7a1965a243f5e8a20d87a883be1fe01e1ae7f6f2fcf27b96b63b9f9c33c797fc",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/evidence/F01/F01-01/image-lock.json",
+          "sha256": "e11118b6027e9497179c630fff51e1b7f02ad1227c47bfad45e495c9975ef1e8",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/evidence/F01/F01-01/generator-probe/check.sh",
+          "sha256": "599642f44bc72c576be0e43dd3b2635a03e4191779352bc067dca6c01352fbe3",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -2518,7 +2539,53 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "review_mode": "independent",
+      "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
+      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "review_summary": "独立复核在集成提交重新运行冻结安装、peer、三端资源编译、Go探针和生成器探针；检查快照归属与镜像清单。镜像未运行，真实隔离留给 F01-04。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-01/workspace-snapshot-provenance.json"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-01/clean-checkout-20261028.md",
+            "docs/evidence/F01/F01-01/image-lock.json",
+            "docs/evidence/F01/F01-01/generator-probe/check.sh"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "仅工具链、探针和测试镜像清单；本卡不修改业务 wire contract。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "不处理用户资料或对象授权；env/密钥忽略检查仅用于保护工作区，不代表权限验收。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡无业务状态、数据库迁移或恢复流程；已有工作保留与快照哈希已核对，不声称执行了破坏性恢复演练。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-01/clean-checkout-20261028.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/F01/F01-01/clean-checkout-20261028.md",
+            "docs/evidence/F01/F01-01/workspace-snapshot-provenance.json"
+          ]
+        }
+      }
     },
     {
       "id": "F01-02",
@@ -2854,13 +2921,24 @@
         "docs/ENGINEERING_STANDARDS.md",
         "docs/DEFINITION_OF_DONE.md",
         "api/openapi.yaml",
-        "api/oapi-codegen.yaml"
+        "api/oapi-codegen.yaml",
+        "docs/evidence/K01/K01-01/codegen-integration.md",
+        "api/tests/codegen/recording-types.ts",
+        "api/tests/codegen/recording_types_test.go",
+        "api/tests/codegen/README.md",
+        "api/tests/codegen/check.sh",
+        "api/tests/codegen/oapi-codegen-probe.yaml",
+        "api/tests/codegen/schema_validation_test.go",
+        "api/tests/codegen/go-probe/go.mod",
+        "api/tests/codegen/go-probe/go.sum"
       ],
       "deliverables": "在 F01 与 K01 通过后，从唯一 OpenAPI 生成 TS/Go 且可重现；陌生执行者上手另由 Q01-01 负责，不阻塞合同生成。",
       "acceptance": [
         "生成两次无漂移；现有契约测试保持，生成物能编译",
         "需要改共享契约或生成配置时提交 Lead 变更请求，不私自扩大写域",
-        "从任务列出的输入和锁定环境重跑生成及现有合同检查，登记真实命令与退出码"
+        "从任务列出的输入和锁定环境重跑生成及现有合同检查，登记真实命令与退出码",
+        "使用正式配置对训练记录生成可构造的 TS/Go 类型；编译真实生成物并接入记录生成探针，不能只比较文件是否产生",
+        "Go 对有不同业务含义的省略、显式 null 和具体值保持三态；评估所有受影响 nullable 字段，并由 Lead 串行审核共享生成配置与依赖锁"
       ],
       "verification_commands": [
         "make contract-check",
@@ -2910,13 +2988,16 @@
         "AGENTS.md",
         "docs/ENGINEERING_STANDARDS.md",
         "docs/DEFINITION_OF_DONE.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/evidence/K01/K01-01/codegen-integration.md",
+        "api/tests/codegen/schema_validation_test.go"
       ],
       "deliverables": "按生成接口适配请求/响应校验和Error；认证上下文只承载已验证身份，实际JWT/微信登录归A01；客户端role/sourceTag不授予权限。",
       "acceptance": [
         "400/401/403/404/409/412/422/429/503采用约定错误映射，保留requestId而不泄漏上游原文",
         "错误参数、额外字段和伪造身份有负例；schema有效不被当作对象授权完成",
-        "实现不依赖虚构业务端点或把占位JWT当真认证"
+        "实现不依赖虚构业务端点或把占位JWT当真认证",
+        "实际请求/响应校验执行 schema 组合约束，拒绝伪造只读名称和非法度量；响应缺失必填服务端名称或时间不能被类型零值掩盖"
       ],
       "verification_commands": [
         "make test MODULE=middleware",
@@ -4533,7 +4614,7 @@
       "id": "K01-01",
       "title": "训练后与逐组记录合同",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -4582,7 +4663,38 @@
         "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
         "不得发送真实客户消息、向外部提交证书或部署生产"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "api/openapi.yaml",
+          "sha256": "dc38a60d86634bfb6f573caf49c0d7f71eddc9aaa837d801372e3aef56092957",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "api/tests/test_recording_contract.py",
+          "sha256": "fbe86dfff5fa0e7884ccd34376fbeed0f8ec61faefbd0f29c446f736962f2e35",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "api/tests/codegen/check.sh",
+          "sha256": "49cf17730549b8acaded6da041583728e0e13874c2b411e90fa9dd4d13516694",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/evidence/K01/K01-01/codegen-integration.md",
+          "sha256": "c9c44ea47d422dc342d618c0c7df1a50c3edda82a451f9b15a6f784f30bbd1d4",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/evidence/K01/K01-01/runtime-cases.md",
+          "sha256": "ba272566aa72295cc3ce165190b59ed6bf29473080064c14d6a94c4643f202a6",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        },
+        {
+          "path": "docs/数据模型与ER设计.md",
+          "sha256": "28aa6c7006e90fe2552ff8c2e3c0e57b219b84797a1c6f95d7bc4c841928286b",
+          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -4591,7 +4703,58 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "review_summary": "独立复核在集成提交复跑78项静态合同测试、OpenAPI校验和TS/Go生成探针；运行时授权、幂等、事务和正式生成配置仍分别由后续任务验收。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "api/openapi.yaml",
+            "docs/数据模型与ER设计.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "api/tests/test_recording_contract.py",
+            "api/tests/codegen/check.sh"
+          ]
+        },
+        "contract": {
+          "status": "pass",
+          "evidence": [
+            "api/openapi.yaml",
+            "docs/evidence/K01/K01-01/codegen-integration.md",
+            "docs/数据模型与ER设计.md"
+          ]
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "本卡仅定义合同而无认证或健康数据服务；真实对象授权和撤权负例仍由相关服务与集成卡验证。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡只声明幂等、版本及恢复合同，不实现运行时状态；真实并发、事务和断线恢复另由后续服务及集成卡验证。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/K01/K01-01/codegen-integration.md",
+            "docs/evidence/K01/K01-01/runtime-cases.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/K01/K01-01/codegen-integration.md",
+            "docs/evidence/K01/K01-01/runtime-cases.md"
+          ]
+        }
+      }
     },
     {
       "id": "K01-02",
