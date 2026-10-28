@@ -83,4 +83,4 @@
 | U08 | 账号关联、注销与数据控制界面 | work_package / pending / 暂缓 | A01, U01 | O03 | 2–4 | planned |
 | I-A04 | 三端训练记录与内部试用集成 | integration / I01 | I-A02, U01, U02, P02-02, P02-03 | — | 1–3 | planned |
 | Q02 | 验收版本与历史证据完整性 | work_package / complete | Q02-01 | — | 1–2 | planned |
-| Q02-01 | 验收版本与历史证据完整性 | task / Q02 | F01-01 | — | 1–2 | active |
+| Q02-01 | 验收版本与历史证据完整性 | task / Q02 | F01-01 | — | 1–2 | accepted |

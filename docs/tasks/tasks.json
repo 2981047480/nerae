@@ -6320,7 +6320,29 @@
         "不得篡改既有 accepted_revision、证据摘要或历史审查结果",
         "不得把静态检查作为真实应用验收或外部审核"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "scripts/plan.py",
+          "sha256": "6f439fe024f4e72b0bf5be4470d800224f6ce8c9bc33a26c94df178de059b467",
+          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+        },
+        {
+          "path": "scripts/tests/test_plan.py",
+          "sha256": "738335cf666b31c1a63a19f50e8e90c114bf6bd0669a8a7f2997f89cf284612d",
+          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+        },
+        {
+          "path": "docs/DEFINITION_OF_DONE.md",
+          "sha256": "bac225bb83c9f6abcdd052e994099f3d587edd63713004c0d2e816510eb0d7b1",
+          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+        },
+        {
+          "path": "docs/evidence/Q02/Q02-01/report.md",
+          "sha256": "a23887f96e15fbed0768c7ae06c4b4ef18ebc230528bb4ac1f0f95d21ef935cd",
+          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
+          "source_revision": "206f2137fad9a1784451c5b0f018e2e8d7bcf89d"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录命令、原因和影响；同类第二次重评路径；第三次重复阻塞报告 blocked。",
       "external_prerequisites": [],
@@ -6328,14 +6350,59 @@
       "id": "Q02-01",
       "parent": "Q02",
       "kind": "task",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "F01-01"
       ],
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "839e242a6357895c86cd4990bb3163f7b6b5c921"
+      "base_revision": "839e242a6357895c86cd4990bb3163f7b6b5c921",
+      "accepted_revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests",
+      "review_summary": "独立 reviewer 在同一集成提交复跑 46 项任务图测试和检查；历史及归档来源与 SHA-256 均可核验。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/Q02/Q02-01/report.md",
+            "scripts/plan.py"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/Q02/Q02-01/report.md",
+            "scripts/tests/test_plan.py"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡只修改证据检查器及其任务元数据，不修改业务 wire contract；同版本身份合同检查另行执行。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "本卡只读取本地 Git 历史及合成测试仓库，不处理实际用户数据。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "检查器只读，无业务状态、数据库迁移或恢复流程；Git 历史缺失时按错误退出。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/DEFINITION_OF_DONE.md",
+            "docs/evidence/Q02/Q02-01/report.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/evidence/Q02/Q02-01/report.md"
+          ]
+        }
+      }
     }
   ],
   "deferred_packages": {
