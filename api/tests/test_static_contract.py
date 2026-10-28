@@ -124,7 +124,8 @@ class DocumentIntegrityTests(ContractCase):
         self.assertTrue(parameters)
         for path, parameter in parameters:
             with self.subTest(path=path):
-                self.assertValid(parameter["schema"], "test-event-001")
+                minimum = parameter["schema"].get("minLength", 0)
+                self.assertValid(parameter["schema"], "x" * max(14, minimum))
                 self.assertInvalid(parameter["schema"], "")
                 self.assertInvalid(parameter["schema"], None)
         for path in ("/me/sessions", "/publish/plans", "/me/diet-plans/{id}/checkins", "/appointments"):

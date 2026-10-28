@@ -103,10 +103,31 @@ erDiagram
 
 | 实体 | 字段、类型与约束 |
 |---|---|
-| `user` | `id PK`；`openid varchar(64) UK`；`unionid varchar(64)?`；`phone_enc blob?`、`key_id varchar(64)?`；`nickname varchar(64)?`、`avatar_asset_id ID? REF file_asset`；`gender tinyint`（0/1/2）；`birth_year smallint?`、`age_verified_at datetime(3)?`；`status varchar(16)`（active/disabled）；`token_version int unsigned >=1`；`last_active_at datetime(3)?`；通用时间列 |
+| `user` | `id PK` 为稳定业务主体；`nickname varchar(64)?`、`avatar_asset_id ID? REF file_asset`；`gender tinyint`（0/1/2）；`birth_year smallint?`、`age_verified_at datetime(3)?`；`status varchar(16)`（active/disabled）；`token_version int unsigned >=1`；`identity_version int unsigned >=1`；`last_active_at datetime(3)?`；通用时间列。登录身份独立于主体，不能以某端 openid 或电话号码当主键 |
 | `user_role` | `id PK`；`user_id ID REF user`；`role varchar(16)`（student/coach）；`status varchar(16)`（active/disabled）；`UK(user_id,role)`。**不含 admin**，选择教练入口不等于审核通过 |
 | `coach_profile` | `user_id PK REF user`；`real_name_enc blob?`、`key_id varchar(64)?`；`bio text`、`style varchar(128)?`、`years smallint unsigned`；`specialties json`（字符串数组）；`service_mode varchar(24)`（online/online_offline）；`city varchar(64)?`；`cert_status varchar(16)`（unverified/pending/approved/rejected）；`status varchar(16)`（draft/pending/active/suspended）；`version int unsigned`；评分/响应/排名是可重算读模型，不作履约事实 |
 | `coach_cert` | `id PK`；`coach_id ID REF coach_profile`；`cert_type varchar(64)`；`file_asset_id ID REF file_asset`；`status varchar(16)`（pending/approved/rejected）；`reviewed_by_admin_id ID? REF admin_account`、`reviewed_at datetime(3)?`、`note text?`。文件默认私有，公开的仅是经允许的认证展示信息 |
+
+### 4.1.1 登录身份、可信设备与关联（K01-02 目标模型）
+
+| 实体 | 字段与约束 |
+|---|---|
+| `login_identity` | `id PK`、`user_id REF user`；`kind`（wechat_mini/phone）、`provider_scope`（微信 AppID 或受控电话命名域）、`subject_enc`、`subject_lookup_hmac`、`key_id`、`state active/revoked`、`verified_at`、时间列。受控活动槽对同一 `(kind,provider_scope,subject)` 全局唯一，每主体每类最多一个活动身份；手机号先规范化再用受密钥保护的 HMAC 查重、加密保存；微信 openid 绑定 AppID，UnionID 可空且不是自动合并依据。密钥轮换须双读/串行回填并维持跨版本唯一，不能仅凭不同 HMAC 版本生成重复主体 |
+| `trusted_device` | `id` 不可预测、`user_id REF user`、ES256/P-256 公钥及稳定指纹、状态 active/revoked、创建/最后使用时间、设备提示（不作安全凭据）。公钥由 App 设备生成；私钥不应导出或同步，服务端只存公钥。每个设备密钥唯一归属主体；撤销使该设备相关会话及待批准登录失效。真实安全存储和设备能力逐端验收 |
+| `auth_session` | 不可预测的会话标识或受保护索引、`user_id`、认证身份、可空设备 ID（小程序微信会话）、`authenticated_at`、账号 `token_version`、到期与撤销状态。每次请求校验主体、会话、身份及 token version；敏感关联、解绑和审批要求近期重新认证：小程序重新完成微信登录，App 在已登记设备重新完成短信和设备签名登录；有效窗口由服务端安全配置。服务端不存明文访问/刷新令牌，撤销不得只依赖客户端清缓存 |
+| `sms_challenge` | 不可预测 ID、号码受保护索引、用途（phone_login / phone_link）、可空关联事务 ID、设备公钥指纹（登录时）、随机 nonce、到期、尝试上限/已用状态。验证码只存带服务端密钥的验证摘要，不能存明文或可被离线穷举的裸哈希；重发使旧码失效，按号码/IP/设备和全局限流并原子消费 |
+| `login_approval` | 不可预测 ID、目标 `user_id`、原短信挑战、设备公钥指纹、随机 nonce、轮询秘密的受保护摘要、比较码、状态、到期、决定会话及消费状态。批准会话必须属于同主体且近期重新认证；与轮询秘密分开。撤销设备、会话或账号后不能兑换；批准和签发会话以事务防重 |
+| `identity_link` | 不可预测 ID、发起 `user_id`、身份版本、目标种类、操作意图（phone add/replace 或微信关联）、待替换旧身份 ID（replace 时必填并与版本绑定）、一次性配对秘密摘要、验证后的目标身份索引、比较码、状态与到期。绑定须已认证且近期重新认证的发起主体、另一身份用途绑定的验证和明确确认；确认时检查身份归属与版本并原子提交；换号成功时同事务停用旧身份并撤销其会话和未消费挑战，失败保留旧身份。取消/过期废弃证明；已归属另一主体不得自动合并或泄露其资料 |
+| `recovery_code` | `user_id`、代次、状态（pending/active/used/revoked）、恢复码受服务端密钥保护的摘要、到期/确认/消费时间；每主体最多一个 active 和一个 pending。至少 128 位密码学随机熵，服务端只持久化受密钥保护的摘要；待确认的原响应如需幂等短期重放须单独加密并绑定原会话。确认替换时旧 active 与新 active 原子切换，取消/超时不影响旧码；恢复时与设备登记和会话发放同事务单次消费。保存期限不预设，实际期限与密钥轮换由 L01-03 安全核验 |
+| `auth_idempotency` | 按匿名挑战/请求或认证主体、方法、路径和高熵键约束；保存受密钥保护的请求摘要、短期加密结果、到期与状态。不得用裸验证码哈希作可枚举摘要；重放先验证原持有证明及当前授权，不得在撤销后复用旧令牌；仅原幂等键和完全相同的已验证签名请求可在未撤销且有效时重放，其他请求不能复用已消费的 jti。有效期和密钥轮换由上线配置与安全评审核定 |
+
+现行 ER 曾把 `user.openid` 标为非空唯一，不能表达 App 首次手机号注册；真实建表前由集成 owner 设计迁移，将既有小程序身份按实际 AppID 转入 `login_identity`，并校验唯一性和业务主体不变。原有 `phone_enc` 若只是资料且未经本人验证，不得自动提升为登录身份；真实旧库升级、回滚和并发由迁移任务实证。目前没有历史业务库或迁移执行的证据。
+
+短信只证明当前号码控制权；号码回收或被盗时，新设备不能仅凭短信取得既有主体，必须由该主体现有近期认证会话批准。无可信设备/已关联微信可用时，允许经短信、新设备私钥证明及本人已启用、未消费的备用恢复码共同恢复；不得仅凭短信恢复。恢复码不可用或手机也无法接收短信时进入人工申诉兜底，实名主体、渠道、处理责任、最少必要证据、审核和安全通知等仍须实际确定并验证，不冒称已有可用服务。换号必须由现有主体近期认证、验证新号码并原子更新归属，旧号码立即失效；完整换号/失号恢复能力待业务卡和安全评审，不以本合同声称实现。
+
+在恢复码未启用且其他途径不可用时，撤销设备或全撤销设备密钥如会使用户失去最后一条独立可用的可信登录路径，服务端拒绝该操作并返回 409；会话退出仍可单独进行。此保护不证明已提供丢失或被盗设备后的恢复/应急冻结能力，相关安全处置须在 A01 完成前补齐。App 普通退出清理会话令牌但保留未撤销的设备密钥。
+
+恢复码生成/使用、设备撤销、账号注销及身份替换并发时由同一主体锁或等效事务约束建立唯一终态；注销后恢复码不可恢复已注销主体。人工申诉不能因单个公开/可猜个人信息、短信或昵称直接授予旧账号；没有可审计人工流程时提示人工服务尚未开通，不伪造处理结果或承诺处理时限。
 
 ### 4.2 `admin_account`：独立管理主体
 

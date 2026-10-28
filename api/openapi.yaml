@@ -26,7 +26,7 @@ servers:
   description: 预发
 tags:
 - name: Auth
-  description: 微信登录与身份
+  description: 小程序微信登录、App 短信登录与本人身份关联
 - name: Me
   description: 我的资料、档案、权限
 - name: Coach
@@ -741,11 +741,1174 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PlanAdjustmentApply'
+  /auth/identity-link-claims/{id}/status:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthIdentityLinkClaimStatus
+      summary: 查询另一端的关联结果
+      description: 只能以本次短期 linkSecret 查询状态；不返回主体资料或会话，不能单独完成关联。关联完成后小程序需使用新 wx.login code 再登录。
+      security: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityLinkClaimStatusRequest'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityLinkClaimStatus'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/phone/challenges:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthPhoneChallenges
+      summary: 为 App 短信登录申请挑战
+      description: 公开入口。只接受规范化号码和目标设备公钥，服务端产生一次性挑战与随机 nonce；不透露号码是否已有账号。按号码、设备、IP 与总量限流，失败次数受限，同一号码同一用途的重发使旧挑战失效，不能使关联用途挑战跨用途互相消费。202 仅表示请求已接受，不证明送达。
+      security: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneLoginChallengeRequest'
+      responses:
+        '202':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneLoginChallenge'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/phone-login:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthPhoneLogin
+      summary: 短信及设备持有证明登录
+      description: 仅验证当前挑战的短信码和同一设备公钥签名；用途、过期、尝试次数和单次消费由服务端原子校验。新手机号可创建新主体并登记首个可信密钥；已有账号仅在已登记且未撤销的设备密钥验证成功后签发完整会话，新密钥必须等待已有可信会话批准，不能仅凭短信读取旧资料。重试同一请求必须按本挑战幂等重放，不能重复消费或发出多份会话；仅原幂等键和完全相同的已验证签名请求可在未撤销且有效时安全重放，其他请求不得复用已消费的 jti。
+      security: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneLoginRequest'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneLoginOutcome'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/login-approvals/{id}/exchange:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthLoginApprovalExchange
+      summary: 查询并领取新设备登录结果
+      description: 匿名端必须同时提交仅由原登录尝试获得的 approvalSecret 与同一设备私钥签名；签名含服务端 nonce、审批 ID 和单次 jti，校验时效、防重、设备归属和批准状态。批准端的会话权限不能由此轮询凭据替代。未批准、拒绝和过期不返回用户资料或会话；已批准且凭据未吊销时原子发放/幂等重放结果，机密不进入日志或
+        URL。
+      security: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginApprovalExchangeRequest'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginApprovalOutcome'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/login-approvals:
+    get:
+      tags:
+      - Auth
+      operationId: getMeLoginApprovals
+      summary: 查看本人待确认的登录
+      description: 仅返回当前主体的待确认事项及匹配码，不含手机号、健康信息或轮询凭据。显示的设备提示不能被当作身份凭据。
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginApprovalList'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/login-approvals/{id}/decision:
+    post:
+      tags:
+      - Auth
+      operationId: postMeLoginApprovalDecision
+      summary: 确认或拒绝新设备登录
+      description: 只有属于同一主体的已有有效会话可操作；批准必须由近期重新认证的现有登录身份完成，明确核对本次匹配码，绑定目标公钥、原挑战、nonce、用途和有效期。拒绝或过期后不可领取；批准、拒绝、设备撤销及会话失效并发时以事务决定唯一终态。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginApprovalDecision'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginApprovalDecisionResult'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identities:
+    get:
+      tags:
+      - Auth
+      operationId: getMeIdentities
+      summary: 查看本人可用登录方式
+      description: 只返回当前主体的身份类型、不可预测 ID，手机号仅返回后四位；不返回微信 openid、完整手机号、短信码或供应商令牌。version 用于关联和解绑的并发检查。
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentitySet'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identity-links:
+    post:
+      tags:
+      - Auth
+      operationId: postMeIdentityLinks
+      summary: 发起本人账号关联
+      description: 从已认证且近期重新认证的当前主体发起，绑定当前 identity version 和关联用途。手机号方向明确新增或替换，发送绑定专用短信；替换须存在当前手机号且原子保留旧身份直到新号码证明并确认。微信方向产生短期配对信息供小程序取得并提交
+        wx.login code。配对信息不是登录会话，不能单独批准或访问用户资料。
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityLinkStart'
+      responses:
+        '201':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityLinkStarted'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/identity-link-claims:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthIdentityLinkClaims
+      summary: 证明待关联的另一身份
+      description: 凭本次短期配对信息提交绑定用途的短信码或小程序 wx.login code，服务端验证来源和一次性用途并绑定待关联事务。微信身份已归属其他主体时拒绝自动合并，不返回对方私人资料；证明成功仍不能自动关联或签发登录会话。
+      security: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityLinkClaim'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityLinkClaimed'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identity-links/{id}:
+    get:
+      tags:
+      - Auth
+      operationId: getMeIdentityLink
+      summary: 查看本人关联状态
+      description: 仅发起主体可查看；按服务端状态展示待证明、待确认、已关联、取消、过期或冲突。不得把未确认的证明显示成已关联。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityLinkStatus'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identity-links/{id}/confirm:
+    post:
+      tags:
+      - Auth
+      operationId: postMeIdentityLinkConfirm
+      summary: 确认关联本人两端身份
+      description: 需本人近期重新认证、核对同一事务的匹配码并明确确认；事务中检查双方证明、identity version、唯一身份归属及未取消未过期状态，原子绑定。已归属其他主体返回 409，不自动合并或泄露对方资料。手机号替换成功时在同一事务停用旧号码、绑定新号码并撤销旧号码相关会话和未完成挑战；失败保留旧身份。旧手机号会话在替换成功时失效，若当前会话受影响，须用新手机号和已登记设备重新登录；成功后小程序使用新的 wx.login code 登录同一主体。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityLinkConfirm'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentitySet'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identity-links/{id}/cancel:
+    post:
+      tags:
+      - Auth
+      operationId: postMeIdentityLinkCancel
+      summary: 取消本人待关联请求
+      description: 仅发起主体可取消未完成请求，取消或过期后证明和秘密立即失效；重复取消按同一事务幂等。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityLinkCancel'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityLinkStatus'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/identities/{identityId}:
+    delete:
+      tags:
+      - Auth
+      operationId: deleteMeIdentity
+      summary: 解绑本人登录方式
+      description: 本人近期重新认证并确认；服务端以 identity version 和事务检查至少保留一个可用登录方式，否则返回 409。解绑与撤销该身份相关会话及待处理关联、可信凭据原子生效；不删除训练数据，也不改变账号注销状态。
+      parameters:
+      - name: identityId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityUnlink'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentitySet'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/trusted-devices:
+    get:
+      tags:
+      - Auth
+      operationId: getMeTrustedDevices
+      summary: 查看本人可信设备
+      description: 只返回设备记录和可读状态；设备标签由客户端提供，仅供辨认，不作为身份或位置真实性证明。
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustedDeviceList'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/trusted-devices/{id}/revoke:
+    post:
+      tags:
+      - Auth
+      operationId: postMeTrustedDeviceRevoke
+      summary: 撤销本人可信设备
+      description: 本人近期重新认证并明确确认。服务端原子撤销密钥、该设备会话和待处理登录审批；当前设备撤销时退出当前会话。如果撤销会使主体没有其他独立可用的可信登录路径或已启用的恢复码则拒绝并返回 409；不能仅删客户端缓存。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrustedDeviceRevoke'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustedDeviceList'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/sessions/revoke-all:
+    post:
+      tags:
+      - Auth
+      operationId: postMeSessionsRevokeAll
+      summary: 退出所有会话
+      description: 本人近期重新认证并明确确认；可选择同时撤销全部可信设备密钥。服务端原子撤销所有会话、关联刷新凭据及待处理审批；若选择撤销设备，必须先确认仍存在独立可用的可信登录路径或已启用的恢复码，否则拒绝并返回 409，不能使用户静默锁定。超时后不能凭已撤销令牌取回结果，须安全重新认证后查看。
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 安全随机数生成至少128位不可预测键；按认证主体、方法与路径隔离，同键异摘要冲突，重放前重新检查当前授权和撤销状态。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeAllSessionsRequest'
+      responses:
+        '200':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeAllSessionsResult'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/sessions/current:
+    delete:
+      tags:
+      - Auth
+      operationId: deleteAuthCurrentSession
+      summary: 退出当前会话
+      description: 服务端撤销当前会话及其关联刷新凭据（如有）；客户端清理该主体的私有内存状态和会话令牌，保留未被用户撤销的设备私钥以便安全重登。退出不等于注销，也不删除服务端数据；其他主体草稿不可串用。
+      responses:
+        '204':
+          description: 操作结果；HTTP 响应禁止缓存，认证凭据不得进入日志或 URL。服务端幂等结果仅可加密且按安全配置短期保留。
+          headers:
+            Cache-Control:
+              required: true
+              description: HTTP 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/recovery-code:
+    get:
+      tags:
+      - Auth
+      operationId: getMeRecoveryCode
+      summary: 查看本人恢复码状态
+      description: 只返回本人是否有已启用恢复码及版本，不返回恢复码、历史码或待确认明文。恢复码未配置或已使用后引导用户设置；真实恢复能力和端侧安全存储须先验证。
+      responses:
+        '200':
+          description: 结果；不得缓存认证凭据或恢复码。
+          headers:
+            Cache-Control:
+              required: true
+              description: 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCodeState'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/recovery-code/issues:
+    post:
+      tags:
+      - Auth
+      operationId: postMeRecoveryCodeIssue
+      summary: 准备一次性展示恢复码
+      description: 仅本人有效会话近期重新认证并明确确认后生成；安全随机生成的新码只在该次加密响应展示，不自动复制、同步或通过通知发送。新码待确认前旧有效码仍可用；新请求废弃同主体先前待确认码。响应丢失时，仅原会话、原幂等键及相同请求可在待确认和短期有效窗口内重放密文；确认、过期或撤销后不可重新显示，须发起新生成。
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键；同键同摘要仅在原持有证明与授权仍有效时重放，异摘要冲突。恢复码或会话响应仅短期加密保留，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryCodeIssueRequest'
+      responses:
+        '201':
+          description: 结果；不得缓存认证凭据或恢复码。
+          headers:
+            Cache-Control:
+              required: true
+              description: 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCodeIssued'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /me/recovery-code/issues/{id}/confirm:
+    post:
+      tags:
+      - Auth
+      operationId: postMeRecoveryCodeConfirm
+      summary: 确认已保存并启用恢复码
+      description: 仅原主体在有效会话中明确确认已保存本次码；检查期望版本、待确认记录、有效期和最近认证。原子停用旧码并启用本次码；失败或未确认时旧有效码不变。并发版本不符返回 409，不再次返回明文。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键；同键同摘要仅在原持有证明与授权仍有效时重放，异摘要冲突。恢复码或会话响应仅短期加密保留，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryCodeConfirmRequest'
+      responses:
+        '200':
+          description: 结果；不得缓存认证凭据或恢复码。
+          headers:
+            Cache-Control:
+              required: true
+              description: 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCodeActive'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
+  /auth/login-approvals/{id}/recover-with-code:
+    post:
+      tags:
+      - Auth
+      operationId: postAuthRecoverWithCode
+      summary: 使用恢复码和短信在新设备恢复登录
+      description: 仅限短信验证完成后、仍有效的本次新设备审批事务；同时验证原审批秘密、该事务 nonce/ID/用途绑定的目标设备 ES256 私钥签名和未使用的有效恢复码。按主体、号码、设备、IP 与全局安全配置限速；失败不透露其他资料，禁止仅凭短信或恢复码签发会话。重查主体、手机号身份和审批处于有效状态，及目标设备/会话未撤销；与注销、身份替换或撤权在同一主体范围串行，已注销或禁用时拒绝且不得凭幂等重放旧令牌。成功在同一事务单次消费恢复码、批准并登记目标设备、发放会话并废弃同次旧审批；提示用户重新生成恢复码。原幂等键和完全相同的已验证持有证明可在结果有效且未撤销时短期安全重放，其他请求不能复用已消费凭据。
+      security: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AuthOpaqueId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 22
+          maxLength: 128
+        description: 客户端以安全随机数生成至少128位不可预测键；同键同摘要仅在原持有证明与授权仍有效时重放，异摘要冲突。恢复码或会话响应仅短期加密保留，不进入日志。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryCodeUseRequest'
+      responses:
+        '200':
+          description: 结果；不得缓存认证凭据或恢复码。
+          headers:
+            Cache-Control:
+              required: true
+              description: 响应不得被缓存。
+              schema:
+                type: string
+                enum:
+                - no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneAuthSuccess'
+        '400':
+          $ref: '#/components/responses/AuthError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+        '403':
+          $ref: '#/components/responses/AuthError'
+        '404':
+          $ref: '#/components/responses/AuthError'
+        '409':
+          $ref: '#/components/responses/AuthError'
+        '410':
+          $ref: '#/components/responses/AuthError'
+        '422':
+          $ref: '#/components/responses/AuthError'
+        '429':
+          $ref: '#/components/responses/AuthError'
+        '500':
+          $ref: '#/components/responses/AuthError'
+        '503':
+          $ref: '#/components/responses/AuthError'
   /auth/wechat-login:
     post:
       tags:
       - Auth
-      summary: 微信登录
+      summary: 小程序微信登录
+      description: 微信临时代码仅由服务端换取该小程序身份；保留现有 operationId。已关联身份映射到稳定主体，未关联时不可凭昵称、手机号或 unionid 静默合并。已有 App 账号可先走本人关联，再用新的 wx.login code 登录。
       security: []
       requestBody:
         required: true
@@ -755,27 +1918,33 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: 登录成功
+          description: 登录成功；认证响应不得缓存或记录令牌。
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum: [no-store]
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
         '400':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/AuthError'
         '422':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '429':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '500':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '503':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '409':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
         '412':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/AuthError'
       operationId: postAuthWechatLogin
   /me:
     get:
@@ -5944,6 +7113,18 @@ components:
         maxLength: 128
       description: 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。
   responses:
+    AuthError:
+      description: 认证或身份操作失败；不得缓存，不透露其他账号资料。
+      headers:
+        Cache-Control:
+          required: true
+          schema:
+            type: string
+            enum: [no-store]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     Error:
       description: 业务错误
       content:
@@ -7254,13 +8435,678 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/PlanTemplateCard'
+    AuthOpaqueId:
+      type: string
+      minLength: 22
+      maxLength: 128
+      pattern: ^[A-Za-z0-9_-]+$
+      description: 服务端生成的不可预测标识，不得使用顺序用户 ID。
+    AuthSecret:
+      type: string
+      minLength: 43
+      maxLength: 256
+      pattern: ^[A-Za-z0-9_-]+$
+      description: 服务端生成的高熵一次性凭据；仅经 TLS 请求体传递，不放 URL、日志或推送。
+    SmsCode:
+      type: string
+      pattern: ^[0-9]{6,10}$
+      description: 一次性短信验证码；不记录明文，具体长度与生效期由供应商及安全配置核定。
+    DevicePublicJwk:
+      type: object
+      additionalProperties: false
+      required:
+      - kty
+      - crv
+      - x
+      - y
+      properties:
+        kty:
+          type: string
+          enum:
+          - EC
+        crv:
+          type: string
+          enum:
+          - P-256
+        x:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+        y:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+    DeviceProof:
+      type: string
+      minLength: 32
+      maxLength: 4096
+      pattern: ^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$
+      description: 紧凑格式 ES256 JWS，保护头 alg=ES256、typ=JWT；载荷必须含 aud=nerae-auth-device、purpose（phone_login、approval_exchange 或 recovery_code）、resourceId、服务端
+        nonce、iat、exp 和随机单次 jti。服务端验证签名及所有字段与事务/公钥绑定并防重。私钥应由平台安全存储生成且不可导出；是否支持须逐端验证。
+    PhoneLoginChallengeRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - phone
+      - devicePublicKey
+      properties:
+        phone:
+          type: string
+          pattern: ^\+[1-9][0-9]{3,14}$
+          description: E.164 形式；具体号段和供应商适用范围由服务端校验。完整号码只用于必要验证，不进入日志。
+        devicePublicKey:
+          $ref: '#/components/schemas/DevicePublicJwk'
+        deviceLabel:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: 可选的设备提示，仅供用户辨认，不能作为身份或位置证明。
+    PhoneLoginChallenge:
+      type: object
+      additionalProperties: false
+      required:
+      - challengeId
+      - nonce
+      - expiresAt
+      properties:
+        challengeId:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        nonce:
+          $ref: '#/components/schemas/AuthSecret'
+        expiresAt:
+          type: string
+          format: date-time
+        retryAfter:
+          type: string
+          format: date-time
+    PhoneLoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - challengeId
+      - code
+      - deviceProof
+      properties:
+        challengeId:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        code:
+          $ref: '#/components/schemas/SmsCode'
+        deviceProof:
+          $ref: '#/components/schemas/DeviceProof'
+    PhoneAuthSuccess:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - token
+      - expiresIn
+      - user
+      properties:
+        status:
+          type: string
+          enum:
+          - authenticated
+        token:
+          type: string
+          minLength: 1
+          maxLength: 8192
+        expiresIn:
+          type: integer
+          minimum: 1
+        user:
+          $ref: '#/components/schemas/User'
+        onboarded:
+          type: boolean
+    PhoneAuthApprovalRequired:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - approvalId
+      - approvalSecret
+      - nonce
+      - comparisonCode
+      - expiresAt
+      properties:
+        status:
+          type: string
+          enum:
+          - approval_required
+        approvalId:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        approvalSecret:
+          $ref: '#/components/schemas/AuthSecret'
+        nonce:
+          $ref: '#/components/schemas/AuthSecret'
+        comparisonCode:
+          type: string
+          pattern: ^[0-9]{4,8}$
+        expiresAt:
+          type: string
+          format: date-time
+    PhoneLoginOutcome:
+      oneOf:
+      - $ref: '#/components/schemas/PhoneAuthSuccess'
+      - $ref: '#/components/schemas/PhoneAuthApprovalRequired'
+    LoginApprovalExchangeRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - approvalSecret
+      - deviceProof
+      properties:
+        approvalSecret:
+          $ref: '#/components/schemas/AuthSecret'
+        deviceProof:
+          $ref: '#/components/schemas/DeviceProof'
+    LoginApprovalOutcome:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - pending
+      - type: object
+        additionalProperties: false
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - denied
+      - type: object
+        additionalProperties: false
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - expired
+      - $ref: '#/components/schemas/PhoneAuthSuccess'
+    LoginApprovalItem:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - comparisonCode
+      - createdAt
+      - expiresAt
+      properties:
+        id:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        comparisonCode:
+          type: string
+          pattern: ^[0-9]{4,8}$
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    LoginApprovalList:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoginApprovalItem'
+    LoginApprovalDecision:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - decision
+        - comparisonCode
+        - confirmed
+        properties:
+          decision:
+            type: string
+            enum:
+            - approve
+          comparisonCode:
+            type: string
+            pattern: ^[0-9]{4,8}$
+          confirmed:
+            type: boolean
+            enum:
+            - true
+      - type: object
+        additionalProperties: false
+        required:
+        - decision
+        properties:
+          decision:
+            type: string
+            enum:
+            - deny
+    LoginApprovalDecisionResult:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - approved
+          - denied
+    IdentityItem:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - id
+        - kind
+        - phoneLast4
+        properties:
+          id:
+            $ref: '#/components/schemas/AuthOpaqueId'
+          kind:
+            type: string
+            enum:
+            - phone
+          phoneLast4:
+            type: string
+            pattern: ^[0-9]{4}$
+      - type: object
+        additionalProperties: false
+        required:
+        - id
+        - kind
+        properties:
+          id:
+            $ref: '#/components/schemas/AuthOpaqueId'
+          kind:
+            type: string
+            enum:
+            - wechat_mini
+    IdentitySet:
+      type: object
+      additionalProperties: false
+      required:
+      - version
+      - items
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/IdentityItem'
+    IdentityLinkStart:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - kind
+        - intent
+        - phone
+        - expectedVersion
+        properties:
+          kind:
+            type: string
+            enum:
+            - phone
+          intent:
+            type: string
+            enum:
+            - add
+            - replace
+          phone:
+            type: string
+            pattern: ^\+[1-9][0-9]{3,14}$
+            description: E.164 形式；具体号段和供应商适用范围由服务端校验。完整号码只用于必要验证，不进入日志。
+          expectedVersion:
+            type: integer
+            minimum: 1
+      - type: object
+        additionalProperties: false
+        required:
+        - kind
+        - expectedVersion
+        properties:
+          kind:
+            type: string
+            enum:
+            - wechat_mini
+          expectedVersion:
+            type: integer
+            minimum: 1
+    IdentityLinkStarted:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - linkSecret
+      - expiresAt
+      properties:
+        id:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        linkSecret:
+          $ref: '#/components/schemas/AuthSecret'
+        expiresAt:
+          type: string
+          format: date-time
+    IdentityLinkClaim:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - kind
+        - linkId
+        - linkSecret
+        - code
+        properties:
+          kind:
+            type: string
+            enum:
+            - phone
+          linkId:
+            $ref: '#/components/schemas/AuthOpaqueId'
+          linkSecret:
+            $ref: '#/components/schemas/AuthSecret'
+          code:
+            $ref: '#/components/schemas/SmsCode'
+      - type: object
+        additionalProperties: false
+        required:
+        - kind
+        - linkId
+        - linkSecret
+        - code
+        properties:
+          kind:
+            type: string
+            enum:
+            - wechat_mini
+          linkId:
+            $ref: '#/components/schemas/AuthOpaqueId'
+          linkSecret:
+            $ref: '#/components/schemas/AuthSecret'
+          code:
+            type: string
+            minLength: 1
+            maxLength: 512
+    IdentityLinkClaimStatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - linkSecret
+      properties:
+        linkSecret:
+          $ref: '#/components/schemas/AuthSecret'
+    IdentityLinkClaimStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - waiting_proof
+          - waiting_confirmation
+          - linked
+          - cancelled
+          - expired
+          - conflict
+    IdentityLinkClaimed:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - comparisonCode
+      properties:
+        status:
+          type: string
+          enum:
+          - proof_received
+        comparisonCode:
+          type: string
+          pattern: ^[0-9]{4,8}$
+    IdentityLinkStatus:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+        - status
+        - comparisonCode
+        properties:
+          status:
+            type: string
+            enum:
+            - waiting_confirmation
+          comparisonCode:
+            type: string
+            pattern: ^[0-9]{4,8}$
+      - type: object
+        additionalProperties: false
+        required:
+        - status
+        properties:
+          status:
+            type: string
+            enum:
+            - waiting_proof
+            - linked
+            - cancelled
+            - expired
+            - conflict
+    IdentityLinkConfirm:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedVersion
+      - comparisonCode
+      - confirmed
+      properties:
+        expectedVersion:
+          type: integer
+          minimum: 1
+        comparisonCode:
+          type: string
+          pattern: ^[0-9]{4,8}$
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    IdentityLinkCancel:
+      type: object
+      additionalProperties: false
+      required:
+      - confirmed
+      properties:
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    IdentityUnlink:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedVersion
+      - confirmed
+      properties:
+        expectedVersion:
+          type: integer
+          minimum: 1
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    TrustedDeviceItem:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - label
+      - createdAt
+      properties:
+        id:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+    TrustedDeviceList:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrustedDeviceItem'
+    TrustedDeviceRevoke:
+      type: object
+      additionalProperties: false
+      required:
+      - confirmed
+      properties:
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    RevokeAllSessionsRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - confirmed
+      - revokeTrustedDevices
+      properties:
+        confirmed:
+          type: boolean
+          enum:
+          - true
+        revokeTrustedDevices:
+          type: boolean
+    RevokeAllSessionsResult:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - devicesRevoked
+      properties:
+        status:
+          type: string
+          enum:
+          - revoked
+        devicesRevoked:
+          type: boolean
+    RecoveryCodeValue:
+      type: string
+      pattern: ^[A-Z2-7]{26}$
+      description: 服务端以密码学安全随机数生成至少128位熵；客户端仅规范化分隔符，不放入 URL、日志或通知。每个有效码只能成功使用一次。
+    RecoveryCodeState:
+      type: object
+      additionalProperties: false
+      required:
+      - state
+      - generation
+      properties:
+        state:
+          type: string
+          enum:
+          - not_configured
+          - active
+        generation:
+          type: integer
+          minimum: 0
+    RecoveryCodeIssueRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedGeneration
+      - confirmed
+      properties:
+        expectedGeneration:
+          type: integer
+          minimum: 0
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    RecoveryCodeIssued:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - recoveryCode
+      - expiresAt
+      properties:
+        id:
+          $ref: '#/components/schemas/AuthOpaqueId'
+        recoveryCode:
+          $ref: '#/components/schemas/RecoveryCodeValue'
+        expiresAt:
+          type: string
+          format: date-time
+    RecoveryCodeConfirmRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedGeneration
+      - confirmed
+      properties:
+        expectedGeneration:
+          type: integer
+          minimum: 0
+        confirmed:
+          type: boolean
+          enum:
+          - true
+    RecoveryCodeUseRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - approvalSecret
+      - recoveryCode
+      - deviceProof
+      properties:
+        approvalSecret:
+          $ref: '#/components/schemas/AuthSecret'
+        recoveryCode:
+          $ref: '#/components/schemas/RecoveryCodeValue'
+        deviceProof:
+          $ref: '#/components/schemas/DeviceProof'
+    RecoveryCodeActive:
+      type: object
+      additionalProperties: false
+      required: [state, generation]
+      properties:
+        state:
+          type: string
+          enum: [active]
+        generation:
+          type: integer
+          minimum: 1
     LoginRequest:
       type: object
+      additionalProperties: false
       required:
       - code
       properties:
         code:
           type: string
+          minLength: 1
+          maxLength: 512
           description: wx.login 返回的 code
         role:
           type: string
@@ -7299,6 +9145,7 @@ components:
           example: '101'
         nickname:
           type: string
+          description: 未设置昵称时返回空字符串，由客户端展示中性占位；不得推断或伪造姓名。
         avatarUrl:
           type: string
           nullable: true
