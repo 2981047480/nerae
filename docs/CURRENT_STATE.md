@@ -16,6 +16,6 @@
 - 未实现/未验收：Go 业务服务、正式 uni-app、真实 HTTP/DB 权限和并发、业务迁移与升级恢复、MiMo 真调用、小程序及 iOS/Android App 真机、签名发布与生产部署。F01 工作包尚未完整接受；静态契约测试不能替代这些验证。
 - F01-04 已在本地集成树加入测试工作区隔离和迁移执行器；在集成提交 `c3ed9db` 以两套临时原生 MySQL 8.4.13 与 Redis 7.4.12 同时验证了跨工作区读写、空库迁移、重复执行和合成失败后的 dirty 阻断。Docker Compose、真实卷清理隔离、失败后的完整恢复和对象存储仍未验证，任务保持 active，见 [F01-04 证据](evidence/F01/F01-04/report.md)。
 - 主体、类目与允许的后续联系渠道尚未注册或核定，仍为 L01/V02 上线前置任务，不因样机交付关闭。
-- 工程规划及 ready 以 tasks.json / scripts/plan.py 为准；F01-01、K01-01、F01-02 与 F01-03 已接受；客户端及后台仅为工程壳，API/worker 仅为进程与健康检查骨架，worker 尚无任务处理器。P02-01 已完成三端资源与平台条件探针；F01-04、L01-01、D02-01 进行中。真实健康数据库、原生安装和真机尚未验证。D02 正在整理 [三端实施索引](UI_SPEC.md)，账号关联/注销仍缺正式画面。D01 的历史 accepted 不等于 R04/R05 或正式 U01–U08 已通过。R04 的历史合同缺口见 [INTEGRATION](design/round-04/INTEGRATION.md)，当前修订见 K01-01 报告；F01/F02 与业务卡仍依赖实际接受证据。
+- 工程规划及 ready 以 tasks.json / scripts/plan.py 为准；F01-01、K01-01、F01-02 与 F01-03 已接受；客户端及后台仅为工程壳，API/worker 仅为进程与健康检查骨架，worker 尚无任务处理器。P02-01 已完成三端资源与平台条件探针；F01-04、L01-01 进行中；D02-01 的文字规格已在集成提交 `459a4d0` 独立复核并接受，D02-I 待复核。真实健康数据库、原生安装和真机尚未验证。[三端实施索引](UI_SPEC.md) 已补齐状态矩阵与素材台账，账号关联/注销仍缺正式画面。D01 的历史 accepted 不等于 R04/R05 或正式 U01–U08 已通过。R04 的历史合同缺口见 [INTEGRATION](design/round-04/INTEGRATION.md)，当前修订见 K01-01 报告；F01/F02 与业务卡仍依赖实际接受证据。
 
 当前文档：PRD、APP_FLOW、UI_SPEC、DECISION_LOG；旧轮次/旧证据原样保留作历史，不回写旧检查结果。当前 Appllama 参考见 design/round-05/references/manifest.json；此前初查留在原项目目录 docs/design/research/2026-10-27-appllama，用户最新要求优先。

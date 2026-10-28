@@ -72,7 +72,7 @@
 | K01-03 | 账号注销与撤权合同 | task / K01 | K01-02 | — | 1–2 | planned |
 | K01-I | 训练、身份与注销合同复核 | integration / K01 | K01-01, K01-02, K01-03 | — | 0.5–1.5 | planned |
 | D02 | 第五轮三端设计实施规格 | work_package / complete | D02-01, D02-I | — | 2–3.5 | planned |
-| D02-01 | 整理 R05 三端组件与状态规格 | task / D02 | D01 | — | 1.5–2.5 | active |
+| D02-01 | 整理 R05 三端组件与状态规格 | task / D02 | D01 | — | 1.5–2.5 | accepted |
 | D02-I | R05 设计实施规格复核 | integration / D02 | D02-01 | — | 0.5–1 | planned |
 | P02-01 | App 编译、打包路径与平台缺口探针 | task / P02 | F01-03 | — | 1–3 | accepted |
 | Q01 | 陌生执行者任务包上手验证 | work_package / complete / 暂缓 | Q01-01 | — | 0.5–1 | planned |

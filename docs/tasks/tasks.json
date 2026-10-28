@@ -5218,7 +5218,7 @@
       "id": "D02-01",
       "title": "整理 R05 三端组件与状态规格",
       "batch": "foundation",
-      "status": "active",
+      "status": "accepted",
       "depends_on": [
         "D01"
       ],
@@ -5271,7 +5271,43 @@
         "不把样例、静态合同测试或模拟器检查当作真实服务、真机或上线证据",
         "不得发送真实客户消息、向外部提交证书或部署生产"
       ],
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "docs/UI_SPEC.md",
+          "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/design/round-05/implementation/screen-map.md",
+          "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/design/round-05/implementation/interaction-spec.md",
+          "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/design/round-05/implementation/account-control.md",
+          "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/design/round-05/implementation/platform-state-matrix.md",
+          "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/design/round-05/implementation/asset-ledger.md",
+          "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        },
+        {
+          "path": "docs/evidence/D02/D02-01/continuation.md",
+          "sha256": "b6f6d952d94aabd0915336ad0748cf062c638ac57ada70de8228fb2896313408",
+          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+        }
+      ],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录实际环境/命令、影响与下一步；同类第二次重评范围与能力；第三次停止该路径并报告 blocked，独立工作继续。",
       "external_prerequisites": [],
@@ -5280,7 +5316,59 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
+      "accepted_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
+      "reviewed_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
+      "review_mode": "independent",
+      "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
+      "review_summary": "独立复核在同一集成提交检查任务覆盖、离线注销与未缓存分支、链接及任务图；真实界面、设备、素材权利和身份合同仍由后续卡验收。",
+      "completion": {
+        "scope": {
+          "status": "pass",
+          "evidence": [
+            "docs/UI_SPEC.md",
+            "docs/design/round-05/implementation/screen-map.md",
+            "docs/evidence/D02/D02-01/continuation.md"
+          ]
+        },
+        "verification": {
+          "status": "pass",
+          "evidence": [
+            "docs/design/round-05/implementation/screen-map.md",
+            "docs/design/round-05/implementation/platform-state-matrix.md",
+            "docs/evidence/D02/D02-01/continuation.md"
+          ]
+        },
+        "contract": {
+          "status": "not_applicable",
+          "reason": "本卡只整理页面和状态规格，不修改业务 wire contract；身份和注销合同仍由 K01-02/03 决定。"
+        },
+        "privacy": {
+          "status": "not_applicable",
+          "reason": "本卡不实现健康数据访问或撤权；文档说明授权和离线边界，真实权限负例由业务与集成卡验收。"
+        },
+        "recovery": {
+          "status": "not_applicable",
+          "reason": "本卡只规定界面恢复状态，不实现同步、注销、删除或备份恢复；真实运行时由后续任务验证。"
+        },
+        "docs": {
+          "status": "pass",
+          "evidence": [
+            "docs/UI_SPEC.md",
+            "docs/design/round-05/implementation/account-control.md",
+            "docs/design/round-05/implementation/platform-state-matrix.md",
+            "docs/design/round-05/implementation/asset-ledger.md"
+          ]
+        },
+        "review": {
+          "status": "pass",
+          "evidence": [
+            "docs/design/round-05/implementation/screen-map.md",
+            "docs/design/round-05/implementation/platform-state-matrix.md",
+            "docs/evidence/D02/D02-01/continuation.md"
+          ]
+        }
+      }
     },
     {
       "id": "D02-I",
