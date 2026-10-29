@@ -28,7 +28,11 @@ func TestRecordingSchemaWithGoValidator(t *testing.T) {
 		{"two exercise sources", "SetRecordWrite", `{"exerciseId":"101","exerciseName":"custom","exerciseEntryKey":"exercise-001","setIndex":1,"recordKey":"set-0001","kind":"bodyweight","reps":8}`, false},
 		{"forged server name", "SetRecordWrite", `{"exerciseId":"101","exerciseEntryKey":"exercise-001","setIndex":1,"recordKey":"set-0001","kind":"bodyweight","reps":8,"resolvedExerciseName":"fake"}`, false},
 		{"empty batch", "SetBatchUpdate", `{"expectedVersion":1}`, false},
-		{"valid deletion", "SetBatchUpdate", `{"expectedVersion":1,"deleteRecordKeys":["set-0001"]}`, true},
+		{"valid deletion", "SetBatchUpdate", `{"expectedVersion":1,"exerciseEntryKeys":[],"deleteRecordKeys":["set-0001"]}`, true},
+		{"valid ordering only", "SetBatchUpdate", `{"expectedVersion":1,"exerciseEntryKeys":["exercise-001"]}`, true},
+		{"duplicate entry", "SetBatchUpdate", `{"expectedVersion":1,"exerciseEntryKeys":["exercise-001","exercise-001"]}`, false},
+		{"null entry order", "SetBatchUpdate", `{"expectedVersion":1,"exerciseEntryKeys":null}`, false},
+		{"valid empty detail", "WorkoutSessionDetail", `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"in_progress","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","recordedAt":null,"sets":[],"exerciseEntryKeys":[]}`, true},
 		{"completed without groups", "WorkoutSessionDetail", `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"completed","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","recordedAt":"2026-10-20T10:00:00Z","sets":[]}`, false},
 		{"skipped with group", "WorkoutSessionDetail", `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"skipped","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","recordedAt":null,"sets":[{"exerciseId":"101","exerciseEntryKey":"exercise-001","setIndex":1,"recordKey":"set-0001","kind":"bodyweight","reps":8,"resolvedExerciseName":"俯卧撑"}]}`, false},
 	}

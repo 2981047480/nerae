@@ -59,22 +59,38 @@ func TestGeneratedSetBatchCarriesTypedActualGroup(t *testing.T) {
 		RecordKey: "set-0001", Kind: SetRecordWriteKind("weight"),
 		WeightKg: &weight, Reps: &reps,
 	}}
-	batch := SetBatchUpdate{ExpectedVersion: 1, Sets: &sets}
+	batch := SetBatchUpdate{ExpectedVersion: 1, ExerciseEntryKeys: []string{"exercise-001"}, Sets: &sets}
 	payload, err := json.Marshal(batch)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got struct {
-		ExpectedVersion int                          `json:"expectedVersion"`
-		Sets            []map[string]json.RawMessage `json:"sets"`
+		ExpectedVersion   int                          `json:"expectedVersion"`
+		ExerciseEntryKeys []string                     `json:"exerciseEntryKeys"`
+		Sets              []map[string]json.RawMessage `json:"sets"`
 	}
 	if err := json.Unmarshal(payload, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.ExpectedVersion != 1 || len(got.Sets) != 1 || string(got.Sets[0]["recordKey"]) != `"set-0001"` {
+	if got.ExpectedVersion != 1 || len(got.ExerciseEntryKeys) != 1 || got.ExerciseEntryKeys[0] != "exercise-001" || len(got.Sets) != 1 || string(got.Sets[0]["recordKey"]) != `"set-0001"` {
 		t.Fatalf("unexpected batch: %s", payload)
 	}
 	if _, sent := got.Sets[0]["resolvedExerciseName"]; sent {
 		t.Fatalf("server-owned name must not be sent: %s", payload)
+	}
+}
+
+func TestGeneratedEmptyOrderEncodesAsArray(t *testing.T) {
+	batch := SetBatchUpdate{ExpectedVersion: 1, ExerciseEntryKeys: []string{}}
+	encoded, err := json.Marshal(batch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &fields); err != nil {
+		t.Fatal(err)
+	}
+	if string(fields["exerciseEntryKeys"]) != "[]" {
+		t.Fatalf("empty order must encode as an array, got %s", fields["exerciseEntryKeys"])
 	}
 }

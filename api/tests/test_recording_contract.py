@@ -54,21 +54,29 @@ class RecordingContractTests(ContractCase):
         row = {'exerciseId': '101', 'exerciseEntryKey': 'exercise-test-001',
                'setIndex': 1, 'recordKey': 'set-test-001',
                'kind': 'weight', 'weightKg': 12.5, 'reps': 8}
-        self.assertValid(schema, {'expectedVersion': 1, 'sets': [row]})
-        self.assertValid(schema, {'expectedVersion': 2, 'deleteRecordKeys': ['set-test-001']})
-        self.assertValid(schema, {'expectedVersion': 3, 'sets': [row], 'deleteRecordKeys': ['set-test-002']})
-        self.assertValid(schema, {'expectedVersion': 4, 'sets': [row], 'restoreRecordKeys': ['set-test-001']})
-        self.assertValid(schema, {'expectedVersion': 5, 'sets': [row, dict(row, recordKey='set-test-002',
-                                                                          exerciseEntryKey='exercise-test-002')]})
+        order = ['exercise-test-001']
+        self.assertValid(schema, {'expectedVersion': 1, 'exerciseEntryKeys': order, 'sets': [row]})
+        self.assertValid(schema, {'expectedVersion': 2, 'exerciseEntryKeys': [], 'deleteRecordKeys': ['set-test-001']})
+        self.assertValid(schema, {'expectedVersion': 3, 'exerciseEntryKeys': order, 'sets': [row], 'deleteRecordKeys': ['set-test-002']})
+        self.assertValid(schema, {'expectedVersion': 4, 'exerciseEntryKeys': order, 'sets': [row], 'restoreRecordKeys': ['set-test-001']})
+        self.assertValid(schema, {'expectedVersion': 5, 'exerciseEntryKeys': order + ['exercise-test-002'],
+                                  'sets': [row, dict(row, recordKey='set-test-002', exerciseEntryKey='exercise-test-002')]})
+        self.assertValid(schema, {'expectedVersion': 6, 'exerciseEntryKeys': order})
+        self.assertValid(schema, {'expectedVersion': 7, 'exerciseEntryKeys': [f'entry-{n:04}' for n in range(2000)]})
         for sample in ({}, {'expectedVersion': 1}, {'expectedVersion': 0, 'sets': [row]},
-                       {'expectedVersion': 1, 'sets': []}, {'expectedVersion': 1, 'deleteRecordKeys': []},
-                       {'expectedVersion': 1, 'restoreRecordKeys': ['set-test-001']},
-                       {'expectedVersion': 1, 'deleteRecordKeys': ['set-test-002'],
+                       {'expectedVersion': 1, 'sets': [row]},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'sets': []},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'deleteRecordKeys': []},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'restoreRecordKeys': ['set-test-001']},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'deleteRecordKeys': ['set-test-002'],
                         'restoreRecordKeys': ['set-test-001']},
-                       {'expectedVersion': 1, 'deleteRecordKeys': ['set-test-001', 'set-test-001']},
-                       {'expectedVersion': 1, 'sets': [row] * 201},
-                       {'expectedVersion': 1, 'sets': [dict(row, resolvedExerciseName='伪造名称')]},
-                       {'expectedVersion': 1, 'sets': [row], 'unexpected': True}):
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'deleteRecordKeys': ['set-test-001', 'set-test-001']},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'sets': [row] * 201},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'sets': [dict(row, resolvedExerciseName='伪造名称')]},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order, 'sets': [row], 'unexpected': True},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': order * 2},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': ['short']},
+                       {'expectedVersion': 1, 'exerciseEntryKeys': [f'entry-{n:04}' for n in range(2001)]}):
             with self.subTest(sample=sample):
                 self.assertInvalid(schema, sample)
         self.assertIn('412', self.contract.operation(path, 'post')['responses'])
@@ -112,15 +120,18 @@ class RecordingContractTests(ContractCase):
                  'status': 'completed', 'source': 'free', 'version': 3,
                  'createdAt': '2026-10-23T10:00:00Z', 'updatedAt': '2026-10-23T10:03:00Z',
                  'recordedAt': '2026-10-23T10:03:00Z',
-                 'sets': [dict(row, resolvedExerciseName='俯卧撑')]}
+                 'sets': [dict(row, resolvedExerciseName='俯卧撑')], 'exerciseEntryKeys': ['exercise-test-001']}
         self.assertMissingRejected(response, valid, ('id', 'date', 'timeZone', 'status', 'source',
-                                                     'version', 'createdAt', 'updatedAt', 'recordedAt', 'sets'))
+                                                     'version', 'createdAt', 'updatedAt', 'recordedAt', 'sets', 'exerciseEntryKeys'))
         self.assertInvalid(response, dict(valid, recordedAt=None))
         self.assertInvalid(response, dict(valid, recordedAt='2026-10-20'))
         self.assertInvalid(response, dict(valid, sets=[]))
-        self.assertValid(response, dict(valid, status='in_progress', recordedAt=None, sets=[]))
-        self.assertValid(response, dict(valid, status='skipped', recordedAt=None, sets=[]))
-        self.assertValid(response, dict(valid, status='skipped', sets=[]))
+        self.assertValid(response, dict(valid, status='in_progress', recordedAt=None, sets=[], exerciseEntryKeys=[]))
+        self.assertValid(response, dict(valid, status='skipped', recordedAt=None, sets=[], exerciseEntryKeys=[]))
+        self.assertValid(response, dict(valid, status='skipped', sets=[], exerciseEntryKeys=[]))
+        self.assertInvalid(response, dict(valid, status='in_progress', recordedAt=None, sets=[]))
+        self.assertInvalid(response, dict(valid, exerciseEntryKeys=[]))
+        self.assertInvalid(response, dict(valid, exerciseEntryKeys=['exercise-test-001'] * 2))
         self.assertInvalid(response, dict(valid, status='skipped', recordedAt=None))
         self.assertInvalid(response, dict(valid, status='skipped'))
         summary = self.contract.schema('WorkoutSession')
