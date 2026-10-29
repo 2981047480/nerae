@@ -6901,9 +6901,9 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "99b1e86",
-      "write_allowlist": ["apps/api/internal/modules/workout/application/workout.go", "apps/api/internal/modules/workout/application/workout_test.go", "apps/api/internal/modules/workout/repository/read.go", "docs/evidence/A04/A04-04/"],
+      "write_allowlist": ["apps/api/internal/modules/workout/application/workout.go", "apps/api/internal/modules/workout/application/workout_test.go", "apps/api/internal/modules/workout/application/ordered_workout.go", "apps/api/internal/modules/workout/repository/read.go", "docs/evidence/A04/A04-04/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md", "docs/evidence/K01/K01-01/runtime-cases.md"],
-      "deliverables": "在单一数据库事务中验证本人会话和年龄状态，再创建自由记录、读取或保存实际组；提交前复验当前授权，失败回滚。",
+      "deliverables": "在单一数据库事务中验证本人会话和年龄状态，再创建自由记录、读取或保存实际组；提交前复验当前授权，失败回滚。为有序组读写和完成确认提供同一授权事务入口，旧无序入口不得对外开放。",
       "acceptance": [
         "隔离 MySQL 使用真实设备证明和数据库会话验证未验证年龄拒绝写入，合成的已验证年龄主体可以写入和以另一会话恢复同一记录",
         "不同主体、失效设备或旧版本不得写入；错误后记录、组和版本保持原状",
