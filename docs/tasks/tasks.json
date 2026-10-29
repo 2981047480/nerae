@@ -7099,7 +7099,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "b959f7d",
+      "base_revision": "a0064b9",
       "write_allowlist": ["apps/api/internal/modules/auth/session/age.go", "apps/api/internal/modules/auth/session/age_test.go", "docs/evidence/A01/A01-10/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
       "deliverables": "实现仅本人有效会话可以明确提交的 18+ 自我声明，并在同一事务校验和更新主体状态；不收集完整出生日期，不将自我声明冒称身份或精确年龄核验。",
