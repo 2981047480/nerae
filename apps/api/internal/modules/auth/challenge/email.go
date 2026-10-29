@@ -19,13 +19,14 @@ type Store struct {
 	hasher     *domain.EmailCodeHasher
 	replay     *repository.ProofReplayStore
 	identities *domain.EmailIdentityProtector
+	now        func() time.Time
 }
 
 func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector) (*Store, error) {
 	if hasher == nil || replay == nil || identities == nil {
 		return nil, ErrChallengeStore
 	}
-	return &Store{hasher: hasher, replay: replay, identities: identities}, nil
+	return &Store{hasher: hasher, replay: replay, identities: identities, now: time.Now}, nil
 }
 
 // IssueInput contains a validated email and server-generated material. Code,
@@ -99,7 +100,7 @@ type AttemptInput struct {
 	ChallengeID string
 	Code        string
 	DeviceProof string
-	Now         time.Time
+	// ProofPolicy comes only from trusted server configuration, never the request.
 	ProofPolicy domain.ProofPolicy
 }
 
@@ -113,13 +114,9 @@ func (AttemptInput) LogValue() slog.Value         { return slog.StringValue("Att
 // must be committed only after identity, trusted-device, revocation, session and
 // idempotency checks succeed in the same transaction.
 type AttemptResult struct {
-	Verified        bool
-	Changed         bool
-	EmailIndex      [32]byte
-	EmailCiphertext []byte
-	EmailKeyID      string
-	Fingerprint     [32]byte
-	PublicKey       domain.DevicePublicJWK
+	Verified bool
+	Changed  bool
+	Proof    *VerifiedEmail
 }
 
 func (AttemptResult) String() string               { return "AttemptResult{redacted}" }
@@ -127,13 +124,77 @@ func (AttemptResult) GoString() string             { return "AttemptResult{redac
 func (AttemptResult) MarshalJSON() ([]byte, error) { return nil, ErrChallengeStore }
 func (AttemptResult) LogValue() slog.Value         { return slog.StringValue("AttemptResult{redacted}") }
 
+// VerifiedEmail is an opaque, transaction-bound result of a successful
+// challenge. Downstream identity code must accept this value, rather than a
+// client-supplied subject or an independently constructed identity object.
+type VerifiedEmail struct {
+	tx          *sql.Tx
+	index       [32]byte
+	ciphertext  []byte
+	keyID       string
+	fingerprint [32]byte
+	publicKey   domain.DevicePublicJWK
+	expiresAt   time.Time
+	proof       string
+	expectation domain.ProofExpectation
+	policy      domain.ProofPolicy
+	now         func() time.Time
+}
+
+type VerifiedEmailDetails struct {
+	Index       [32]byte
+	Ciphertext  []byte
+	KeyID       string
+	Fingerprint [32]byte
+	PublicKey   domain.DevicePublicJWK
+}
+
+func (VerifiedEmail) String() string                      { return "VerifiedEmail{redacted}" }
+func (VerifiedEmail) GoString() string                    { return "VerifiedEmail{redacted}" }
+func (VerifiedEmail) MarshalJSON() ([]byte, error)        { return nil, ErrChallengeStore }
+func (VerifiedEmail) LogValue() slog.Value                { return slog.StringValue("VerifiedEmail{redacted}") }
+func (VerifiedEmailDetails) String() string               { return "VerifiedEmailDetails{redacted}" }
+func (VerifiedEmailDetails) GoString() string             { return "VerifiedEmailDetails{redacted}" }
+func (VerifiedEmailDetails) MarshalJSON() ([]byte, error) { return nil, ErrChallengeStore }
+func (VerifiedEmailDetails) LogValue() slog.Value {
+	return slog.StringValue("VerifiedEmailDetails{redacted}")
+}
+
+// ForTransaction refuses zero values, expired proofs and other or completed
+// transactions. Downstream operations must accept the opaque proof itself and
+// perform all identity and authorization writes using this same transaction;
+// the exported details alone are never an authentication credential.
+func (v *VerifiedEmail) ForTransaction(ctx context.Context, tx *sql.Tx) (VerifiedEmailDetails, error) {
+	if v == nil || ctx == nil || tx == nil || v.tx != tx || v.now == nil ||
+		v.index == [32]byte{} || len(v.ciphertext) == 0 || v.keyID == "" || v.fingerprint == [32]byte{} {
+		return VerifiedEmailDetails{}, ErrChallengeStore
+	}
+	now := v.now().UTC()
+	if now.IsZero() || !v.expiresAt.After(now) {
+		return VerifiedEmailDetails{}, ErrChallengeStore
+	}
+	if _, err := domain.VerifyDeviceProof(v.proof, v.publicKey, v.expectation, now, v.policy); err != nil {
+		return VerifiedEmailDetails{}, ErrChallengeStore
+	}
+	var live int
+	if err := tx.QueryRowContext(ctx, "SELECT 1").Scan(&live); err != nil || live != 1 {
+		return VerifiedEmailDetails{}, ErrChallengeStore
+	}
+	return VerifiedEmailDetails{Index: v.index, Ciphertext: append([]byte(nil), v.ciphertext...), KeyID: v.keyID,
+		Fingerprint: v.fingerprint, PublicKey: v.publicKey}, nil
+}
+
 // Attempt returns the same rejected result for unknown, expired, superseded,
 // exhausted, invalid and replayed challenges. Callers must enforce independent
 // email/IP/device/global rate limits before exposing any HTTP operation.
 func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (AttemptResult, error) {
 	rejected := AttemptResult{}
-	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || ctx == nil || tx == nil ||
-		!opaque(input.ChallengeID, 22, 128) || input.Now.IsZero() {
+	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || s.now == nil || ctx == nil || tx == nil ||
+		!opaque(input.ChallengeID, 22, 128) {
+		return rejected, ErrChallengeStore
+	}
+	now := s.now().UTC()
+	if now.IsZero() {
 		return rejected, ErrChallengeStore
 	}
 	if err := s.checkEmailEpoch(ctx, tx); err != nil {
@@ -174,7 +235,7 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if err != nil {
 		return rejected, ErrChallengeStore
 	}
-	if consumed || attempts >= maxAttempts || !expires.After(input.Now) {
+	if consumed || attempts >= maxAttempts || !expires.After(now) {
 		return rejected, nil
 	}
 	var index [32]byte
@@ -191,8 +252,8 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if err != nil || !hmac.Equal(actualFingerprint[:], fingerprint) {
 		return rejected, ErrChallengeStore
 	}
-	proof, err := domain.VerifyDeviceProof(input.DeviceProof, key,
-		domain.ProofExpectation{Purpose: "email_login", ResourceID: input.ChallengeID, Nonce: string(nonce)}, input.Now, input.ProofPolicy)
+	expectation := domain.ProofExpectation{Purpose: "email_login", ResourceID: input.ChallengeID, Nonce: string(nonce)}
+	proof, err := domain.VerifyDeviceProof(input.DeviceProof, key, expectation, now, input.ProofPolicy)
 	if err != nil {
 		return rejected, nil
 	}
@@ -203,21 +264,23 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 		}
 		return AttemptResult{Changed: true}, nil
 	}
-	if err := s.replay.Consume(ctx, tx, actualFingerprint, proof, input.Now); err != nil {
+	if err := s.replay.Consume(ctx, tx, actualFingerprint, proof, now); err != nil {
 		if errors.Is(err, repository.ErrProofAlreadyUsed) {
 			return rejected, nil
 		}
 		return rejected, ErrChallengeStore
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET consumed_at = ? WHERE challenge_id = ? AND consumed_at IS NULL`, sqlUTC(input.Now), input.ChallengeID)
+	result, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET consumed_at = ? WHERE challenge_id = ? AND consumed_at IS NULL`, sqlUTC(now), input.ChallengeID)
 	if err != nil {
 		return rejected, ErrChallengeStore
 	}
 	if count, err := result.RowsAffected(); err != nil || count != 1 {
 		return rejected, ErrChallengeStore
 	}
-	return AttemptResult{Verified: true, Changed: true, EmailIndex: index, EmailCiphertext: ciphertext,
-		EmailKeyID: currentKeyID, Fingerprint: actualFingerprint, PublicKey: key}, nil
+	verified := &VerifiedEmail{tx: tx, index: index, ciphertext: append([]byte(nil), ciphertext...),
+		keyID: currentKeyID, fingerprint: actualFingerprint, publicKey: key, expiresAt: expires,
+		proof: input.DeviceProof, expectation: expectation, policy: input.ProofPolicy, now: s.now}
+	return AttemptResult{Verified: true, Changed: true, Proof: verified}, nil
 }
 
 func (s *Store) checkEmailEpoch(ctx context.Context, tx *sql.Tx) error {

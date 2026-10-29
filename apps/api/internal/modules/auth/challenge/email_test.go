@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -102,6 +103,9 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 	private, public := testKey(t)
 	now := time.Now().UTC().Truncate(time.Second)
+	var clock atomic.Int64
+	clock.Store(now.UnixNano())
+	store.now = func() time.Time { return time.Unix(0, clock.Load()).UTC() }
 	email := "person@example.test"
 	index, _ := protector.Index(email)
 	nonce := strings.Repeat("N", 43)
@@ -122,12 +126,13 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		}
 	}
 	attempt := func(id, code, proof string, when time.Time, commit bool) (AttemptResult, error) {
+		clock.Store(when.UnixNano())
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
 			return AttemptResult{}, err
 		}
 		defer tx.Rollback()
-		result, err := store.Attempt(ctx, tx, AttemptInput{ChallengeID: id, Code: code, DeviceProof: proof, Now: when,
+		result, err := store.Attempt(ctx, tx, AttemptInput{ChallengeID: id, Code: code, DeviceProof: proof,
 			ProofPolicy: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 		if err != nil {
 			return result, err
@@ -223,11 +228,8 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		t.Fatalf("initial verified attempt: %v", err)
 	}
 	result, err = attempt(third, "012345", rollbackProof, now, true)
-	if err != nil || !result.Verified || result.EmailIndex != index {
+	if err != nil || !result.Verified || result.Proof == nil {
 		t.Fatalf("attempt after rollback: %v", err)
-	}
-	if recovered, err := protector.Open(result.EmailIndex, result.EmailCiphertext); err != nil || recovered != email || result.EmailKeyID != "test-key" {
-		t.Fatal("verified result did not carry a protected email for account creation")
 	}
 
 	wrongProtector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{5}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
@@ -360,6 +362,78 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	result, err = attempt(timezoneValid, "012345", testProof(t, private, timezoneValid, nonce, "timezone-valid", beforeExpiry), beforeExpiry, true)
 	if err != nil || !result.Verified {
 		t.Fatalf("valid challenge rejected before UTC deadline: %v", err)
+	}
+
+	email = "bound@example.test"
+	boundID := strings.Repeat("M", 32)
+	issue(boundID, 3)
+	clock.Store(now.UnixNano())
+	boundTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	boundResult, err := store.Attempt(ctx, boundTx, AttemptInput{ChallengeID: boundID, Code: "012345",
+		DeviceProof: testProof(t, private, boundID, nonce, "bound-proof", now),
+		ProofPolicy: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	if err != nil || !boundResult.Verified || boundResult.Proof == nil {
+		_ = boundTx.Rollback()
+		t.Fatal("valid challenge did not produce a transaction-bound proof")
+	}
+	details, err := boundResult.Proof.ForTransaction(ctx, boundTx)
+	if err != nil || details.KeyID != "test-key" {
+		_ = boundTx.Rollback()
+		t.Fatal("bound identity details unavailable")
+	}
+	if recovered, err := protector.Open(details.Index, details.Ciphertext); err != nil || recovered != email {
+		_ = boundTx.Rollback()
+		t.Fatal("bound proof did not carry the protected address")
+	}
+	otherTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = boundTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := boundResult.Proof.ForTransaction(ctx, otherTx); !errors.Is(err, ErrChallengeStore) {
+		_ = otherTx.Rollback()
+		_ = boundTx.Rollback()
+		t.Fatal("challenge proof accepted by another transaction")
+	}
+	_ = otherTx.Rollback()
+	clock.Store(now.Add(2 * time.Minute).UnixNano())
+	if _, err := boundResult.Proof.ForTransaction(ctx, boundTx); !errors.Is(err, ErrChallengeStore) {
+		_ = boundTx.Rollback()
+		t.Fatal("expired device proof accepted while the email challenge remained valid")
+	}
+	clock.Store(now.Add(5 * time.Minute).UnixNano())
+	if _, err := boundResult.Proof.ForTransaction(ctx, boundTx); !errors.Is(err, ErrChallengeStore) {
+		_ = boundTx.Rollback()
+		t.Fatal("expired challenge proof accepted")
+	}
+	for _, rendered := range []string{fmt.Sprintf("%+v", *boundResult.Proof), fmt.Sprintf("%#v", *boundResult.Proof)} {
+		if strings.Contains(rendered, "test-key") || strings.Contains(rendered, email) {
+			_ = boundTx.Rollback()
+			t.Fatal("formatted proof value exposed protected identity details")
+		}
+	}
+	for _, value := range []any{boundResult.Proof, *boundResult.Proof, details} {
+		if _, err := json.Marshal(value); err == nil {
+			_ = boundTx.Rollback()
+			t.Fatal("verified proof or details were JSON-serializable")
+		}
+	}
+	var proofLog bytes.Buffer
+	slog.New(slog.NewJSONHandler(&proofLog, nil)).Info("test", "proof", *boundResult.Proof, "details", details)
+	if strings.Contains(proofLog.String(), "test-key") || strings.Contains(proofLog.String(), email) {
+		_ = boundTx.Rollback()
+		t.Fatal("structured log exposed protected proof details")
+	}
+	_ = boundTx.Rollback()
+	clock.Store(now.UnixNano())
+	if _, err := boundResult.Proof.ForTransaction(ctx, boundTx); !errors.Is(err, ErrChallengeStore) {
+		t.Fatal("proof accepted after its transaction rolled back")
+	}
+	if _, err := (&VerifiedEmail{}).ForTransaction(ctx, boundTx); !errors.Is(err, ErrChallengeStore) {
+		t.Fatal("unverified zero-value challenge proof accepted")
 	}
 
 	email = "tamper@example.test"
