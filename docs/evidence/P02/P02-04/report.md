@@ -30,3 +30,5 @@
 直接调用第一次因测试参数将预期 map 误写为数组而失败；修正后进入编译，但未指定官方基座路径导致空参数错误。指定 HBuilderX 自带基座后，沙箱内 Xcode 构建因无法建立默认 DerivedData 缓存失败；授权环境在隔离临时目录重跑成功。没有启动模拟器、安装、上传或执行签名功能。生成产物位于 `/private/tmp/nerae-uts-device.8MnuqDWw/input/unpackage/modules/unimoduleNeraeDeviceProbe.framework`，为临时证据，不是应用包。
 
 受限于 HBuilderX 5.33 与项目锁定 uni 编译器 5.26 不一致，这只证明该版本组合下真实 Swift 源码可通过 UTS 原生编译，尚不证明项目锁定版本兼容，也不证明安全芯片或 iPhone 运行。`security find-identity` 在授权环境报告 1 个有效签名身份，两个标准描述文件目录中未找到 `.mobileprovision` 文件；设备列表在授权环境报告 iPhone 14 Pro Max `available (paired)`，尚未安装。正式桥的身份映射、错误处理、uni-app 接线、签名描述文件、完整 App 和真实登录同步仍待实现。
+
+复现脚本 `infra/app/ios/device/verify-uts-probe.sh` 在授权环境运行 `NERAE_KEEP_PROBE=1 .../verify-uts-probe.sh` 返回 0；用当前仓库源码生成 iPhoneOS arm64 动态 framework，SHA-256 `b7260d43b30bb2b5d6f534b063a35c5fa734eb9ed85e648b60490002dc9192b6`，独立夹具 `/private/tmp/nerae-uts-probe.9VPW5T1T` 被主动保留。脚本默认只清理自己新建且成功的临时目录，失败会保留；编译本身不验证 iPhone、硬件或服务。该 SHA 仅标识本次构建产物，不保证不同构建路径可重现相同字节。
