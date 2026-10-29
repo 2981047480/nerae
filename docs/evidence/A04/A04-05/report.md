@@ -11,4 +11,6 @@
 - `application/finish_test.go`：`1a6e8bd7df37fe5827a989253d2d271ac630c5575a802a56fa1d530e64aa9ab9`
 - `mysql_smoke.py`：`16e6c9aef27e34ba82db9213acca0e7c293b33377af78b076e55fc2d746dc5b9`
 
+集成提交 `b5ca21d` 上使用 `python3 -B docs/evidence/A04/A04-04/mysql_smoke.py`，在同一私有数据库中同时执行本完成测试与认证记录读写测试，均通过；任务图检查有效。本次复测不代表完整 HTTP 合同或最终接受已完成。
+
 该内部事务尚未支持实际日期修改、可选总时长/RPE/备注、计划训练统计及 HTTP 幂等响应；真实年龄核验、设备批准、客户端接线和双设备同步也未完成。禁止用本测试冒称完整 App 或正式保存接口已交付。

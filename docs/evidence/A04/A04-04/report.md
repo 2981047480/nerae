@@ -10,9 +10,9 @@
 
 - `repository/read.go`：`2bb05fae4ead6d85fa5d98c1c0719f6d138f75553fb572225a706142181c1365`
 - `application/workout.go`：`c02ff1df06bf2bed4d21a1c1e971f8316213af842287dfea70ab9dc7b9bac890`
-- `application/workout_test.go`：`dbc930d5e479212d6052169993b8d9df2949ddf56e3e1ccd98ea5d3847849331`
+- `application/workout_test.go`：`d8ccff49a3906bf6e2fe4c492c22d584f01ff81925719c9dc2418f467e347f7f`
 - `mysql_smoke.py`：`595863f95aef1e20df9e478e011713ba1cc35c28d7dc2045e2b2764f77deaa6d`
 
-集成提交 `af7ded4` 的同一文件版本再次通过隔离 MySQL 接缝测试；任务图和 7 项迁移清单检查有效。该复测不表示 HTTP、双设备同步或最终接受已完成。
+集成提交 `af7ded4` 的原始文件版本通过隔离 MySQL 接缝测试。随后将年龄拒绝后的记录计数限定到测试主体，集成提交 `b5ca21d` 上当前文件与训练完成测试在同一隔离数据库共同通过；任务图和 7 项迁移清单检查有效。该复测不表示 HTTP、双设备同步或最终接受已完成。
 
 真实年龄核验、发送邮箱验证码、设备批准与恢复、HTTP 和幂等响应、动作排序、客户端接线、双设备测试及 App 安装均未完成。
