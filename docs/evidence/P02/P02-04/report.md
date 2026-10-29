@@ -20,3 +20,13 @@
 探针使用 HBuilderX 5.33，项目锁定 uni 编译器 5.26，不能将它视为匹配工具链的成功验证。仍未得到原生桥、iOS 签名安装、真实手机或完整 App 的证据。
 
 后续只读检查 HBuilderX 编译启动代码发现平台扩展路径由启动参数选择，单模块 CLI 路径可能未带入 iOS 扩展；这只是待验证的原因。另建不含业务数据的 Swift/UTS 源码夹具，执行 `cli launch app-ios --iosTarget device --compile true --continue-on-error false`：CLI 退出 0，但仅输出 HBuilderX 版本，未见编译日志或夹具构建产物，不能记为成功。未启动模拟器或安装任何 App。HBuilderX 的 iPhone 设备列表无结果；Xcode 只读设备列表显示 iPhone 已配对、开发者模式已启用，但连接通道为 unavailable，不证明当前设备可用于安装。未继续重复该路径。
+
+## 2026-10-30 官方 iOS UTS 独立编译增量
+
+只读检查定位到 HBuilderX 5.33 自带的 `uts-development-ios` 编译扩展与 `plugins/launcher/base/iPhone_base.ipa`。显式设置插件目录后，官方 `getSwiftCompilerServer()` 能加载并且 `checkEnv()` 返回 `code: 0`；先前 CLI 报扩展不可用的具体根因仍未证实。未使用之前被站点安全拦截的下载来源。
+
+用官方 `uni-uts-v1/dist/swift.js` 的 `runSwiftDev` 在独立临时夹具编译：显式传入 `UNI_INPUT_DIR`、`UNI_OUTPUT_DIR`、`UNI_HBUILDERX_PLUGINS`、`IOS_STANDARD_BASE_PATH`、`IOS_RUNTIME_NASE_PATH`、`HX_Version=5.33`，指定独立 `TMPDIR` 以限定插件自清理范围；先对仅含合成 echo 的 UTS/Swift 夹具进行探针，再对复制的 `DeviceKey.swift`、`DeviceProof.swift`、`SignatureEncoding.swift` 及仅供编译的签名桥验证。`runSwiftDev` 两次返回 `code: 0`，实际生成 `unimoduleNeraeDeviceProbe.framework`；`file` 显示 arm64 Mach-O 动态库，`xcrun vtool -show-build` 显示 platform IOS、最低 iOS 15.0、SDK 26.5。复制源码经 `cmp` 与集成树一致。framework 本身未签名；探针桥的错误字符串仅用于验证编译，不是产品 API，不接入或运行。
+
+直接调用第一次因测试参数将预期 map 误写为数组而失败；修正后进入编译，但未指定官方基座路径导致空参数错误。指定 HBuilderX 自带基座后，沙箱内 Xcode 构建因无法建立默认 DerivedData 缓存失败；授权环境在隔离临时目录重跑成功。没有启动模拟器、安装、上传或执行签名功能。生成产物位于 `/private/tmp/nerae-uts-device.8MnuqDWw/input/unpackage/modules/unimoduleNeraeDeviceProbe.framework`，为临时证据，不是应用包。
+
+受限于 HBuilderX 5.33 与项目锁定 uni 编译器 5.26 不一致，这只证明该版本组合下真实 Swift 源码可通过 UTS 原生编译，尚不证明项目锁定版本兼容，也不证明安全芯片或 iPhone 运行。`security find-identity` 在授权环境报告 1 个有效签名身份，两个标准描述文件目录中未找到 `.mobileprovision` 文件；设备列表在授权环境报告 iPhone 14 Pro Max `available (paired)`，尚未安装。正式桥的身份映射、错误处理、uni-app 接线、签名描述文件、完整 App 和真实登录同步仍待实现。
