@@ -1,0 +1,21 @@
+CREATE TABLE auth_session (
+    id VARBINARY(128) NOT NULL PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    identity_id VARBINARY(128) NOT NULL,
+    device_id VARBINARY(128) NOT NULL,
+    login_challenge_id VARBINARY(128) NOT NULL,
+    token_version BIGINT UNSIGNED NOT NULL,
+    state VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    authenticated_at DATETIME(6) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    revoked_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL,
+    KEY auth_session_user (user_id, state),
+    UNIQUE KEY auth_session_login_challenge (login_challenge_id),
+    CONSTRAINT auth_session_user_fk FOREIGN KEY (user_id) REFERENCES user (id),
+    CONSTRAINT auth_session_identity_fk FOREIGN KEY (identity_id) REFERENCES login_identity (id),
+    CONSTRAINT auth_session_device_fk FOREIGN KEY (device_id) REFERENCES trusted_device (id),
+    CONSTRAINT auth_session_version_valid CHECK (token_version >= 1),
+    CONSTRAINT auth_session_time_valid CHECK (expires_at > authenticated_at),
+    CONSTRAINT auth_session_state_valid CHECK ((state = 'active' AND revoked_at IS NULL) OR (state = 'revoked' AND revoked_at IS NOT NULL))
+) ENGINE=InnoDB;
