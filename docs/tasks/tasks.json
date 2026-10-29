@@ -482,7 +482,8 @@
       "batch": "P0-A",
       "status": "planned",
       "depends_on": [
-        "F02"
+        "F02",
+        "A01-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -6770,6 +6771,39 @@
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
       "base_revision": "620befb974e2da8a3922494ebe32127229bb1ac9"
+    },
+    {
+      "id": "A01-01",
+      "title": "登录设备持有证明的服务端签名校验",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": ["F01-02"],
+      "acceptance_requires": ["K01-02", "F02"],
+      "parent": "A01",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
+      "write_allowlist": ["apps/api/internal/modules/auth/", "docs/evidence/A01/A01-01/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
+      "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；只返回待事务消费的证明标识，不签发账号会话。",
+      "acceptance": [
+        "合法证明通过，错误签名、公钥、算法、用途、挑战、nonce、过期、未来和重复字段均拒绝",
+        "校验结果不代替持久化的单次消费、防重、短信验证、可信设备批准或真实登录",
+        "复核不记录手机号、验证码、凭据或证明正文"
+      ],
+      "verification_commands": ["cd apps/api && go test -race ./internal/modules/auth/..."],
+      "risks": ["证明 jti 的数据库事务防重、原生密钥安全存储、短信供应商和端到端登录仍待实现。"],
+      "effort_days": [1, 2],
+      "flow_ids": ["F01"],
+      "forbidden": ["禁止以测试私钥、固定验证码或内存替身授予业务访问", "不得将密码或设备证明写入日志"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
     }
   ],
   "deferred_packages": {
