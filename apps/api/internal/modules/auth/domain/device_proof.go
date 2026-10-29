@@ -19,7 +19,10 @@ import (
 
 var ErrInvalidDeviceProof = errors.New("invalid device proof")
 
-const maxProofClockSkew = 5 * time.Minute
+const (
+	maxProofClockSkew = 5 * time.Minute
+	maxProofLifetime  = 24 * time.Hour
+)
 
 // DevicePublicJWK must be obtained from the server's own challenge record.
 type DevicePublicJWK struct {
@@ -58,12 +61,18 @@ func DeviceProofReplayDeadline(expiresAt time.Time) time.Time {
 	return expiresAt.Add(maxProofClockSkew)
 }
 
+// DeviceProofLatestExpiry is the latest expiry any supported proof policy can
+// accept at now, including the maximum possible future-issued clock skew.
+func DeviceProofLatestExpiry(now time.Time) time.Time {
+	return now.Add(maxProofLifetime + maxProofClockSkew)
+}
+
 // VerifyDeviceProof validates the contract's compact ES256 JWS. It never
 // consults a key supplied in the JWS header or makes an authorization decision.
 func VerifyDeviceProof(compact string, key DevicePublicJWK, expected ProofExpectation, now time.Time, policy ProofPolicy) (VerifiedDeviceProof, error) {
 	invalid := func() (VerifiedDeviceProof, error) { return VerifiedDeviceProof{}, ErrInvalidDeviceProof }
 	if len(compact) < 32 || len(compact) > 4096 || now.IsZero() || policy.MaxLifetime <= 0 ||
-		policy.MaxLifetime > 24*time.Hour || policy.ClockSkew < 0 || policy.ClockSkew > maxProofClockSkew ||
+		policy.MaxLifetime > maxProofLifetime || policy.ClockSkew < 0 || policy.ClockSkew > maxProofClockSkew ||
 		!validPurpose(expected.Purpose) || expected.ResourceID == "" || expected.Nonce == "" {
 		return invalid()
 	}
