@@ -147,6 +147,27 @@ func TestAuthenticatedRequestUsesLiveSessionAndTransaction(t *testing.T) {
 		t.Fatal("invalid signature accepted")
 	}
 	_ = tx.Rollback()
+	// A live-looking credential must not become a logout merely because the
+	// transaction or database lookup is unavailable.
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not start unavailable test")
+	}
+	_ = tx.Rollback()
+	if p, err := AuthenticateRequest(r, tx, store); p != nil || !errors.Is(err, ErrAuthUnavailable) || AuthFailureKind(err) != Unavailable {
+		t.Fatal("ended transaction was not classified unavailable")
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not start cancelled lookup test")
+	}
+	cancelled, cancelQuery := context.WithCancel(ctx)
+	cancelQuery()
+	if p, err := AuthenticateRequest(r.WithContext(cancelled), tx, store); p != nil || !errors.Is(err, ErrAuthUnavailable) || AuthFailureKind(err) != Unavailable {
+		_ = tx.Rollback()
+		t.Fatal("cancelled lookup was not classified unavailable")
+	}
+	_ = tx.Rollback()
 	// Exercise revocation in a separate transaction and observe a real row-lock
 	// wait before committing the authenticated transaction.
 	tx, err = db.BeginTx(ctx, nil)
@@ -223,6 +244,23 @@ func TestAuthenticatedRequestUsesLiveSessionAndTransaction(t *testing.T) {
 		_ = tx.Rollback()
 		if _, err := db.ExecContext(ctx, tc.restore); err != nil {
 			t.Fatal("could not restore synthetic auth state")
+		}
+	}
+}
+
+func TestAuthFailureKindDoesNotMapUnknownFailuresToLogout(t *testing.T) {
+	for _, tc := range []struct {
+		err  error
+		want ErrorKind
+	}{
+		{ErrInvalidBearer, Unauthenticated},
+		{ErrSessionRejected, Unauthenticated},
+		{ErrAuthUnavailable, Unavailable},
+		{errors.New("private upstream detail"), InternalError},
+		{nil, InternalError},
+	} {
+		if got := AuthFailureKind(tc.err); got != tc.want {
+			t.Fatalf("got %v, want %v", got, tc.want)
 		}
 	}
 }
