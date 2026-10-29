@@ -39,7 +39,7 @@ class IdentityContractTests(ContractCase):
         request = self.contract.request(path, 'post')
         valid = {'email': 'person@example.com', 'devicePublicKey': self.public_key}
         self.assertMissingRejected(request, valid, ('email', 'devicePublicKey'))
-        for bad in (dict(valid, email='not-an-address'), dict(valid, email='a@@example.com'),
+        for bad in (dict(valid, email='not-an-address'), dict(valid, email='a@@example.com'), dict(valid, email='测试@example.com'),
                     dict(valid, email='person@example.com\r\nBcc:other@example.com'),
                     dict(valid, userId='101'), dict(valid, devicePublicKey=dict(self.public_key, d='private'))):
             self.assertInvalid(request, bad)
