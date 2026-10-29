@@ -18,3 +18,5 @@
 在独立临时源码夹具中复制本卡 Swift 源码并加入仅供编译的 UTS/Swift 桥；未安装到手机、未上传、未调用真实设备密钥。HBuilderX 5.33 CLI 起初将含 `package.json` 的外层夹具识别为 CLI 工程并报告缺少 `node_modules`；改成独立源码根后触发官方 iOS 扩展安装。插件管理器显示 `uts-development-ios` 1.6.0.2026092217 已安装，但随后编译、重载扩展、重启 HBuilderX 再编译仍报告“正在安装 uts iOS 运行扩展”，未到实际编译阶段。CLI 在该失败情况下返回 0，必须按输出及产物而非退出码判断。只读检查对应编译器代码显示该提示由未取得 Swift compiler server 触发，根因尚未确认。临时夹具和扩展保持原状供排查。
 
 探针使用 HBuilderX 5.33，项目锁定 uni 编译器 5.26，不能将它视为匹配工具链的成功验证。仍未得到原生桥、iOS 签名安装、真实手机或完整 App 的证据。
+
+后续只读检查 HBuilderX 编译启动代码发现平台扩展路径由启动参数选择，单模块 CLI 路径可能未带入 iOS 扩展；这只是待验证的原因。另建不含业务数据的 Swift/UTS 源码夹具，执行 `cli launch app-ios --iosTarget device --compile true --continue-on-error false`：CLI 退出 0，但仅输出 HBuilderX 版本，未见编译日志或夹具构建产物，不能记为成功。未启动模拟器或安装任何 App。HBuilderX 的 iPhone 设备列表无结果；Xcode 只读设备列表显示 iPhone 已配对、开发者模式已启用，但连接通道为 unavailable，不证明当前设备可用于安装。未继续重复该路径。
