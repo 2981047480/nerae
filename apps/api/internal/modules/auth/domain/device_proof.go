@@ -135,6 +135,24 @@ func validPurpose(purpose string) bool {
 	return purpose == "phone_login" || purpose == "approval_exchange" || purpose == "recovery_code"
 }
 
+// DeviceKeyFingerprint returns the SHA-256 JWK thumbprint of a validated
+// P-256 public key. It identifies a key, not the user who owns it.
+func DeviceKeyFingerprint(key DevicePublicJWK) ([32]byte, error) {
+	if _, ok := parsePublicKey(key); !ok {
+		return [32]byte{}, ErrInvalidDeviceProof
+	}
+	canonical, err := json.Marshal(struct {
+		Crv string `json:"crv"`
+		Kty string `json:"kty"`
+		X   string `json:"x"`
+		Y   string `json:"y"`
+	}{key.Crv, key.Kty, key.X, key.Y})
+	if err != nil {
+		return [32]byte{}, ErrInvalidDeviceProof
+	}
+	return sha256.Sum256(canonical), nil
+}
+
 func parsePublicKey(key DevicePublicJWK) (*ecdsa.PublicKey, bool) {
 	if key.Kty != "EC" || key.Crv != "P-256" || len(key.X) != 43 || len(key.Y) != 43 {
 		return nil, false

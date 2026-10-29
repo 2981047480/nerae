@@ -199,3 +199,20 @@ func TestVerifyRejectsMalformedKeysAndPolicies(t *testing.T) {
 		t.Fatalf("oversized proof accepted: %v", err)
 	}
 }
+
+func TestDeviceKeyFingerprintUsesCanonicalPublicJWK(t *testing.T) {
+	_, key := makeKey(t)
+	got, err := DeviceKeyFingerprint(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical := fmt.Sprintf(`{"crv":"P-256","kty":"EC","x":"%s","y":"%s"}`, key.X, key.Y)
+	want := sha256.Sum256([]byte(canonical))
+	if got != want {
+		t.Fatal("fingerprint is not the canonical JWK SHA-256 thumbprint")
+	}
+	key.Crv = "P-384"
+	if _, err := DeviceKeyFingerprint(key); !errors.Is(err, ErrInvalidDeviceProof) {
+		t.Fatalf("invalid key fingerprinted: %v", err)
+	}
+}
