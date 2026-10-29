@@ -6774,7 +6774,7 @@
     },
     {
       "id": "A01-01",
-      "title": "登录设备持有证明的服务端签名校验",
+      "title": "设备证明与短信挑战密码学基础",
       "batch": "P0-A",
       "status": "active",
       "depends_on": ["F01-02"],
@@ -6789,9 +6789,10 @@
       "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
       "write_allowlist": ["apps/api/internal/modules/auth/", "docs/evidence/A01/A01-01/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
-      "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；只返回待事务消费的证明标识，不签发账号会话。",
+      "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信挑战和随机码，使用服务端密钥对验证码生成绑定摘要；不发送短信或签发账号会话。",
       "acceptance": [
         "合法证明通过，错误签名、公钥、算法、用途、挑战、nonce、过期、未来和重复字段均拒绝",
+        "短信码使用密码学随机数，摘要绑定挑战与用途；错误码或密钥不进入日志或 API 响应",
         "校验结果不代替持久化的单次消费、防重、短信验证、可信设备批准或真实登录",
         "复核不记录手机号、验证码、凭据或证明正文"
       ],

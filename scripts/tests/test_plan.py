@@ -141,6 +141,9 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(any('must depend on child' in e for e in plan.validate(self.doc)))
 
     def test_complete_package_requires_children_and_summed_estimate(self):
+        # A01 now has an implementation child; construct the missing-child
+        # condition explicitly instead of assuming a particular package stays empty.
+        self.doc['tasks']=[task for task in self.doc['tasks'] if task.get('parent') != 'A01']
         self.task('A01')['breakdown']='complete'
         self.task('F01')['effort_days']=[1,2]
         errors=plan.validate(self.doc)
