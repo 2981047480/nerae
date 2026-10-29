@@ -36,6 +36,7 @@ test('real user input and the selected mode restore under the same authenticated
   assert.equal(await controller.update(draft => switchMode(draft, 'per_set')), true)
   assert.equal(await controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '8')), true)
   assert.equal(controller.status, 'saved_locally')
+  assert.deepEqual(controller.recordingLease, { subjectId: '101', generation: 'session-1' })
   const restored = await DraftController.load('101', 'event-0001', storage, now, auth)
   assert.equal(restored.draft.mode, 'per_set')
   assert.equal(restored.draft.exercises[0].sets[0].recordKey, 'record-001')
@@ -131,6 +132,7 @@ test('switching accounts blocks access while previously accepted local writes fi
   assert.equal(writes, 2)
   assert.deepEqual(values, ['8', '9'])
   assert.throws(() => controller.draft, /账号已变化/)
+  assert.throws(() => controller.recordingLease, /账号已变化/)
 })
 
 test('corrupt or wrong-subject data is rejected without replacing stored bytes', async () => {

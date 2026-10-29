@@ -12,6 +12,24 @@ export interface RecordingAuth {
   isCurrent(subjectId: string, generation: string): boolean
 }
 
+/** Scope is obtained from the current authenticated draft owner, not user input. */
+export interface RecordingLease {
+  subjectId: string
+  generation: string
+}
+
+export interface ScopedSessionDetail {
+  lease: RecordingLease
+  detail: WorkoutSessionDetail
+}
+
+// A snapshot is only usable in the runtime that received it from this adapter.
+// Restoring from local storage requires a fresh authenticated read.
+const issuedSnapshots = new WeakMap<object, object>()
+export function isIssuedSnapshot(value: unknown): value is ScopedSessionDetail {
+  return value !== null && typeof value === 'object' && issuedSnapshots.has(value)
+}
+
 export interface HttpRequest {
   url: string
   method: 'GET' | 'POST'
@@ -29,7 +47,7 @@ export type RequestPort = (request: HttpRequest) => Promise<HttpResponse>
 export type RecordingApiErrorCode =
   | 'unauthenticated' | 'session_changed' | 'forbidden' | 'not_found'
   | 'version_conflict' | 'conflict' | 'invalid_request' | 'rate_limited'
-  | 'unavailable' | 'network' | 'invalid_response'
+  | 'unavailable' | 'network' | 'invalid_response' | 'reconcile_required'
 
 export class RecordingApiError extends Error {
   readonly code: RecordingApiErrorCode
@@ -52,6 +70,9 @@ export interface WorkoutSessionDetail {
   createdAt: string
   updatedAt: string
   recordedAt: string | null
+  durationMin?: number | null
+  rpe?: number | null
+  note?: string | null
   sets: ServerSet[]
   exerciseEntryKeys: string[]
 }
@@ -125,6 +146,31 @@ function validDateTime(value: unknown): value is string {
     Number(parts[4]) < 60 && !Number.isNaN(Date.parse(value)))
 }
 
+/** Compare instants without losing sub-millisecond digits or requiring one offset spelling. */
+function compareInstants(left: string, right: string): number | undefined {
+  const pattern = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$/
+  const a = pattern.exec(left)
+  const b = pattern.exec(right)
+  if (!a || !b) return undefined
+  const aSecond = Date.parse(`${a[1]}${a[3]}`)
+  const bSecond = Date.parse(`${b[1]}${b[3]}`)
+  if (!Number.isFinite(aSecond) || !Number.isFinite(bSecond)) return undefined
+  if (aSecond !== bSecond) return aSecond < bSecond ? -1 : 1
+  const aFraction = a[2] || ''
+  const bFraction = b[2] || ''
+  for (let i = 0; i < Math.max(aFraction.length, bFraction.length); i++) {
+    const aDigit = aFraction[i] || '0'
+    const bDigit = bFraction[i] || '0'
+    if (aDigit !== bDigit) return aDigit < bDigit ? -1 : 1
+  }
+  return 0
+}
+
+function sameInstant(left: string | null, right: string | null): boolean {
+  if (left === null || right === null) return left === right
+  return compareInstants(left, right) === 0
+}
+
 function validTimeZone(value: unknown): value is string {
   if (typeof value !== 'string' || !value.trim() || value.length > 64) return false
   try { new Intl.DateTimeFormat('en', { timeZone: value }); return true }
@@ -177,12 +223,17 @@ function setPayload(raw: unknown): SetPayload {
 }
 
 /** Fail closed on a malformed response before its version or IDs reach a draft. */
-function sessionDetail(raw: unknown): WorkoutSessionDetail {
+export function parseSessionDetail(raw: unknown): WorkoutSessionDetail {
   if (!object(raw) || !validId(raw.id) || !validDate(raw.date) || !validTimeZone(raw.timeZone) ||
     !['in_progress', 'completed', 'skipped'].includes(String(raw.status)) ||
     !['free', 'plan'].includes(String(raw.source)) || !validVersion(raw.version) ||
     !validDateTime(raw.createdAt) || !validDateTime(raw.updatedAt) ||
-    !(raw.recordedAt === null || validDateTime(raw.recordedAt)) || !Array.isArray(raw.sets)) {
+    !(raw.recordedAt === null || validDateTime(raw.recordedAt)) || !Array.isArray(raw.sets) ||
+    (raw.durationMin !== undefined && raw.durationMin !== null &&
+      (!Number.isSafeInteger(raw.durationMin) || Number(raw.durationMin) < 0)) ||
+    (raw.rpe !== undefined && raw.rpe !== null && !decimal(raw.rpe, 1, 10, 1)) ||
+    (raw.note !== undefined && raw.note !== null &&
+      (typeof raw.note !== 'string' || Array.from(raw.note).length > 2000))) {
     throw new RecordingApiError('invalid_response')
   }
   if ((raw.status === 'completed' && (raw.sets.length === 0 || raw.recordedAt === null)) ||
@@ -191,6 +242,7 @@ function sessionDetail(raw: unknown): WorkoutSessionDetail {
   const positions = new Map(order.map((key, index) => [key, index]))
   const seenEntries = new Set<string>()
   const identities = new Map<string, string>()
+  const resolvedNames = new Map<string, string>()
   const keys = new Set<string>()
   let previousEntry = -1
   let previousIndex = 0
@@ -206,19 +258,23 @@ function sessionDetail(raw: unknown): WorkoutSessionDetail {
     }
     const hasId = validId(set.exerciseId)
     const hasName = typeof set.exerciseName === 'string' && Boolean(set.exerciseName.trim()) && Array.from(set.exerciseName).length <= 60
-    if (hasId === hasName || (set.exerciseId !== undefined && !hasId) || (set.exerciseName !== undefined && !hasName)) {
+    if (hasId === hasName || (set.exerciseId !== undefined && !hasId) || (set.exerciseName !== undefined && !hasName) ||
+      (hasName && set.resolvedExerciseName !== set.exerciseName)) {
       throw new RecordingApiError('invalid_response')
     }
     const entryPosition = positions.get(set.exerciseEntryKey)
     const index = Number(set.setIndex)
     const identity = hasId ? `id:${set.exerciseId}` : `name:${set.exerciseName}`
     const priorIdentity = identities.get(set.exerciseEntryKey)
+    const priorName = resolvedNames.get(set.exerciseEntryKey)
     if (entryPosition === undefined || entryPosition < previousEntry ||
       (entryPosition === previousEntry && index <= previousIndex) ||
-      (priorIdentity !== undefined && priorIdentity !== identity)) {
+      (priorIdentity !== undefined && priorIdentity !== identity) ||
+      (priorName !== undefined && priorName !== set.resolvedExerciseName)) {
       throw new RecordingApiError('invalid_response')
     }
     identities.set(set.exerciseEntryKey, identity)
+    resolvedNames.set(set.exerciseEntryKey, set.resolvedExerciseName)
     seenEntries.add(set.exerciseEntryKey)
     previousEntry = entryPosition
     previousIndex = index
@@ -226,6 +282,23 @@ function sessionDetail(raw: unknown): WorkoutSessionDetail {
   }
   if (seenEntries.size !== order.length) throw new RecordingApiError('invalid_response')
   return raw as unknown as WorkoutSessionDetail
+}
+
+/** Compare persisted user-entered values, ignoring the server-owned display name. */
+export function matchesSetPayload(write: SetPayload, found: ServerSet): boolean {
+  return found.recordKey === write.recordKey && found.exerciseEntryKey === write.exerciseEntryKey &&
+    found.setIndex === write.setIndex && found.kind === write.kind &&
+    found.exerciseId === write.exerciseId && found.exerciseName === write.exerciseName &&
+    found.weightKg === write.weightKg && found.reps === write.reps && found.seconds === write.seconds &&
+    (found.rpe ?? null) === (write.rpe ?? null)
+}
+
+function matchesServerSet(expected: ServerSet, found: ServerSet): boolean {
+  return found.recordKey === expected.recordKey && found.exerciseEntryKey === expected.exerciseEntryKey &&
+    found.setIndex === expected.setIndex && found.kind === expected.kind && found.exerciseId === expected.exerciseId &&
+    found.exerciseName === expected.exerciseName && found.resolvedExerciseName === expected.resolvedExerciseName &&
+    found.weightKg === expected.weightKg && found.reps === expected.reps && found.seconds === expected.seconds &&
+    (found.rpe ?? null) === (expected.rpe ?? null)
 }
 
 function responseError(status: number): RecordingApiError {
@@ -258,24 +331,30 @@ export class RecordingApi {
   private readonly base: string
   private readonly auth: RecordingAuth
   private readonly request: RequestPort
-  constructor(baseUrl: string, auth: RecordingAuth, request: RequestPort) {
+  private readonly lease: RecordingLease
+  constructor(baseUrl: string, auth: RecordingAuth, request: RequestPort, lease: RecordingLease) {
     this.base = apiBase(baseUrl)
+    if (!lease || !validId(lease.subjectId) || typeof lease.generation !== 'string' || !lease.generation) {
+      throw new RecordingApiError('unauthenticated')
+    }
+    this.lease = { subjectId: lease.subjectId, generation: lease.generation }
     this.auth = auth
     this.request = request
   }
 
   private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
-    data?: unknown, idempotencyKey?: string): Promise<WorkoutSessionDetail> {
+    data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
     const credential = this.auth.current()
     if (!credential) throw new RecordingApiError('unauthenticated')
     // Capture scalar values: an auth store may mutate its current object while
     // a network request is in flight.
     const { subjectId, generation, accessToken } = credential
     if (!validId(subjectId) || typeof generation !== 'string' || !generation ||
-      typeof accessToken !== 'string' || !accessToken ||
-      /[\r\n\s]/.test(accessToken) || !this.auth.isCurrent(subjectId, generation)) {
+      typeof accessToken !== 'string' || !accessToken || /[\r\n\s]/.test(accessToken)) {
       throw new RecordingApiError('unauthenticated')
     }
+    if (subjectId !== this.lease.subjectId || generation !== this.lease.generation ||
+      !this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
     if (method === 'POST' && !validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
     const header: Record<string, string> = { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
     if (method === 'POST') {
@@ -294,15 +373,24 @@ export class RecordingApi {
       throw new RecordingApiError('network')
     }
     if (!this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
-    if (!Number.isInteger(response.statusCode)) throw new RecordingApiError('invalid_response')
+    if (!response || !Number.isInteger(response.statusCode)) throw new RecordingApiError('invalid_response')
     if (response.statusCode < 200 || response.statusCode >= 300) throw responseError(response.statusCode)
     if (response.statusCode !== expectedStatus) throw new RecordingApiError('invalid_response')
-    const detail = sessionDetail(response.data)
+    const detail = parseSessionDetail(response.data)
     if (expectedId !== undefined && detail.id !== expectedId) throw new RecordingApiError('invalid_response')
-    return detail
+    // Do not let edits to a response object change a later projection.
+    const immutable = { ...detail, sets: detail.sets.map(set => Object.freeze({ ...set })),
+      exerciseEntryKeys: [...detail.exerciseEntryKeys] }
+    Object.freeze(immutable.sets)
+    Object.freeze(immutable.exerciseEntryKeys)
+    Object.freeze(immutable)
+    const scoped = Object.freeze({ lease: Object.freeze({ subjectId, generation }), detail: immutable })
+    if (!this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
+    issuedSnapshots.set(scoped, this)
+    return scoped
   }
 
-  createFreeSession(input: FreeSessionInput, idempotencyKey: string): Promise<WorkoutSessionDetail> {
+  createFreeSession(input: FreeSessionInput, idempotencyKey: string): Promise<ScopedSessionDetail> {
     if (!validKey(input.clientEventId) || !validDate(input.date) || !validTimeZone(input.timeZone)) {
       throw new RecordingApiError('invalid_request')
     }
@@ -311,7 +399,7 @@ export class RecordingApi {
     }, idempotencyKey)
   }
 
-  readSession(id: string): Promise<WorkoutSessionDetail> {
+  readSession(id: string): Promise<ScopedSessionDetail> {
     if (!validId(id)) throw new RecordingApiError('invalid_request')
     return this.call('GET', `/me/sessions/${id}`, 200, id)
   }
@@ -319,8 +407,13 @@ export class RecordingApi {
   /** Caller supplies the projected order from the latest complete snapshot.
    * A 412 must be reconciled with a fresh read, never retried blindly.
    */
-  saveBatch(id: string, input: SetBatchInput, idempotencyKey: string): Promise<WorkoutSessionDetail> {
-    if (!validId(id) || !input || !validVersion(input.expectedVersion)) throw new RecordingApiError('invalid_request')
+  saveBatch(id: string, input: SetBatchInput, idempotencyKey: string, baseline: ScopedSessionDetail): Promise<ScopedSessionDetail> {
+    if (!validId(id) || !input || !validVersion(input.expectedVersion) || !isIssuedSnapshot(baseline) ||
+      issuedSnapshots.get(baseline) !== this || baseline.detail.id !== id || baseline.detail.version !== input.expectedVersion) {
+      throw new RecordingApiError('invalid_request')
+    }
+    if (baseline.lease.subjectId !== this.lease.subjectId || baseline.lease.generation !== this.lease.generation ||
+      !this.auth.isCurrent(this.lease.subjectId, this.lease.generation)) throw new RecordingApiError('session_changed')
     const expectedVersion = input.expectedVersion
     const order = keyList(input.exerciseEntryKeys, 2000, true, 'invalid_request')
     const entries = new Set(order)
@@ -350,38 +443,96 @@ export class RecordingApi {
     if (deleted?.some(key => recordKeys.has(key)) || restored?.some(key => !recordKeys.has(key))) {
       throw new RecordingApiError('invalid_request')
     }
+    // Project the full active set from the authenticated baseline. This prevents
+    // a 200 response that omits unrelated saved groups from becoming an ack.
+    const expected = new Map<string, { write?: SetPayload; previous?: ServerSet }>()
+    const entryIdentities = new Map<string, ServerSet>()
+    for (const previous of baseline.detail.sets) {
+      expected.set(previous.recordKey, { previous })
+      entryIdentities.set(previous.exerciseEntryKey, previous)
+    }
+    for (const key of deleted || []) expected.delete(key)
+    for (const write of cleanSets || []) {
+      const previous = expected.get(write.recordKey)?.previous
+      const entry = entryIdentities.get(write.exerciseEntryKey)
+      if ((previous && previous.exerciseEntryKey !== write.exerciseEntryKey) ||
+        (entry && (entry.exerciseId !== write.exerciseId || entry.exerciseName !== write.exerciseName))) {
+        throw new RecordingApiError('invalid_request')
+      }
+      expected.set(write.recordKey, { write, previous })
+    }
+    const projectedEntries = new Set<string>()
+    const projectedIndexes = new Map<string, Set<number>>()
+    for (const item of expected.values()) {
+      const set = item.write || item.previous
+      if (!set) throw new RecordingApiError('invalid_request')
+      projectedEntries.add(set.exerciseEntryKey)
+      const used = projectedIndexes.get(set.exerciseEntryKey) || new Set<number>()
+      if (used.has(set.setIndex)) throw new RecordingApiError('invalid_request')
+      used.add(set.setIndex)
+      projectedIndexes.set(set.exerciseEntryKey, used)
+    }
+    if (projectedEntries.size !== order.length || order.some(key => !projectedEntries.has(key))) {
+      throw new RecordingApiError('invalid_request')
+    }
+    const mustChange = order.length !== baseline.detail.exerciseEntryKeys.length ||
+      order.some((key, index) => key !== baseline.detail.exerciseEntryKeys[index]) ||
+      expected.size !== baseline.detail.sets.length ||
+      [...expected.values()].some(item => item.write && (!item.previous || !matchesSetPayload(item.write, item.previous)))
+    if (mustChange && expectedVersion === Number.MAX_SAFE_INTEGER) throw new RecordingApiError('invalid_request')
     return this.call('POST', `/me/sessions/${id}/sets`, 200, id, {
       expectedVersion,
       exerciseEntryKeys: order,
       ...(cleanSets === undefined ? {} : { sets: cleanSets }),
       ...(deleted === undefined ? {} : { deleteRecordKeys: deleted }),
       ...(restored === undefined ? {} : { restoreRecordKeys: restored }),
-    }, idempotencyKey).then(detail => {
+    }, idempotencyKey).then(snapshot => {
+      if (!this.auth.isCurrent(snapshot.lease.subjectId, snapshot.lease.generation)) {
+        throw new RecordingApiError('session_changed')
+      }
+      const detail = snapshot.detail
       // A successful status alone is not an acknowledgement of these edits.
       // On mismatch the caller must reconcile by reading, not issue a new write.
-      if (detail.version < expectedVersion || detail.exerciseEntryKeys.length !== order.length ||
+      if (detail.version !== expectedVersion + (mustChange ? 1 : 0) ||
+        detail.exerciseEntryKeys.length !== order.length ||
         detail.exerciseEntryKeys.some((key, index) => key !== order[index])) {
         throw new RecordingApiError('invalid_response')
       }
-      const returned = new Map(detail.sets.map(set => [set.recordKey, set]))
-      for (const write of cleanSets || []) {
-        const found = returned.get(write.recordKey)
-        if (!found || found.exerciseEntryKey !== write.exerciseEntryKey || found.setIndex !== write.setIndex ||
-          found.kind !== write.kind || found.exerciseId !== write.exerciseId || found.exerciseName !== write.exerciseName ||
-          found.weightKg !== write.weightKg || found.reps !== write.reps || found.seconds !== write.seconds ||
-          (found.rpe ?? null) !== (write.rpe ?? null)) throw new RecordingApiError('invalid_response')
+      const expectedStatus = expected.size === 0 && baseline.detail.status === 'completed' ? 'in_progress' : baseline.detail.status
+      if (detail.date !== baseline.detail.date || detail.timeZone !== baseline.detail.timeZone ||
+        detail.source !== baseline.detail.source || detail.status !== expectedStatus ||
+        !sameInstant(detail.createdAt, baseline.detail.createdAt) ||
+        !sameInstant(detail.recordedAt, baseline.detail.recordedAt) ||
+        (!mustChange && !sameInstant(detail.updatedAt, baseline.detail.updatedAt)) ||
+        detail.sets.length !== expected.size) {
+        throw new RecordingApiError('invalid_response')
       }
-      if (deleted?.some(key => returned.has(key))) throw new RecordingApiError('invalid_response')
-      return detail
+      const returned = new Map(detail.sets.map(set => [set.recordKey, set]))
+      for (const [key, item] of expected) {
+        const found = returned.get(key)
+        if (!found) throw new RecordingApiError('invalid_response')
+        if (item.write) {
+          if (!matchesSetPayload(item.write, found)) throw new RecordingApiError('invalid_response')
+          const entry = entryIdentities.get(item.write.exerciseEntryKey)
+          if (entry && entry.resolvedExerciseName !== found.resolvedExerciseName) throw new RecordingApiError('invalid_response')
+        } else if (!item.previous || !matchesServerSet(item.previous, found)) {
+          throw new RecordingApiError('invalid_response')
+        }
+      }
+      return snapshot
     })
   }
 
-  saveSets(id: string, expectedVersion: number, sets: SetPayload[], exerciseEntryKeys: string[], idempotencyKey: string): Promise<WorkoutSessionDetail> {
-    return this.saveBatch(id, { expectedVersion, sets, exerciseEntryKeys }, idempotencyKey)
+  saveSets(id: string, expectedVersion: number, sets: SetPayload[], exerciseEntryKeys: string[], idempotencyKey: string,
+    baseline: ScopedSessionDetail): Promise<ScopedSessionDetail> {
+    return this.saveBatch(id, { expectedVersion, sets, exerciseEntryKeys }, idempotencyKey, baseline)
   }
 
-  finishSession(id: string, input: FinishInput, idempotencyKey: string): Promise<WorkoutSessionDetail> {
-    if (!validId(id) || !validVersion(input.expectedVersion) ||
+  finishSession(id: string, input: FinishInput, idempotencyKey: string, baseline: ScopedSessionDetail): Promise<ScopedSessionDetail> {
+    if (!validId(id) || !input || !validVersion(input.expectedVersion) || input.expectedVersion === Number.MAX_SAFE_INTEGER ||
+      !isIssuedSnapshot(baseline) || issuedSnapshots.get(baseline) !== this || baseline.detail.id !== id ||
+      baseline.detail.version !== input.expectedVersion || baseline.detail.source !== 'free' ||
+      baseline.detail.status === 'skipped' || baseline.detail.sets.length === 0 ||
       (input.date !== undefined && !validDate(input.date)) ||
       (input.durationMin !== undefined && input.durationMin !== null &&
         (!Number.isSafeInteger(input.durationMin) || input.durationMin < 0)) ||
@@ -390,11 +541,40 @@ export class RecordingApi {
         (typeof input.note !== 'string' || Array.from(input.note).length > 2000))) {
       throw new RecordingApiError('invalid_request')
     }
+    if (baseline.lease.subjectId !== this.lease.subjectId || baseline.lease.generation !== this.lease.generation ||
+      !this.auth.isCurrent(this.lease.subjectId, this.lease.generation)) throw new RecordingApiError('session_changed')
     const body: FinishInput = { expectedVersion: input.expectedVersion }
     for (const field of ['date', 'durationMin', 'rpe', 'note'] as const) {
       if (input[field] !== undefined) Object.assign(body, { [field]: input[field] })
     }
-    return this.call('POST', `/me/sessions/${id}/finish`, 200, id, body, idempotencyKey)
+    return this.call('POST', `/me/sessions/${id}/finish`, 200, id, body, idempotencyKey).then(snapshot => {
+      if (!this.auth.isCurrent(snapshot.lease.subjectId, snapshot.lease.generation)) {
+        throw new RecordingApiError('session_changed')
+      }
+      const detail = snapshot.detail
+      if (detail.status !== 'completed' || detail.recordedAt === null || detail.version !== body.expectedVersion + 1 ||
+        detail.source !== baseline.detail.source || detail.timeZone !== baseline.detail.timeZone ||
+        detail.date !== (body.date ?? baseline.detail.date) || !sameInstant(detail.createdAt, baseline.detail.createdAt) ||
+        compareInstants(detail.updatedAt, baseline.detail.updatedAt) === -1 ||
+        detail.exerciseEntryKeys.length !== baseline.detail.exerciseEntryKeys.length ||
+        detail.exerciseEntryKeys.some((key, index) => key !== baseline.detail.exerciseEntryKeys[index]) ||
+        detail.sets.length !== baseline.detail.sets.length ||
+        detail.sets.some((set, index) => !matchesServerSet(baseline.detail.sets[index], set))) {
+        throw new RecordingApiError('invalid_response')
+      }
+      for (const field of ['durationMin', 'rpe', 'note'] as const) {
+        if (body[field] !== undefined) {
+          // The schema permits omitted fields, but omission cannot confirm this write.
+          if (detail[field] === undefined) throw new RecordingApiError('reconcile_required')
+          if (detail[field] !== body[field]) throw new RecordingApiError('invalid_response')
+        } else if ((detail[field] === undefined) !== (baseline.detail[field] === undefined)) {
+          throw new RecordingApiError('reconcile_required')
+        } else if (detail[field] !== baseline.detail[field]) {
+          throw new RecordingApiError('invalid_response')
+        }
+      }
+      return snapshot
+    })
   }
 }
 

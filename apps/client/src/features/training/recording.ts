@@ -214,7 +214,7 @@ function decimal(value: string, maxPlaces: number, minimum: number, maximum: num
   return result
 }
 
-function validation(exercise: DraftExercise, set: DraftSet): { value?: SetWrite; message?: string; blank?: boolean } {
+export function validateDraftSet(exercise: DraftExercise, set: DraftSet): { value?: SetWrite; message?: string; blank?: boolean } {
   const weight = set.weightKg.trim()
   const reps = set.reps.trim()
   const seconds = set.seconds.trim()
@@ -262,7 +262,7 @@ export function confirmSet(
 ): { ok: true; draft: RecordingDraft } | { ok: false; message: string } {
   const target = findExercise(draft, exerciseEntryKey)
   const set = findSet(target, recordKey)
-  const checked = validation(target, set)
+  const checked = validateDraftSet(target, set)
   if (checked.blank || checked.message) return { ok: false, message: checked.message || '先填写这组的实际数据' }
   if (set.confirmed) return { ok: true, draft }
   const changed = { ...target, sets: target.sets.map(item => item === set ? { ...set, confirmed: true } : item) }
@@ -282,7 +282,7 @@ export function prepareConfirmedSet(
     const exercise = findExercise(draft, exerciseEntryKey)
     const set = findSet(exercise, recordKey)
     if (!set.confirmed) return { ok: false, message: '请先记下这一组' }
-    const checked = validation(exercise, set)
+    const checked = validateDraftSet(exercise, set)
     if (!checked.value) return { ok: false, message: checked.message || '先填写这组的实际数据' }
     if (set.persisted && !set.dirty) return { ok: true, state: 'already_saved' }
     return { ok: true, state: 'send', set: checked.value }
@@ -300,7 +300,7 @@ export function preparePerSetFinish(draft: RecordingDraft, today: string): PerSe
   let savedGroups = 0
   for (const exercise of draft.exercises) {
     exercise.sets.forEach(set => {
-      const checked = validation(exercise, set)
+      const checked = validateDraftSet(exercise, set)
       const message = checked.message ||
         (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined) ||
         (checked.value && !set.confirmed ? '请先记下这一组' : undefined) ||
@@ -390,7 +390,7 @@ export function prepareSave(draft: RecordingDraft, today: string): SavePreparati
   const issues: GroupIssue[] = []
   for (const exercise of draft.exercises) {
     exercise.sets.forEach(set => {
-      const checked = validation(exercise, set)
+      const checked = validateDraftSet(exercise, set)
       const message = checked.message ||
         (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined)
       if (message) issues.push({ exerciseEntryKey: exercise.exerciseEntryKey, recordKey: set.recordKey, message })

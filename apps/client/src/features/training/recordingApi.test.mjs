@@ -14,15 +14,16 @@ const detail = overrides => ({
   updatedAt: '2026-10-29T08:00:00Z', recordedAt: null, sets: [], exerciseEntryKeys: [], ...overrides,
 })
 const apiError = code => error => error instanceof RecordingApiError && error.code === code
+const makeApi = (base, leaseAuth, request) => new RecordingApi(base, leaseAuth, request, { subjectId: '101', generation: 'login-1' })
 
 test('free-session creation sends the actual input with authentication and a caller-owned idempotency key', async () => {
   const requests = []
-  const api = new RecordingApi('https://api.example.org/v1/', auth, async request => {
+  const api = makeApi('https://api.example.org/v1/', auth, async request => {
     requests.push(request)
     return { statusCode: 201, data: detail() }
   })
   const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
-  assert.equal((await api.createFreeSession(input, 'create-0001')).id, '42')
+  assert.equal((await api.createFreeSession(input, 'create-0001')).detail.id, '42')
   assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions')
   assert.equal(requests[0].header.Authorization, 'Bearer real-session-token')
   assert.equal(requests[0].header['Idempotency-Key'], 'create-0001')
@@ -32,52 +33,61 @@ test('free-session creation sends the actual input with authentication and a cal
 
 test('saving and rereading use the same resource, version, keys and caller-owned replay token', async () => {
   const requests = []
-  const api = new RecordingApi('https://api.example.org/v1', auth, async request => {
+  const api = makeApi('https://api.example.org/v1', auth, async request => {
     requests.push(request)
-    return { statusCode: 200, data: detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] }) }
+    return { statusCode: 200, data: request.method === 'GET' ? detail() : detail({ version: 4, sets: [set], exerciseEntryKeys: ['entry-0001'] }) }
   })
+  const baseline = await api.readSession('42')
   const { resolvedExerciseName, ...fields } = set
   const write = { ...fields, completed: true }
-  await api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001')
-  await api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001')
+  await api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline)
+  await api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline)
   await api.readSession('42')
-  assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions/42/sets')
-  assert.equal(requests[2].url, 'https://api.example.org/v1/me/sessions/42')
-  assert.equal(requests[0].data, requests[1].data)
-  assert.equal(requests[0].header['Idempotency-Key'], requests[1].header['Idempotency-Key'])
-  assert.deepEqual(JSON.parse(requests[0].data), { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write] })
-  assert.equal(requests[2].header['Idempotency-Key'], undefined)
+  assert.equal(requests[1].url, 'https://api.example.org/v1/me/sessions/42/sets')
+  assert.equal(requests[3].url, 'https://api.example.org/v1/me/sessions/42')
+  assert.equal(requests[1].data, requests[2].data)
+  assert.equal(requests[1].header['Idempotency-Key'], requests[2].header['Idempotency-Key'])
+  assert.deepEqual(JSON.parse(requests[1].data), { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write] })
+  assert.equal(requests[3].header['Idempotency-Key'], undefined)
 })
 
 test('version conflict and network errors are explicit and do not trigger a blind retry', async () => {
-  let requests = 0
-  const conflict = new RecordingApi('https://api.example.org', auth, async () => {
-    requests++
+  let writes = 0
+  const conflict = makeApi('https://api.example.org', auth, async request => {
+    if (request.method === 'GET') return { statusCode: 200, data: detail() }
+    writes++
     return { statusCode: 412, data: { message: 'server-private-details' } }
   })
-  await assert.rejects(conflict.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'update-0001'), apiError('version_conflict'))
-  assert.equal(requests, 1)
-  const offline = new RecordingApi('https://api.example.org', auth, async () => { throw new Error('token in low-level error') })
+  const baseline = await conflict.readSession('42')
+  await assert.rejects(conflict.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'update-0001', baseline), apiError('version_conflict'))
+  assert.equal(writes, 1)
+  const offline = makeApi('https://api.example.org', auth, async () => { throw new Error('token in low-level error') })
   await assert.rejects(offline.readSession('42'), error => apiError('network')(error) && !error.message.includes('token'))
 })
 
-test('finish preserves explicit nulls but omits unrelated fields', async () => {
+test('finish preserves explicit nulls but omits unrelated fields and verifies its full result', async () => {
   let captured
-  const api = new RecordingApi('https://api.example.org/v1', auth, async request => {
+  const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: 30 })
+  const completed = detail({ version: 4, status: 'completed', recordedAt: '2026-10-29T08:00:01Z',
+    sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: null, note: '完成' })
+  const api = makeApi('https://api.example.org/v1', auth, async request => {
+    if (request.method === 'GET') return { statusCode: 200, data: initial }
     captured = request
-    return { statusCode: 200, data: detail({ status: 'completed', recordedAt: '2026-10-29T08:00:01Z', sets: [set], exerciseEntryKeys: ['entry-0001'] }) }
+    return { statusCode: 200, data: completed }
   })
-  await api.finishSession('42', { expectedVersion: 3, durationMin: null, note: '完成', ignored: 'do not send' }, 'finish-0001')
+  const baseline = await api.readSession('42')
+  assert.equal((await api.finishSession('42', { expectedVersion: 3, durationMin: null, note: '完成', ignored: 'do not send' }, 'finish-0001', baseline)).detail.status, 'completed')
   assert.deepEqual(JSON.parse(captured.data), { expectedVersion: 3, durationMin: null, note: '完成' })
 })
 
-test('invalid or duplicate sets are rejected before network access', () => {
-  let called = false
-  const api = new RecordingApi('https://api.example.org', auth, async () => { called = true })
+test('invalid or duplicate sets are rejected before network access', async () => {
+  let calls = 0
+  const api = makeApi('https://api.example.org', auth, async () => { calls++; return { statusCode: 200, data: detail() } })
+  const baseline = await api.readSession('42')
   const write = { ...set, completed: true }
-  assert.throws(() => api.saveSets('42', 3, [{ ...write, reps: 0 }], ['entry-0001'], 'update-0001'), apiError('invalid_request'))
-  assert.throws(() => api.saveSets('42', 3, [write, write], ['entry-0001'], 'update-0001'), apiError('invalid_request'))
-  assert.equal(called, false)
+  assert.throws(() => api.saveSets('42', 3, [{ ...write, reps: 0 }], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
+  assert.throws(() => api.saveSets('42', 3, [write, write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
+  assert.equal(calls, 1)
 })
 
 test('a response from the old session cannot be used after switching account or logging in again', async () => {
@@ -87,7 +97,7 @@ test('a response from the old session cannot be used after switching account or 
     current: () => ({ ...credential, generation }),
     isCurrent: (id, captured) => id === '101' && captured === generation,
   }
-  const api = new RecordingApi('https://api.example.org', lease, () => new Promise(resolve => { release = resolve }))
+  const api = makeApi('https://api.example.org', lease, () => new Promise(resolve => { release = resolve }))
   const pending = api.readSession('42')
   generation = 'login-2'
   release({ statusCode: 200, data: detail() })
@@ -101,7 +111,7 @@ test('mutating the credential object during a request does not make the old resp
     current: () => mutable,
     isCurrent: (id, generation) => id === mutable.subjectId && generation === mutable.generation,
   }
-  const api = new RecordingApi('https://api.example.org', lease, () => new Promise(resolve => { release = resolve }))
+  const api = makeApi('https://api.example.org', lease, () => new Promise(resolve => { release = resolve }))
   const pending = api.readSession('42')
   mutable.generation = 'login-2'
   release({ statusCode: 200, data: detail() })
@@ -110,10 +120,10 @@ test('mutating the credential object during a request does not make the old resp
 
 test('missing authentication and insecure or malformed configuration fail closed', async () => {
   for (const base of ['http://api.example.org', 'https://user:pass@example.org', 'https://example.org/?token=secret']) {
-    assert.throws(() => new RecordingApi(base, auth, async () => ({})), /服务地址/)
+    assert.throws(() => makeApi(base, auth, async () => ({})), /服务地址/)
   }
   let called = false
-  const api = new RecordingApi('https://api.example.org', { current: () => null, isCurrent: () => false }, async () => { called = true })
+  const api = makeApi('https://api.example.org', { current: () => null, isCurrent: () => false }, async () => { called = true })
   await assert.rejects(api.readSession('42'), apiError('unauthenticated'))
   assert.equal(called, false)
   assert.throws(() => api.readSession('../42'), apiError('invalid_request'))
@@ -129,13 +139,14 @@ test('malformed, incomplete or mismatched server records never become an acknowl
     detail({ updatedAt: '2026-10-29T24:00:00Z' }),
     detail({ status: 'completed', sets: [] }),
     detail({ sets: [{ ...set, resolvedExerciseName: '' }], exerciseEntryKeys: ['entry-0001'] }),
+    detail({ sets: [{ ...set, resolvedExerciseName: '不同名称' }], exerciseEntryKeys: ['entry-0001'] }),
     detail({ sets: [{ ...set, reps: 0 }], exerciseEntryKeys: ['entry-0001'] }),
     detail({ sets: [{ ...set, weightKg: '50' }], exerciseEntryKeys: ['entry-0001'] }),
     detail({ sets: [set, set], exerciseEntryKeys: ['entry-0001'] }),
     detail({ sets: [{ ...set, exerciseId: '5' }], exerciseEntryKeys: ['entry-0001'] }),
   ]
   for (const data of invalid) {
-    const api = new RecordingApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
+    const api = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
     await assert.rejects(api.readSession('42'), apiError('invalid_response'))
   }
 })
@@ -156,8 +167,8 @@ test('ordered details accept gaps but reject missing, duplicate, mismatched or u
   const secondEntry = { ...set, recordKey: 'record-003', exerciseEntryKey: 'entry-0002', exerciseName: '划船', resolvedExerciseName: '划船' }
   const laterSet = { ...set, recordKey: 'record-002', setIndex: 4 }
   const valid = detail({ sets: [set, laterSet, secondEntry], exerciseEntryKeys: ['entry-0001', 'entry-0002'] })
-  const apiFor = data => new RecordingApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
-  assert.deepEqual((await apiFor(valid).readSession('42')).exerciseEntryKeys, ['entry-0001', 'entry-0002'])
+  const apiFor = data => makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
+  assert.deepEqual((await apiFor(valid).readSession('42')).detail.exerciseEntryKeys, ['entry-0001', 'entry-0002'])
   const invalid = [
     { ...valid, exerciseEntryKeys: undefined },
     { ...valid, exerciseEntryKeys: null },
@@ -177,26 +188,29 @@ test('ordered details accept gaps but reject missing, duplicate, mismatched or u
 test('batch sends an explicit projected order for a reorder, delete and restore', async () => {
   const requests = []
   const secondEntry = { ...set, recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseName: '划船', resolvedExerciseName: '划船' }
-  const api = new RecordingApi('https://api.example.org', auth, async request => {
+  const api = makeApi('https://api.example.org', auth, async request => {
     requests.push(request)
+    if (request.method === 'GET') return { statusCode: 200, data: detail({ sets: [set, secondEntry], exerciseEntryKeys: ['entry-0001', 'entry-0002'] }) }
     const body = JSON.parse(request.data)
-    if (body.deleteRecordKeys) return { statusCode: 200, data: detail() }
-    if (body.restoreRecordKeys) return { statusCode: 200, data: detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] }) }
-    return { statusCode: 200, data: detail({ sets: [secondEntry, set], exerciseEntryKeys: ['entry-0002', 'entry-0001'] }) }
+    if (body.deleteRecordKeys) return { statusCode: 200, data: detail({ version: 5, sets: [secondEntry], exerciseEntryKeys: ['entry-0002'] }) }
+    if (body.restoreRecordKeys) return { statusCode: 200, data: detail({ version: 6, sets: [secondEntry, set], exerciseEntryKeys: ['entry-0002', 'entry-0001'] }) }
+    return { statusCode: 200, data: detail({ version: 4, sets: [secondEntry, set], exerciseEntryKeys: ['entry-0002', 'entry-0001'] }) }
   })
   const { resolvedExerciseName, ...fields } = set
   const write = { ...fields, completed: true }
-  await api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0002', 'entry-0001'] }, 'reorder-001')
-  await api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: [], deleteRecordKeys: ['record-001'] }, 'delete-0001')
-  await api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] }, 'restore-001')
-  assert.deepEqual(JSON.parse(requests[0].data), { expectedVersion: 3, exerciseEntryKeys: ['entry-0002', 'entry-0001'] })
-  assert.deepEqual(JSON.parse(requests[1].data), { expectedVersion: 3, exerciseEntryKeys: [], deleteRecordKeys: ['record-001'] })
-  assert.deepEqual(JSON.parse(requests[2].data), { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] })
+  const baseline = await api.readSession('42')
+  const reordered = await api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0002', 'entry-0001'] }, 'reorder-001', baseline)
+  const removed = await api.saveBatch('42', { expectedVersion: 4, exerciseEntryKeys: ['entry-0002'], deleteRecordKeys: ['record-001'] }, 'delete-0001', reordered)
+  await api.saveBatch('42', { expectedVersion: 5, exerciseEntryKeys: ['entry-0002', 'entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] }, 'restore-001', removed)
+  assert.deepEqual(JSON.parse(requests[1].data), { expectedVersion: 3, exerciseEntryKeys: ['entry-0002', 'entry-0001'] })
+  assert.deepEqual(JSON.parse(requests[2].data), { expectedVersion: 4, exerciseEntryKeys: ['entry-0002'], deleteRecordKeys: ['record-001'] })
+  assert.deepEqual(JSON.parse(requests[3].data), { expectedVersion: 5, exerciseEntryKeys: ['entry-0002', 'entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] })
 })
 
-test('invalid order and overlapping batches fail before a network request', () => {
+test('invalid order and overlapping batches fail before a network request', async () => {
   let requests = 0
-  const api = new RecordingApi('https://api.example.org', auth, async () => { requests++; return { statusCode: 200, data: detail() } })
+  const api = makeApi('https://api.example.org', auth, async () => { requests++; return { statusCode: 200, data: detail() } })
+  const baseline = await api.readSession('42')
   const write = { ...set, completed: true }
   const base = { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'] }
   const bad = [
@@ -214,42 +228,187 @@ test('invalid order and overlapping batches fail before a network request', () =
     { ...base, sets: Array.from({ length: 200 }, (_, i) => ({ ...write, recordKey: `record-${String(i).padStart(3, '0')}`, setIndex: i + 1 })), deleteRecordKeys: ['record-999'] },
     { ...base, exerciseEntryKeys: Array.from({ length: 2001 }, (_, i) => `entry-${String(i).padStart(4, '0')}`) },
   ]
-  for (const input of bad) assert.throws(() => api.saveBatch('42', input, 'update-0001'), apiError('invalid_request'))
-  assert.equal(requests, 0)
+  for (const input of bad) assert.throws(() => api.saveBatch('42', input, 'update-0001', baseline), apiError('invalid_request'))
+  assert.equal(requests, 1)
 })
 
 
 test('a 200 response that does not acknowledge the requested order or group is not treated as saved', async () => {
   const write = { ...set, completed: true }
+  const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] })
   const wrong = [
     detail(),
     detail({ sets: [{ ...set, reps: 7 }], exerciseEntryKeys: ['entry-0001'] }),
     detail({ sets: [set], exerciseEntryKeys: ['entry-0001'], version: 2 }),
   ]
   for (const data of wrong) {
-    const api = new RecordingApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
-    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001'), apiError('invalid_response'))
+    const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : data }))
+    const baseline = await api.readSession('42')
+    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
   }
-  const undeleted = new RecordingApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] }) }))
-  await assert.rejects(undeleted.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], deleteRecordKeys: ['record-001'] }, 'delete-0001'), apiError('invalid_response'))
+  const undeleted = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: initial }))
+  const baseline = await undeleted.readSession('42')
+  await assert.rejects(undeleted.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: [], deleteRecordKeys: ['record-001'] }, 'delete-0001', baseline), apiError('invalid_response'))
 })
-
 
 test('in-flight batch acknowledgement uses the original immutable request values', async () => {
   let release
   let sent
-  const api = new RecordingApi('https://api.example.org', auth, request => {
+  const api = makeApi('https://api.example.org', auth, request => {
+    if (request.method === 'GET') return Promise.resolve({ statusCode: 200, data: detail() })
     sent = JSON.parse(request.data)
     return new Promise(resolve => { release = resolve })
   })
+  const baseline = await api.readSession('42')
   const input = { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [{ ...set, completed: true }] }
-  const pending = api.saveBatch('42', input, 'update-0001')
+  const pending = api.saveBatch('42', input, 'update-0001', baseline)
   input.expectedVersion = 99
   input.exerciseEntryKeys[0] = 'entry-0002'
   input.sets[0].reps = 1
-  release({ statusCode: 200, data: detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] }) })
-  assert.equal((await pending).version, 3)
+  release({ statusCode: 200, data: detail({ version: 4, sets: [set], exerciseEntryKeys: ['entry-0001'] }) })
+  assert.equal((await pending).detail.version, 4)
   assert.equal(sent.expectedVersion, 3)
   assert.deepEqual(sent.exerciseEntryKeys, ['entry-0001'])
   assert.equal(sent.sets[0].reps, 8)
+})
+
+test('a recording API bound to one login refuses a different login before network access', async () => {
+  let generation = 'login-1'
+  let requests = 0
+  const lease = { current: () => ({ ...credential, generation }), isCurrent: (id, captured) => id === '101' && captured === generation }
+  const api = makeApi('https://api.example.org', lease, async () => { requests++; return { statusCode: 200, data: detail() } })
+  generation = 'login-2'
+  await assert.rejects(api.readSession('42'), apiError('session_changed'))
+  assert.equal(requests, 0)
+})
+
+
+test('a write response must preserve every unrelated saved group from its baseline', async () => {
+  const second = { ...set, recordKey: 'record-002', setIndex: 2, reps: 6 }
+  const original = detail({ sets: [set, second], exerciseEntryKeys: ['entry-0001'] })
+  const write = { ...second, reps: 7, completed: true }
+  const changed = { ...second, reps: 7 }
+  const wrong = [
+    detail({ version: 4, sets: [changed], exerciseEntryKeys: ['entry-0001'] }),
+    detail({ version: 4, sets: [{ ...set, reps: 9 }, changed], exerciseEntryKeys: ['entry-0001'] }),
+    detail({ version: 4, sets: [{ ...set, resolvedExerciseName: '其他名称' }, changed], exerciseEntryKeys: ['entry-0001'] }),
+  ]
+  for (const response of wrong) {
+    const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : response }))
+    const baseline = await api.readSession('42')
+    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+  }
+})
+
+test('write baseline must be issued by the same adapter, session and version', async () => {
+  let calls = 0
+  const transport = async () => { calls++; return { statusCode: 200, data: detail() } }
+  const first = makeApi('https://api.example.org', auth, transport)
+  const second = makeApi('https://api.example.org', auth, transport)
+  const baseline = await first.readSession('42')
+  const write = { ...set, completed: true }
+  assert.throws(() => second.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
+  assert.throws(() => first.saveSets('42', 4, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
+  assert.throws(() => first.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', { ...baseline }), apiError('invalid_request'))
+  assert.equal(calls, 1)
+})
+
+
+test('existing groups can be changed without losing untouched groups; versions reflect actual changes', async () => {
+  const second = { ...set, recordKey: 'record-002', setIndex: 2, reps: 6 }
+  const original = detail({ sets: [set, second], exerciseEntryKeys: ['entry-0001'] })
+  const write = { ...second, reps: 7, completed: true }
+  const changed = detail({ version: 4, sets: [set, { ...second, reps: 7 }], exerciseEntryKeys: ['entry-0001'] })
+  const success = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : changed }))
+  const baseline = await success.readSession('42')
+  const updated = await success.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline)
+  assert.equal(updated.detail.version, 4)
+  assert.deepEqual(updated.detail.sets.map(group => group.reps), [8, 7])
+  const invalid = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : { ...changed, version: 3 } }))
+  const otherBaseline = await invalid.readSession('42')
+  await assert.rejects(invalid.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', otherBaseline), apiError('invalid_response'))
+  const noop = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: original }))
+  const noopBaseline = await noop.readSession('42')
+  assert.equal((await noop.saveSets('42', 3, [{ ...second, completed: true }], ['entry-0001'], 'update-0002', noopBaseline)).detail.version, 3)
+})
+
+
+test('a write preserves creation and recording instants even when offsets or fractional spellings differ', async () => {
+  const original = detail({ createdAt: '2026-10-29T08:00:00.123400Z', recordedAt: '2026-10-29T08:01:00.000001Z' })
+  const write = { ...set, completed: true }
+  const result = detail({ version: 4, sets: [set], exerciseEntryKeys: ['entry-0001'],
+    createdAt: '2026-10-29T16:00:00.1234+08:00', recordedAt: '2026-10-29T16:01:00.0000010+08:00' })
+  const good = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : result }))
+  const baseline = await good.readSession('42')
+  await good.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline)
+  for (const response of [
+    { ...result, createdAt: '2026-10-29T16:00:01.1234+08:00' },
+    { ...result, recordedAt: '2026-10-29T16:01:00.000002+08:00' },
+  ]) {
+    const bad = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : response }))
+    const badBaseline = await bad.readSession('42')
+    await assert.rejects(bad.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', badBaseline), apiError('invalid_response'))
+  }
+})
+
+test('restoring a custom group cannot acknowledge a different resolved name', async () => {
+  const write = { ...set, completed: true }
+  const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200,
+    data: request.method === 'GET' ? detail() : detail({ version: 4, sets: [{ ...set, resolvedExerciseName: '不同名称' }], exerciseEntryKeys: ['entry-0001'] }) }))
+  const baseline = await api.readSession('42')
+  await assert.rejects(api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] }, 'restore-001', baseline), apiError('invalid_response'))
+})
+
+
+test('finish rejects a 200 response unless the saved status, version, fields and all groups are confirmed', async () => {
+  const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: 30, note: '原备注' })
+  const finished = detail({ version: 4, status: 'completed', recordedAt: '2026-10-29T08:00:01Z',
+    sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: null, note: '新备注' })
+  const wrong = [
+    initial,
+    { ...finished, version: 3 },
+    { ...finished, recordedAt: null },
+    { ...finished, sets: [{ ...set, reps: 7 }] },
+    { ...finished, createdAt: '2026-10-28T08:00:00Z' },
+    { ...finished, durationMin: 30 },
+    { ...finished, note: '原备注' },
+    { ...finished, date: '2026-10-28' },
+  ]
+  for (const response of wrong) {
+    const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : response }))
+    const baseline = await api.readSession('42')
+    await assert.rejects(api.finishSession('42', { expectedVersion: 3, durationMin: null, note: '新备注' }, 'finish-0001', baseline), apiError('invalid_response'))
+  }
+})
+
+test('no-op set batch cannot advance its update timestamp', async () => {
+  const original = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] })
+  const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200,
+    data: request.method === 'GET' ? original : { ...original, updatedAt: '2026-10-29T08:00:01Z' } }))
+  const baseline = await api.readSession('42')
+  await assert.rejects(api.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+})
+
+
+test('finish asks for reconciliation when a contract-optional field needed for confirmation is absent', async () => {
+  const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: 30 })
+  const withoutDuration = detail({ version: 4, status: 'completed', recordedAt: '2026-10-29T08:00:01Z', sets: [set], exerciseEntryKeys: ['entry-0001'] })
+  for (const input of [{ expectedVersion: 3, durationMin: null }, { expectedVersion: 3 }]) {
+    const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : withoutDuration }))
+    const baseline = await api.readSession('42')
+    await assert.rejects(api.finishSession('42', input, 'finish-0001', baseline), apiError('reconcile_required'))
+  }
+})
+
+test('finish rejects a backwards update instant but allows equal instants and offsets', async () => {
+  const initial = detail({ updatedAt: '2026-10-29T08:00:00.000001Z', sets: [set], exerciseEntryKeys: ['entry-0001'] })
+  const finished = detail({ version: 4, status: 'completed', recordedAt: '2026-10-29T08:00:01Z',
+    updatedAt: '2026-10-29T16:00:00.0000010+08:00', sets: [set], exerciseEntryKeys: ['entry-0001'] })
+  const good = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : finished }))
+  const baseline = await good.readSession('42')
+  assert.equal((await good.finishSession('42', { expectedVersion: 3 }, 'finish-0001', baseline)).detail.version, 4)
+  const bad = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial :
+    { ...finished, updatedAt: '2026-10-29T16:00:00.0000009+08:00' } }))
+  const badBaseline = await bad.readSession('42')
+  await assert.rejects(bad.finishSession('42', { expectedVersion: 3 }, 'finish-0001', badBaseline), apiError('invalid_response'))
 })

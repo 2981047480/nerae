@@ -92,6 +92,12 @@ export class DraftController {
     return this.currentDraft
   }
 
+  /** Bind network operations to the same authenticated owner as this draft. */
+  get recordingLease(): { subjectId: string; generation: string } {
+    this.assertCurrent()
+    return { subjectId: this.subjectId, generation: this.generation }
+  }
+
   private assertCurrent(): void {
     if (!this.auth.isCurrent(this.subjectId, this.generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
   }
