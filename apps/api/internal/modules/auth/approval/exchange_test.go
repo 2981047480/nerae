@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -397,22 +398,29 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err != nil {
 		t.Fatal("old device session could not create isolated workout")
 	}
-	group := workoutdomain.Set{RecordKey: "device-group-001", ExerciseEntryKey: "device-entry-001", Exercise: workoutdomain.Exercise{Source: workoutdomain.Custom, Name: "自定义动作"},
+	groupA := workoutdomain.Set{RecordKey: "device-group-001", ExerciseEntryKey: "device-entry-001", Exercise: workoutdomain.Exercise{Source: workoutdomain.Custom, Name: "自定义动作"},
 		Index: 1, Kind: workoutdomain.Weight, WeightKg: "42.5", Reps: 8}
-	if v, changed, err := workout.SaveSets(ctx, db, oldToken, workoutRef.ID, 1, workoutdomain.Batch{Sets: []workoutdomain.Set{group}}); err != nil || !changed || v != 2 {
-		t.Fatal("old device session could not save isolated workout")
+	groupB := workoutdomain.Set{RecordKey: "device-group-002", ExerciseEntryKey: "device-entry-002", Exercise: workoutdomain.Exercise{Source: workoutdomain.Custom, Name: "自定义卧推"},
+		Index: 1, Kind: workoutdomain.Weight, WeightKg: "25", Reps: 10}
+	initialOrder := []string{"device-entry-002", "device-entry-001"}
+	if v, changed, err := workout.SaveSets(ctx, db, oldToken, workoutRef.ID, 1, workoutdomain.Batch{Sets: []workoutdomain.Set{groupA, groupB}}, initialOrder); err != nil || !changed || v != 2 {
+		t.Fatal("old device session could not save isolated workout and complete order")
 	}
-	snapshot, err := workout.ReadFree(ctx, db, newToken.ForResponse(), workoutRef.ID)
-	if err != nil || snapshot.Version != 2 || snapshot.Sets[group.RecordKey].WeightKg != "42.50" || snapshot.Sets[group.RecordKey].Exercise.Name != group.Exercise.Name {
-		t.Fatal("approved new device session could not read same workout")
+	snapshot, err := workout.ReadOrderedFree(ctx, db, newToken.ForResponse(), workoutRef.ID)
+	if err != nil || snapshot.Version != 2 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, initialOrder) ||
+		snapshot.Sets[groupA.RecordKey].WeightKg != "42.50" || snapshot.Sets[groupA.RecordKey].Exercise.Name != groupA.Exercise.Name ||
+		snapshot.Sets[groupB.RecordKey].WeightKg != "25.00" {
+		t.Fatal("approved new device session could not read the same ordered workout")
 	}
-	group.WeightKg = "50"
-	if v, changed, err := workout.SaveSets(ctx, db, newToken.ForResponse(), workoutRef.ID, 2, workoutdomain.Batch{Sets: []workoutdomain.Set{group}}); err != nil || !changed || v != 3 {
-		t.Fatal("approved new device session could not update same workout")
+	groupB.WeightKg = "30"
+	updatedOrder := []string{"device-entry-001", "device-entry-002"}
+	if v, changed, err := workout.SaveSets(ctx, db, newToken.ForResponse(), workoutRef.ID, 2, workoutdomain.Batch{Sets: []workoutdomain.Set{groupB}}, updatedOrder); err != nil || !changed || v != 3 {
+		t.Fatal("approved new device session could not update and reorder the same workout")
 	}
-	snapshot, err = workout.ReadFree(ctx, db, oldToken, workoutRef.ID)
-	if err != nil || snapshot.Version != 3 || snapshot.Sets[group.RecordKey].WeightKg != "50.00" {
-		t.Fatal("old device session could not read updated workout")
+	snapshot, err = workout.ReadOrderedFree(ctx, db, oldToken, workoutRef.ID)
+	if err != nil || snapshot.Version != 3 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, updatedOrder) ||
+		snapshot.Sets[groupB.RecordKey].WeightKg != "30.00" {
+		t.Fatal("old device session could not read updated group and order")
 	}
 	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("consumed approval was exchanged again")
