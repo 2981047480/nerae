@@ -16,3 +16,7 @@
 - 文字放大验收不能只看根scrollWidth：overflow-x:clip会掩盖内部min-content撑宽。实际检查输入/按钮及祖先的左右边界、命中区与截图，避免把裁切当无溢出通过。
 
 - Harness长会话提交反馈后，要用完整AX核对消息气泡、轮次和实际生成状态，不能把点击返回当成已执行。此轮Return提交、运行中Return排队/CmdReturn插话已实测成功；按钮索引重编号后不要沿用旧值。停止/连接失败须留终态和落盘成果，再做窄恢复；观察超时不是重启依据。
+
+## iOS 原生编译
+
+- HBuilderX CLI 报 iOS UTS 扩展安装中时，扩展可能已在磁盘上；先用 `infra/app/ios/device/verify-uts-probe.sh` 指向官方 HBuilderX 安装，验证插件路径、内置 iPhone 基座及实际生成的 iPhoneOS arm64 framework。插件编译器可能返回无效成功码，必须检查产物；脚本隔离其临时清理目录。HBuilderX 5.33 的探针不能证明项目锁定的 5.26 兼容，也不是签名安装或真机验证。
