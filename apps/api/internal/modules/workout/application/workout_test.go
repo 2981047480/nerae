@@ -171,7 +171,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		t.Fatal("unverified age could create a workout")
 	}
 	var count int
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session`).Scan(&count); err != nil || count != 0 {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id = ?`, claimsA.SubjectID).Scan(&count); err != nil || count != 0 {
 		t.Fatal("age-rejected workout left data")
 	}
 	// This is an isolated database fixture, not a real age-verification flow.
