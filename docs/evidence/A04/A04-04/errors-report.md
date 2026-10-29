@@ -5,3 +5,5 @@
 锁定 Go `go test -race -count=1 ./internal/modules/workout/application` 通过（无 DSN 时 DB 用例跳过）。本卡 `mysql_smoke.py` 在私有 Unix socket MySQL 通过两个完整训练事务测试：包含在途授权撤销、组更新和完成确认的全部回滚，以及取消上下文后的回滚和不可用分类；不连接真实服务。首次数据库全包运行发现 A04-05 的完成测试仍期望旧错误类别，配套测试提交 `a0da684` 改为保守分类并重跑通过；失败目录保留 `/private/tmp/nerae-workout-integration-mysql-s1aa4_l2`。
 
 客户端、HTTP 路由、幂等与真实双设备尚未接线；`Principal.ForTransaction` 的细分错误仍待设计，不能称故障提示已向用户交付或任务已接受。
+
+集成复验：`68c9a19` 的训练事务定向 Go race 测试、私有 MySQL 完成/保存事务及任务图检查通过。

@@ -29,4 +29,6 @@
 
 依赖会话存储区分无效/撤销与服务不可用；`AuthenticateRequest` 仅把明确无效的凭证映射为 `ErrSessionRejected`，数据库错误及未知存储错误均为 `ErrAuthUnavailable`。`AuthFailureKind` 将前者映射 401、后者映射 503，未知直接调用错误为 500。请求取消后调用者仍应停止响应；业务授权和原事务提交前重新校验仍是调用者职责。独立 reviewer 只读复核未发现错误分类导致误退出的阻断。
 
-`go test -race -count=1 ./internal/middleware` 通过（未配置 DSN 时数据库测试跳过）；本卡私有 MySQL harness 通过，其中真实事务分别覆盖无效签名、撤权、结束事务及已取消查询。仍无真实业务路由调用，workout application 自己还会合并认证错误，且年龄声明、精确数字、幂等、登录供应商等前置仍未完成；不能声明 App 登录或故障提示已交付。
+`go test -race -count=1 ./internal/middleware` 通过（未配置 DSN 时数据库测试跳过）；本卡私有 MySQL harness 通过，其中真实事务分别覆盖无效签名、撤权、结束事务及已取消查询。仍无真实业务路由调用，当时 workout application 仍合并认证错误；后续已在 `68c9a19` 修正。年龄声明、精确数字、幂等、登录供应商等前置仍未完成；不能声明 App 登录或故障提示已交付。
+
+集成复验：`894a078` 在私有 MySQL 中通过认证边界测试，完整 Go race 测试通过；普通沙箱首次因禁止本机回环端口导致 SMTP 测试失败，授权环境重跑通过。默认未配置 DSN 的普通套件会跳过数据库用例，数据库证据来自专用 harness。
