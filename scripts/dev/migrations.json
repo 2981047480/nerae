@@ -35,6 +35,13 @@
       "module": "workout",
       "file": "0001_workout_session.up.sql",
       "sha256": "d52c48160d66f190b885898def7ad6c523e8af180063461d8a53fdb14cb17e82"
+    },
+    {
+      "order": 6,
+      "id": "workout/0002_workout_sets.up.sql",
+      "module": "workout",
+      "file": "0002_workout_sets.up.sql",
+      "sha256": "f0bf5f8631ad4c25df031c37916b0c45f376ab597f9e368d33f9353383bd0efe"
     }
   ]
 }
