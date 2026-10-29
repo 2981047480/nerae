@@ -344,6 +344,34 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(any(e.startswith('F01: dependency not accepted') for e in errors))
         self.assertTrue(any(e.startswith('K01: dependency not accepted') for e in errors))
 
+    def test_transport_can_start_on_verified_snapshot_but_not_accept_before_codegen(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        starting = ['F01-01', 'F01-02', 'F01-03', 'K01-01', 'Q02-02']
+        for name in starting:
+            tasks[name]['status'] = 'accepted'
+        tasks['F02-01']['status'] = 'active'
+        self.assertIn('F02-02', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        for name in starting:
+            tasks[name]['status'] = 'planned'
+            self.assertNotIn('F02-02', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+            tasks[name]['status'] = 'accepted'
+        boundary = tasks['F02-02']
+        boundary.update(status='active', owner='fixture', actual_model='fixture',
+                        actual_reasoning='high', base_revision='fixture')
+        self.assertFalse(any(e.startswith('F02-02: dependency not accepted') for e in plan.validate(self.doc)))
+        boundary['status'] = 'accepted'
+        self.assertTrue(any(e.startswith('F02-02: acceptance dependency not accepted') for e in plan.validate(self.doc)))
+        boundary['status'] = 'planned'
+        self.assertNotIn('F02-03', plan.ready_tasks(tasks, self.doc['deferred_packages']))
+        self.assertIn('F02-02', tasks['F02']['depends_on'])
+        self.assertIn('F02-03', tasks['F02']['depends_on'])
+
+    def test_transport_acceptance_edge_does_not_order_codegen_writers(self):
+        tasks = {t['id']: t for t in self.doc['tasks']}
+        tasks['F02-01']['write_allowlist'].append('apps/api/internal/middleware/')
+        errors = plan.validate(self.doc)
+        self.assertTrue(any('F02-01/F02-02: unordered write overlap' in e for e in errors))
+
     def test_codegen_acceptance_only_dependency_never_orders_writers(self):
         tasks = {t['id']: t for t in self.doc['tasks']}
         tasks['F02-01']['write_allowlist'].append('api/tests/shared-fixture.py')

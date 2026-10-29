@@ -3297,13 +3297,17 @@
       "id": "F02-02",
       "title": "统一错误、请求校验与身份上下文边界",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
-        "F02-01"
+        "F01-01",
+        "F01-02",
+        "F01-03",
+        "K01-01",
+        "Q02-02"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "Project Lead",
       "write_allowlist": [
         "apps/api/internal/middleware/",
         "docs/evidence/F02/F02-02/"
@@ -3313,10 +3317,11 @@
         "docs/ENGINEERING_STANDARDS.md",
         "docs/DEFINITION_OF_DONE.md",
         "api/openapi.yaml",
+        "apps/api/internal/gen/api.gen.go",
         "docs/evidence/K01/K01-01/codegen-integration.md",
         "api/tests/codegen/schema_validation_test.go"
       ],
-      "deliverables": "按生成接口适配请求/响应校验和Error；认证上下文只承载已验证身份，实际JWT/微信登录归A01；客户端role/sourceTag不授予权限。",
+      "deliverables": "以基线提交中已验证的生成合同快照实现请求/响应校验和Error；认证上下文只承载已验证身份，实际JWT/微信登录归A01；客户端role/sourceTag不授予权限。F02-01最终接受后须按最终生成物同版重验。",
       "acceptance": [
         "400/401/403/404/409/412/422/429/503采用约定错误映射，保留requestId而不泄漏上游原文",
         "错误参数、额外字段和伪造身份有负例；schema有效不被当作对象授权完成",
@@ -3329,7 +3334,8 @@
         "make contract-check"
       ],
       "risks": [
-        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。",
+        "提前开发基于已验证的生成合同快照；F02-01最终接受前合同和生成物可能变化，必须在最终同版重验。"
       ],
       "effort_days": [
         1,
@@ -3349,9 +3355,12 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": [],
+      "acceptance_requires": ["F02-01"],
       "parent": "F02",
-      "kind": "task"
+      "kind": "task",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "a71a7840e0c390eaca66906ea6c5bc35c8e21eef"
     },
     {
       "id": "F02-03",
