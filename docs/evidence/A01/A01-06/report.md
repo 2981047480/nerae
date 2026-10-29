@@ -9,4 +9,6 @@
 - `session/token.go`：`335c4a3b0d90113f2cf7dabddc21d2762aa23c0917a545c85c68bf9822c15253`
 - `session/token_test.go`：`9474dc8d5a013481c425ea5feb5a1b13861d768f0a86238fe430a7dc9e15b5ab`
 
+集成提交 `5a9e0ba` 的同一文件版本再次通过 `go test -race -count=1 ./internal/modules/auth/session`，任务图检查有效。此复测不代表完成最终接受或对外启用。
+
 这是密码学基础，不得单独作为认证中间件。后续每次请求都必须在业务事务中检查数据库会话、主体、身份、可信设备及 token version 的当前状态，并校验资源归属和年龄门槛；签发必须源自真实已验证挑战、随机会话 ID 和已提交事务。密钥运维与轮换、设备批准/恢复、会话撤销、幂等响应和真实邮件登录均尚未完成。
