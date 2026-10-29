@@ -21,6 +21,8 @@ CREATE TABLE auth_email_login_challenge (
     code_digest BINARY(32) NOT NULL,
     attempts SMALLINT UNSIGNED NOT NULL,
     max_attempts SMALLINT UNSIGNED NOT NULL,
+    proof_max_lifetime_ns BIGINT UNSIGNED NOT NULL,
+    proof_clock_skew_ns BIGINT UNSIGNED NOT NULL,
     created_at DATETIME(6) NOT NULL,
     expires_at DATETIME(6) NOT NULL,
     consumed_at DATETIME(6) NULL,

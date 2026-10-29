@@ -74,9 +74,14 @@ func testKey(t *testing.T) (*ecdsa.PrivateKey, domain.DevicePublicJWK) {
 
 func testProof(t *testing.T, private *ecdsa.PrivateKey, challengeID, nonce, jti string, now time.Time) string {
 	t.Helper()
+	return testProofTimes(t, private, challengeID, nonce, jti, now, now.Add(time.Minute))
+}
+
+func testProofTimes(t *testing.T, private *ecdsa.PrivateKey, challengeID, nonce, jti string, issuedAt, expiresAt time.Time) string {
+	t.Helper()
 	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"ES256","typ":"JWT"}`))
 	claims, err := json.Marshal(map[string]any{"aud": "nerae-auth-device", "purpose": "email_login", "resourceId": challengeID,
-		"nonce": nonce, "iat": now.Unix(), "exp": now.Add(time.Minute).Unix(), "jti": jti})
+		"nonce": nonce, "iat": issuedAt.Unix(), "exp": expiresAt.Unix(), "jti": jti})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +102,8 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
-	store, err := NewStore(hasher, replay, protector)
+	policy := Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 2, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}}
+	store, err := NewStore(hasher, replay, protector, policy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,15 +115,15 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	email := "person@example.test"
 	index, _ := protector.Index(email)
 	nonce := strings.Repeat("N", 43)
-	issue := func(id string, attempts int) {
+	issue := func(id string) {
 		t.Helper()
+		clock.Store(now.UnixNano())
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345",
-			PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: attempts})
+		err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345", PublicKey: public})
 		if err != nil {
 			t.Fatalf("failed to issue challenge: %v", err)
 		}
@@ -132,8 +138,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 			return AttemptResult{}, err
 		}
 		defer tx.Rollback()
-		result, err := store.Attempt(ctx, tx, AttemptInput{ChallengeID: id, Code: code, DeviceProof: proof,
-			ProofPolicy: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+		result, err := store.Attempt(ctx, tx, AttemptInput{ChallengeID: id, Code: code, DeviceProof: proof})
 		if err != nil {
 			return result, err
 		}
@@ -164,7 +169,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 			}
 			defer tx.Rollback()
 			err = store.Issue(ctx, tx, IssueInput{Email: fmt.Sprintf("epoch%d@example.test", n), ChallengeID: id,
-				Nonce: nonce, Code: "012345", PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
+				Nonce: nonce, Code: "012345", PublicKey: public})
 			if err == nil {
 				err = tx.Commit()
 			}
@@ -183,7 +188,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 
 	first := strings.Repeat("A", 32)
-	issue(first, 2)
+	issue(first)
 	validFirst := testProof(t, private, first, nonce, "wrong-attempt-jti", now)
 	badProof := testProof(t, private, first, strings.Repeat("B", 43), "bad-proof-jti", now)
 	result, err := attempt(first, "999999", badProof, now, true)
@@ -194,9 +199,18 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	assertRejected(result, err, true)
 	result, err = attempt(first, "012345", validFirst, now, true)
 	assertRejected(result, err, false)
+	looser, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3, DeviceProof: policy.DeviceProof})
+	looser.now = store.now
+	looseTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err = looser.Attempt(ctx, looseTx, AttemptInput{ChallengeID: first, Code: "012345", DeviceProof: validFirst})
+	_ = looseTx.Rollback()
+	assertRejected(result, err, false) // A later policy relaxation cannot restore exhausted attempts.
 
 	second := strings.Repeat("B", 32)
-	issue(second, 3)
+	issue(second)
 	result, err = attempt(first, "012345", validFirst, now, true)
 	assertRejected(result, err, false)
 	proof := testProof(t, private, second, nonce, "concurrent-proof", now)
@@ -221,7 +235,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 
 	third := strings.Repeat("C", 32)
-	issue(third, 3)
+	issue(third)
 	rollbackProof := testProof(t, private, third, nonce, "rollback-proof", now)
 	result, err = attempt(third, "012345", rollbackProof, now, false)
 	if err != nil || !result.Verified {
@@ -233,20 +247,33 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 
 	wrongProtector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{5}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
-	wrongStore, _ := NewStore(hasher, replay, wrongProtector)
+	wrongStore, _ := NewStore(hasher, replay, wrongProtector, policy)
 	wrongTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wrongErr := wrongStore.Issue(ctx, wrongTx, IssueInput{Email: email, ChallengeID: strings.Repeat("Z", 32), Nonce: nonce,
-		Code: "012345", PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
+		Code: "012345", PublicKey: public})
 	_ = wrongTx.Rollback()
 	if !errors.Is(wrongErr, ErrChallengeStore) {
 		t.Fatal("a different email key epoch was not rejected")
 	}
 
 	expired := strings.Repeat("D", 32)
-	issue(expired, 3)
+	issue(expired)
+	stricter, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: time.Minute, MaxAttempts: 1, DeviceProof: policy.DeviceProof})
+	stricter.now = store.now
+	clock.Store(now.Add(time.Minute).UnixNano())
+	strictTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err = stricter.Attempt(ctx, strictTx, AttemptInput{ChallengeID: expired, Code: "012345",
+		DeviceProof: testProof(t, private, expired, nonce, "stricter-policy", now.Add(time.Minute))})
+	_ = strictTx.Rollback()
+	assertRejected(result, err, false)
+	result, err = attempt(expired, "012345", testProof(t, private, expired, nonce, "before-creation", now), now.Add(-time.Second), true)
+	assertRejected(result, err, false)
 	result, err = attempt(expired, "012345", testProof(t, private, expired, nonce, "expired-proof", now), now.Add(5*time.Minute), true)
 	assertRejected(result, err, false)
 	var digest, ciphertext []byte
@@ -259,6 +286,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 
 	email = "concurrent@example.test" // Exercise concurrent creation of a previously absent slot.
 	index, _ = protector.Index(email)
+	clock.Store(now.UnixNano())
 	var issuanceStart sync.WaitGroup
 	issuanceStart.Add(1)
 	issued := make(chan error, 2)
@@ -272,8 +300,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 				return
 			}
 			defer tx.Rollback()
-			err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345",
-				PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
+			err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345", PublicKey: public})
 			if err == nil {
 				err = tx.Commit()
 			}
@@ -298,13 +325,12 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	email = "rollback@example.test"
 	index, _ = protector.Index(email)
 	oldID, newID := strings.Repeat("G", 32), strings.Repeat("H", 32)
-	issue(oldID, 3)
+	issue(oldID)
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: newID, Nonce: nonce, Code: "012345",
-		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: newID, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not create rollback candidate")
 	}
@@ -335,8 +361,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneID, Nonce: nonce, Code: "012345",
-		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneID, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not issue with alternate driver location")
 	}
@@ -350,8 +375,8 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneValid, Nonce: nonce, Code: "012345",
-		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
+	clock.Store(now.UnixNano())
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneValid, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not issue alternate-location valid challenge")
 	}
@@ -366,15 +391,14 @@ func TestEmailChallengeTransaction(t *testing.T) {
 
 	email = "bound@example.test"
 	boundID := strings.Repeat("M", 32)
-	issue(boundID, 3)
+	issue(boundID)
 	clock.Store(now.UnixNano())
 	boundTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	boundResult, err := store.Attempt(ctx, boundTx, AttemptInput{ChallengeID: boundID, Code: "012345",
-		DeviceProof: testProof(t, private, boundID, nonce, "bound-proof", now),
-		ProofPolicy: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+		DeviceProof: testProof(t, private, boundID, nonce, "bound-proof", now)})
 	if err != nil || !boundResult.Verified || boundResult.Proof == nil {
 		_ = boundTx.Rollback()
 		t.Fatal("valid challenge did not produce a transaction-bound proof")
@@ -436,9 +460,33 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		t.Fatal("unverified zero-value challenge proof accepted")
 	}
 
+	email = "policy@example.test"
+	policyID := strings.Repeat("P", 32)
+	issue(policyID)
+	policyAttempt := func(candidate *Store, proof string) {
+		t.Helper()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		result, err := candidate.Attempt(ctx, tx, AttemptInput{ChallengeID: policyID, Code: "012345", DeviceProof: proof})
+		assertRejected(result, err, false)
+	}
+	proofLooser, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3,
+		DeviceProof: domain.ProofPolicy{MaxLifetime: 24 * time.Hour, ClockSkew: 5 * time.Minute}})
+	proofLooser.now = store.now
+	policyAttempt(proofLooser, testProofTimes(t, private, policyID, nonce, "old-lifetime-bound", now.Add(-6*time.Minute), now.Add(time.Minute)))
+	policyAttempt(proofLooser, testProofTimes(t, private, policyID, nonce, "old-skew-bound", now.Add(time.Minute), now.Add(2*time.Minute)))
+	proofStricter, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 2,
+		DeviceProof: domain.ProofPolicy{MaxLifetime: time.Minute, ClockSkew: 0}})
+	proofStricter.now = store.now
+	policyAttempt(proofStricter, testProofTimes(t, private, policyID, nonce, "new-lifetime-bound", now, now.Add(2*time.Minute)))
+	policyAttempt(proofStricter, testProofTimes(t, private, policyID, nonce, "new-skew-bound", now.Add(time.Second), now.Add(30*time.Second)))
+
 	email = "tamper@example.test"
 	tamperedID := strings.Repeat("L", 32)
-	issue(tamperedID, 3)
+	issue(tamperedID)
 	if err := db.QueryRowContext(ctx, `SELECT email_ciphertext FROM auth_email_login_challenge WHERE challenge_id = ?`, tamperedID).Scan(&ciphertext); err != nil {
 		t.Fatal("cannot read test ciphertext")
 	}
@@ -470,7 +518,29 @@ func TestChallengeInputFormattingIsRedacted(t *testing.T) {
 	if strings.Contains(log.String(), "012345") || strings.Contains(log.String(), "private") || strings.Contains(log.String(), input.Email) {
 		t.Fatal("structured logging exposed challenge secrets")
 	}
-	if _, err := NewStore(nil, nil, nil); !errors.Is(err, ErrChallengeStore) {
+	if _, err := NewStore(nil, nil, nil, Policy{}); !errors.Is(err, ErrChallengeStore) {
 		t.Fatal("missing dependencies accepted")
+	}
+}
+
+func TestServerChallengePolicyValidation(t *testing.T) {
+	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
+	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
+	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
+	valid := Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: time.Minute}}
+	if _, err := NewStore(hasher, replay, protector, valid); err != nil {
+		t.Fatalf("valid server policy rejected: %v", err)
+	}
+	for _, policy := range []Policy{
+		{ChallengeTTL: 0, MaxAttempts: 3, DeviceProof: valid.DeviceProof},
+		{ChallengeTTL: 31 * time.Minute, MaxAttempts: 3, DeviceProof: valid.DeviceProof},
+		{ChallengeTTL: time.Second + time.Nanosecond, MaxAttempts: 3, DeviceProof: valid.DeviceProof},
+		{ChallengeTTL: time.Minute, MaxAttempts: 0, DeviceProof: valid.DeviceProof},
+		{ChallengeTTL: time.Minute, MaxAttempts: 11, DeviceProof: valid.DeviceProof},
+		{ChallengeTTL: time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 25 * time.Hour}},
+	} {
+		if _, err := NewStore(hasher, replay, protector, policy); !errors.Is(err, ErrChallengeStore) {
+			t.Fatal("invalid server policy accepted")
+		}
 	}
 }

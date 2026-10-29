@@ -19,14 +19,25 @@ type Store struct {
 	hasher     *domain.EmailCodeHasher
 	replay     *repository.ProofReplayStore
 	identities *domain.EmailIdentityProtector
+	policy     Policy
 	now        func() time.Time
 }
 
-func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector) (*Store, error) {
-	if hasher == nil || replay == nil || identities == nil {
+// Policy is server configuration, not request input. A caller may not relax
+// these bounds for an individual request.
+type Policy struct {
+	ChallengeTTL time.Duration
+	MaxAttempts  int
+	DeviceProof  domain.ProofPolicy
+}
+
+func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector, policy Policy) (*Store, error) {
+	if hasher == nil || replay == nil || identities == nil || policy.ChallengeTTL < time.Second ||
+		policy.ChallengeTTL > 30*time.Minute || policy.ChallengeTTL%time.Microsecond != 0 ||
+		policy.MaxAttempts < 1 || policy.MaxAttempts > 10 || !domain.ValidProofPolicy(policy.DeviceProof) {
 		return nil, ErrChallengeStore
 	}
-	return &Store{hasher: hasher, replay: replay, identities: identities, now: time.Now}, nil
+	return &Store{hasher: hasher, replay: replay, identities: identities, policy: policy, now: time.Now}, nil
 }
 
 // IssueInput contains a validated email and server-generated material. Code,
@@ -38,9 +49,6 @@ type IssueInput struct {
 	Nonce       string
 	Code        string
 	PublicKey   domain.DevicePublicJWK
-	CreatedAt   time.Time
-	ExpiresAt   time.Time
-	MaxAttempts int
 }
 
 func (IssueInput) String() string               { return "IssueInput{redacted}" }
@@ -53,16 +61,15 @@ func (IssueInput) LogValue() slog.Value         { return slog.StringValue("Issue
 // commit invalidates earlier challenges for this email and purpose. Sending
 // email, durable idempotency and rate limits are separate requirements.
 func (s *Store) Issue(ctx context.Context, tx *sql.Tx, input IssueInput) error {
-	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || ctx == nil || tx == nil ||
-		!opaque(input.ChallengeID, 22, 128) || !opaque(input.Nonce, 43, 256) ||
-		input.CreatedAt.IsZero() || input.ExpiresAt.IsZero() || input.MaxAttempts < 1 || input.MaxAttempts > 10 {
+	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || s.now == nil || ctx == nil || tx == nil ||
+		!opaque(input.ChallengeID, 22, 128) || !opaque(input.Nonce, 43, 256) {
 		return ErrChallengeStore
 	}
-	created := input.CreatedAt.UTC().Truncate(time.Microsecond)
-	expires := input.ExpiresAt.UTC().Truncate(time.Microsecond)
-	if !expires.After(created) || expires.Sub(created) > 30*time.Minute {
+	created := s.now().UTC().Truncate(time.Microsecond)
+	if created.IsZero() {
 		return ErrChallengeStore
 	}
+	expires := created.Add(s.policy.ChallengeTTL)
 	fingerprint, err := domain.DeviceKeyFingerprint(input.PublicKey)
 	if err != nil {
 		return ErrChallengeStore
@@ -87,9 +94,10 @@ func (s *Store) Issue(ctx context.Context, tx *sql.Tx, input IssueInput) error {
 		return ErrChallengeStore
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO auth_email_login_challenge
-		(challenge_id, email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, created_at, expires_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`, input.ChallengeID, index[:], ciphertext, keyID, input.Nonce,
-		input.PublicKey.X, input.PublicKey.Y, fingerprint[:], digest, input.MaxAttempts, sqlUTC(created), sqlUTC(expires))
+		(challenge_id, email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, proof_max_lifetime_ns, proof_clock_skew_ns, created_at, expires_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`, input.ChallengeID, index[:], ciphertext, keyID, input.Nonce,
+		input.PublicKey.X, input.PublicKey.Y, fingerprint[:], digest, s.policy.MaxAttempts,
+		int64(s.policy.DeviceProof.MaxLifetime), int64(s.policy.DeviceProof.ClockSkew), sqlUTC(created), sqlUTC(expires))
 	if err != nil {
 		return ErrChallengeStore
 	}
@@ -100,8 +108,6 @@ type AttemptInput struct {
 	ChallengeID string
 	Code        string
 	DeviceProof string
-	// ProofPolicy comes only from trusted server configuration, never the request.
-	ProofPolicy domain.ProofPolicy
 }
 
 func (AttemptInput) String() string               { return "AttemptInput{redacted}" }
@@ -219,11 +225,12 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	var storedIndex, ciphertext, keyID, nonce, fingerprint, digest []byte
 	var x, y string
 	var attempts, maxAttempts int
-	var expiresRaw string
+	var maxLifetimeNS, clockSkewNS int64
+	var createdRaw, expiresRaw string
 	var consumed bool
-	err = tx.QueryRowContext(ctx, `SELECT email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, CAST(expires_at AS CHAR), consumed_at IS NOT NULL
+	err = tx.QueryRowContext(ctx, `SELECT email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, proof_max_lifetime_ns, proof_clock_skew_ns, CAST(created_at AS CHAR), CAST(expires_at AS CHAR), consumed_at IS NOT NULL
         FROM auth_email_login_challenge WHERE challenge_id = ? FOR UPDATE`, input.ChallengeID).
-		Scan(&storedIndex, &ciphertext, &keyID, &nonce, &x, &y, &fingerprint, &digest, &attempts, &maxAttempts, &expiresRaw, &consumed)
+		Scan(&storedIndex, &ciphertext, &keyID, &nonce, &x, &y, &fingerprint, &digest, &attempts, &maxAttempts, &maxLifetimeNS, &clockSkewNS, &createdRaw, &expiresRaw, &consumed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rejected, nil
 	}
@@ -231,11 +238,30 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 		maxAttempts < 1 || maxAttempts > 10 || attempts < 0 || attempts > maxAttempts {
 		return rejected, ErrChallengeStore
 	}
-	expires, err := time.Parse("2006-01-02 15:04:05.999999", expiresRaw)
-	if err != nil {
+	proofPolicy := domain.ProofPolicy{MaxLifetime: time.Duration(maxLifetimeNS), ClockSkew: time.Duration(clockSkewNS)}
+	if !domain.ValidProofPolicy(proofPolicy) {
 		return rejected, ErrChallengeStore
 	}
-	if consumed || attempts >= maxAttempts || !expires.After(now) {
+	if s.policy.DeviceProof.MaxLifetime < proofPolicy.MaxLifetime {
+		proofPolicy.MaxLifetime = s.policy.DeviceProof.MaxLifetime
+	}
+	if s.policy.DeviceProof.ClockSkew < proofPolicy.ClockSkew {
+		proofPolicy.ClockSkew = s.policy.DeviceProof.ClockSkew
+	}
+	created, createdErr := time.Parse("2006-01-02 15:04:05.999999", createdRaw)
+	expires, expiresErr := time.Parse("2006-01-02 15:04:05.999999", expiresRaw)
+	if createdErr != nil || expiresErr != nil || !expires.After(created) || expires.Sub(created) > 30*time.Minute {
+		return rejected, ErrChallengeStore
+	}
+	// A stricter deployed policy immediately applies to already-issued
+	// challenges; relaxing it never extends their original limits.
+	if policyExpiry := created.Add(s.policy.ChallengeTTL); policyExpiry.Before(expires) {
+		expires = policyExpiry
+	}
+	if s.policy.MaxAttempts < maxAttempts {
+		maxAttempts = s.policy.MaxAttempts
+	}
+	if consumed || attempts >= maxAttempts || now.Before(created) || !expires.After(now) {
 		return rejected, nil
 	}
 	var index [32]byte
@@ -253,7 +279,7 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 		return rejected, ErrChallengeStore
 	}
 	expectation := domain.ProofExpectation{Purpose: "email_login", ResourceID: input.ChallengeID, Nonce: string(nonce)}
-	proof, err := domain.VerifyDeviceProof(input.DeviceProof, key, expectation, now, input.ProofPolicy)
+	proof, err := domain.VerifyDeviceProof(input.DeviceProof, key, expectation, now, proofPolicy)
 	if err != nil {
 		return rejected, nil
 	}
@@ -279,7 +305,7 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	}
 	verified := &VerifiedEmail{tx: tx, index: index, ciphertext: append([]byte(nil), ciphertext...),
 		keyID: currentKeyID, fingerprint: actualFingerprint, publicKey: key, expiresAt: expires,
-		proof: input.DeviceProof, expectation: expectation, policy: input.ProofPolicy, now: s.now}
+		proof: input.DeviceProof, expectation: expectation, policy: proofPolicy, now: s.now}
 	return AttemptResult{Verified: true, Changed: true, Proof: verified}, nil
 }
 
