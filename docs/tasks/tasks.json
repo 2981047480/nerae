@@ -6776,7 +6776,7 @@
     },
     {
       "id": "A01-01",
-      "title": "设备证明与短信挑战密码学基础",
+      "title": "设备证明与短信/测试邮箱挑战密码学基础",
       "batch": "P0-A",
       "status": "active",
       "depends_on": ["F01-02"],
@@ -6789,9 +6789,9 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
-      "write_allowlist": ["apps/api/internal/modules/auth/domain/device_proof.go", "apps/api/internal/modules/auth/domain/device_proof_test.go", "apps/api/internal/modules/auth/domain/sms_challenge.go", "apps/api/internal/modules/auth/domain/sms_challenge_test.go", "docs/evidence/A01/A01-01/"],
+      "write_allowlist": ["apps/api/internal/modules/auth/domain/device_proof.go", "apps/api/internal/modules/auth/domain/device_proof_test.go", "apps/api/internal/modules/auth/domain/sms_challenge.go", "apps/api/internal/modules/auth/domain/sms_challenge_test.go", "apps/api/internal/modules/auth/domain/email_challenge.go", "apps/api/internal/modules/auth/domain/email_challenge_test.go", "docs/evidence/A01/A01-01/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
-      "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信挑战和随机码，使用服务端密钥对验证码生成绑定摘要；不发送短信或签发账号会话。",
+      "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信和测试邮箱挑战随机码，使用服务端密钥对验证码生成用途隔离的绑定摘要；不发送验证码或签发账号会话。",
       "acceptance": [
         "合法证明通过，错误签名、公钥、算法、用途、挑战、nonce、过期、未来和重复字段均拒绝",
         "短信码使用密码学随机数，摘要绑定挑战与用途；错误码或密钥不进入日志或 API 响应",
