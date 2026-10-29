@@ -4,7 +4,7 @@
 
 `python3 -B docs/evidence/A01/A01-09/mysql_smoke.py` 的历史运行退出 0。测试仅在本机新建私有 Unix socket MySQL 8.4 中应用 9 份迁移，使用合成邮箱与设备密钥；成功后关闭并移除专属目录，不发送真实邮件。覆盖未批准/已拒绝、错误秘密/私钥/nonce、原身份/账号/设备/会话撤销或过期、主体版本变化、目标密钥已撤销或被另一主体占用、同设备 JTI 跨申请重放、已消费申请重复兑换、事务中途失败回滚与同证明重试、同申请并发唯一成功。测试还实际锁住目标设备行，在申请与原会话仍有效时单独让签名证明过期，验证兑换回滚且重试不受错误防重标记影响。
 
-两把不同的合成设备私钥分别取得同主体会话：原会话创建并写入训练组，新会话读回并修改，原会话再读到更新；年龄标记由隔离测试夹具设置。这验证服务端事务接缝，不是实际手机、网络 HTTP、SMTP 或正式年龄核验。只读安全复核未发现可直接复现的越权或重复签发；其指出的原会话单独过期与跨申请 JTI 重放负例，以及证明单独过期负例均已补充并重新通过。
+两把不同的合成设备私钥分别取得同主体会话：原会话通过 `DeclareAdult(..., true)` 记录明确的 18+ 自我声明，再创建并写入训练组；新会话读回并修改，原会话再读到更新。随后本人通过 `ClearAdultDeclaration` 撤回声明，两设备会话均因年龄门槛被拒绝读取；本人重新明确声明后，新设备恢复读取原有记录。此声明是自我声明，不是身份或实际年龄核验；撤回并发防护以及 HTTP/UI 撤回入口尚未开放。此验证使用私有数据库和合成设备密钥，不是实际手机、网络 HTTP 或 SMTP 验收。只读安全复核未发现可直接复现的越权或重复签发；原会话单独过期、跨申请 JTI 重放以及证明单独过期的负例均已补充并重新通过。
 
 被测文件 SHA-256：
 
@@ -23,7 +23,9 @@
 
 隔离迁移清单追加 `workout/0003_workout_exercise_order.up.sql`。`python3 -B docs/evidence/A01/A01-09/mysql_smoke.py` 首次在沙箱中 exit 1：MySQL 8.4.13 初始化期间 `SIGSEGV (Invalid permissions for mapped object)`，尚未执行测试；脚本保留失败目录 `/private/tmp/nerae-approval-mysql-yedw8uve`。使用正常授权对同一命令重试，exit 0：两个 approval 套件测试通过，成功运行创建的私有 Unix socket 数据目录已关闭并移除。`git diff --check` exit 0。
 
-本补测仅使用隔离 MySQL 与合成 P-256 设备密钥，不代表真实手机、HTTP、SMTP 或真实账户登录验收。变更后 SHA-256：
+本补测仅使用隔离 MySQL 与合成 P-256 设备密钥，不代表真实手机、HTTP、SMTP、真实账户登录或正式年龄核验验收。变更后 SHA-256：
 
 - `approval/exchange_test.go`：`982dc1a7772e210a8d478cede756e09c1a86294a88631bfb2d387f8bdf034898`
 - `mysql_smoke.py`：`f58f6dd2de7e2ee13ec575af98e5c5b4e1e71a5227709d6a3909d6c9b6e622b5`
+
+本次补测再次运行 `python3 -B docs/evidence/A01/A01-09/mysql_smoke.py`，退出码 0；`TestApprovedDeviceExchange` 与 `TestNewDeviceApprovalTransactions` 均通过。沙箱内首次尝试只失败于私有 MySQL 初始化（exit 1，未进入测试）；在受限授权下同一隔离 harness 成功，私有 socket 数据库已关闭并清理。最终测试文件 SHA-256：`a06294acc2d47f8abc491d58fd689a79509eaa4c9cfb3ece32699e2213abf2ae`。

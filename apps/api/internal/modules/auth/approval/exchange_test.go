@@ -388,9 +388,10 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not initialize isolated workout service")
 	}
-	// This fixture is not an implementation of age verification.
-	if _, err := db.ExecContext(ctx, `UPDATE user SET age_verified_at = UTC_TIMESTAMP(6) WHERE id = ?`, oldClaims.SubjectID); err != nil {
-		t.Fatal("could not set isolated age fixture")
+	// This is an explicit self-declaration through the authenticated session
+	// seam, not evidence of identity or actual age verification.
+	if err := auth.DeclareAdult(ctx, db, oldToken, true); err != nil {
+		t.Fatal("old device session could not record adult self-declaration")
 	}
 	zone := "UTC"
 	workoutInput := workoutrepo.FreeSessionInput{Date: time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02"), TimeZone: &zone, ClientEventID: "device-sync-event"}
@@ -421,6 +422,22 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err != nil || snapshot.Version != 3 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, updatedOrder) ||
 		snapshot.Sets[groupB.RecordKey].WeightKg != "30.00" {
 		t.Fatal("old device session could not read updated group and order")
+	}
+	if err := auth.ClearAdultDeclaration(ctx, db, oldToken); err != nil {
+		t.Fatal("subject could not withdraw adult self-declaration")
+	}
+	if _, err := workout.ReadOrderedFree(ctx, db, oldToken, workoutRef.ID); !errors.Is(err, application.ErrAgeRequired) {
+		t.Fatal("withdrawn declaration did not block original device read")
+	}
+	if _, err := workout.ReadOrderedFree(ctx, db, newToken.ForResponse(), workoutRef.ID); !errors.Is(err, application.ErrAgeRequired) {
+		t.Fatal("withdrawn declaration did not block approved device read")
+	}
+	if err := auth.DeclareAdult(ctx, db, oldToken, true); err != nil {
+		t.Fatal("subject could not explicitly restore adult self-declaration")
+	}
+	if snapshot, err = workout.ReadOrderedFree(ctx, db, newToken.ForResponse(), workoutRef.ID); err != nil ||
+		snapshot.Version != 3 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, updatedOrder) {
+		t.Fatal("explicit re-declaration did not restore approved device access")
 	}
 	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("consumed approval was exchanged again")
