@@ -26,3 +26,7 @@
 nil/非法 `currentOrder` 与非法持久化状态现在返回 `ErrInvalidOrderedSnapshot`；nil `targetOrder` 返回 `ErrInvalid`。新增断言直接区分三种结果。completed 空组反例以空 current/target order 验证；删除键缺条目反例先移除活动组并用空顺序验证，避免顺序错误掩盖快照错误。
 
 最终指定命令：`cd apps/api && GOTOOLCHAIN=local GOPROXY=off /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race ./internal/modules/workout/domain`，exit 0。
+
+## 历史条目身份复核
+
+新增对全部历史 `Entries` 的稳定键和 `Exercise` 来源身份校验，覆盖仅被已删除键引用的条目。补充恢复负例：删除条目快照中的历史动作来源无效时，旧快照阶段返回 `ErrInvalidOrderedSnapshot`，不会落入用户恢复请求错误分类。指定领域 race 测试 exit 0。

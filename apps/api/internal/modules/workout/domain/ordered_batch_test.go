@@ -139,6 +139,18 @@ func TestApplyOrderedBatchRejectsDamagedPersistedSnapshots(t *testing.T) {
 	}
 }
 
+func TestApplyOrderedBatchRejectsInvalidHistoricalExerciseBeforeRestore(t *testing.T) {
+	set := orderedSet("record01", "entrykeyA", 1, "A")
+	cur := orderedSession(set)
+	delete(cur.Sets, set.RecordKey)
+	cur.Keys[set.RecordKey] = Key{ExerciseEntryKey: set.ExerciseEntryKey, Deleted: true}
+	cur.Entries[set.ExerciseEntryKey] = Exercise{Source: Source("invalid")}
+	_, _, err := ApplyOrderedBatch(cur, []string{}, Batch{Sets: []Set{set}, RestoreKeys: []string{set.RecordKey}}, []string{set.ExerciseEntryKey})
+	if !errors.Is(err, ErrInvalidOrderedSnapshot) {
+		t.Fatalf("invalid historical exercise must be snapshot error before restore, got %v", err)
+	}
+}
+
 func TestApplyOrderedBatchSnapshotAndRequestErrorClassification(t *testing.T) {
 	valid := orderedSession(orderedSet("record01", "entrykeyA", 1, "A"))
 	if _, _, err := ApplyOrderedBatch(valid, nil, Batch{}, []string{"entrykeyA"}); !errors.Is(err, ErrInvalidOrderedSnapshot) {

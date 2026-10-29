@@ -41,6 +41,11 @@ func validateOrderedSnapshot(session Session, order []string) error {
 	if session.Sets == nil || session.Keys == nil || session.Entries == nil || (session.Status == Completed && len(session.Sets) == 0) {
 		return ErrInvalidOrderedSnapshot
 	}
+	for entryKey, identity := range session.Entries {
+		if !validKey(entryKey) || validateExercise(identity) != nil {
+			return ErrInvalidOrderedSnapshot
+		}
+	}
 	entryKeys := make(map[string]struct{})
 	indexes := make(map[string]map[int]struct{})
 	for mapKey, set := range session.Sets {
