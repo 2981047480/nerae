@@ -172,7 +172,9 @@
         "pnpm-lock.yaml",
         "api/oapi-codegen.yaml",
         "api/templates/",
-        "apps/api/internal/contractnullable/"
+        "apps/api/internal/contractnullable/",
+        "scripts/tests/test_plan.py",
+        "docs/IMPLEMENTATION_PLAN.md"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3121,7 +3123,8 @@
       "depends_on": [
         "F01-01",
         "K01-01",
-        "Q02-02"
+        "Q02-02",
+        "D01-01"
       ],
       "role": "architect",
       "model_policy": "judgment",
@@ -3130,7 +3133,9 @@
         "api/oapi-codegen.yaml",
         "docs/evidence/F02/F02-00/",
         "api/templates/",
-        "apps/api/internal/contractnullable/"
+        "apps/api/internal/contractnullable/",
+        "scripts/tests/test_plan.py",
+        "docs/IMPLEMENTATION_PLAN.md"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3142,7 +3147,7 @@
         "api/tests/codegen/recording_types_test.go",
         "api/tests/codegen/schema_validation_test.go"
       ],
-      "deliverables": "Lead 串行审核共享 Go 生成配置，保留有业务含义的可选 nullable 三态；盘点全部 nullable 字段并用当前合同快照验证生成行为。 对必填 nullable 未初始化的编码设置失败保护。",
+      "deliverables": "Lead 串行审核共享 Go 生成配置，保留有业务含义的可选 nullable 三态；盘点全部 nullable 字段并用当前合同快照验证生成行为。 对必填 nullable 未初始化的编码设置失败保护。 同步维护里程碑工量和对应任务图测试。",
       "acceptance": [
         "正式配置启用经评估的 nullable 语义，生成不改变 OpenAPI 及 operationId",
         "训练结束字段的省略/null/具体值解码和精确编码有真实生成模型测试；必填 nullable 的字段缺失由 schema 校验拒绝",
