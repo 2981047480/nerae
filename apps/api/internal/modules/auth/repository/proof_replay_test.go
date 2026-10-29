@@ -161,6 +161,12 @@ func TestProofReplayTransactions(t *testing.T) {
 	if err := consume(store, fingerprint, tooLong, true); !errors.Is(err, ErrReplayInput) {
 		t.Fatalf("long retention accepted: %v", err)
 	}
+	latest := newProof("latest-valid")
+	latest.ExpiresAt = domain.DeviceProofLatestExpiry(now)
+	latest.ReplayUntil = domain.DeviceProofReplayDeadline(latest.ExpiresAt)
+	if err := consume(store, fingerprint, latest, true); err != nil {
+		t.Fatalf("maximum permitted expiry rejected: %v", err)
+	}
 	farFuture := newProof("far-future")
 	farFuture.ExpiresAt = domain.DeviceProofLatestExpiry(now).Add(time.Nanosecond)
 	farFuture.ReplayUntil = domain.DeviceProofReplayDeadline(farFuture.ExpiresAt)
