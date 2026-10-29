@@ -1,0 +1,12 @@
+{
+  "name": "@nerae/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts"
+    }
+  }
+}
