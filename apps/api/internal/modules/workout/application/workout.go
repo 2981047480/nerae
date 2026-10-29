@@ -43,12 +43,17 @@ func (s *Service) inTransaction(ctx context.Context, db *sql.DB, token string, w
 	}
 	defer tx.Rollback()
 	principal, err := s.sessions.Authenticate(ctx, tx, token)
-	if err != nil {
+	if errors.Is(err, session.ErrInvalidSession) {
 		return ErrAuthentication
 	}
+	if err != nil || principal == nil {
+		return ErrUnavailable
+	}
+	// ForTransaction currently coalesces expiry, revocation, and storage faults.
+	// Keep the failure unavailable until that boundary can classify it safely.
 	before, err := principal.ForTransaction(ctx, tx)
 	if err != nil {
-		return ErrAuthentication
+		return ErrUnavailable
 	}
 	if !before.AgeVerified {
 		return ErrAgeRequired
@@ -58,7 +63,7 @@ func (s *Service) inTransaction(ctx context.Context, db *sql.DB, token string, w
 	}
 	after, err := principal.ForTransaction(ctx, tx)
 	if err != nil || after.SubjectID != before.SubjectID {
-		return ErrAuthentication
+		return ErrUnavailable
 	}
 	if !after.AgeVerified {
 		return ErrAgeRequired

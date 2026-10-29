@@ -300,8 +300,8 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		_, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'revoked' WHERE user_id = ?`, userID)
 		return err
 	})
-	if !errors.Is(err, ErrAuthentication) {
-		t.Fatal("ordered transaction accepted revoked device")
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatal("ordered transaction did not conservatively reject revoked device")
 	}
 	orderedSnapshot, err = service.ReadOrderedFree(ctx, db, tokenA, ordered.ID)
 	if err != nil || orderedSnapshot.Version != 4 || orderedSnapshot.Sets[first.RecordKey].WeightKg != "42.50" || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, reversed) {
@@ -318,12 +318,30 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		_, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'revoked' WHERE user_id = ?`, userID)
 		return err
 	})
-	if !errors.Is(err, ErrAuthentication) {
-		t.Fatal("same-transaction revocation was not rejected")
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatal("same-transaction revocation was not conservatively rejected")
 	}
 	snapshot, err = service.ReadFree(ctx, db, tokenA, created.ID)
 	if err != nil || snapshot.Version != 3 || snapshot.Sets[first.RecordKey].WeightKg != "50.00" {
 		t.Fatal("authorization failure did not roll back the workout write")
+	}
+	// A failed commit-time recheck must never be translated to logout, and
+	// the earlier write must not survive the cancelled transaction.
+	cancelCtx, cancelWork := context.WithCancel(ctx)
+	err = service.inTransaction(cancelCtx, db, tokenA, func(tx *sql.Tx, userID uint64) error {
+		if _, _, err := records.ApplyOrderedBatch(cancelCtx, tx, userID, created.ID, 3, domain.Batch{Sets: []domain.Set{attempted}}, []string{"entry-001"}); err != nil {
+			return err
+		}
+		cancelWork()
+		return nil
+	})
+	cancelWork()
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatal("failed authorization recheck was not classified unavailable")
+	}
+	snapshot, err = service.ReadFree(ctx, db, tokenA, created.ID)
+	if err != nil || snapshot.Version != 3 || snapshot.Sets[first.RecordKey].WeightKg != "50.00" {
+		t.Fatal("cancelled authorization recheck did not roll back the workout")
 	}
 	// A change to the age marker in the same transaction must also roll back.
 	err = service.inTransaction(ctx, db, tokenA, func(tx *sql.Tx, userID uint64) error {
