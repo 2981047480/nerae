@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"mime/quotedprintable"
 	"net"
@@ -40,8 +41,10 @@ type SMTPConfig struct {
 	Timeout  time.Duration
 }
 
-func (SMTPConfig) String() string   { return "SMTPConfig{redacted}" }
-func (SMTPConfig) GoString() string { return "SMTPConfig{redacted}" }
+func (SMTPConfig) String() string               { return "SMTPConfig{redacted}" }
+func (SMTPConfig) GoString() string             { return "SMTPConfig{redacted}" }
+func (SMTPConfig) MarshalJSON() ([]byte, error) { return nil, ErrInvalidConfiguration }
+func (SMTPConfig) LogValue() slog.Value         { return slog.StringValue("SMTPConfig{redacted}") }
 
 type SMTPMailer struct {
 	address  string
@@ -53,8 +56,10 @@ type SMTPMailer struct {
 	roots    *x509.CertPool // nil in production: use the system trust store
 }
 
-func (*SMTPMailer) String() string   { return "SMTPMailer{redacted}" }
-func (*SMTPMailer) GoString() string { return "SMTPMailer{redacted}" }
+func (*SMTPMailer) String() string               { return "SMTPMailer{redacted}" }
+func (*SMTPMailer) GoString() string             { return "SMTPMailer{redacted}" }
+func (*SMTPMailer) MarshalJSON() ([]byte, error) { return nil, ErrInvalidConfiguration }
+func (*SMTPMailer) LogValue() slog.Value         { return slog.StringValue("SMTPMailer{redacted}") }
 
 func NewSMTPMailer(cfg SMTPConfig) (*SMTPMailer, error) {
 	host, port, err := net.SplitHostPort(cfg.Address)

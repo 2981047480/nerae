@@ -9,9 +9,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/big"
 	"mime/quotedprintable"
 	"net"
@@ -247,6 +249,16 @@ func TestSMTPRejectsInjectionAndRedactsConfiguration(t *testing.T) {
 		if strings.Contains(rendered, cfg.Password) || strings.Contains(rendered, cfg.From) {
 			t.Fatal("formatted mail transport exposed credentials or sender")
 		}
+	}
+	for _, value := range []any{cfg, mailer} {
+		if _, err := json.Marshal(value); err == nil {
+			t.Fatal("sensitive SMTP configuration was JSON-serializable")
+		}
+	}
+	var log strings.Builder
+	slog.New(slog.NewJSONHandler(&log, nil)).Info("test", "config", cfg, "mailer", mailer)
+	if strings.Contains(log.String(), cfg.Password) || strings.Contains(log.String(), cfg.From) {
+		t.Fatal("structured logging exposed SMTP configuration")
 	}
 	bad := cfg
 	bad.From = "sender@example.test\r\nBcc:other@example.test"
