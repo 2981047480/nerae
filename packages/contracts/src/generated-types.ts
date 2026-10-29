@@ -308,6 +308,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/email/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 为测试版 App 邮箱登录申请挑战
+         * @description 公开入口，仅接受邮箱地址与目标设备公钥。服务端生成一次性挑战和随机 nonce，统一响应不能暴露邮箱是否已有账号；按邮箱、设备、IP 和总量限流，失败次数受限，重发使同邮箱同用途旧挑战失效，关联用途不得跨用途消费。202 仅表示已接受，不保证邮件送达。
+         */
+        post: operations["postAuthEmailChallenges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试版邮箱验证码及设备持有证明登录
+         * @description 验证同一挑战的邮件码和设备公钥签名，原子校验用途、过期、次数和单次消费。新邮箱可创建主体并登记首个可信密钥；已有主体只有已登记且未撤销的设备通过验证才可获得完整会话，新设备仍需已有可信会话批准或本人此前启用的恢复码。不能凭邮箱码单独读取旧资料；同一高熵幂等键和完全相同的已验证请求仅在授权与凭据仍有效时安全重放，其他请求不得复用 jti。
+         */
+        post: operations["postAuthEmailLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/phone/challenges": {
         parameters: {
             query?: never;
@@ -417,7 +457,7 @@ export interface paths {
         };
         /**
          * 查看本人可用登录方式
-         * @description 只返回当前主体的身份类型、不可预测 ID，手机号仅返回后四位；不返回微信 openid、完整手机号、短信码或供应商令牌。version 用于关联和解绑的并发检查。
+         * @description 只返回当前主体的身份类型、不可预测 ID，手机号仅返回后四位、邮箱仅返回脱敏值；不返回微信 openid、完整手机号或邮箱、验证码或供应商令牌。version 用于关联和解绑的并发检查。
          */
         get: operations["getMeIdentities"];
         put?: never;
@@ -439,7 +479,7 @@ export interface paths {
         put?: never;
         /**
          * 发起本人账号关联
-         * @description 从已认证且近期重新认证的当前主体发起，绑定当前 identity version 和关联用途。手机号方向明确新增或替换，发送绑定专用短信；替换须存在当前手机号且原子保留旧身份直到新号码证明并确认。微信方向产生短期配对信息供小程序取得并提交 wx.login code。配对信息不是登录会话，不能单独批准或访问用户资料。
+         * @description 从已认证且近期重新认证的当前主体发起，绑定当前 identity version 和关联用途。手机号方向明确新增或替换，发送绑定专用短信；替换须存在当前手机号且原子保留旧身份直到新号码证明并确认。邮箱方向仅新增并发送绑定用途邮件；微信方向产生短期配对信息供小程序取得并提交 wx.login code。配对信息不是登录会话，不能单独批准或访问用户资料。
          */
         post: operations["postMeIdentityLinks"];
         delete?: never;
@@ -459,7 +499,7 @@ export interface paths {
         put?: never;
         /**
          * 证明待关联的另一身份
-         * @description 凭本次短期配对信息提交绑定用途的短信码或小程序 wx.login code，服务端验证来源和一次性用途并绑定待关联事务。微信身份已归属其他主体时拒绝自动合并，不返回对方私人资料；证明成功仍不能自动关联或签发登录会话。
+         * @description 凭本次短期配对信息提交绑定用途的短信码、测试版邮箱码或小程序 wx.login code，服务端验证来源和一次性用途并绑定待关联事务。目标身份已归属其他主体时拒绝自动合并，不返回对方私人资料；证明成功仍不能自动关联或签发登录会话。
          */
         post: operations["postAuthIdentityLinkClaims"];
         delete?: never;
@@ -659,7 +699,7 @@ export interface paths {
         put?: never;
         /**
          * 准备一次性展示恢复码
-         * @description 仅当前主体已验证并关联有效手机号、本人有效会话近期重新认证并明确确认后生成；没有可用手机号时返回 409 并引导关联。安全随机生成的新码只在该次加密响应展示，不自动复制、同步或通过通知发送。新码待确认前旧有效码仍可用；新请求废弃同主体先前待确认码。响应丢失时，仅原会话、原幂等键及相同请求可在待确认和短期有效窗口内重放密文；确认、过期或撤销后不可重新显示，须发起新生成。
+         * @description 仅当前主体已验证并关联有效手机号或测试版邮箱、本人有效会话近期重新认证并明确确认后生成；两者均不可用时返回 409 并引导关联。安全随机生成的新码只在该次加密响应展示，不自动复制、同步或通过通知发送。新码待确认前旧有效码仍可用；新请求废弃同主体先前待确认码。响应丢失时，仅原会话、原幂等键及相同请求可在待确认和短期有效窗口内重放密文；确认、过期或撤销后不可重新显示，须发起新生成。
          */
         post: operations["postMeRecoveryCodeIssue"];
         delete?: never;
@@ -698,8 +738,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 使用恢复码和短信在新设备恢复登录
-         * @description 仅限短信验证完成后、仍有效的本次新设备审批事务；同时验证原审批秘密、该事务 nonce/ID/用途绑定的目标设备 ES256 私钥签名和未使用的有效恢复码。按主体、号码、设备、IP 与全局安全配置限速；失败不透露其他资料，禁止仅凭短信或恢复码签发会话。重查主体、手机号身份和审批处于有效状态，及目标设备/会话未撤销；与注销、身份替换或撤权在同一主体范围串行，已注销或禁用时拒绝且不得凭幂等重放旧令牌。成功在同一事务单次消费恢复码、批准并登记目标设备、发放会话并废弃同次旧审批；提示用户重新生成恢复码。原幂等键和完全相同的已验证持有证明可在结果有效且未撤销时短期安全重放，其他请求不能复用已消费凭据。
+         * 使用恢复码及已验证的登录方式在新设备恢复
+         * @description 仅限短信或测试版邮箱验证完成后、仍有效的本次新设备审批事务；同时验证原审批秘密、该事务 nonce/ID/用途绑定的目标设备 ES256 私钥签名和未使用的有效恢复码。按主体、受保护身份索引、设备、IP 与全局安全配置限速；失败不透露其他资料，禁止仅凭验证码或恢复码签发会话。重查主体、本次验证的登录身份和审批处于有效状态，及目标设备/会话未撤销；与注销、身份替换或撤权在同一主体范围串行，已注销或禁用时拒绝且不得凭幂等重放旧令牌。成功在同一事务单次消费恢复码、批准并登记目标设备、发放会话并废弃同次旧审批；提示用户重新生成恢复码。原幂等键和完全相同的已验证持有证明可在结果有效且未撤销时短期安全重放，其他请求不能复用已消费凭据。
          */
         post: operations["postAuthRecoverWithCode"];
         delete?: never;
@@ -2787,6 +2827,13 @@ export interface components {
         AuthSecret: string;
         /** @description 一次性短信验证码；不记录明文，具体长度与生效期由供应商及安全配置核定。 */
         SmsCode: string;
+        /** @description 一次性邮箱验证码；不记录明文，不在 HTTP 响应或日志中返回，具体长度与生效期由安全配置核定。 */
+        EmailCode: string;
+        /**
+         * Format: email
+         * @description 邮箱域名按大小写不敏感规范化，本地部分按输入精确保留；不删除加号或点号、不推断其他供应商别名。真实地址仅用于必要验证并加密存储，不进入日志。
+         */
+        EmailAddress: string;
         DevicePublicJwk: {
             /** @enum {string} */
             kty: "EC";
@@ -2795,8 +2842,28 @@ export interface components {
             x: string;
             y: string;
         };
-        /** @description 紧凑格式 ES256 JWS，保护头 alg=ES256、typ=JWT；载荷必须含 aud=nerae-auth-device、purpose（phone_login、approval_exchange 或 recovery_code）、resourceId、服务端 nonce、iat、exp 和随机单次 jti。服务端验证签名及所有字段与事务/公钥绑定并防重。私钥应由平台安全存储生成且不可导出；是否支持须逐端验证。 */
+        /** @description 紧凑格式 ES256 JWS，保护头 alg=ES256、typ=JWT；载荷必须含 aud=nerae-auth-device、purpose（phone_login、email_login、approval_exchange 或 recovery_code）、resourceId、服务端 nonce、iat、exp 和随机单次 jti。服务端验证签名及所有字段与事务/公钥绑定并防重。私钥应由平台安全存储生成且不可导出；是否支持须逐端验证。 */
         DeviceProof: string;
+        EmailLoginChallengeRequest: {
+            email: components["schemas"]["EmailAddress"];
+            devicePublicKey: components["schemas"]["DevicePublicJwk"];
+            /** @description 可选设备提示，不能作为身份或位置证明。 */
+            deviceLabel?: string;
+        };
+        EmailLoginChallenge: {
+            challengeId: components["schemas"]["AuthOpaqueId"];
+            nonce: components["schemas"]["AuthSecret"];
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            retryAfter?: string;
+        };
+        EmailLoginRequest: {
+            challengeId: components["schemas"]["AuthOpaqueId"];
+            code: components["schemas"]["EmailCode"];
+            deviceProof: components["schemas"]["DeviceProof"];
+        };
+        EmailLoginOutcome: components["schemas"]["PhoneAuthSuccess"] | components["schemas"]["PhoneAuthApprovalRequired"];
         PhoneLoginChallengeRequest: {
             /** @description E.164 形式；具体号段和供应商适用范围由服务端校验。完整号码只用于必要验证，不进入日志。 */
             phone: string;
@@ -2884,6 +2951,12 @@ export interface components {
             id: components["schemas"]["AuthOpaqueId"];
             /** @enum {string} */
             kind: "wechat_mini";
+        } | {
+            id: components["schemas"]["AuthOpaqueId"];
+            /** @enum {string} */
+            kind: "email";
+            /** @description 服务端脱敏的邮箱提示，不得返回完整地址。 */
+            emailMasked: string;
         };
         IdentitySet: {
             version: number;
@@ -2900,6 +2973,11 @@ export interface components {
         } | {
             /** @enum {string} */
             kind: "wechat_mini";
+            expectedVersion: number;
+        } | {
+            /** @enum {string} */
+            kind: "email";
+            email: components["schemas"]["EmailAddress"];
             expectedVersion: number;
         };
         IdentityLinkStarted: {
@@ -2920,6 +2998,12 @@ export interface components {
             linkId: components["schemas"]["AuthOpaqueId"];
             linkSecret: components["schemas"]["AuthSecret"];
             code: string;
+        } | {
+            /** @enum {string} */
+            kind: "email";
+            linkId: components["schemas"]["AuthOpaqueId"];
+            linkSecret: components["schemas"]["AuthSecret"];
+            code: components["schemas"]["EmailCode"];
         };
         IdentityLinkClaimStatusRequest: {
             linkSecret: components["schemas"]["AuthSecret"];
@@ -4616,6 +4700,84 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IdentityLinkClaimStatus"];
+                };
+            };
+            400: components["responses"]["AuthError"];
+            401: components["responses"]["AuthError"];
+            403: components["responses"]["AuthError"];
+            404: components["responses"]["AuthError"];
+            409: components["responses"]["AuthError"];
+            410: components["responses"]["AuthError"];
+            422: components["responses"]["AuthError"];
+            429: components["responses"]["AuthError"];
+            500: components["responses"]["AuthError"];
+            503: components["responses"]["AuthError"];
+        };
+    };
+    postAuthEmailChallenges: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 客户端以安全随机数生成至少 128 位不可预测键；匿名请求按邮箱受保护索引与用途隔离，不接受客户端 userId，密钥、邮箱及验证码不得进入日志。 */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailLoginChallengeRequest"];
+            };
+        };
+        responses: {
+            /** @description 操作已接受，认证响应不得缓存。 */
+            202: {
+                headers: {
+                    /** @description HTTP 响应不得被缓存。 */
+                    "Cache-Control": "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailLoginChallenge"];
+                };
+            };
+            400: components["responses"]["AuthError"];
+            401: components["responses"]["AuthError"];
+            403: components["responses"]["AuthError"];
+            404: components["responses"]["AuthError"];
+            409: components["responses"]["AuthError"];
+            410: components["responses"]["AuthError"];
+            422: components["responses"]["AuthError"];
+            429: components["responses"]["AuthError"];
+            500: components["responses"]["AuthError"];
+            503: components["responses"]["AuthError"];
+        };
+    };
+    postAuthEmailLogin: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 客户端以安全随机数生成至少 128 位不可预测键；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。 */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description 操作结果；认证响应不得缓存。 */
+            200: {
+                headers: {
+                    /** @description HTTP 响应不得被缓存。 */
+                    "Cache-Control": "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailLoginOutcome"];
                 };
             };
             400: components["responses"]["AuthError"];
