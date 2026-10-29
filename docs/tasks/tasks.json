@@ -6895,7 +6895,7 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "9fa8011",
-      "write_allowlist": ["apps/api/internal/modules/auth/session/store.go", "apps/api/internal/modules/auth/session/store_test.go", "apps/api/migrations/auth/0004_auth_session.up.sql", "docs/evidence/A01/A01-07/"],
+      "write_allowlist": ["apps/api/internal/modules/auth/session/store.go", "apps/api/internal/modules/auth/session/store_test.go", "apps/api/internal/modules/auth/challenge/session_binding.go", "apps/api/migrations/auth/0004_auth_session.up.sql", "docs/evidence/A01/A01-07/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
       "deliverables": "仅由同事务邮箱挑战和已确认可信设备创建会话；每次事务中检查会话、身份、主体、设备、版本和过期，返回不能跨事务复用的内部主体证明。",
       "acceptance": [
@@ -7028,7 +7028,7 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "f2a7bb9",
-      "write_allowlist": ["apps/api/internal/modules/auth/challenge/", "apps/api/migrations/auth/0002_email_challenge.up.sql", "docs/evidence/A01/A01-04/"],
+      "write_allowlist": ["apps/api/internal/modules/auth/challenge/email.go", "apps/api/internal/modules/auth/challenge/email_test.go", "apps/api/migrations/auth/0002_email_challenge.up.sql", "docs/evidence/A01/A01-04/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
       "deliverables": "实现测试邮箱登录挑战的事务存储、过期与尝试限制、重发使旧挑战失效及设备证明和验证码联合单次消费；不签发会话。",
       "acceptance": [
