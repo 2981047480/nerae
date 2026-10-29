@@ -56,6 +56,13 @@
       "module": "auth",
       "file": "0005_login_approval.up.sql",
       "sha256": "e4ce2f6f2864650efa883ac53e17a08a460adc78a9ba730231a0a61ec39a2436"
+    },
+    {
+      "order": 9,
+      "id": "auth/0006_approval_exchange.up.sql",
+      "module": "auth",
+      "file": "0006_approval_exchange.up.sql",
+      "sha256": "c38b3f5683124afa03f7ee206df9baac26dd428922e4cf3ffd1b9b3746dfbc5f"
     }
   ]
 }

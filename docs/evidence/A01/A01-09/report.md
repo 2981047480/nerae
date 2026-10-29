@@ -11,6 +11,8 @@
 - `approval/exchange.go`：`4f47e41b531242248eaa90f34b8faa3335217f572a1eb2f1764d387eb39f8f35`
 - `approval/exchange_test.go`：`bb6ab977b7e5567ce4358fb2ca55351ced528b9107e263036ef8f128b5c72120`
 - `auth/0006_approval_exchange.up.sql`：`c38b3f5683124afa03f7ee206df9baac26dd428922e4cf3ffd1b9b3746dfbc5f`
-- `mysql_smoke.py`：`a3abd2b371b333c50a620fd2fb0b207726fa16c6732fd0c484e5bc1a1b17afad`
+- `mysql_smoke.py`：`5e38f810a5c6b0d481cea659609022b67e4e99eeb99bcc6540f978a97391fc6b`
+
+集成提交 `8a2bf8f` 上，申请/确认及兑换测试在同一个私有数据库共同通过，包含两把合成设备密钥对同一训练记录的读写；9 项迁移清单和任务图检查有效。此复测不代表真实手机、HTTP 或最终接受已完成。
 
 当前兑换器自行提交；提交结果不明或响应丢失后无法安全重放，必须先设计与交易同提交的加密幂等响应和撤销复查，再开放 HTTP。真实发信、限流、原生设备安全存储、微信跨身份批准、恢复码、动作原始顺序、客户端接线和真实双设备验收均未完成。
