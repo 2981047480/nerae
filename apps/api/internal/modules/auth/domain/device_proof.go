@@ -147,7 +147,7 @@ func VerifyDeviceProof(compact string, key DevicePublicJWK, expected ProofExpect
 }
 
 func validPurpose(purpose string) bool {
-	return purpose == "phone_login" || purpose == "approval_exchange" || purpose == "recovery_code"
+	return purpose == "phone_login" || purpose == "email_login" || purpose == "approval_exchange" || purpose == "recovery_code"
 }
 
 // DeviceKeyFingerprint returns the SHA-256 JWK thumbprint of a validated

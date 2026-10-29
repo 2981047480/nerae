@@ -79,6 +79,19 @@ func TestVerifyValidDeviceProofAndReplayRetention(t *testing.T) {
 	}
 }
 
+func TestEmailDeviceProofCannotBeReusedForPhoneLogin(t *testing.T) {
+	private, key := makeKey(t)
+	emailExpected := testExpected
+	emailExpected.Purpose = "email_login"
+	proof := signProof(t, private, `{"alg":"ES256","typ":"JWT"}`, payload(t, map[string]any{"purpose": "email_login"}))
+	if _, err := VerifyDeviceProof(proof, key, emailExpected, testNow, testPolicy); err != nil {
+		t.Fatalf("valid email proof rejected: %v", err)
+	}
+	if _, err := VerifyDeviceProof(proof, key, testExpected, testNow, testPolicy); !errors.Is(err, ErrInvalidDeviceProof) {
+		t.Fatalf("email proof accepted for phone login: %v", err)
+	}
+}
+
 func TestFractionalNumericDateDoesNotShortenReplayRetention(t *testing.T) {
 	private, key := makeKey(t)
 	body := fmt.Sprintf(`{"aud":"nerae-auth-device","purpose":"phone_login","resourceId":"challenge-123","nonce":"server-nonce-123","iat":%d.0000000001,"exp":%d.0000000001,"jti":"unique-request-id"}`, testNow.Unix(), testNow.Unix()+1)
