@@ -2314,7 +2314,8 @@
         "V03",
         "P02-01",
         "P02-02",
-        "P02-03"
+        "P02-03",
+        "P02-04"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -6095,7 +6096,7 @@
       "model_policy": "implementation",
       "owner": null,
       "write_allowlist": [
-        "infra/app/ios/",
+        "infra/app/ios/build/",
         "docs/evidence/P02/P02-02/"
       ],
       "inputs": [
@@ -6141,6 +6142,39 @@
       "acceptance_requires": [],
       "parent": "P02",
       "kind": "task"
+    },
+    {
+      "id": "P02-04",
+      "title": "iOS 设备密钥与登录证明原生基础",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": ["P02-01"],
+      "acceptance_requires": ["A01-01", "A01-09", "P02-02"],
+      "parent": "P02",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "8780436",
+      "write_allowlist": ["infra/app/ios/device/", "docs/evidence/P02/P02-04/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
+      "deliverables": "实现 iOS Secure Enclave P-256 设备私钥与 ES256 登录/设备批准证明基础；不提供网页替代或可导出私钥。",
+      "acceptance": [
+        "使用官方 iOS SDK 编译原生代码，验证 ES256 签名编码与服务端验证器兼容，私钥不导出或同步",
+        "相同身份别名恢复同一设备密钥，不同身份不得共享密钥；不可访问、重复或硬件不可用时失败关闭",
+        "未接入 uni-app 原生桥、实际签名安装与 iPhone 测试时仅为基础实现，不得称可安装 App 或真实安全存储已验收"
+      ],
+      "verification_commands": ["使用 iPhoneOS SDK 编译；执行可在 macOS 上运行的签名编码与服务端兼容测试"],
+      "risks": ["匹配的 DCloud 原生 SDK 与原生桥、Apple 签名及 iPhone 真机尚需验证；密钥丢失恢复依赖恢复码和人工流程。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01"],
+      "forbidden": ["不启动模拟器或推送网页", "不生成或保存真实私钥到仓库", "不添加训练/休息倒计时"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实命令；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": ["iPhoneOS SDK；后续原生桥、开发签名与真实 iPhone。"]
     },
     {
       "id": "P02-03",
