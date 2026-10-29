@@ -175,9 +175,13 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id = ?`, claimsA.SubjectID).Scan(&count); err != nil || count != 0 {
 		t.Fatal("age-rejected workout left data")
 	}
-	// This is an isolated database fixture, not a real age-verification flow.
-	if _, err := db.ExecContext(ctx, `UPDATE user SET age_verified_at = UTC_TIMESTAMP(6) WHERE id IN (?, ?)`, claimsA.SubjectID, claimsB.SubjectID); err != nil {
-		t.Fatal("could not set synthetic age fixtures")
+	// These are explicit 18+ self-declarations through the authenticated auth
+	// API, not independent verification of either subject's actual age.
+	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
+		t.Fatal("could not declare adult status for first test subject")
+	}
+	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
+		t.Fatal("could not declare adult status for second test subject")
 	}
 	created, err := service.CreateFree(ctx, db, tokenA, input)
 	if err != nil || created.ID == 0 || created.Version != 1 {
@@ -231,6 +235,41 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	orderedSnapshot, err := service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
 	if err != nil || orderedSnapshot.Version != 2 || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
 		t.Fatal("another session did not recover ordered groups")
+	}
+	if err := auth.ClearAdultDeclaration(ctx, db, tokenA); err != nil {
+		t.Fatal("could not clear the authenticated subject's adult self-declaration")
+	}
+	if _, err := service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID); !errors.Is(err, ErrAgeRequired) {
+		t.Fatal("existing session read workout after adult self-declaration was cleared")
+	}
+	deniedUpdate := first
+	deniedUpdate.WeightKg = "60"
+	if _, _, err := service.SaveOrderedSets(ctx, db, tokenA, ordered.ID, 2, domain.Batch{Sets: []domain.Set{deniedUpdate}}, wanted); !errors.Is(err, ErrAgeRequired) {
+		t.Fatal("existing session wrote workout after adult self-declaration was cleared")
+	}
+	var withheldVersion uint64
+	var withheldStatus string
+	var withheldSetCount int
+	var withheldWeight string
+	var withheldOrderCount int
+	if err := db.QueryRowContext(ctx, `SELECT version, status FROM workout_session WHERE id = ?`, ordered.ID).
+		Scan(&withheldVersion, &withheldStatus); err != nil || withheldVersion != 2 || withheldStatus != string(domain.InProgress) {
+		t.Fatalf("age-rejected access changed the ordered session: err=%v version=%d status=%q", err, withheldVersion, withheldStatus)
+	}
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*), SUM(weight_kg) FROM set_record WHERE session_id = ?`, ordered.ID).
+		Scan(&withheldSetCount, &withheldWeight); err != nil || withheldSetCount != 2 || withheldWeight != "87.50" {
+		t.Fatalf("age-rejected access changed saved measurements: err=%v count=%d weight=%q", err, withheldSetCount, withheldWeight)
+	}
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_exercise_order WHERE session_id = ?`, ordered.ID).
+		Scan(&withheldOrderCount); err != nil || withheldOrderCount != 2 {
+		t.Fatalf("age-rejected access changed saved order: err=%v count=%d", err, withheldOrderCount)
+	}
+	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
+		t.Fatal("could not explicitly re-declare adult status for the test subject")
+	}
+	orderedSnapshot, err = service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
+	if err != nil || orderedSnapshot.Version != 2 || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
+		t.Fatal("existing session did not recover workout read after explicit re-declaration")
 	}
 	if _, err := service.ReadOrderedFree(ctx, db, tokenB, ordered.ID); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject read ordered workout")
