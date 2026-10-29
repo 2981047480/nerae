@@ -14,7 +14,7 @@ export PYTHONDONTWRITEBYTECODE := 1
         typecheck-client typecheck-admin build-client build-admin boundary-check codegen-check check-isolation \
         migration-check test test-integration e2e e2e-api visual-diff seed-check seed-dry-run check
 
-check-foundation: check-versions check-planning contract-check quality-tests check-dev format-go format-ts go-vet go-test typecheck-client typecheck-admin build-client build-admin boundary-check
+check-foundation: check-versions check-planning contract-check codegen-check quality-tests check-dev format-go format-ts go-vet go-test typecheck-client typecheck-admin build-client build-admin boundary-check
 
 check-versions:
 	"$(NERAE_PYTHON)" scripts/quality/check_versions.py
@@ -61,6 +61,10 @@ boundary-check:
 	"$(NERAE_PYTHON)" scripts/quality/run_node_tests.py
 	"$(NERAE_NODE)" scripts/quality/boundary.mjs
 
-codegen-check check-isolation migration-check test test-integration e2e e2e-api visual-diff seed-check seed-dry-run check:
+codegen-check:
+	"$(NERAE_PYTHON)" scripts/quality/run_unittest.py scripts/codegen
+	"$(NERAE_PYTHON)" scripts/codegen/generate.py check
+
+check-isolation migration-check test test-integration e2e e2e-api visual-diff seed-check seed-dry-run check:
 	@printf '%s\n' 'NOT_READY: $@ requires its designated implementation and real acceptance evidence' >&2
 	@exit 1

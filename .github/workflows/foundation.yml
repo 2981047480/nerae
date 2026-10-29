@@ -37,5 +37,6 @@ jobs:
         run: |
           python -m pip install -r api/test-requirements.txt
           pnpm install --frozen-lockfile --ignore-scripts
+          npm ci --prefix scripts/codegen/npm --ignore-scripts --no-audit --no-fund
       - name: Run the same foundation entry as local development
         run: make check-foundation NERAE_PYTHON=python

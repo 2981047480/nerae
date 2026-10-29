@@ -16,3 +16,5 @@ make boundary-check
 Go 检查解析全部生产源文件的 import（包括 build tag），客户端检查解析 Vue/TypeScript/JavaScript 导入并追踪内部依赖；当前只覆盖已定义的目录层次和导入类型。模块 Go 文件须置于 `domain`、`application`、`transport`、`handler`、`repository`、`infrastructure`、`persistence`、`api` 或 `contract` 目录；跨模块 import 仅允许 `domain`、`application`、`api`、`contract`。需要新层次时先调整检查与反例。视图依赖图中的外部库仅允许已列明的 Vue、uni-app 基础库和 vue-i18n，新增外部库须复核并补规则；指向扫描范围之外的源码也会失败。生产 Go 源码不得 import `testdata`。无法追踪的 Worker / Service Worker、`import.meta.glob`、动态 import/require 和代码求值目前显式失败。它不能证明 SQL 表写入归属、运行时网络、授权或动态执行安全，真实服务与安全验收仍由业务及集成卡完成。
 
 TS 格式使用锁文件中的 TypeScript 格式化接口；Vue 模板与样式只检查基础空白，不声称覆盖其全部格式或视觉。
+
+`make codegen-check` 使用锁定的生成器重新生成 TS/Go 类型两次，检查与仓库生成物一致，并运行记录/身份类型与 Go schema 负例。生成器工具需先在 `scripts/codegen/npm` 执行锁定的 `npm ci --ignore-scripts`；缺工具、漂移或测试失败均为非零退出。生成代码不经人工格式化，格式门禁只排除该固定生成文件。静态生成检查不代表真实 HTTP 或数据库已联调。

@@ -54,7 +54,8 @@ export function formatIssues(file, content) {
     }));
   }
   for (const chunk of chunks) {
-    const edits = editsFor(chunk.file, chunk.content);
+    const edits = editsFor(chunk.file, chunk.content).filter(edit =>
+      chunk.content.slice(edit.span.start, edit.span.start + edit.span.length) !== edit.newText);
     if (edits.length) issues.push(`TypeScript formatting: ${edits.length} edit(s)`);
   }
   return issues;
@@ -66,7 +67,7 @@ export function check(rootPath = root) {
     ...walk(path.join(rootPath, 'apps/admin/src')),
     ...walk(path.join(rootPath, 'packages')),
     ...['apps/client/vite.config.ts', 'apps/admin/vite.config.ts'].map(file => path.join(rootPath, file)).filter(existsSync),
-  ];
+  ].filter(file => path.resolve(file) !== path.resolve(rootPath, 'packages/contracts/src/generated-types.ts'));
   if (!files.length) throw new Error('no TS/JS/Vue source files found');
   const issues = files.flatMap(file => formatIssues(file, readFileSync(file, 'utf8')).map(issue => `${path.relative(rootPath, file)}: ${issue}`));
   if (issues.length) {

@@ -75,7 +75,7 @@ class QualityEntrypointTests(unittest.TestCase):
             self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
 
     def test_not_ready_and_missing_make_targets_fail(self):
-        targets = ['codegen-check', 'check-isolation', 'migration-check', 'test', 'test-integration',
+        targets = ['check-isolation', 'migration-check', 'test', 'test-integration',
                    'e2e', 'e2e-api', 'visual-diff', 'seed-check', 'seed-dry-run', 'check']
         with tempfile.TemporaryDirectory(prefix='nerae-quality-make-') as temporary:
             for target in targets:
@@ -87,6 +87,14 @@ class QualityEntrypointTests(unittest.TestCase):
             missing = subprocess.run(['make', '-f', str(ROOT / 'Makefile'), 'target-does-not-exist'], cwd=temporary,
                                      text=True, capture_output=True, check=False)
             self.assertNotEqual(missing.returncode, 0, missing.stdout + missing.stderr)
+
+    def test_codegen_gate_fails_when_required_files_are_missing(self):
+        with tempfile.TemporaryDirectory(prefix='nerae-quality-codegen-') as temporary:
+            result = subprocess.run(['make', '-f', str(ROOT / 'Makefile'), 'codegen-check',
+                                     f'NERAE_PYTHON={sys.executable}'], cwd=temporary,
+                                    text=True, capture_output=True, check=False)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn('NOT_READY', result.stdout + result.stderr)
 
     def test_build_runner_rejects_success_without_a_new_artifact(self):
         with tempfile.TemporaryDirectory(prefix='nerae-quality-build-') as temporary:
