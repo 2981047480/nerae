@@ -17,6 +17,7 @@ import (
 
 var (
 	ErrSessionUnavailable = errors.New("session unavailable")
+	ErrInvalidSession     = errors.New("invalid or revoked session")
 	ErrApprovalRequired   = errors.New("device approval required")
 )
 
@@ -200,13 +201,16 @@ func (p *Principal) ForTransaction(ctx context.Context, tx *sql.Tx) (PrincipalDe
 // must perform resource and age authorization and its business writes in the
 // same tx, and must not use this value after commit/rollback. Lock order is
 // identity -> user -> device -> session; workout rows are locked afterwards.
+// ErrInvalidSession means the signed credential is invalid, expired, missing,
+// or revoked. ErrSessionUnavailable means storage, context or internal state
+// could not be verified and MUST NOT be presented as a definite logout.
 func (s *Store) Authenticate(ctx context.Context, tx *sql.Tx, token string) (*Principal, error) {
 	if s == nil || s.codec == nil || s.now == nil || ctx == nil || tx == nil {
 		return nil, ErrSessionUnavailable
 	}
-	claims, err := s.codec.Verify(token)
+	claims, err := s.verifySessionToken(token)
 	if err != nil {
-		return nil, ErrSessionUnavailable
+		return nil, err
 	}
 	subjectID, err := strconv.ParseUint(claims.SubjectID, 10, 64)
 	if err != nil || subjectID == 0 {
@@ -214,25 +218,47 @@ func (s *Store) Authenticate(ctx context.Context, tx *sql.Tx, token string) (*Pr
 	}
 	var initialUser uint64
 	var identityID, deviceID []byte
-	if err := tx.QueryRowContext(ctx, `SELECT user_id, identity_id, device_id FROM auth_session WHERE id = ?`, []byte(claims.SessionID)).
-		Scan(&initialUser, &identityID, &deviceID); err != nil || initialUser != subjectID || len(identityID) == 0 || len(deviceID) == 0 {
+	err = tx.QueryRowContext(ctx, `SELECT user_id, identity_id, device_id FROM auth_session WHERE id = ?`, []byte(claims.SessionID)).
+		Scan(&initialUser, &identityID, &deviceID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrInvalidSession
+	}
+	if err != nil || initialUser != subjectID || len(identityID) == 0 || len(deviceID) == 0 {
 		return nil, ErrSessionUnavailable
 	}
 	var identityOwner uint64
 	var identityState string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM login_identity WHERE id = ? FOR UPDATE`, identityID).Scan(&identityOwner, &identityState); err != nil || identityOwner != subjectID || identityState != "active" {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM login_identity WHERE id = ? FOR UPDATE`, identityID).Scan(&identityOwner, &identityState); err != nil || identityOwner != subjectID {
+		return nil, ErrSessionUnavailable
+	}
+	if identityState == "revoked" {
+		return nil, ErrInvalidSession
+	}
+	if identityState != "active" {
 		return nil, ErrSessionUnavailable
 	}
 	var userStatus string
 	var tokenVersion uint64
 	var ageVerified bool
 	if err := tx.QueryRowContext(ctx, `SELECT status, token_version, age_verified_at IS NOT NULL FROM user WHERE id = ? FOR UPDATE`, subjectID).
-		Scan(&userStatus, &tokenVersion, &ageVerified); err != nil || userStatus != "active" || tokenVersion != claims.TokenVersion {
+		Scan(&userStatus, &tokenVersion, &ageVerified); err != nil || tokenVersion == 0 {
+		return nil, ErrSessionUnavailable
+	}
+	if userStatus == "disabled" || tokenVersion != claims.TokenVersion {
+		return nil, ErrInvalidSession
+	}
+	if userStatus != "active" {
 		return nil, ErrSessionUnavailable
 	}
 	var deviceOwner uint64
 	var deviceState string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM trusted_device WHERE id = ? FOR UPDATE`, deviceID).Scan(&deviceOwner, &deviceState); err != nil || deviceOwner != subjectID || deviceState != "active" {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM trusted_device WHERE id = ? FOR UPDATE`, deviceID).Scan(&deviceOwner, &deviceState); err != nil || deviceOwner != subjectID {
+		return nil, ErrSessionUnavailable
+	}
+	if deviceState == "revoked" {
+		return nil, ErrInvalidSession
+	}
+	if deviceState != "active" {
 		return nil, ErrSessionUnavailable
 	}
 	var rowUser, rowVersion uint64
@@ -242,19 +268,54 @@ func (s *Store) Authenticate(ctx context.Context, tx *sql.Tx, token string) (*Pr
         DATE_FORMAT(authenticated_at, '%Y-%m-%d %H:%i:%s.%f'), DATE_FORMAT(expires_at, '%Y-%m-%d %H:%i:%s.%f')
         FROM auth_session WHERE id = ? FOR UPDATE`, []byte(claims.SessionID)).
 		Scan(&rowUser, &rowIdentity, &rowDevice, &rowVersion, &state, &authAt, &expiresAt); err != nil || rowUser != subjectID ||
-		string(rowIdentity) != string(identityID) || string(rowDevice) != string(deviceID) || rowVersion != claims.TokenVersion || state != "active" {
+		string(rowIdentity) != string(identityID) || string(rowDevice) != string(deviceID) || rowVersion != claims.TokenVersion {
+		return nil, ErrSessionUnavailable
+	}
+	if state == "revoked" {
+		return nil, ErrInvalidSession
+	}
+	if state != "active" {
 		return nil, ErrSessionUnavailable
 	}
 	issued, errIssued := time.Parse("2006-01-02 15:04:05.000000", authAt)
 	expires, errExpires := time.Parse("2006-01-02 15:04:05.000000", expiresAt)
-	if errIssued != nil || errExpires != nil || !issued.Equal(claims.IssuedAt) || !expires.Equal(claims.ExpiresAt) || !expires.After(s.now().UTC()) {
+	if errIssued != nil || errExpires != nil || !issued.Equal(claims.IssuedAt) || !expires.Equal(claims.ExpiresAt) {
 		return nil, ErrSessionUnavailable
+	}
+	now := s.now().UTC()
+	if now.IsZero() {
+		return nil, ErrSessionUnavailable
+	}
+	if !expires.After(now) {
+		return nil, ErrInvalidSession
 	}
 	// A long wait on any lock must not extend the signed token's validity.
-	if _, err := s.codec.Verify(token); err != nil {
-		return nil, ErrSessionUnavailable
+	if _, err := s.verifySessionToken(token); err != nil {
+		return nil, err
 	}
 	return &Principal{tx: tx, store: s, token: token, subjectID: subjectID, sessionID: claims.SessionID, deviceID: string(deviceID), ageVerified: ageVerified, expiresAt: expires, now: s.now}, nil
+}
+
+// Verify against one captured clock reading so codec configuration or clock
+// failure cannot be confused with a bad credential. Capture afresh after locks.
+func (s *Store) verifySessionToken(token string) (TokenClaims, error) {
+	if s == nil || s.codec == nil || len(s.codec.key) != 32 || s.codec.now == nil ||
+		s.codec.policy.MaxLifetime < time.Second || s.codec.policy.MaxLifetime > 30*24*time.Hour ||
+		s.codec.policy.MaxLifetime%time.Second != 0 || s.codec.policy.ClockSkew < 0 ||
+		s.codec.policy.ClockSkew > 5*time.Minute || s.codec.policy.ClockSkew%time.Second != 0 {
+		return TokenClaims{}, ErrSessionUnavailable
+	}
+	now := s.codec.now().UTC()
+	if now.IsZero() || now.Unix() < 1 {
+		return TokenClaims{}, ErrSessionUnavailable
+	}
+	codec := *s.codec
+	codec.now = func() time.Time { return now }
+	claims, err := codec.Verify(token)
+	if err != nil {
+		return TokenClaims{}, ErrInvalidSession
+	}
+	return claims, nil
 }
 
 func utcTimestamp(value time.Time) string {

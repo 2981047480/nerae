@@ -277,10 +277,10 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	}
 	_ = newTx.Rollback()
 	var count int
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session`).Scan(&count); err != nil || count != 1 {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE user_id = ?`, details.SubjectID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("unapproved device acquired a session")
 	}
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM trusted_device`).Scan(&count); err != nil || count != 1 {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM trusted_device WHERE user_id = ?`, details.SubjectID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("unapproved device was trusted")
 	}
 	// A valid session created inside a rolled-back transaction stays unusable.
@@ -295,7 +295,7 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if value, err := rolled.AfterCommit(ctx, db); err == nil || value != "" {
 		t.Fatal("rolled-back session released a token")
 	}
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session`).Scan(&count); err != nil || count != 1 {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE user_id = ?`, details.SubjectID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("rolled-back session remained in database")
 	}
 	// Even in the same live transaction, one verified challenge can create
@@ -334,42 +334,69 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if err != nil || secondClaims.SubjectID != claims.SubjectID || secondClaims.SessionID == claims.SessionID {
 		t.Fatal("fresh trusted-device session did not preserve the same subject")
 	}
-	checkDenied := func() {
+	checkDenied := func(want error) {
 		t.Helper()
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
 			t.Fatal("could not begin negative authentication")
 		}
 		defer tx.Rollback()
-		if _, err := store.Authenticate(ctx, tx, token); !errors.Is(err, ErrSessionUnavailable) {
-			t.Fatal("revoked or altered session was accepted")
+		if _, err := store.Authenticate(ctx, tx, token); !errors.Is(err, want) {
+			t.Fatalf("revoked or altered session returned wrong classification: %v", err)
 		}
 	}
 	changes := []struct {
 		change, restore string
 		args            []any
+		want            error
 	}{
-		{`UPDATE user SET status = 'disabled' WHERE id = ?`, `UPDATE user SET status = 'active' WHERE id = ?`, []any{details.SubjectID}},
-		{`UPDATE user SET token_version = token_version + 1 WHERE id = ?`, `UPDATE user SET token_version = token_version - 1 WHERE id = ?`, []any{details.SubjectID}},
-		{`UPDATE login_identity SET state = 'revoked' WHERE user_id = ?`, `UPDATE login_identity SET state = 'active' WHERE user_id = ?`, []any{details.SubjectID}},
-		{`UPDATE trusted_device SET state = 'revoked' WHERE id = ?`, `UPDATE trusted_device SET state = 'active' WHERE id = ?`, []any{[]byte(details.DeviceID)}},
-		{`UPDATE auth_session SET state = 'revoked', revoked_at = UTC_TIMESTAMP(6) WHERE id = ?`, `UPDATE auth_session SET state = 'active', revoked_at = NULL WHERE id = ?`, []any{[]byte(details.SessionID)}},
-		{`UPDATE auth_session SET expires_at = DATE_SUB(expires_at, INTERVAL 1 SECOND) WHERE id = ?`, `UPDATE auth_session SET expires_at = DATE_ADD(expires_at, INTERVAL 1 SECOND) WHERE id = ?`, []any{[]byte(details.SessionID)}},
+		{`UPDATE user SET status = 'disabled' WHERE id = ?`, `UPDATE user SET status = 'active' WHERE id = ?`, []any{details.SubjectID}, ErrInvalidSession},
+		{`UPDATE user SET token_version = token_version + 1 WHERE id = ?`, `UPDATE user SET token_version = token_version - 1 WHERE id = ?`, []any{details.SubjectID}, ErrInvalidSession},
+		{`UPDATE login_identity SET state = 'revoked' WHERE user_id = ?`, `UPDATE login_identity SET state = 'active' WHERE user_id = ?`, []any{details.SubjectID}, ErrInvalidSession},
+		{`UPDATE trusted_device SET state = 'revoked' WHERE id = ?`, `UPDATE trusted_device SET state = 'active' WHERE id = ?`, []any{[]byte(details.DeviceID)}, ErrInvalidSession},
+		{`UPDATE auth_session SET state = 'revoked', revoked_at = UTC_TIMESTAMP(6) WHERE id = ?`, `UPDATE auth_session SET state = 'active', revoked_at = NULL WHERE id = ?`, []any{[]byte(details.SessionID)}, ErrInvalidSession},
+		{`UPDATE auth_session SET expires_at = DATE_SUB(expires_at, INTERVAL 1 SECOND) WHERE id = ?`, `UPDATE auth_session SET expires_at = DATE_ADD(expires_at, INTERVAL 1 SECOND) WHERE id = ?`, []any{[]byte(details.SessionID)}, ErrSessionUnavailable},
 	}
 	for _, item := range changes {
 		if _, err := db.ExecContext(ctx, item.change, item.args...); err != nil {
 			t.Fatal("could not modify isolated session state")
 		}
-		checkDenied()
+		checkDenied(item.want)
 		if _, err := db.ExecContext(ctx, item.restore, item.args...); err != nil {
 			t.Fatal("could not restore isolated session state")
 		}
 	}
 	codec.now = func() time.Time { return claims.ExpiresAt }
 	store.now = codec.now
-	checkDenied()
+	checkDenied(ErrInvalidSession)
 	codec.now = time.Now
 	store.now = time.Now
+
+	// Invalid credentials and missing sessions are distinct from a broken DB
+	// transaction or cancelled query; neither result leaks the supplied token.
+	negativeTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin classification check")
+	}
+	if _, err := store.Authenticate(ctx, negativeTx, token+"tampered"); !errors.Is(err, ErrInvalidSession) {
+		t.Fatal("tampered credential was not classified invalid")
+	}
+	missing, err := codec.Issue(claims.SubjectID, "AAAAAAAAAAAAAAAAAAAAAA", claims.TokenVersion)
+	if err != nil {
+		t.Fatal("could not create missing-session token")
+	}
+	if _, err := store.Authenticate(ctx, negativeTx, missing.ForResponse()); !errors.Is(err, ErrInvalidSession) {
+		t.Fatal("missing session was not classified invalid")
+	}
+	cancelled, cancelQuery := context.WithCancel(ctx)
+	cancelQuery()
+	if _, err := store.Authenticate(cancelled, negativeTx, token); !errors.Is(err, ErrSessionUnavailable) {
+		t.Fatal("cancelled DB lookup was not classified unavailable")
+	}
+	_ = negativeTx.Rollback()
+	if _, err := store.Authenticate(ctx, negativeTx, token); !errors.Is(err, ErrSessionUnavailable) {
+		t.Fatal("ended transaction was not classified unavailable")
+	}
 
 	// A device revocation waits for an in-flight authorized transaction; after
 	// it commits, every later authentication observes the revoked device.
@@ -407,5 +434,34 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if err := lockedTx.Commit(); err != nil || <-revoked != nil {
 		t.Fatal("could not complete the device revocation test")
 	}
-	checkDenied()
+	checkDenied(ErrInvalidSession)
+}
+
+func TestAuthenticationClassifiesBrokenCodecAsUnavailable(t *testing.T) {
+	codec, err := NewTokenCodec(bytes.Repeat([]byte{5}, 32), TokenPolicy{MaxLifetime: time.Hour})
+	if err != nil {
+		t.Fatal("codec setup failed")
+	}
+	store := &Store{codec: codec, now: time.Now}
+	cases := []struct {
+		name       string
+		breakCodec func(*TokenCodec)
+	}{
+		{"missing key", func(c *TokenCodec) { c.key = nil }},
+		{"missing clock", func(c *TokenCodec) { c.now = nil }},
+		{"zero clock", func(c *TokenCodec) { c.now = func() time.Time { return time.Time{} } }},
+		{"epoch clock", func(c *TokenCodec) { c.now = func() time.Time { return time.Unix(0, 0) } }},
+		{"invalid policy", func(c *TokenCodec) { c.policy.MaxLifetime = 0 }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			copy := *codec
+			tc.breakCodec(&copy)
+			store.codec = &copy
+			_, err := store.Authenticate(context.Background(), &sql.Tx{}, "invalid-credential")
+			if !errors.Is(err, ErrSessionUnavailable) || errors.Is(err, ErrInvalidSession) {
+				t.Fatalf("broken codec was not classified unavailable: %v", err)
+			}
+		})
+	}
 }
