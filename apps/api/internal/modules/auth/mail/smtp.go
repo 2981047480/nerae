@@ -12,12 +12,13 @@ import (
 	"mime"
 	"mime/quotedprintable"
 	"net"
-	netmail "net/mail"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
 	"strings"
 	"time"
+
+	"nerae/api/internal/modules/auth/domain"
 )
 
 var (
@@ -145,16 +146,8 @@ func beforeSubmissionError(ctx context.Context) error {
 }
 
 func validAddress(value string) bool {
-	if value == "" || len(value) > 254 || strings.Count(value, "@") != 1 {
-		return false
-	}
-	for _, c := range value {
-		if c <= ' ' || c >= 127 {
-			return false
-		}
-	}
-	parsed, err := netmail.ParseAddress(value)
-	return err == nil && parsed.Name == "" && parsed.Address == value
+	_, err := domain.NormalizeEmail(value)
+	return err == nil
 }
 
 func validCode(value string) bool {
