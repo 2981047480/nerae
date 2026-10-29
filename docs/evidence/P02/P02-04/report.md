@@ -32,3 +32,5 @@
 受限于 HBuilderX 5.33 与项目锁定 uni 编译器 5.26 不一致，这只证明该版本组合下真实 Swift 源码可通过 UTS 原生编译，尚不证明项目锁定版本兼容，也不证明安全芯片或 iPhone 运行。`security find-identity` 在授权环境报告 1 个有效签名身份，两个标准描述文件目录中未找到 `.mobileprovision` 文件；设备列表在授权环境报告 iPhone 14 Pro Max `available (paired)`，尚未安装。正式桥的身份映射、错误处理、uni-app 接线、签名描述文件、完整 App 和真实登录同步仍待实现。
 
 复现脚本 `infra/app/ios/device/verify-uts-probe.sh` 在授权环境运行 `NERAE_KEEP_PROBE=1 .../verify-uts-probe.sh` 返回 0；用当前仓库源码生成 iPhoneOS arm64 动态 framework，SHA-256 `b7260d43b30bb2b5d6f534b063a35c5fa734eb9ed85e648b60490002dc9192b6`，独立夹具 `/private/tmp/nerae-uts-probe.9VPW5T1T` 被主动保留。脚本默认只清理自己新建且成功的临时目录，失败会保留；编译本身不验证 iPhone、硬件或服务。该 SHA 仅标识本次构建产物，不保证不同构建路径可重现相同字节。
+
+集成版本 `e004d56` 执行 `bash -n` 与 `infra/app/ios/device/verify-uts-probe.sh` 均退出 0；脚本验证 iPhoneOS arm64 二进制并只清理了本次成功探针目录。独立 reviewer 只读核对清理范围、失败处理与无安装/私钥操作，未发现阻断。
