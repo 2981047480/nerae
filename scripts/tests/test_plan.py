@@ -209,11 +209,39 @@ class PlanTests(unittest.TestCase):
 
     def test_m1_estimate_matches_distinct_planned_work(self):
         tasks={t['id']:t for t in self.doc['tasks']}
-        ids=['F01','K01','D02','F02','P02-01','P02-02','P02-03','L01-01',
-             'A01','A02','I-A01','A03','A04','S01-A','I-A02','U01','U02','I-A04']
+        foundation=['F01','K01','D02','F02','P02-01','P02-02','P02-03','L01-01']
+        product=['A01','A02','I-A01','A03','A04','S01-A','I-A02','U01','U02','I-A04']
+        ids=foundation+product
         self.assertEqual(len(ids),len(set(ids)))
-        self.assertEqual([sum(tasks[k]['effort_days'][i] for k in ids) for i in (0,1)],[49,95])
-        self.assertIn('**49–95**',(ROOT/'docs/IMPLEMENTATION_PLAN.md').read_text())
+        def estimate(group):
+            return [sum(tasks[k]['effort_days'][i] for k in group) for i in (0,1)]
+        def label(values):
+            return f'{values[0]:g}–{values[1]:g}'
+        text=(ROOT/'docs/IMPLEMENTATION_PLAN.md').read_text()
+        expected={
+            '工程、合同、设计和可安装开发包':label(estimate(foundation)),
+            '记录领域与三端界面、集成及试用':label(estimate(product)),
+            '**合计**':'**'+label(estimate(ids))+'**',
+        }
+        def verify_rows(document):
+            found={name:[] for name in expected}
+            for line in document.splitlines():
+                if not line.startswith('|'):
+                    continue
+                cells=[cell.strip() for cell in line.strip().strip('|').split('|')]
+                if len(cells)==3 and cells[0] in found:
+                    found[cells[0]].append(cells[2])
+            for name,value in expected.items():
+                self.assertEqual(found[name],[value],name)
+        verify_rows(text)
+        first=next(line for line in text.splitlines() if line.startswith('| 工程、合同、设计和可安装开发包 |'))
+        changed=first.replace('| '+expected['工程、合同、设计和可安装开发包']+' |',
+                              '| '+expected['记录领域与三端界面、集成及试用']+' |')
+        self.assertNotEqual(first,changed)
+        with self.assertRaises(AssertionError):
+            verify_rows(text.replace(first,changed,1))
+        reserve=next(line for line in text.splitlines() if '预算容量约' in line)
+        self.assertIn('**'+label([round(n*1.2,1) for n in estimate(ids)])+' 人日**',reserve)
 
     def test_partial_package_cannot_be_accepted(self):
         self.task('I01')['status']='accepted'
