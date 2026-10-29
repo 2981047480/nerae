@@ -483,7 +483,8 @@
       "status": "planned",
       "depends_on": [
         "F02",
-        "A01-01"
+        "A01-01",
+        "A01-02"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -6787,7 +6788,7 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
-      "write_allowlist": ["apps/api/internal/modules/auth/", "docs/evidence/A01/A01-01/"],
+      "write_allowlist": ["apps/api/internal/modules/auth/domain/device_proof.go", "apps/api/internal/modules/auth/domain/device_proof_test.go", "apps/api/internal/modules/auth/domain/sms_challenge.go", "apps/api/internal/modules/auth/domain/sms_challenge_test.go", "docs/evidence/A01/A01-01/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
       "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信挑战和随机码，使用服务端密钥对验证码生成绑定摘要；不发送短信或签发账号会话。",
       "acceptance": [
@@ -6801,6 +6802,39 @@
       "effort_days": [1, 2],
       "flow_ids": ["F01"],
       "forbidden": ["禁止以测试私钥、固定验证码或内存替身授予业务访问", "不得将密码或设备证明写入日志"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "A01-02",
+      "title": "设备证明事务防重存储",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": ["F01-02"],
+      "acceptance_requires": ["A01-01", "K01-02", "F02-03"],
+      "parent": "A01",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "b52bcfae560c7f8204541b5506012fca7a28f86d",
+      "write_allowlist": ["apps/api/internal/modules/auth/repository/", "apps/api/migrations/auth/", "docs/evidence/A01/A01-02/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
+      "deliverables": "实现设备证明 JTI 的受保护摘要、事务内唯一消费和足够长的保留期限；真实会话及响应重放另行接入。",
+      "acceptance": [
+        "隔离 MySQL 实测重复与并发消费仅成功一次，事务回滚后可重试",
+        "保留期限按数据库精度向上取整，原始 JTI 与密钥不落库、不进入错误文本",
+        "幂等结果重放、撤销检查、密钥轮换和实际登录尚未完成时不得宣称链路可用"
+      ],
+      "verification_commands": ["真实隔离 MySQL 的并发、回滚和保留期集成测试"],
+      "risks": ["密钥轮换和幂等重放必须保持防重；单表测试不等于真实登录。"],
+      "effort_days": [1, 2],
+      "flow_ids": ["F01"],
+      "forbidden": ["不接触已有业务数据库", "不得将测试凭据或原始 JTI 写入日志"],
       "evidence": [],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
