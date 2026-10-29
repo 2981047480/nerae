@@ -66,7 +66,7 @@ func (s *ProofReplayStore) Consume(ctx context.Context, tx *sql.Tx, fingerprint 
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO auth_device_proof_replay
         (device_fingerprint, jti_digest, retain_until, created_at) VALUES (?, ?, ?, ?)`,
-		fingerprint[:], digest[:], retention, now.UTC())
+		fingerprint[:], digest[:], utcSQL(retention), utcSQL(now))
 	if err != nil {
 		var mysqlError *mysql.MySQLError
 		if errors.As(err, &mysqlError) && mysqlError.Number == 1062 {
@@ -75,6 +75,12 @@ func (s *ProofReplayStore) Consume(ctx context.Context, tx *sql.Tx, fingerprint 
 		return ErrReplayStore
 	}
 	return nil
+}
+
+// DATETIME is timezone-free. Write UTC text so a driver's loc setting cannot
+// shorten the replay deadline when another instance reads the same marker.
+func utcSQL(value time.Time) string {
+	return value.UTC().Truncate(time.Microsecond).Format("2006-01-02 15:04:05.000000")
 }
 
 func (s *ProofReplayStore) checkKeyEpoch(ctx context.Context, tx *sql.Tx) error {

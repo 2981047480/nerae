@@ -199,4 +199,34 @@ func TestProofReplayTransactions(t *testing.T) {
 	if bytes.Contains(savedDigest, []byte(fractional.JTI)) || len(savedDigest) != 32 {
 		t.Fatal("stored marker exposed raw JTI or had an unexpected digest length")
 	}
+
+	// A connection configured with another driver location must write the
+	// same UTC deadline that a different service instance will read.
+	otherCfg, _ := mysql.ParseDSN(os.Getenv("NERAE_PROOF_TEST_DSN"))
+	otherLocation, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherCfg.Loc = otherLocation
+	otherDB, err := sql.Open("mysql", otherCfg.FormatDSN())
+	if err != nil {
+		t.Fatal("cannot open alternate-location test connection")
+	}
+	defer otherDB.Close()
+	tx, err := otherDB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	timezoneProof := newProof("timezone-proof")
+	if err := store.Consume(ctx, tx, fingerprint, timezoneProof, now); err != nil {
+		_ = tx.Rollback()
+		t.Fatalf("consume with alternate driver location: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("cannot commit alternate-location proof")
+	}
+	timezoneDigest := store.jtiDigest(fingerprint, timezoneProof.JTI)
+	if err := db.QueryRowContext(ctx, `SELECT retain_until FROM auth_device_proof_replay WHERE device_fingerprint = ? AND jti_digest = ?`, fingerprint[:], timezoneDigest[:]).Scan(&retained); err != nil || !retained.Equal(timezoneProof.ReplayUntil) {
+		t.Fatal("driver location changed replay retention")
+	}
 }
