@@ -1,3 +1,9 @@
+CREATE TABLE auth_email_identity_key_epoch (
+    slot TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    key_tag BINARY(32) NOT NULL,
+    CONSTRAINT auth_email_identity_key_singleton CHECK (slot = 1)
+) ENGINE=InnoDB;
+
 CREATE TABLE auth_email_login_slot (
     email_index BINARY(32) NOT NULL PRIMARY KEY,
     challenge_id VARBINARY(128) NOT NULL
@@ -6,6 +12,8 @@ CREATE TABLE auth_email_login_slot (
 CREATE TABLE auth_email_login_challenge (
     challenge_id VARBINARY(128) NOT NULL PRIMARY KEY,
     email_index BINARY(32) NOT NULL,
+    email_ciphertext VARBINARY(512) NOT NULL,
+    email_key_id VARBINARY(64) NOT NULL,
     nonce VARBINARY(256) NOT NULL,
     public_x CHAR(43) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     public_y CHAR(43) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

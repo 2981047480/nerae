@@ -16,22 +16,23 @@ import (
 var ErrChallengeStore = errors.New("email challenge unavailable")
 
 type Store struct {
-	hasher *domain.EmailCodeHasher
-	replay *repository.ProofReplayStore
+	hasher     *domain.EmailCodeHasher
+	replay     *repository.ProofReplayStore
+	identities *domain.EmailIdentityProtector
 }
 
-func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore) (*Store, error) {
-	if hasher == nil || replay == nil {
+func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector) (*Store, error) {
+	if hasher == nil || replay == nil || identities == nil {
 		return nil, ErrChallengeStore
 	}
-	return &Store{hasher: hasher, replay: replay}, nil
+	return &Store{hasher: hasher, replay: replay, identities: identities}, nil
 }
 
-// IssueInput contains server-generated material. EmailIndex must come from the
-// protected identity index; Code, nonce and ID must come from crypto/rand.
+// IssueInput contains a validated email and server-generated material. Code,
+// nonce and ID must come from crypto/rand.
 // Callers must never log this struct or its fields.
 type IssueInput struct {
-	EmailIndex  [32]byte
+	Email       string
 	ChallengeID string
 	Nonce       string
 	Code        string
@@ -51,8 +52,8 @@ func (IssueInput) LogValue() slog.Value         { return slog.StringValue("Issue
 // commit invalidates earlier challenges for this email and purpose. Sending
 // email, durable idempotency and rate limits are separate requirements.
 func (s *Store) Issue(ctx context.Context, tx *sql.Tx, input IssueInput) error {
-	if s == nil || s.hasher == nil || s.replay == nil || ctx == nil || tx == nil ||
-		input.EmailIndex == [32]byte{} || !opaque(input.ChallengeID, 22, 128) || !opaque(input.Nonce, 43, 256) ||
+	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || ctx == nil || tx == nil ||
+		!opaque(input.ChallengeID, 22, 128) || !opaque(input.Nonce, 43, 256) ||
 		input.CreatedAt.IsZero() || input.ExpiresAt.IsZero() || input.MaxAttempts < 1 || input.MaxAttempts > 10 {
 		return ErrChallengeStore
 	}
@@ -69,16 +70,24 @@ func (s *Store) Issue(ctx context.Context, tx *sql.Tx, input IssueInput) error {
 	if err != nil {
 		return ErrChallengeStore
 	}
+	index, ciphertext, err := s.identities.Protect(input.Email)
+	if err != nil {
+		return ErrChallengeStore
+	}
+	keyID, _, err := s.identities.KeyEpoch()
+	if err != nil || s.checkEmailEpoch(ctx, tx) != nil {
+		return ErrChallengeStore
+	}
 	// Every issuance and attempt locks the slot before locking an existing
 	// challenge; concurrent reissues therefore have a single current ID.
 	_, err = tx.ExecContext(ctx, `INSERT INTO auth_email_login_slot (email_index, challenge_id)
-        VALUES (?, ?) ON DUPLICATE KEY UPDATE challenge_id = VALUES(challenge_id)`, input.EmailIndex[:], input.ChallengeID)
+		VALUES (?, ?) ON DUPLICATE KEY UPDATE challenge_id = VALUES(challenge_id)`, index[:], input.ChallengeID)
 	if err != nil {
 		return ErrChallengeStore
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO auth_email_login_challenge
-        (challenge_id, email_index, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, created_at, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`, input.ChallengeID, input.EmailIndex[:], input.Nonce,
+		(challenge_id, email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, created_at, expires_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`, input.ChallengeID, index[:], ciphertext, keyID, input.Nonce,
 		input.PublicKey.X, input.PublicKey.Y, fingerprint[:], digest, input.MaxAttempts, sqlUTC(created), sqlUTC(expires))
 	if err != nil {
 		return ErrChallengeStore
@@ -104,11 +113,13 @@ func (AttemptInput) LogValue() slog.Value         { return slog.StringValue("Att
 // must be committed only after identity, trusted-device, revocation, session and
 // idempotency checks succeed in the same transaction.
 type AttemptResult struct {
-	Verified    bool
-	Changed     bool
-	EmailIndex  [32]byte
-	Fingerprint [32]byte
-	PublicKey   domain.DevicePublicJWK
+	Verified        bool
+	Changed         bool
+	EmailIndex      [32]byte
+	EmailCiphertext []byte
+	EmailKeyID      string
+	Fingerprint     [32]byte
+	PublicKey       domain.DevicePublicJWK
 }
 
 func (AttemptResult) String() string               { return "AttemptResult{redacted}" }
@@ -121,8 +132,11 @@ func (AttemptResult) LogValue() slog.Value         { return slog.StringValue("At
 // email/IP/device/global rate limits before exposing any HTTP operation.
 func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (AttemptResult, error) {
 	rejected := AttemptResult{}
-	if s == nil || s.hasher == nil || s.replay == nil || ctx == nil || tx == nil ||
+	if s == nil || s.hasher == nil || s.replay == nil || s.identities == nil || ctx == nil || tx == nil ||
 		!opaque(input.ChallengeID, 22, 128) || input.Now.IsZero() {
+		return rejected, ErrChallengeStore
+	}
+	if err := s.checkEmailEpoch(ctx, tx); err != nil {
 		return rejected, ErrChallengeStore
 	}
 	var emailIndex []byte
@@ -141,14 +155,14 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if err != nil {
 		return rejected, ErrChallengeStore
 	}
-	var storedIndex, nonce, fingerprint, digest []byte
+	var storedIndex, ciphertext, keyID, nonce, fingerprint, digest []byte
 	var x, y string
 	var attempts, maxAttempts int
 	var expiresRaw string
 	var consumed bool
-	err = tx.QueryRowContext(ctx, `SELECT email_index, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, CAST(expires_at AS CHAR), consumed_at IS NOT NULL
+	err = tx.QueryRowContext(ctx, `SELECT email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint, code_digest, attempts, max_attempts, CAST(expires_at AS CHAR), consumed_at IS NOT NULL
         FROM auth_email_login_challenge WHERE challenge_id = ? FOR UPDATE`, input.ChallengeID).
-		Scan(&storedIndex, &nonce, &x, &y, &fingerprint, &digest, &attempts, &maxAttempts, &expiresRaw, &consumed)
+		Scan(&storedIndex, &ciphertext, &keyID, &nonce, &x, &y, &fingerprint, &digest, &attempts, &maxAttempts, &expiresRaw, &consumed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return rejected, nil
 	}
@@ -162,6 +176,15 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	}
 	if consumed || attempts >= maxAttempts || !expires.After(input.Now) {
 		return rejected, nil
+	}
+	var index [32]byte
+	copy(index[:], emailIndex)
+	currentKeyID, _, err := s.identities.KeyEpoch()
+	if err != nil || string(keyID) != currentKeyID {
+		return rejected, ErrChallengeStore
+	}
+	if _, err := s.identities.Open(index, ciphertext); err != nil {
+		return rejected, ErrChallengeStore
 	}
 	key := domain.DevicePublicJWK{Kty: "EC", Crv: "P-256", X: x, Y: y}
 	actualFingerprint, err := domain.DeviceKeyFingerprint(key)
@@ -193,9 +216,29 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if count, err := result.RowsAffected(); err != nil || count != 1 {
 		return rejected, ErrChallengeStore
 	}
-	var resultIndex [32]byte
-	copy(resultIndex[:], emailIndex)
-	return AttemptResult{Verified: true, Changed: true, EmailIndex: resultIndex, Fingerprint: actualFingerprint, PublicKey: key}, nil
+	return AttemptResult{Verified: true, Changed: true, EmailIndex: index, EmailCiphertext: ciphertext,
+		EmailKeyID: currentKeyID, Fingerprint: actualFingerprint, PublicKey: key}, nil
+}
+
+func (s *Store) checkEmailEpoch(ctx context.Context, tx *sql.Tx) error {
+	_, expected, err := s.identities.KeyEpoch()
+	if err != nil {
+		return ErrChallengeStore
+	}
+	var stored []byte
+	err = tx.QueryRowContext(ctx, `SELECT key_tag FROM auth_email_identity_key_epoch WHERE slot = 1 FOR SHARE`).Scan(&stored)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Concurrent initialization can deadlock; failing closed is safe and
+		// callers may retry the entire transaction with fresh idempotency rules.
+		if _, err = tx.ExecContext(ctx, `INSERT INTO auth_email_identity_key_epoch (slot, key_tag) VALUES (1, ?)`, expected[:]); err != nil {
+			return ErrChallengeStore
+		}
+		return nil
+	}
+	if err != nil || !hmac.Equal(stored, expected[:]) {
+		return ErrChallengeStore
+	}
+	return nil
 }
 
 // DATETIME has no timezone. Supplying and reading explicit UTC strings avoids

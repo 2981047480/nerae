@@ -95,13 +95,15 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	defer cancel()
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
-	store, err := NewStore(hasher, replay)
+	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
+	store, err := NewStore(hasher, replay, protector)
 	if err != nil {
 		t.Fatal(err)
 	}
 	private, public := testKey(t)
 	now := time.Now().UTC().Truncate(time.Second)
-	index := [32]byte{9}
+	email := "person@example.test"
+	index, _ := protector.Index(email)
 	nonce := strings.Repeat("N", 43)
 	issue := func(id string, attempts int) {
 		t.Helper()
@@ -110,7 +112,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback()
-		err = store.Issue(ctx, tx, IssueInput{EmailIndex: index, ChallengeID: id, Nonce: nonce, Code: "012345",
+		err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345",
 			PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: attempts})
 		if err != nil {
 			t.Fatalf("failed to issue challenge: %v", err)
@@ -140,6 +142,39 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		if err != nil || result.Verified || result.Changed != changed {
 			t.Fatalf("unexpected rejected result (changed=%v): %v", result.Changed, err)
 		}
+	}
+
+	// Competing first initializers may conflict, but must fail closed and
+	// leave exactly one key epoch rather than accepting mixed configurations.
+	var epochStart sync.WaitGroup
+	epochStart.Add(1)
+	epochResults := make(chan error, 2)
+	for n, id := range []string{strings.Repeat("X", 32), strings.Repeat("Y", 32)} {
+		go func(n int, id string) {
+			epochStart.Wait()
+			tx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				epochResults <- err
+				return
+			}
+			defer tx.Rollback()
+			err = store.Issue(ctx, tx, IssueInput{Email: fmt.Sprintf("epoch%d@example.test", n), ChallengeID: id,
+				Nonce: nonce, Code: "012345", PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
+			if err == nil {
+				err = tx.Commit()
+			}
+			epochResults <- err
+		}(n, id)
+	}
+	epochStart.Done()
+	epochA, epochB := <-epochResults, <-epochResults
+	if (epochA != nil && !errors.Is(epochA, ErrChallengeStore)) || (epochB != nil && !errors.Is(epochB, ErrChallengeStore)) ||
+		(epochA != nil && epochB != nil) {
+		t.Fatalf("key epoch initialization failed closed unexpectedly: %v / %v", epochA, epochB)
+	}
+	var epochs int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_identity_key_epoch`).Scan(&epochs); err != nil || epochs != 1 {
+		t.Fatal("expected exactly one email key epoch")
 	}
 
 	first := strings.Repeat("A", 32)
@@ -191,17 +226,37 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil || !result.Verified || result.EmailIndex != index {
 		t.Fatalf("attempt after rollback: %v", err)
 	}
+	if recovered, err := protector.Open(result.EmailIndex, result.EmailCiphertext); err != nil || recovered != email || result.EmailKeyID != "test-key" {
+		t.Fatal("verified result did not carry a protected email for account creation")
+	}
+
+	wrongProtector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{5}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
+	wrongStore, _ := NewStore(hasher, replay, wrongProtector)
+	wrongTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrongErr := wrongStore.Issue(ctx, wrongTx, IssueInput{Email: email, ChallengeID: strings.Repeat("Z", 32), Nonce: nonce,
+		Code: "012345", PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
+	_ = wrongTx.Rollback()
+	if !errors.Is(wrongErr, ErrChallengeStore) {
+		t.Fatal("a different email key epoch was not rejected")
+	}
 
 	expired := strings.Repeat("D", 32)
 	issue(expired, 3)
 	result, err = attempt(expired, "012345", testProof(t, private, expired, nonce, "expired-proof", now), now.Add(5*time.Minute), true)
 	assertRejected(result, err, false)
-	var digest []byte
-	if err := db.QueryRowContext(ctx, `SELECT code_digest FROM auth_email_login_challenge WHERE challenge_id = ?`, expired).Scan(&digest); err != nil || len(digest) != 32 || bytes.Contains(digest, []byte("012345")) {
+	var digest, ciphertext []byte
+	if err := db.QueryRowContext(ctx, `SELECT code_digest, email_ciphertext FROM auth_email_login_challenge WHERE challenge_id = ?`, expired).Scan(&digest, &ciphertext); err != nil || len(digest) != 32 || bytes.Contains(digest, []byte("012345")) || bytes.Contains(ciphertext, []byte(email)) {
 		t.Fatal("stored code digest invalid or exposed test code")
 	}
+	if recovered, err := protector.Open(index, ciphertext); err != nil || recovered != email {
+		t.Fatal("encrypted challenge email could not be recovered for account creation")
+	}
 
-	index = [32]byte{10} // Exercise concurrent creation of a previously absent slot.
+	email = "concurrent@example.test" // Exercise concurrent creation of a previously absent slot.
+	index, _ = protector.Index(email)
 	var issuanceStart sync.WaitGroup
 	issuanceStart.Add(1)
 	issued := make(chan error, 2)
@@ -215,7 +270,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 				return
 			}
 			defer tx.Rollback()
-			err = store.Issue(ctx, tx, IssueInput{EmailIndex: index, ChallengeID: id, Nonce: nonce, Code: "012345",
+			err = store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345",
 				PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3})
 			if err == nil {
 				err = tx.Commit()
@@ -238,14 +293,15 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		}
 	}
 
-	index = [32]byte{11}
+	email = "rollback@example.test"
+	index, _ = protector.Index(email)
 	oldID, newID := strings.Repeat("G", 32), strings.Repeat("H", 32)
 	issue(oldID, 3)
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{EmailIndex: index, ChallengeID: newID, Nonce: nonce, Code: "012345",
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: newID, Nonce: nonce, Code: "012345",
 		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not create rollback candidate")
@@ -270,13 +326,14 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		t.Fatal("could not open alternate-location test connection")
 	}
 	defer otherDB.Close()
-	index = [32]byte{12}
+	email = "timezone@example.test"
+	index, _ = protector.Index(email)
 	timezoneID := strings.Repeat("J", 32)
 	tx, err = otherDB.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{EmailIndex: index, ChallengeID: timezoneID, Nonce: nonce, Code: "012345",
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneID, Nonce: nonce, Code: "012345",
 		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not issue with alternate driver location")
@@ -291,7 +348,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Issue(ctx, tx, IssueInput{EmailIndex: index, ChallengeID: timezoneValid, Nonce: nonce, Code: "012345",
+	if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: timezoneValid, Nonce: nonce, Code: "012345",
 		PublicKey: public, CreatedAt: now, ExpiresAt: now.Add(5 * time.Minute), MaxAttempts: 3}); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("could not issue alternate-location valid challenge")
@@ -304,13 +361,28 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil || !result.Verified {
 		t.Fatalf("valid challenge rejected before UTC deadline: %v", err)
 	}
+
+	email = "tamper@example.test"
+	tamperedID := strings.Repeat("L", 32)
+	issue(tamperedID, 3)
+	if err := db.QueryRowContext(ctx, `SELECT email_ciphertext FROM auth_email_login_challenge WHERE challenge_id = ?`, tamperedID).Scan(&ciphertext); err != nil {
+		t.Fatal("cannot read test ciphertext")
+	}
+	ciphertext[len(ciphertext)-1] ^= 1
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET email_ciphertext = ? WHERE challenge_id = ?`, ciphertext, tamperedID); err != nil {
+		t.Fatal("cannot tamper with test ciphertext")
+	}
+	_, err = attempt(tamperedID, "012345", testProof(t, private, tamperedID, nonce, "tampered-email", now), now, false)
+	if !errors.Is(err, ErrChallengeStore) {
+		t.Fatal("tampered encrypted email was accepted")
+	}
 }
 
 func TestChallengeInputFormattingIsRedacted(t *testing.T) {
-	input := IssueInput{Code: "012345", Nonce: "private-nonce"}
+	input := IssueInput{Email: "person@example.test", Code: "012345", Nonce: "private-nonce"}
 	attempt := AttemptInput{Code: "012345", DeviceProof: "private-proof"}
 	for _, value := range []string{fmt.Sprintf("%+v", input), fmt.Sprintf("%#v", input), fmt.Sprintf("%+v", attempt), fmt.Sprintf("%#v", attempt)} {
-		if strings.Contains(value, "012345") || strings.Contains(value, "private") {
+		if strings.Contains(value, "012345") || strings.Contains(value, "private") || strings.Contains(value, input.Email) {
 			t.Fatal("formatted challenge exposed secret material")
 		}
 	}
@@ -321,10 +393,10 @@ func TestChallengeInputFormattingIsRedacted(t *testing.T) {
 	}
 	var log bytes.Buffer
 	slog.New(slog.NewJSONHandler(&log, nil)).Info("test", "issue", input, "attempt", attempt)
-	if strings.Contains(log.String(), "012345") || strings.Contains(log.String(), "private") {
+	if strings.Contains(log.String(), "012345") || strings.Contains(log.String(), "private") || strings.Contains(log.String(), input.Email) {
 		t.Fatal("structured logging exposed challenge secrets")
 	}
-	if _, err := NewStore(nil, nil); !errors.Is(err, ErrChallengeStore) {
+	if _, err := NewStore(nil, nil, nil); !errors.Is(err, ErrChallengeStore) {
 		t.Fatal("missing dependencies accepted")
 	}
 }
