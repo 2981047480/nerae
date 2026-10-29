@@ -63,6 +63,13 @@
       "module": "auth",
       "file": "0006_approval_exchange.up.sql",
       "sha256": "c38b3f5683124afa03f7ee206df9baac26dd428922e4cf3ffd1b9b3746dfbc5f"
+    },
+    {
+      "order": 10,
+      "id": "workout/0003_workout_exercise_order.up.sql",
+      "module": "workout",
+      "file": "0003_workout_exercise_order.up.sql",
+      "sha256": "5cd355feb72e34b9f5dd102124a85c521da7f9ca34aa1d126ddb5588e3a2ec70"
     }
   ]
 }
