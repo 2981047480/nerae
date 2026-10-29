@@ -134,8 +134,8 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 		_, err := tx.ExecContext(ctx, `UPDATE user SET token_version = token_version + 1 WHERE id = ?`, userID)
 		return err
 	})
-	if !errors.Is(err, ErrAuthentication) {
-		t.Fatal("changed authentication did not reject completion")
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatal("changed authentication did not conservatively reject completion")
 	}
 	rolledBack, err := service.ReadFree(ctx, db, token, ref.ID)
 	if err != nil || rolledBack.Version != 2 || rolledBack.Status != domain.InProgress || rolledBack.RecordedAt != nil {
