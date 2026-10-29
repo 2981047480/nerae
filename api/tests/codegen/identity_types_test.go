@@ -39,6 +39,15 @@ func TestGeneratedPendingLoginRoundTrip(t *testing.T) {
 	}
 }
 
+func TestGeneratedWechatVariantNamesRemainStable(t *testing.T) {
+	identity := IdentityItem1{Kind: IdentityItem1KindWechatMini}
+	claim := IdentityLinkClaim1{Kind: IdentityLinkClaim1KindWechatMini}
+	start := IdentityLinkStart1{Kind: WechatMini}
+	if string(identity.Kind) != "wechat_mini" || string(claim.Kind) != "wechat_mini" || string(start.Kind) != "wechat_mini" {
+		t.Fatal("existing generated WeChat variants changed")
+	}
+}
+
 func TestIdentitySchemasWithGoValidator(t *testing.T) {
 	path := os.Getenv("NERAE_OPENAPI")
 	if path == "" {

@@ -8899,6 +8899,18 @@ components:
         required:
         - id
         - kind
+        properties:
+          id:
+            $ref: '#/components/schemas/AuthOpaqueId'
+          kind:
+            type: string
+            enum:
+            - wechat_mini
+      - type: object
+        additionalProperties: false
+        required:
+        - id
+        - kind
         - emailMasked
         properties:
           id:
@@ -8912,18 +8924,6 @@ components:
             maxLength: 254
             pattern: '^[^@]*\*+[^@]*@[^@]+$'
             description: 服务端脱敏的邮箱提示，不得返回完整地址。
-      - type: object
-        additionalProperties: false
-        required:
-        - id
-        - kind
-        properties:
-          id:
-            $ref: '#/components/schemas/AuthOpaqueId'
-          kind:
-            type: string
-            enum:
-            - wechat_mini
     IdentitySet:
       type: object
       additionalProperties: false
@@ -8969,6 +8969,19 @@ components:
         additionalProperties: false
         required:
         - kind
+        - expectedVersion
+        properties:
+          kind:
+            type: string
+            enum:
+            - wechat_mini
+          expectedVersion:
+            type: integer
+            minimum: 1
+      - type: object
+        additionalProperties: false
+        required:
+        - kind
         - email
         - expectedVersion
         properties:
@@ -8978,19 +8991,6 @@ components:
             - email
           email:
             $ref: '#/components/schemas/EmailAddress'
-          expectedVersion:
-            type: integer
-            minimum: 1
-      - type: object
-        additionalProperties: false
-        required:
-        - kind
-        - expectedVersion
-        properties:
-          kind:
-            type: string
-            enum:
-            - wechat_mini
           expectedVersion:
             type: integer
             minimum: 1
@@ -9040,13 +9040,15 @@ components:
           kind:
             type: string
             enum:
-            - email
+            - wechat_mini
           linkId:
             $ref: '#/components/schemas/AuthOpaqueId'
           linkSecret:
             $ref: '#/components/schemas/AuthSecret'
           code:
-            $ref: '#/components/schemas/EmailCode'
+            type: string
+            minLength: 1
+            maxLength: 512
       - type: object
         additionalProperties: false
         required:
@@ -9058,15 +9060,13 @@ components:
           kind:
             type: string
             enum:
-            - wechat_mini
+            - email
           linkId:
             $ref: '#/components/schemas/AuthOpaqueId'
           linkSecret:
             $ref: '#/components/schemas/AuthSecret'
           code:
-            type: string
-            minLength: 1
-            maxLength: 512
+            $ref: '#/components/schemas/EmailCode'
     IdentityLinkClaimStatusRequest:
       type: object
       additionalProperties: false
