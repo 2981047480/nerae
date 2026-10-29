@@ -42,6 +42,7 @@ type EmailIdentityProtector struct {
 	indexKey []byte
 	aead     cipher.AEAD
 	keyID    string
+	epochTag [32]byte
 }
 
 func NewEmailIdentityProtector(indexKey, encryptionKey []byte, keyID string) (*EmailIdentityProtector, error) {
@@ -56,7 +57,25 @@ func NewEmailIdentityProtector(indexKey, encryptionKey []byte, keyID string) (*E
 	if err != nil {
 		return nil, ErrEmailIdentity
 	}
-	return &EmailIdentityProtector{indexKey: append([]byte(nil), indexKey...), aead: aead, keyID: keyID}, nil
+	encTag := hmac.New(sha256.New, encryptionKey)
+	_, _ = encTag.Write([]byte("nerae.email-identity.encryption-epoch.v1"))
+	epoch := hmac.New(sha256.New, indexKey)
+	_, _ = epoch.Write([]byte("nerae.email-identity.epoch.v1\x00"))
+	_, _ = epoch.Write([]byte{byte(len(keyID))})
+	_, _ = epoch.Write([]byte(keyID))
+	_, _ = epoch.Write(encTag.Sum(nil))
+	var tag [32]byte
+	copy(tag[:], epoch.Sum(nil))
+	return &EmailIdentityProtector{indexKey: append([]byte(nil), indexKey...), aead: aead, keyID: keyID, epochTag: tag}, nil
+}
+
+// KeyEpoch is a non-secret keyed tag for fail-closed database epoch checks.
+// Rotation still needs a separately reviewed migration preserving uniqueness.
+func (p *EmailIdentityProtector) KeyEpoch() (string, [32]byte, error) {
+	if p == nil || p.aead == nil || len(p.indexKey) < 32 || !validEmailKeyID(p.keyID) {
+		return "", [32]byte{}, ErrEmailIdentity
+	}
+	return p.keyID, p.epochTag, nil
 }
 
 func (p *EmailIdentityProtector) Index(address string) ([32]byte, error) {

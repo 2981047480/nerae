@@ -73,6 +73,16 @@ func TestEmailIdentityProtectionIsBoundAndNonDeterministic(t *testing.T) {
 	if _, err := otherKeyID.Open(index, ciphertext); !errors.Is(err, ErrEmailIdentity) {
 		t.Fatal("ciphertext accepted under a different key identifier")
 	}
+	_, originalEpoch, err := protector.KeyEpoch()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, otherEpoch, _ := otherKeyID.KeyEpoch()
+	otherKey, _ := NewEmailIdentityProtector(bytes.Repeat([]byte{1}, 32), bytes.Repeat([]byte{3}, 32), "key-1")
+	_, otherKeyEpoch, _ := otherKey.KeyEpoch()
+	if originalEpoch == otherEpoch || originalEpoch == otherKeyEpoch {
+		t.Fatal("key or key identifier changes must change the database epoch")
+	}
 }
 
 func TestEmailIdentityProtectorRejectsUnsafeKeys(t *testing.T) {
