@@ -53,6 +53,7 @@ export interface WorkoutSessionDetail {
   updatedAt: string
   recordedAt: string | null
   sets: ServerSet[]
+  exerciseEntryKeys: string[]
 }
 
 export interface ServerSet extends Omit<SetWrite, 'rpe' | 'completed'> {
@@ -62,6 +63,15 @@ export interface ServerSet extends Omit<SetWrite, 'rpe' | 'completed'> {
 }
 
 export type SetPayload = Omit<SetWrite, 'rpe'> & { rpe?: number | null }
+
+/** The order describes all actual entries after this batch, not just changed sets. */
+export interface SetBatchInput {
+  expectedVersion: number
+  exerciseEntryKeys: string[]
+  sets?: SetPayload[]
+  deleteRecordKeys?: string[]
+  restoreRecordKeys?: string[]
+}
 
 export interface FreeSessionInput {
   date: string
@@ -88,6 +98,14 @@ function validId(value: unknown): value is string {
 function validKey(value: unknown, max = 64): value is string {
   return typeof value === 'string' && Array.from(value).length >= 8 && Array.from(value).length <= max &&
     !/[\r\n]/.test(value) && Boolean(value.trim())
+}
+
+function keyList(value: unknown, maximum: number, allowEmpty: boolean, code: 'invalid_request' | 'invalid_response'): string[] {
+  if (!Array.isArray(value) || (!allowEmpty && value.length === 0) || value.length > maximum ||
+    !value.every(item => validKey(item)) || new Set(value).size !== value.length) {
+    throw new RecordingApiError(code)
+  }
+  return [...value] as string[]
 }
 
 function validVersion(value: unknown): value is number {
@@ -169,7 +187,13 @@ function sessionDetail(raw: unknown): WorkoutSessionDetail {
   }
   if ((raw.status === 'completed' && (raw.sets.length === 0 || raw.recordedAt === null)) ||
     (raw.status === 'skipped' && raw.sets.length !== 0)) throw new RecordingApiError('invalid_response')
+  const order = keyList(raw.exerciseEntryKeys, 2000, true, 'invalid_response')
+  const positions = new Map(order.map((key, index) => [key, index]))
+  const seenEntries = new Set<string>()
+  const identities = new Map<string, string>()
   const keys = new Set<string>()
+  let previousEntry = -1
+  let previousIndex = 0
   for (const set of raw.sets) {
     if (!object(set) || !validKey(set.recordKey) || !validKey(set.exerciseEntryKey) ||
       !Number.isSafeInteger(set.setIndex) || Number(set.setIndex) < 1 ||
@@ -185,8 +209,22 @@ function sessionDetail(raw: unknown): WorkoutSessionDetail {
     if (hasId === hasName || (set.exerciseId !== undefined && !hasId) || (set.exerciseName !== undefined && !hasName)) {
       throw new RecordingApiError('invalid_response')
     }
+    const entryPosition = positions.get(set.exerciseEntryKey)
+    const index = Number(set.setIndex)
+    const identity = hasId ? `id:${set.exerciseId}` : `name:${set.exerciseName}`
+    const priorIdentity = identities.get(set.exerciseEntryKey)
+    if (entryPosition === undefined || entryPosition < previousEntry ||
+      (entryPosition === previousEntry && index <= previousIndex) ||
+      (priorIdentity !== undefined && priorIdentity !== identity)) {
+      throw new RecordingApiError('invalid_response')
+    }
+    identities.set(set.exerciseEntryKey, identity)
+    seenEntries.add(set.exerciseEntryKey)
+    previousEntry = entryPosition
+    previousIndex = index
     keys.add(set.recordKey)
   }
+  if (seenEntries.size !== order.length) throw new RecordingApiError('invalid_response')
   return raw as unknown as WorkoutSessionDetail
 }
 
@@ -278,13 +316,68 @@ export class RecordingApi {
     return this.call('GET', `/me/sessions/${id}`, 200, id)
   }
 
-  saveSets(id: string, expectedVersion: number, sets: SetPayload[], idempotencyKey: string): Promise<WorkoutSessionDetail> {
-    if (!validId(id) || !validVersion(expectedVersion) || !Array.isArray(sets) || sets.length < 1 || sets.length > 200) {
+  /** Caller supplies the projected order from the latest complete snapshot.
+   * A 412 must be reconciled with a fresh read, never retried blindly.
+   */
+  saveBatch(id: string, input: SetBatchInput, idempotencyKey: string): Promise<WorkoutSessionDetail> {
+    if (!validId(id) || !input || !validVersion(input.expectedVersion)) throw new RecordingApiError('invalid_request')
+    const expectedVersion = input.expectedVersion
+    const order = keyList(input.exerciseEntryKeys, 2000, true, 'invalid_request')
+    const entries = new Set(order)
+    let cleanSets: SetPayload[] | undefined
+    if (input.sets !== undefined) {
+      if (!Array.isArray(input.sets) || input.sets.length < 1 || input.sets.length > 200) throw new RecordingApiError('invalid_request')
+      cleanSets = input.sets.map(setPayload)
+    }
+    const deleted = input.deleteRecordKeys === undefined ? undefined : keyList(input.deleteRecordKeys, 200, false, 'invalid_request')
+    const restored = input.restoreRecordKeys === undefined ? undefined : keyList(input.restoreRecordKeys, 200, false, 'invalid_request')
+    if ((cleanSets?.length || 0) + (deleted?.length || 0) > 200) throw new RecordingApiError('invalid_request')
+    const recordKeys = new Set<string>()
+    const indexes = new Map<string, Set<number>>()
+    const identities = new Map<string, string>()
+    for (const set of cleanSets || []) {
+      if (recordKeys.has(set.recordKey) || !entries.has(set.exerciseEntryKey)) throw new RecordingApiError('invalid_request')
+      recordKeys.add(set.recordKey)
+      const identity = set.exerciseId === undefined ? `name:${set.exerciseName}` : `id:${set.exerciseId}`
+      const priorIdentity = identities.get(set.exerciseEntryKey)
+      if (priorIdentity !== undefined && priorIdentity !== identity) throw new RecordingApiError('invalid_request')
+      identities.set(set.exerciseEntryKey, identity)
+      const groupIndexes = indexes.get(set.exerciseEntryKey) || new Set<number>()
+      if (groupIndexes.has(set.setIndex)) throw new RecordingApiError('invalid_request')
+      groupIndexes.add(set.setIndex)
+      indexes.set(set.exerciseEntryKey, groupIndexes)
+    }
+    if (deleted?.some(key => recordKeys.has(key)) || restored?.some(key => !recordKeys.has(key))) {
       throw new RecordingApiError('invalid_request')
     }
-    const cleanSets = sets.map(setPayload)
-    if (new Set(cleanSets.map(set => set.recordKey)).size !== cleanSets.length) throw new RecordingApiError('invalid_request')
-    return this.call('POST', `/me/sessions/${id}/sets`, 200, id, { expectedVersion, sets: cleanSets }, idempotencyKey)
+    return this.call('POST', `/me/sessions/${id}/sets`, 200, id, {
+      expectedVersion,
+      exerciseEntryKeys: order,
+      ...(cleanSets === undefined ? {} : { sets: cleanSets }),
+      ...(deleted === undefined ? {} : { deleteRecordKeys: deleted }),
+      ...(restored === undefined ? {} : { restoreRecordKeys: restored }),
+    }, idempotencyKey).then(detail => {
+      // A successful status alone is not an acknowledgement of these edits.
+      // On mismatch the caller must reconcile by reading, not issue a new write.
+      if (detail.version < expectedVersion || detail.exerciseEntryKeys.length !== order.length ||
+        detail.exerciseEntryKeys.some((key, index) => key !== order[index])) {
+        throw new RecordingApiError('invalid_response')
+      }
+      const returned = new Map(detail.sets.map(set => [set.recordKey, set]))
+      for (const write of cleanSets || []) {
+        const found = returned.get(write.recordKey)
+        if (!found || found.exerciseEntryKey !== write.exerciseEntryKey || found.setIndex !== write.setIndex ||
+          found.kind !== write.kind || found.exerciseId !== write.exerciseId || found.exerciseName !== write.exerciseName ||
+          found.weightKg !== write.weightKg || found.reps !== write.reps || found.seconds !== write.seconds ||
+          (found.rpe ?? null) !== (write.rpe ?? null)) throw new RecordingApiError('invalid_response')
+      }
+      if (deleted?.some(key => returned.has(key))) throw new RecordingApiError('invalid_response')
+      return detail
+    })
+  }
+
+  saveSets(id: string, expectedVersion: number, sets: SetPayload[], exerciseEntryKeys: string[], idempotencyKey: string): Promise<WorkoutSessionDetail> {
+    return this.saveBatch(id, { expectedVersion, sets, exerciseEntryKeys }, idempotencyKey)
   }
 
   finishSession(id: string, input: FinishInput, idempotencyKey: string): Promise<WorkoutSessionDetail> {

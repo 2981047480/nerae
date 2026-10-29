@@ -121,7 +121,7 @@ func TestActualCommentListCannotInventEmptyCursor(t *testing.T) {
 }
 
 func TestRequiredReadOnlyNullableNeedsResponseSchemaValidation(t *testing.T) {
-	input := `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"skipped","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","sets":[]}`
+	input := `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"skipped","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","sets":[],"exerciseEntryKeys":[]}`
 	var response WorkoutSessionDetail
 	if err := json.Unmarshal([]byte(input), &response); err != nil {
 		t.Fatal(err)

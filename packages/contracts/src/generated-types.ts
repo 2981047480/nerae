@@ -1520,6 +1520,8 @@ export interface paths {
          * 按版本保存或移除实际训练组
          * @description 两种填写模式使用相同session及稳定recordKey。sets是按recordKey新增或完整替换组的显式变更，不代表替换全部组；deleteRecordKeys仅移除列出的键。空白或未确认组不作为实际组上传，未列出的组不受影响。
          *     recordKey在会话内区分大小写且唯一；exerciseEntryKey标识同一会话中的一个动作条目，同一动作可以出现多次，不能用exerciseId+setIndex合并不同动作段。动作库条目传exerciseId，自定义动作传exerciseName；服务端在首次写入动作条目时冻结显示名称与来源。同一exerciseEntryKey后续必须匹配原动作身份及自定义名称，否则422；变更动作身份应删除旧组并使用新条目及新组键。同组的测量和顺序可按原键修订。新组不可复用已删除键，未明确恢复时返回409；明确撤销删除时，restoreRecordKeys须列出原键，同时在sets携带该组完整数据，服务端验证键属于本会话的已删除组。
+         *     exerciseEntryKeys是本批全部变更生效后的完整动作条目顺序，而非本批新增动作；按键区分大小写，与变更后全部实际组所属条目的集合必须完全相同且各出现一次。仅有空白或未确认组的草稿条目不出现在此列表；最后一个实际组被删除时移除条目，恢复实际组时须重新明确它的位置。可只提交顺序，未变化时不递增版本。每个动作条目内存活实际组的setIndex必须互不相同，可以有空位；需要交换组顺序时在同批提交全部受影响组。任一集合不一致、重复索引或超限返回422且不部分写入；不得根据数组偶然顺序、录入时间或组号推断动作顺序。
+         *     训练后模式点击保存即确认该次完整有效的非空组；逐组模式点击某一组的“记下”只确认该组，其他未确认输入不得作为实际组上传。删除后的撤销依赖当前设备仍有用户可恢复的原组完整数据；普通详情和组键墓碑不提供已删除组值，不能假称另一设备可直接撤销。
          *     批次内组键不可重复，删除键不可与更新键重叠，恢复键必须是本批更新键的子集，合计更新和删除最多200项；服务端校验全部输入后在一个事务内执行，违反返回422且不部分写入。删除不存在的键是无变化操作；整批无实际变更时版本和updatedAt不变。已结束会话允许修订。最后一组被移除时会话变为in_progress草稿并同步重新计算相关完成统计，不保留空完成记录。
          *     原子比较expectedVersion，旧版本返回412且不改动；同幂等键及相同请求摘要在保留期内重放原结果，同键异摘要409。新键重试时若版本已变化需读取当前版本并解决冲突，不能盲目覆盖。
          *
@@ -3123,6 +3125,7 @@ export interface components {
             nickname: string;
             avatarUrl?: string | null;
             roles: ("student" | "coach")[];
+            /** @description 历史字段名；当前仅表示本人明确提交了 18+ 自我声明，不代表已进行证件、身份或精确年龄核验。声明更正及撤回的 HTTP 入口仍需另行定义和验收。 */
             ageVerified?: boolean;
             /** @enum {string} */
             status?: "active" | "disabled";
@@ -3319,10 +3322,13 @@ export interface components {
              */
             readonly recordedAt: string | null;
         };
-        /** @description 可恢复或处理冲突的完整记录，始终包含当前实际组；completed必须至少有一组。 */
+        /** @description 可恢复或处理冲突的完整记录，始终包含当前实际组及其动作条目顺序；completed必须至少有一组。exerciseEntryKeys与sets所属条目集合精确一致，sets按动作顺序及各动作内setIndex升序返回；这些跨字段不变量由运行时校验。未确认草稿不是实际组，其单独同步能力不可由此接口推定。 */
         WorkoutSessionDetail: components["schemas"]["WorkoutSession"] & {
             sets: components["schemas"]["WorkoutSetRecord"][];
+            exerciseEntryKeys: components["schemas"]["WorkoutExerciseEntryOrder"];
         };
+        /** @description 按用户记录顺序排列的全部实际动作条目键；技术上限不是建议训练量，条目内组序号可不连续。 */
+        WorkoutExerciseEntryOrder: string[];
         /** @description 已确认的实际组；两种记录模式共享recordKey。kind指明数据的含义，perSide和durationPerSide的数值为每侧值，不自动推断左右分别或合计。秒数由用户手填，不表示计时功能。 */
         SetRecord: {
             /** @description 动作库中的动作ID；与自定义exerciseName二选一，必须有权使用。 */
@@ -3983,6 +3989,7 @@ export interface components {
         WorkoutCreate: components["schemas"]["PlannedSessionCreate"] | components["schemas"]["FreeSessionCreate"];
         SetBatchUpdate: {
             expectedVersion: number;
+            exerciseEntryKeys: components["schemas"]["WorkoutExerciseEntryOrder"];
             sets?: components["schemas"]["SetRecordWrite"][];
             deleteRecordKeys?: string[];
             /** @description 明确撤销删除的组键；必须属于本批sets，且服务端确认是本会话已删除的组。不能单独提交。 */
