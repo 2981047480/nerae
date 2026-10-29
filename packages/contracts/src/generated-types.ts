@@ -2831,7 +2831,7 @@ export interface components {
         EmailCode: string;
         /**
          * Format: email
-         * @description 邮箱域名按大小写不敏感规范化，本地部分按输入精确保留；不删除加号或点号、不推断其他供应商别名。真实地址仅用于必要验证并加密存储，不进入日志。
+         * @description 测试版仅支持无空白、无显示名的 ASCII 邮箱地址；服务端还须验证具体语法，不支持时明确提示。域名按大小写不敏感规范化，本地部分按输入精确保留；不删除加号或点号、不推断其他供应商别名。真实地址仅用于必要验证并加密存储，不进入日志。
          */
         EmailAddress: string;
         DevicePublicJwk: {
