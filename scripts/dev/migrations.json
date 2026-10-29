@@ -13,7 +13,7 @@
       "id": "auth/0002_email_challenge.up.sql",
       "module": "auth",
       "file": "0002_email_challenge.up.sql",
-      "sha256": "27bd630cdca2e8cf7e47c710808fea0af4b5dcbe348898b3420c94c95e7dfae2"
+      "sha256": "232bbc3f170706e22dd563d893acc4121c7b67a4c8df8deae149c590c95f1da3"
     }
   ]
 }
