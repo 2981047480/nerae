@@ -652,7 +652,8 @@
       "batch": "P0-A",
       "status": "planned",
       "depends_on": [
-        "A03"
+        "A03",
+        "A04-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -1078,7 +1079,8 @@
       "status": "planned",
       "depends_on": [
         "A04",
-        "U01"
+        "U01",
+        "U02-01"
       ],
       "role": "ui-builder",
       "model_policy": "implementation",
@@ -6638,11 +6640,137 @@
           ]
         }
       }
+    },
+    {
+      "id": "U02-01",
+      "title": "训练记录双模式编辑与草稿模型",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": [
+        "F01-03",
+        "K01-01",
+        "D02-01"
+      ],
+      "acceptance_requires": [
+        "U01",
+        "A04",
+        "P02-02",
+        "P02-03"
+      ],
+      "parent": "U02",
+      "kind": "task",
+      "role": "ui-builder",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "e6d274e06bcd85b2f25e262bd6a19de9ab0cea80",
+      "write_allowlist": [
+        "apps/client/src/features/training/",
+        "docs/evidence/U02/U02-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/UI_SPEC.md",
+        "docs/design/round-04/BRIEF.md",
+        "docs/design/round-05/implementation/interaction-spec.md"
+      ],
+      "deliverables": "在正式 uni-app 客户端实现共用记录模型的训练后和逐组编辑；保留真实输入、稳定键和明确的校验与保存状态，接口接线前不伪装服务端同步。",
+      "acceptance": [
+        "两模式共用会话、动作和组键；空白、半填、重复、修改、失败和切换均有验证",
+        "仅从认证主体和实际数据构造草稿；不伪造登录、动作或训练结果",
+        "小程序和 App 资源可编译；真实持久化、接口、真机与视觉在依赖完成后同版复验"
+      ],
+      "verification_commands": [
+        "pnpm --filter @nerae/client typecheck",
+        "pnpm --filter @nerae/client build:mp-weixin",
+        "pnpm --filter @nerae/client build:app"
+      ],
+      "risks": [
+        "身份、服务端记录和原生打包未完成；早期模块不得宣称完整 App 或跨端同步。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "禁止训练播放器和训练/休息倒计时；不伪造训练时长、用户、动作或保存成功",
+        "共享路由、接口和根锁由 Lead 串行处理；不得将样机或资源构建当成正式业务验收"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重新评估；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "A04-01",
+      "title": "训练实际组和状态的服务端领域规则",
+      "batch": "P0-A",
+      "status": "planned",
+      "depends_on": [
+        "F01-02",
+        "K01-01"
+      ],
+      "acceptance_requires": [
+        "F02",
+        "A03"
+      ],
+      "parent": "A04",
+      "kind": "task",
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": null,
+      "write_allowlist": [
+        "apps/api/internal/modules/workout/",
+        "docs/evidence/A04/A04-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/CURRENT_STATE.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/evidence/K01/K01-01/runtime-cases.md"
+      ],
+      "deliverables": "实现训练组实际值、稳定键、批次关系与状态变更的服务端纯领域规则；不实现或冒充认证、真实数据库事务及 HTTP。",
+      "acceptance": [
+        "服务端验证重量/次数/秒数类型和范围、十进制精度、动作来源与稳定键",
+        "拒绝重复组键、更新与删除重叠、无效恢复及超量批次，错误不产生部分领域变更",
+        "最后一组移除回草稿，完成需实际组；域逻辑不能授权访问或模拟跨主体验收"
+      ],
+      "verification_commands": [
+        "cd apps/api && go test -race ./internal/modules/workout/..."
+      ],
+      "risks": [
+        "真实认证、数据库并发、幂等、撤权、时区与接口仍依赖 F02、A01、A03 和后续集成验证。"
+      ],
+      "effort_days": [
+        1,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "禁止客户端主体、假 JWT 或内存替身授予业务访问",
+        "不得把纯单元测试当作 HTTP/DB、并发、真机或跨端完成"
+      ],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
     }
   ],
   "deferred_packages": {
     "U01": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
-    "U02": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U03": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U04": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U05": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
