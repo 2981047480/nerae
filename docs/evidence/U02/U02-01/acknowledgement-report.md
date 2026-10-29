@@ -7,3 +7,5 @@
 验证：`node --test --test-reporter=dot apps/client/src/features/training/*.test.mjs` 72 项通过；锁定版 `vue-tsc --noEmit -p apps/client/tsconfig.json` 和 `git diff --check` 通过；App 与小程序资源编译通过。测试使用合成请求端口；另验证本地写入失败后最新输入仍留在当前进程并显示存储失败。进程退出后的可靠恢复尚未实现。
 
 未完成：本代码没有页面业务调用点，不是已交付的 App 同步。仍缺事务性待发队列、服务端幂等重放、版本冲突与未知结果恢复、本地写入失败 UI、实际 HTTP、真实身份及设备，未确认草稿也尚无跨端同步。当前未实现已保存组删除/恢复交互和 catalog 动作权限，不得将此卡标为 accepted。
+
+集成复验：合入提交 `c8c41ed` 后，72 项记录测试、vue-tsc、`scripts/plan.py check` 和 App/小程序资源构建通过。未执行真实服务或设备测试。
