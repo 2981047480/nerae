@@ -21,6 +21,7 @@
 - Docker、Compose、Colima 和 Lima 的官方工具已校验并保存在独立临时目录；本机剩余空间约 2.5 GiB，未启动虚拟机或清理任何既有卷。F01-04 的 Compose 隔离仍未验证。
 - 用户更正：有免费 DCloud 开发者账号；有 iPhone、没有 Android 真机。HBuilderX 官方工具已下载并完成 macOS 签名和公证检查，用户已登录并获取 DCloud AppID；与项目编译器匹配的原生 SDK、AppKey、可安装包和 Android 真机验收仍未完成。
 - 用户要求首个可安装测试版就具备真实登录与跨设备同步，不接受仅本机记录或网页样机。用户无可授权短信主体资质，选择测试版先用真实邮箱验证码，并有可开启 SMTP 的 QQ 邮箱；实际发送、凭据和服务端 HTTPS 地址仍待验证。用户改选腾讯云 T_SERVER，使用其指定密钥已只读验证 Ubuntu 24.04、约 8 GB 内存和 31 GB 根分区剩余，Docker 可用，现有 Caddy 占用 80/443；服务器到 QQ SMTP 的 TLS 握手通过，但还没有验证发信或更改服务器。也尚无微信小程序账号和域名。
+- App 测试可评估直接使用服务器公网 IP 的受信任 HTTPS：2026-10-30 只读确认服务器 Caddy v2.11.4，离线配置适配能解析 `shortlived` ACME profile；[Let's Encrypt](https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability) 支持约 6 天有效期的 IP 证书，[Caddy](https://caddyserver.com/docs/caddyfile/directives/tls) 支持指定该 profile。尚未申请证书、检查既有路由冲突、测试续期或 iPhone 信任，不能宣称 HTTPS 可用。正式微信小程序的公网请求仍需配置合法域名，[微信支付开发文档](https://pay.wechatpay.cn/doc/v3/partner/4012088031) 不允许将公网 IP 配作服务器域名。
 - 记录组件、草稿控制器和服务端训练组纯领域规则已进入集成提交 `0fd58b8`；客户端测试与 Go race 测试通过，App/小程序资源在临时夹具编译通过。真实页面接线、鉴权、HTTP/数据库、同步及真机尚未完成，详见 [客户端进度](evidence/U02/U02-01/report.md) 与 [领域规则进度](evidence/A04/A04-01/report.md)。
 - 集成提交 `1c9a14a` 加入记录 HTTP 适配器和设备证明签名校验；它们仍无实际登录、短信、完整登录事务、离线同步队列或业务路由。阿里云[资质说明](https://help.aliyun.com/zh/sms/user-guide/qualification-application-description)称个人认证自用资质不能通过签名实名报备；[测试短信](https://help.aliyun.com/zh/sms/user-guide/send-test-messages-1)也要求审核通过并计费，实际主体和签名尚未确定。
 - A01-02 加入设备证明 JTI 事务防重存储并在私有 MySQL 上验证并发与回滚；尚缺过期清理、密钥轮换、实际认证、会话和幂等响应，仍为 active，见 [进度](evidence/A01/A01-02/report.md)。
@@ -31,6 +32,7 @@
 - 用户 JWT 签名基础与邮箱可信设备会话事务已实现，并在隔离 MySQL 验证提交后发令牌和用户、身份、设备及会话撤销检查；当前没有对外登录端点，也没有业务访问授权，见 [令牌进度](evidence/A01/A01-06/report.md) 与 [会话进度](evidence/A01/A01-07/report.md)。
 - 新设备申请、本人批准与签名兑换已在隔离 MySQL 中联测；两把合成设备密钥可获得同一主体的独立会话并共享训练记录。真实邮件、HTTP 幂等与限流、原生设备、跨身份确认和恢复码尚未实现，见 [批准进度](evidence/A01/A01-08/report.md) 与 [兑换进度](evidence/A01/A01-09/report.md)。
 - iOS 设备签名基础已用 iPhoneOS SDK 编译，合成软件密钥签名通过服务端验证；尚未接入 uni-app，也未在 iPhone 运行或建立账号与设备密钥映射，见 [P02-04 进度](evidence/P02/P02-04/report.md)。
+- 逐组模式的本地记录模型已限制单组确认，逐组完成前检查本地保存状态；集成版本的 37 项记录相关测试、客户端类型检查及 App/小程序资源编译通过。组件尚未接线，状态仍须由真实服务端响应驱动，见 [逐组修复](evidence/U02/U02-01/confirmation-report.md)。
 - 自由训练记录已具备按主体事件键的数据库创建与恢复原语，并在隔离 MySQL 验证并发、回滚及日期时区，见 [记录进度](evidence/A04/A04-02/report.md)。
 - 自定义动作和实际组的内部事务已支持按版本增改删、明确恢复与保存确认，动作名称加密；可选完成字段、受权动作库、计划统计、HTTP 接口、客户端接线和跨设备同步均未完成，见 [训练组进度](evidence/A04/A04-03/report.md) 与 [完成事务](evidence/A04/A04-05/report.md)。
 - 邮箱会话、年龄标记和自由记录读写已在同一隔离 MySQL 事务联测；两次登录使用同一模拟设备，不构成真实双设备同步。动作原始顺序尚未持久化，真实年龄核验、HTTP 幂等和客户端接线仍未完成，见 [接缝进度](evidence/A04/A04-04/report.md)。
