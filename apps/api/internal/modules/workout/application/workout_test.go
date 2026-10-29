@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -186,7 +187,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		Index: 1, Kind: domain.Weight, WeightKg: "42.5", Reps: 8}
 	second := first
 	second.RecordKey, second.Index, second.WeightKg = "record-002", 2, "45"
-	if v, changed, err := service.SaveSets(ctx, db, tokenA, created.ID, 1, domain.Batch{Sets: []domain.Set{first, second}}); err != nil || !changed || v != 2 {
+	if v, changed, err := service.SaveSets(ctx, db, tokenA, created.ID, 1, domain.Batch{Sets: []domain.Set{first, second}}, []string{"entry-001"}); err != nil || !changed || v != 2 {
 		t.Fatal("authenticated subject could not save sets")
 	}
 	snapshot, err := service.ReadFree(ctx, db, tokenAgain, created.ID)
@@ -196,27 +197,83 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	if _, err := service.ReadFree(ctx, db, tokenB, created.ID); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject read a private workout")
 	}
-	if _, _, err := service.SaveSets(ctx, db, tokenB, created.ID, 2, domain.Batch{Sets: []domain.Set{first}}); !errors.Is(err, repository.ErrUnavailable) {
+	if _, _, err := service.SaveSets(ctx, db, tokenB, created.ID, 2, domain.Batch{Sets: []domain.Set{first}}, []string{"entry-001"}); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject modified a private workout")
 	}
 	modified := first
 	modified.WeightKg = "50"
-	if v, changed, err := service.SaveSets(ctx, db, tokenAgain, created.ID, 2, domain.Batch{Sets: []domain.Set{modified}}); err != nil || !changed || v != 3 {
+	if v, changed, err := service.SaveSets(ctx, db, tokenAgain, created.ID, 2, domain.Batch{Sets: []domain.Set{modified}}, []string{"entry-001"}); err != nil || !changed || v != 3 {
 		t.Fatal("second session could not modify the same workout")
 	}
-	if _, _, err := service.SaveSets(ctx, db, tokenA, created.ID, 2, domain.Batch{Sets: []domain.Set{first}}); !errors.Is(err, repository.ErrVersionConflict) {
+	if _, _, err := service.SaveSets(ctx, db, tokenA, created.ID, 2, domain.Batch{Sets: []domain.Set{first}}, []string{"entry-001"}); !errors.Is(err, repository.ErrVersionConflict) {
 		t.Fatal("stale session overwrote a newer workout")
 	}
 	snapshot, err = service.ReadFree(ctx, db, tokenA, created.ID)
 	if err != nil || snapshot.Version != 3 || snapshot.Sets[first.RecordKey].WeightKg != "50.00" {
 		t.Fatal("stale write changed the persisted workout")
 	}
+	// Independently exercise the ordered path using the same two authenticated
+	// sessions. The second device approval is covered in its own test harness.
+	orderedInput := input
+	orderedInput.ClientEventID = "ordered-integration-event"
+	ordered, err := service.CreateFree(ctx, db, tokenA, orderedInput)
+	if err != nil {
+		t.Fatal("could not create ordered workout")
+	}
+	otherEntry := second
+	otherEntry.ExerciseEntryKey = "entry-002"
+	otherEntry.Exercise.Name = "自定义卧推"
+	otherEntry.Index = 1
+	wanted := []string{"entry-002", "entry-001"}
+	if v, changed, err := service.SaveOrderedSets(ctx, db, tokenA, ordered.ID, 1, domain.Batch{Sets: []domain.Set{first, otherEntry}}, wanted); err != nil || !changed || v != 2 {
+		t.Fatal("authenticated ordered save failed")
+	}
+	orderedSnapshot, err := service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
+	if err != nil || orderedSnapshot.Version != 2 || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
+		t.Fatal("another session did not recover ordered groups")
+	}
+	if _, err := service.ReadOrderedFree(ctx, db, tokenB, ordered.ID); !errors.Is(err, repository.ErrUnavailable) {
+		t.Fatal("different subject read ordered workout")
+	}
+	if _, _, err := service.SaveOrderedSets(ctx, db, tokenB, ordered.ID, 2, domain.Batch{}, wanted); !errors.Is(err, repository.ErrUnavailable) {
+		t.Fatal("different subject changed ordered workout")
+	}
+	reversed := []string{"entry-001", "entry-002"}
+	if v, changed, err := service.SaveOrderedSets(ctx, db, tokenAgain, ordered.ID, 2, domain.Batch{}, reversed); err != nil || !changed || v != 3 {
+		t.Fatal("authenticated order-only update failed")
+	}
+	if _, _, err := service.SaveOrderedSets(ctx, db, tokenA, ordered.ID, 2, domain.Batch{}, wanted); !errors.Is(err, repository.ErrVersionConflict) {
+		t.Fatal("stale ordered version was accepted")
+	}
+	if v, err := service.CompleteOrderedFree(ctx, db, tokenA, ordered.ID, 3); err != nil || v != 4 {
+		t.Fatal("ordered completion failed")
+	}
+	orderedSnapshot, err = service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
+	if err != nil || orderedSnapshot.Version != 4 || orderedSnapshot.Status != domain.Completed || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, reversed) {
+		t.Fatal("ordered completion did not preserve order")
+	}
+	orderedAttempt := first
+	orderedAttempt.WeightKg = "60"
+	err = service.inTransaction(ctx, db, tokenA, func(tx *sql.Tx, userID uint64) error {
+		if _, _, err := records.ApplyOrderedBatch(ctx, tx, userID, ordered.ID, 4, domain.Batch{Sets: []domain.Set{orderedAttempt}}, wanted); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'revoked' WHERE user_id = ?`, userID)
+		return err
+	})
+	if !errors.Is(err, ErrAuthentication) {
+		t.Fatal("ordered transaction accepted revoked device")
+	}
+	orderedSnapshot, err = service.ReadOrderedFree(ctx, db, tokenA, ordered.ID)
+	if err != nil || orderedSnapshot.Version != 4 || orderedSnapshot.Sets[first.RecordKey].WeightKg != "42.50" || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, reversed) {
+		t.Fatal("authorization failure did not roll back groups and order")
+	}
 	// Simulate a revocation inside the same transaction after a group update.
 	// The service's final authorization check must roll both changes back.
 	attempted := first
 	attempted.WeightKg = "60"
 	err = service.inTransaction(ctx, db, tokenA, func(tx *sql.Tx, userID uint64) error {
-		if _, _, err := records.ApplyBatch(ctx, tx, userID, created.ID, 3, domain.Batch{Sets: []domain.Set{attempted}}); err != nil {
+		if _, _, err := records.ApplyOrderedBatch(ctx, tx, userID, created.ID, 3, domain.Batch{Sets: []domain.Set{attempted}}, []string{"entry-001"}); err != nil {
 			return err
 		}
 		_, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'revoked' WHERE user_id = ?`, userID)
@@ -231,7 +288,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	}
 	// A change to the age marker in the same transaction must also roll back.
 	err = service.inTransaction(ctx, db, tokenA, func(tx *sql.Tx, userID uint64) error {
-		if _, _, err := records.ApplyBatch(ctx, tx, userID, created.ID, 3, domain.Batch{Sets: []domain.Set{attempted}}); err != nil {
+		if _, _, err := records.ApplyOrderedBatch(ctx, tx, userID, created.ID, 3, domain.Batch{Sets: []domain.Set{attempted}}, []string{"entry-001"}); err != nil {
 			return err
 		}
 		_, err := tx.ExecContext(ctx, `UPDATE user SET age_verified_at = NULL WHERE id = ?`, userID)

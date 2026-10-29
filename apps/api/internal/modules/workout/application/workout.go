@@ -82,29 +82,10 @@ func (s *Service) CreateFree(ctx context.Context, db *sql.DB, token string, inpu
 	return result, nil
 }
 
-func (s *Service) ReadFree(ctx context.Context, db *sql.DB, token string, sessionID uint64) (repository.Snapshot, error) {
-	var result repository.Snapshot
-	err := s.inTransaction(ctx, db, token, func(tx *sql.Tx, subjectID uint64) error {
-		var err error
-		result, err = s.records.ReadFree(ctx, tx, subjectID, sessionID)
-		return err
-	})
-	if err != nil {
-		return repository.Snapshot{}, err
-	}
-	return result, nil
+func (s *Service) ReadFree(ctx context.Context, db *sql.DB, token string, sessionID uint64) (repository.OrderedSnapshot, error) {
+	return s.ReadOrderedFree(ctx, db, token, sessionID)
 }
 
-func (s *Service) SaveSets(ctx context.Context, db *sql.DB, token string, sessionID, expectedVersion uint64, batch domain.Batch) (uint64, bool, error) {
-	var version uint64
-	var changed bool
-	err := s.inTransaction(ctx, db, token, func(tx *sql.Tx, subjectID uint64) error {
-		var err error
-		version, changed, err = s.records.ApplyBatch(ctx, tx, subjectID, sessionID, expectedVersion, batch)
-		return err
-	})
-	if err != nil {
-		return 0, false, err
-	}
-	return version, changed, nil
+func (s *Service) SaveSets(ctx context.Context, db *sql.DB, token string, sessionID, expectedVersion uint64, batch domain.Batch, order []string) (uint64, bool, error) {
+	return s.SaveOrderedSets(ctx, db, token, sessionID, expectedVersion, batch, order)
 }
