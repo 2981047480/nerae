@@ -350,7 +350,7 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 | status / version | varchar(16) / int unsigned | in_progress / completed / skipped；修改令牌 >=1 |
 | duration_min / rpe | smallint unsigned? / decimal(3,1)? | 仅接受用户实际提供的总时长，未知为 NULL；RPE 为主观评分，范围服从具名 API，不用作疾病判断 |
 | note_enc / key_id | blob? / varchar(64)? | 主观感受，按 training scope 访问 |
-| client_event_id | varchar(64) | API 长度 8–64，**UK(user_id,client_event_id)**，区分大小写；不是全局唯一 |
+| client_event_id | varbinary(256) | API 为有效 UTF-8 的 8–64 个字符；以原始字节存储，精确区分大小写及末尾字节。数据库限制 8–256 字节，字符数与 UTF-8 合法性由服务端校验；**UK(user_id,client_event_id)**，不是全局唯一 |
 | creation_request_hash | char(64) | 开始事件规范化摘要，识别同事件异内容 |
 | started_at / recorded_at | datetime(3)? / datetime(3)? | `started_at` 仅在存在可证明的实际开始事实时使用，补记不造值；`recorded_at` 为最近一次保存确认的服务端接收时间，不代表训练结束或各组完成时刻。`created_at/updated_at` 为服务端记录创建与变更时间 |
 

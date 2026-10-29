@@ -28,6 +28,13 @@
       "module": "auth",
       "file": "0003_email_identity.up.sql",
       "sha256": "373e34b4915f595b18c8c5dc911ecabc32a6e45f350027891c372d188b50f38e"
+    },
+    {
+      "order": 5,
+      "id": "workout/0001_workout_session.up.sql",
+      "module": "workout",
+      "file": "0001_workout_session.up.sql",
+      "sha256": "d52c48160d66f190b885898def7ad6c523e8af180063461d8a53fdb14cb17e82"
     }
   ]
 }
