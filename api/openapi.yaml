@@ -9391,6 +9391,7 @@ components:
             - coach
         ageVerified:
           type: boolean
+          description: 历史字段名；当前仅表示本人明确提交了 18+ 自我声明，不代表已进行证件、身份或精确年龄核验。声明更正及撤回的 HTTP 入口仍需另行定义和验收。
         status:
           type: string
           enum:
