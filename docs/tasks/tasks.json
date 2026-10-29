@@ -6713,7 +6713,7 @@
       "id": "A04-01",
       "title": "训练实际组和状态的服务端领域规则",
       "batch": "P0-A",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "F01-02",
         "K01-01"
@@ -6726,7 +6726,7 @@
       "kind": "task",
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "/root/foundation_review",
       "write_allowlist": [
         "apps/api/internal/modules/workout/",
         "docs/evidence/A04/A04-01/"
@@ -6766,7 +6766,10 @@
       "evidence": [],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
-      "external_prerequisites": []
+      "external_prerequisites": [],
+      "actual_model": "gpt-6-luna",
+      "actual_reasoning": "medium",
+      "base_revision": "620befb974e2da8a3922494ebe32127229bb1ac9"
     }
   ],
   "deferred_packages": {
