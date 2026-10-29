@@ -52,6 +52,12 @@ type VerifiedDeviceProof struct {
 	ReplayUntil time.Time
 }
 
+// DeviceProofReplayDeadline includes the largest permitted clock skew, so a
+// marker remains valid even if the configured skew later increases.
+func DeviceProofReplayDeadline(expiresAt time.Time) time.Time {
+	return expiresAt.Add(maxProofClockSkew)
+}
+
 // VerifyDeviceProof validates the contract's compact ES256 JWS. It never
 // consults a key supplied in the JWS header or makes an authorization decision.
 func VerifyDeviceProof(compact string, key DevicePublicJWK, expected ProofExpectation, now time.Time, policy ProofPolicy) (VerifiedDeviceProof, error) {
@@ -128,7 +134,7 @@ func VerifyDeviceProof(compact string, key DevicePublicJWK, expected ProofExpect
 	}
 	// Keep the replay marker for the largest allowed skew, even if an operator
 	// later increases the configured skew while this proof is still alive.
-	return VerifiedDeviceProof{JTI: jti, ExpiresAt: expiresAt, ReplayUntil: expiresAt.Add(maxProofClockSkew)}, nil
+	return VerifiedDeviceProof{JTI: jti, ExpiresAt: expiresAt, ReplayUntil: DeviceProofReplayDeadline(expiresAt)}, nil
 }
 
 func validPurpose(purpose string) bool {
