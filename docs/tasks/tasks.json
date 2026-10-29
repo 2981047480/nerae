@@ -6868,12 +6868,12 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "c60a547",
-      "write_allowlist": ["apps/api/internal/modules/workout/repository/records.go", "apps/api/internal/modules/workout/repository/records_test.go", "apps/api/internal/modules/workout/repository/exercise_crypto.go", "apps/api/migrations/workout/0002_workout_sets.up.sql", "docs/evidence/A04/A04-03/"],
+      "write_allowlist": ["apps/api/internal/modules/workout/repository/records.go", "apps/api/internal/modules/workout/repository/records_test.go", "apps/api/internal/modules/workout/repository/exercise_crypto.go", "apps/api/internal/modules/workout/repository/order.go", "apps/api/internal/modules/workout/repository/order_test.go", "apps/api/migrations/workout/0002_workout_sets.up.sql", "apps/api/migrations/workout/0003_workout_exercise_order.up.sql", "docs/evidence/A04/A04-03/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md", "docs/evidence/K01/K01-01/runtime-cases.md"],
-      "deliverables": "依据服务端领域规则在真实事务内保存、删除和明确恢复自由记录的实际组，冻结并加密本人填写的动作名，按会话版本拒绝冲突；本卡不开放 HTTP。",
+      "deliverables": "依据服务端领域规则在真实事务内保存、删除和明确恢复自由记录的实际组，冻结并加密本人填写的动作名，按会话版本拒绝冲突；增加动作顺序与组变更的同事务持久化并在隔离数据库验证。本卡不开放 HTTP。",
       "acceptance": [
         "隔离 MySQL 验证组写入、无变化重放、删除与明确恢复、无效整批回滚及跨主体隔离",
-        "以真实锁等待验证同版本并发只有一笔成功；自定义动作名加密且密钥不匹配时失败关闭",
+        "以真实锁等待验证同版本并发只有一笔成功；自定义动作名加密且密钥不匹配时失败关闭；实际动作顺序、组内索引、版本及组变更在同事务写入或回滚",
         "不支持的库动作在接入受权动作库前明确拒绝；完成状态、幂等响应、真实认证和客户端同步仍须后续集成"
       ],
       "verification_commands": ["真实隔离 MySQL 的实际组事务和并发测试"],
