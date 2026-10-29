@@ -6,3 +6,6 @@ generate:
 output: apps/api/internal/gen/api.gen.go
 output-options:
   skip-prune: false
+  nullable-type: true
+  user-templates:
+    imports.tmpl: api/templates/oapi-imports.tmpl

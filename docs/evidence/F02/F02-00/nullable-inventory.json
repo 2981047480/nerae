@@ -1,0 +1,331 @@
+{
+  "contract_sha256": "8ee8e9af3a5cfaef4d38dad19b70629ca1c162990c29eb12e77a25c6257b46e6",
+  "total": 64,
+  "components": 49,
+  "paths": 15,
+  "required": 14,
+  "optional": 50,
+  "other": 0,
+  "fields": [
+    {
+      "path": "/paths/~1coach~1apply/post/requestBody/content/application~1json/schema/properties/city",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1students/get/responses/200/content/application~1json/schema/allOf/1/properties/items/items/properties/remainingDays",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1students/get/responses/200/content/application~1json/schema/allOf/1/properties/items/items/properties/lastWorkoutAt",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1todos/get/responses/200/content/application~1json/schema/items/properties/aiSuggestedAction",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1todos~1{id}~1action/post/requestBody/content/application~1json/schema/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1appointments~1{id}~1status/post/requestBody/content/application~1json/schema/properties/closeReason",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1appointments~1{id}~1deal/post/requestBody/content/application~1json/schema/properties/amountMinCents",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1appointments~1{id}~1deal/post/requestBody/content/application~1json/schema/properties/amountMaxCents",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1coach~1ai~1plan-draft/post/requestBody/content/application~1json/schema/properties/constraints",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1appointments/post/requestBody/content/application~1json/schema/properties/packageId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1reports/post/requestBody/content/application~1json/schema/properties/detail",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1ai~1chat/post/requestBody/content/application~1json/schema/properties/context",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1ai~1analyze/post/requestBody/content/application~1json/schema/properties/planId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1admin~1moderation~1tasks~1{id}~1resolve/post/requestBody/content/application~1json/schema/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/paths/~1admin~1reports~1{id}~1resolve/post/requestBody/content/application~1json/schema/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/ExerciseList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachPlanList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/TrainingOccurrenceList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/RelationMessageList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/TrustedDeviceItem/properties/lastUsedAt",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/User/properties/avatarUrl",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachCard/properties/avatarUrl",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachCard/properties/responseMinutes",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachCard/properties/nextAvailable",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachDetail/allOf/1/properties/style",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CoachDetail/allOf/1/properties/city",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/weeks",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/daysPerWeek",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/mealsPerDay",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/kcalRange",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/ratingAvg",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanTemplateCard/properties/coverUrl",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanDetail/properties/publishedVersion",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/planId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/planDayId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/durationMin",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/rpe",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutSession/properties/recordedAt",
+      "required": true,
+      "read_only": true
+    },
+    {
+      "path": "/components/schemas/SetRecord/properties/rpe",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/BodyMetric/properties/weightKg",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/BodyMetric/properties/bodyFatPct",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/BodyMetric/properties/waistCm",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/BodyMetric/properties/sleepHours",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/DietCheckin/properties/adherenceScore",
+      "required": false,
+      "read_only": true
+    },
+    {
+      "path": "/components/schemas/Appointment/properties/packageId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/Appointment/properties/dealAmountRange",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/AppointmentForm/properties/budgetRange",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/AppointmentForm/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/Relation/properties/studentConfirmedAt",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/DataGrant/properties/grantedAt",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/DataGrant/properties/revokedAt",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/Review/properties/reply",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PublishAssistRequest/properties/templateId",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/Notification/properties/readAt",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/StudentProfileUpdate/properties/injuryNotes",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/PlanList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/CommentList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/MessageList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/ShareLink/properties/expiresAt",
+      "required": true,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutFinish/properties/durationMin",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutFinish/properties/rpe",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/WorkoutFinish/properties/note",
+      "required": false,
+      "read_only": false
+    },
+    {
+      "path": "/components/schemas/AnomalyList/properties/nextCursor",
+      "required": true,
+      "read_only": false
+    }
+  ]
+}
