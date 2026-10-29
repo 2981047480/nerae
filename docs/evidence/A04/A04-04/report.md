@@ -13,4 +13,6 @@
 - `application/workout_test.go`：`dbc930d5e479212d6052169993b8d9df2949ddf56e3e1ccd98ea5d3847849331`
 - `mysql_smoke.py`：`595863f95aef1e20df9e478e011713ba1cc35c28d7dc2045e2b2764f77deaa6d`
 
+集成提交 `af7ded4` 的同一文件版本再次通过隔离 MySQL 接缝测试；任务图和 7 项迁移清单检查有效。该复测不表示 HTTP、双设备同步或最终接受已完成。
+
 真实年龄核验、发送邮箱验证码、设备批准与恢复、HTTP 和幂等响应、动作排序、客户端接线、双设备测试及 App 安装均未完成。
