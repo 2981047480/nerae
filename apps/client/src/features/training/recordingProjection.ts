@@ -1,9 +1,9 @@
 import {
   prepareConfirmedSet, prepareSave, restoreDraft, validateDraftSet,
-  type DraftExercise, type GroupIssue, type RecordingDraft, type SetWrite,
+  type DraftExercise, type DraftSet, type GroupIssue, type RecordingDraft, type SetWrite,
 } from './recording'
 import {
-  isIssuedSnapshot, matchesSetPayload, parseSessionDetail,
+  acknowledgesSets, isIssuedSnapshot, matchesSetPayload, parseSessionDetail,
   type RecordingAuth, type RecordingLease, type ScopedSessionDetail, type ServerSet, type WorkoutSessionDetail,
 } from './recordingApi'
 
@@ -24,6 +24,10 @@ type PreparedBatch = {
 export type OrderedPreparation = ProjectionFailure | PreparedBatch | { ok: true; state: 'already_saved' }
 
 type ValidBase = { ok: true; draft: RecordingDraft; snapshot: WorkoutSessionDetail }
+type PreparationProof = { baseline: ScopedSessionDetail; lease: RecordingLease; clientEventId: string; submitted: Map<string, DraftSet> }
+const preparationProofs = new WeakMap<object, PreparationProof>()
+
+export type AcknowledgementResult = ProjectionFailure | { ok: true; draft: RecordingDraft }
 
 function failure(reason: ProjectionFailure['reason']): ProjectionFailure {
   if (reason === 'session_changed') return { ok: false, reason, message: '账号已变化，请重新登录后恢复记录' }
@@ -56,7 +60,7 @@ function validateBase(
     remote = parseSessionDetail(snapshot.detail)
   } catch { return failure('invalid_draft') }
   if (!local.server || local.server.id !== remote.id || local.server.version !== remote.version ||
-    remote.source !== 'free' || remote.status === 'skipped') return failure('reconcile_required')
+    local.timeZone !== remote.timeZone || remote.source !== 'free' || remote.status === 'skipped') return failure('reconcile_required')
 
   const serverRows = new Map(remote.sets.map(set => [set.recordKey, set]))
   const seen = new Set<string>()
@@ -82,7 +86,7 @@ function validateBase(
   return { ok: true, draft: local, snapshot: remote }
 }
 
-function project(base: ValidBase, writes: SetWrite[]): OrderedPreparation {
+function project(base: ValidBase, writes: SetWrite[], baseline: ScopedSessionDetail, lease: RecordingLease): OrderedPreparation {
   const projected = new Map<string, { exerciseEntryKey: string; setIndex: number }>()
   for (const set of base.snapshot.sets) projected.set(set.recordKey, { exerciseEntryKey: set.exerciseEntryKey, setIndex: set.setIndex })
   for (const write of writes) projected.set(write.recordKey, { exerciseEntryKey: write.exerciseEntryKey, setIndex: write.setIndex })
@@ -97,8 +101,21 @@ function project(base: ValidBase, writes: SetWrite[]): OrderedPreparation {
   }
   const order = base.draft.exercises.map(exercise => exercise.exerciseEntryKey).filter(key => activeEntries.has(key))
   if (order.length !== activeEntries.size || order.length > 2000) return failure('reconcile_required')
-  return { ok: true, state: 'send', sessionId: base.snapshot.id, expectedVersion: base.snapshot.version,
-    exerciseEntryKeys: order, sets: writes }
+  const submitted = new Map<string, DraftSet>()
+  for (const write of writes) {
+    const group = base.draft.exercises.find(exercise => exercise.exerciseEntryKey === write.exerciseEntryKey)
+      ?.sets.find(set => set.recordKey === write.recordKey)
+    if (!group) return failure('reconcile_required')
+    submitted.set(write.recordKey, { ...group })
+  }
+  const sets = writes.map(write => Object.freeze({ ...write }))
+  Object.freeze(sets)
+  Object.freeze(order)
+  const prepared: PreparedBatch = Object.freeze({ ok: true, state: 'send', sessionId: base.snapshot.id,
+    expectedVersion: base.snapshot.version, exerciseEntryKeys: order, sets })
+  preparationProofs.set(prepared, { baseline, lease: { subjectId: lease.subjectId, generation: lease.generation },
+    clientEventId: base.draft.clientEventId, submitted })
+  return prepared
 }
 
 /** Training-after mode submits the complete nonblank valid groups only after explicit save. */
@@ -109,7 +126,7 @@ export function prepareOrderedAfterWorkout(
   if (!base.ok) return base
   const prepared = prepareSave(base.draft, today)
   if (!prepared.ok) return { ok: false, reason: 'invalid_draft', message: prepared.message, issues: prepared.issues }
-  return project(base, prepared.sets)
+  return project(base, prepared.sets, snapshot, lease)
 }
 
 /** Per-set mode submits only the one group the user explicitly confirmed. */
@@ -122,5 +139,51 @@ export function prepareOrderedConfirmedSet(
   const prepared = prepareConfirmedSet(base.draft, exerciseEntryKey, recordKey, today)
   if (!prepared.ok) return { ok: false, reason: 'invalid_draft', message: prepared.message }
   if (prepared.state === 'already_saved') return { ok: true, state: 'already_saved' }
-  return project(base, [prepared.set])
+  return project(base, [prepared.set], snapshot, lease)
+}
+
+
+/**
+ * Merge only an acknowledgement of this exact prepared write. Call inside the
+ * draft controller's update transform so it sees the latest in-memory draft;
+ * the caller must persist the result and handle local write failures separately.
+ * No network retry, recovery or durable outbox is implemented here.
+ */
+export function applySetsAcknowledgement(
+  current: RecordingDraft, prepared: OrderedPreparation, response: ScopedSessionDetail,
+  auth: RecordingAuth, today: string,
+): AcknowledgementResult {
+  if (!prepared || !prepared.ok || prepared.state !== 'send') return failure('reconcile_required')
+  const proof = preparationProofs.get(prepared)
+  if (!proof || !acknowledgesSets(response, proof.baseline, prepared.expectedVersion, prepared.sets, prepared.exerciseEntryKeys)) {
+    return failure('reconcile_required')
+  }
+  const base = validateBase(current, proof.baseline, proof.lease, auth, today)
+  if (!base.ok) return base
+  if (base.draft.clientEventId !== proof.clientEventId || response.lease.subjectId !== proof.lease.subjectId ||
+    response.lease.generation !== proof.lease.generation) return failure('reconcile_required')
+  const actual = new Map(response.detail.sets.map(set => [set.recordKey, set]))
+  const writes = new Map(prepared.sets.map(set => [set.recordKey, set]))
+  const changed = new Map<string, DraftSet>()
+  for (const write of prepared.sets) {
+    const exercise = base.draft.exercises.find(item => item.exerciseEntryKey === write.exerciseEntryKey)
+    const group = exercise?.sets.find(item => item.recordKey === write.recordKey)
+    const submitted = proof.submitted.get(write.recordKey)
+    const saved = actual.get(write.recordKey)
+    if (!exercise || !group || !submitted || !saved || group.setIndex !== write.setIndex ||
+      !sameIdentity(exercise, saved)) return failure('reconcile_required')
+    const validated = validateDraftSet(exercise, group)
+    const sameAsSaved = Boolean(validated.value && matchesSetPayload(validated.value, saved))
+    const sameInput = group.weightKg === submitted.weightKg && group.reps === submitted.reps &&
+      group.seconds === submitted.seconds && group.rpe === submitted.rpe && group.confirmed === submitted.confirmed
+    changed.set(write.recordKey, { ...group, persisted: true, dirty: !sameAsSaved,
+      confirmed: sameInput ? true : group.confirmed })
+  }
+  if (changed.size !== writes.size) return failure('reconcile_required')
+  const draft: RecordingDraft = { ...base.draft, server: { id: response.detail.id, version: response.detail.version },
+    exercises: base.draft.exercises.map(exercise => ({ ...exercise,
+      sets: exercise.sets.map(group => changed.get(group.recordKey) || group) })) }
+  try { restoreDraft(draft, today) } catch { return failure('invalid_draft') }
+  if (!auth.isCurrent(proof.lease.subjectId, proof.lease.generation)) return failure('session_changed')
+  return { ok: true, draft }
 }

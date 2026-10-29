@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { registerHooks } from 'node:module'
 import { test } from 'node:test'
-import { addExercise, confirmSet, createRecordingDraft, switchMode, updateSet } from './recording.ts'
+import { addExercise, confirmSet, createRecordingDraft, removeUnsubmittedSet, switchMode, updateSet } from './recording.ts'
 
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === './recording' && /\/(recordingApi|recordingProjection)\.ts$/.test(context.parentURL || '')) {
+    if (specifier === './recording' && /\/(recordingApi|recordingProjection|draftStorage)\.ts$/.test(context.parentURL || '')) {
       return nextResolve('./recording.ts', context)
     }
     if (specifier === './recordingApi' && context.parentURL?.endsWith('/recordingProjection.ts')) {
@@ -14,8 +14,9 @@ const hooks = registerHooks({
     return nextResolve(specifier, context)
   },
 })
-const { prepareOrderedAfterWorkout, prepareOrderedConfirmedSet } = await import('./recordingProjection.ts')
+const { applySetsAcknowledgement, prepareOrderedAfterWorkout, prepareOrderedConfirmedSet } = await import('./recordingProjection.ts')
 const { RecordingApi } = await import('./recordingApi.ts')
+const { DraftController } = await import('./draftStorage.ts')
 hooks.deregister()
 
 const today = '2026-10-30'
@@ -170,4 +171,119 @@ test('local reordering of existing server entries cannot be sent as a side effec
   const result = prepareOrderedConfirmedSet(local, snapshot, lease, auth, 'entry-0003', 'record-003', today)
   assert.equal(result.ok, false)
   assert.equal(result.reason, 'reconcile_required')
+})
+
+
+async function pendingPerSetWrite(local = perSet(draft(), 'entry-0002', 'record-002'), duringRequest = value => value) {
+  let release
+  const api = new RecordingApi('https://api.example.org', auth, request => {
+    if (request.method === 'GET') return Promise.resolve({ statusCode: 200, data: detail() })
+    return new Promise(resolve => { release = resolve })
+  }, lease)
+  const baseline = await api.readSession('42')
+  const prepared = prepareOrderedConfirmedSet(local, baseline, lease, auth, 'entry-0002', 'record-002', today)
+  assert.equal(prepared.state, 'send')
+  const pending = api.saveSets(prepared.sessionId, prepared.expectedVersion, prepared.sets, prepared.exerciseEntryKeys, 'update-0001', baseline)
+  const edited = duringRequest(local)
+  const saved = { recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseName: '划船',
+    resolvedExerciseName: '划船', setIndex: 1, kind: 'bodyweight', reps: 6 }
+  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [serverA, saved] }) })
+  return { api, baseline, prepared, response: await pending, local, edited }
+}
+
+test('a matching per-set acknowledgement marks only the submitted group saved', async () => {
+  const { prepared, response, local } = await pendingPerSetWrite()
+  const result = applySetsAcknowledgement(local, prepared, response, auth, today)
+  assert.equal(result.ok, true)
+  assert.equal(result.draft.server.version, 3)
+  assert.deepEqual({ persisted: result.draft.exercises[1].sets[0].persisted, dirty: result.draft.exercises[1].sets[0].dirty,
+    confirmed: result.draft.exercises[1].sets[0].confirmed }, { persisted: true, dirty: false, confirmed: true })
+  assert.equal(result.draft.exercises[2].sets[0].persisted, false)
+  assert.equal(result.draft.exercises[2].sets[0].reps, '9')
+  assert.equal(local.server.version, 2)
+  assert.equal(local.exercises[1].sets[0].persisted, false)
+})
+
+test('edits made while a per-set request is in flight remain visible and unsaved after its acknowledgement', async () => {
+  const local = perSet(draft(), 'entry-0002', 'record-002')
+  const { prepared, response, edited } = await pendingPerSetWrite(local, value => {
+    value = updateSet(value, 'entry-0002', 'record-002', 'reps', '7')
+    return updateSet(value, 'entry-0003', 'record-003', 'reps', '10')
+  })
+  const result = applySetsAcknowledgement(edited, prepared, response, auth, today)
+  assert.equal(result.ok, true)
+  assert.equal(result.draft.server.version, 3)
+  assert.deepEqual({ reps: result.draft.exercises[1].sets[0].reps, persisted: result.draft.exercises[1].sets[0].persisted,
+    dirty: result.draft.exercises[1].sets[0].dirty, confirmed: result.draft.exercises[1].sets[0].confirmed },
+    { reps: '7', persisted: true, dirty: true, confirmed: false })
+  assert.equal(result.draft.exercises[2].sets[0].reps, '10')
+  assert.equal(result.draft.exercises[2].sets[0].persisted, false)
+})
+
+test('a removed submitted group or changed session requires reconciliation without mutating the draft', async () => {
+  const { prepared, response, local } = await pendingPerSetWrite()
+  const removed = removeUnsubmittedSet(local, 'entry-0002', 'record-002')
+  const before = JSON.stringify(removed)
+  assert.equal(applySetsAcknowledgement(removed, prepared, response, auth, today).reason, 'reconcile_required')
+  assert.equal(JSON.stringify(removed), before)
+  const wrongEvent = { ...local, clientEventId: 'event-0002' }
+  assert.equal(applySetsAcknowledgement(wrongEvent, prepared, response, auth, today).reason, 'reconcile_required')
+  const otherVersion = { ...local, server: { ...local.server, version: 4 } }
+  assert.equal(applySetsAcknowledgement(otherVersion, prepared, response, auth, today).reason, 'reconcile_required')
+  const switched = { current: () => ({ ...credential, generation: 'login-2' }), isCurrent: () => false }
+  assert.equal(applySetsAcknowledgement(local, prepared, response, switched, today).reason, 'session_changed')
+})
+
+test('a read snapshot, copied preparation or copied acknowledgement cannot stand in for this write', async () => {
+  const { api, prepared, response, local } = await pendingPerSetWrite()
+  const read = await api.readSession('42')
+  assert.equal(applySetsAcknowledgement(local, prepared, read, auth, today).reason, 'reconcile_required')
+  assert.equal(applySetsAcknowledgement(local, { ...prepared }, response, auth, today).reason, 'reconcile_required')
+  assert.equal(applySetsAcknowledgement(local, prepared, { ...response }, auth, today).reason, 'reconcile_required')
+  assert.equal(Object.isFrozen(prepared.sets), true)
+  assert.throws(() => { prepared.sets[0].reps = 99 }, TypeError)
+})
+
+test('after-workout acknowledgement keeps newer edits and confirms unchanged submitted groups', async () => {
+  const local = draft()
+  let release
+  const api = new RecordingApi('https://api.example.org', auth, request => {
+    if (request.method === 'GET') return Promise.resolve({ statusCode: 200, data: detail() })
+    return new Promise(resolve => { release = resolve })
+  }, lease)
+  const baseline = await api.readSession('42')
+  const prepared = prepareOrderedAfterWorkout(local, baseline, lease, auth, today)
+  const pending = api.saveSets(prepared.sessionId, prepared.expectedVersion, prepared.sets, prepared.exerciseEntryKeys, 'update-0001', baseline)
+  let edited = updateSet(local, 'entry-0003', 'record-003', 'reps', '11')
+  edited = addExercise(edited, 'entry-0004', { source: 'custom', exerciseName: '硬拉' }, 'bodyweight', 'record-004')
+  const b = { recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseName: '划船', resolvedExerciseName: '划船', setIndex: 1, kind: 'bodyweight', reps: 6 }
+  const c = { recordKey: 'record-003', exerciseEntryKey: 'entry-0003', exerciseName: '俯卧撑', resolvedExerciseName: '俯卧撑', setIndex: 1, kind: 'bodyweight', reps: 9 }
+  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002', 'entry-0003'], sets: [serverA, b, c] }) })
+  const result = applySetsAcknowledgement(edited, prepared, await pending, auth, today)
+  assert.equal(result.ok, true)
+  assert.equal(result.draft.exercises[1].sets[0].confirmed, true)
+  assert.equal(result.draft.exercises[1].sets[0].dirty, false)
+  assert.equal(result.draft.exercises[2].sets[0].reps, '11')
+  assert.equal(result.draft.exercises[2].sets[0].dirty, true)
+  assert.equal(result.draft.exercises[2].sets[0].confirmed, false)
+  assert.equal(result.draft.exercises[3].sets[0].persisted, false)
+})
+
+
+test('merging into the controller keeps the latest edit visible if local persistence fails', async () => {
+  const local = perSet(draft(), 'entry-0002', 'record-002')
+  const { prepared, response } = await pendingPerSetWrite(local)
+  const controller = new DraftController('101', local, { read: async () => null, write: async () => { throw new Error('disk full') } },
+    () => new Date('2026-10-30T12:00:00Z'), { generation: lease.generation, isCurrent: auth.isCurrent })
+  await controller.update(value => updateSet(value, 'entry-0002', 'record-002', 'reps', '7'))
+  const persisted = await controller.update(value => {
+    const result = applySetsAcknowledgement(value, prepared, response, auth, today)
+    assert.equal(result.ok, true)
+    return result.draft
+  })
+  assert.equal(persisted, false)
+  assert.equal(controller.status, 'storage_error')
+  assert.equal(controller.draft.server.version, 3)
+  assert.equal(controller.draft.exercises[1].sets[0].reps, '7')
+  assert.equal(controller.draft.exercises[1].sets[0].dirty, true)
 })

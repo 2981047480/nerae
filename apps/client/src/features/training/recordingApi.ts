@@ -26,6 +26,19 @@ export interface ScopedSessionDetail {
 // A snapshot is only usable in the runtime that received it from this adapter.
 // Restoring from local storage requires a fresh authenticated read.
 const issuedSnapshots = new WeakMap<object, object>()
+const batchAcknowledgements = new WeakMap<object, { baseline: ScopedSessionDetail; version: number; sets: string; order: string }>()
+
+/** Only a validated response to this exact submitted batch may update a draft. */
+export function acknowledgesSets(
+  response: unknown, baseline: ScopedSessionDetail, expectedVersion: number, sets: SetWrite[], order: string[],
+): response is ScopedSessionDetail {
+  if (!response || typeof response !== 'object') return false
+  const issued = batchAcknowledgements.get(response)
+  if (!issued || issued.baseline !== baseline || issued.version !== expectedVersion) return false
+  try {
+    return issued.sets === JSON.stringify(sets.map(setPayload)) && issued.order === JSON.stringify(order)
+  } catch { return false }
+}
 export function isIssuedSnapshot(value: unknown): value is ScopedSessionDetail {
   return value !== null && typeof value === 'object' && issuedSnapshots.has(value)
 }
@@ -518,6 +531,10 @@ export class RecordingApi {
         } else if (!item.previous || !matchesServerSet(item.previous, found)) {
           throw new RecordingApiError('invalid_response')
         }
+      }
+      if (cleanSets !== undefined && deleted === undefined && restored === undefined) {
+        batchAcknowledgements.set(snapshot, { baseline, version: expectedVersion,
+          sets: JSON.stringify(cleanSets), order: JSON.stringify(order) })
       }
       return snapshot
     })
