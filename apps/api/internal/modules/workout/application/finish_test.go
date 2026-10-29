@@ -103,11 +103,27 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	}
 	set := domain.Set{RecordKey: "record-finish-001", ExerciseEntryKey: "entry-finish-001", Exercise: domain.Exercise{Source: domain.Custom, Name: "自定义动作"},
 		Index: 1, Kind: domain.Weight, WeightKg: "42.5", Reps: 8}
-	if v, changed, err := service.SaveSets(ctx, db, token, ref.ID, 1, domain.Batch{Sets: []domain.Set{set}}); err != nil || !changed || v != 2 {
+	if v, changed, err := service.SaveSets(ctx, db, token, ref.ID, 1, domain.Batch{Sets: []domain.Set{set}}, []string{set.ExerciseEntryKey}); err != nil || !changed || v != 2 {
 		t.Fatal("could not save isolated group")
 	}
 	if _, err := service.CompleteFree(ctx, db, other, ref.ID, 2); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject completed a private workout")
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM workout_exercise_order WHERE session_id = ?`, ref.ID); err != nil {
+		t.Fatal("could not corrupt isolated order fixture")
+	}
+	if _, err := service.CompleteFree(ctx, db, token, ref.ID, 2); !errors.Is(err, repository.ErrUnavailable) {
+		t.Fatal("completion accepted a broken exercise order")
+	}
+	var brokenVersion uint64
+	var brokenStatus string
+	var brokenRecorded sql.NullTime
+	if err := db.QueryRowContext(ctx, `SELECT version, status, recorded_at FROM workout_session WHERE id = ?`, ref.ID).
+		Scan(&brokenVersion, &brokenStatus, &brokenRecorded); err != nil || brokenVersion != 2 || brokenStatus != string(domain.InProgress) || brokenRecorded.Valid {
+		t.Fatalf("rejected broken-order completion changed session state: err=%v version=%d status=%q recorded=%t", err, brokenVersion, brokenStatus, brokenRecorded.Valid)
+	}
+	if _, err := db.ExecContext(ctx, `INSERT INTO workout_exercise_order (session_id, exercise_entry_key, position) VALUES (?, ?, 1)`, ref.ID, []byte(set.ExerciseEntryKey)); err != nil {
+		t.Fatal("could not repair isolated order fixture")
 	}
 	// Force authentication to change after the completion update but before the
 	// service's final check; the status, timestamp and version must all roll back.
@@ -188,7 +204,7 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE id = ?`, ref.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("repeat confirmation created another workout")
 	}
-	if v, changed, err := service.SaveSets(ctx, db, token, ref.ID, 4, domain.Batch{DeleteKeys: []string{set.RecordKey}}); err != nil || !changed || v != 5 {
+	if v, changed, err := service.SaveSets(ctx, db, token, ref.ID, 4, domain.Batch{DeleteKeys: []string{set.RecordKey}}, []string{}); err != nil || !changed || v != 5 {
 		t.Fatal("could not delete final group")
 	}
 	draft, err := service.ReadFree(ctx, db, token, ref.ID)

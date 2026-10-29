@@ -18,10 +18,11 @@ func (s *RecordStore) CompleteFree(ctx context.Context, tx *sql.Tx, subjectID, s
 	if s == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 || expectedVersion == 0 {
 		return 0, ErrInvalid
 	}
-	snapshot, err := s.ReadFree(ctx, tx, subjectID, sessionID)
+	ordered, err := s.ReadOrderedFree(ctx, tx, subjectID, sessionID)
 	if err != nil {
 		return 0, err
 	}
+	snapshot := ordered.Snapshot
 	if snapshot.Version != expectedVersion {
 		return 0, ErrVersionConflict
 	}
