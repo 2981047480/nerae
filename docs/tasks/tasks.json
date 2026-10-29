@@ -658,7 +658,8 @@
       "status": "planned",
       "depends_on": [
         "A03",
-        "A04-01"
+        "A04-01",
+        "A04-02"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -6734,7 +6735,7 @@
       "model_policy": "implementation",
       "owner": "/root/foundation_review",
       "write_allowlist": [
-        "apps/api/internal/modules/workout/",
+        "apps/api/internal/modules/workout/domain/",
         "docs/evidence/A04/A04-01/"
       ],
       "inputs": [
@@ -6776,6 +6777,39 @@
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
       "base_revision": "620befb974e2da8a3922494ebe32127229bb1ac9"
+    },
+    {
+      "id": "A04-02",
+      "title": "自由训练记录的持久创建和恢复",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": ["F01-02", "K01-01"],
+      "acceptance_requires": ["A04-01", "A01-05"],
+      "parent": "A04",
+      "kind": "task",
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "df83021",
+      "write_allowlist": ["apps/api/internal/modules/workout/repository/", "apps/api/migrations/workout/0001_workout_session.up.sql", "docs/evidence/A04/A04-02/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md", "docs/evidence/K01/K01-01/runtime-cases.md"],
+      "deliverables": "实现自由训练记录的 MySQL 创建与按同主体事件键恢复，冻结训练日和时区，不虚构开始或时长；本卡不开放 HTTP 或声称已认证。",
+      "acceptance": [
+        "隔离 MySQL 验证相同主体和事件重复创建只得到一条记录，异内容冲突，不同主体的相同事件互不影响",
+        "验证真实并发、回滚、日期时区边界及不可用主体；使用者须先由真实认证和年龄准入确定主体",
+        "组数据、会话授权、幂等响应和跨设备读取未接入时不得宣称训练同步完成"
+      ],
+      "verification_commands": ["真实隔离 MySQL 的自由记录事务与并发测试"],
+      "risks": ["主体传入仍依赖上层认证；计划会话、组明细、加密、版本和完整幂等响应未覆盖。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01", "F02"],
+      "forbidden": ["不接触已有业务数据库", "不伪造认证主体、训练时长或开始事实"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
     },
     {
       "id": "A01-01",
