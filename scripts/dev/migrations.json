@@ -1,4 +1,12 @@
 {
   "version": 1,
-  "migrations": []
+  "migrations": [
+    {
+      "order": 1,
+      "id": "auth/0001_device_proof_replay.up.sql",
+      "module": "auth",
+      "file": "0001_device_proof_replay.up.sql",
+      "sha256": "6cba67b1cafd09e278921ed2342cff58303e6f44de0c1c0fdfbabe8773685bc0"
+    }
+  ]
 }
