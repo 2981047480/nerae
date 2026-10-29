@@ -45,6 +45,12 @@ type ProofPolicy struct {
 	ClockSkew   time.Duration
 }
 
+// ValidProofPolicy validates server-controlled proof bounds.
+func ValidProofPolicy(policy ProofPolicy) bool {
+	return policy.MaxLifetime > 0 && policy.MaxLifetime <= maxProofLifetime &&
+		policy.ClockSkew >= 0 && policy.ClockSkew <= maxProofClockSkew
+}
+
 // VerifiedDeviceProof is only a cryptographic result. The caller must
 // atomically consume JTI through ReplayUntil, check SMS and device trust, and
 // issue a session in a separate transaction. JTI and proof contents must not
@@ -71,8 +77,7 @@ func DeviceProofLatestExpiry(now time.Time) time.Time {
 // consults a key supplied in the JWS header or makes an authorization decision.
 func VerifyDeviceProof(compact string, key DevicePublicJWK, expected ProofExpectation, now time.Time, policy ProofPolicy) (VerifiedDeviceProof, error) {
 	invalid := func() (VerifiedDeviceProof, error) { return VerifiedDeviceProof{}, ErrInvalidDeviceProof }
-	if len(compact) < 32 || len(compact) > 4096 || now.IsZero() || policy.MaxLifetime <= 0 ||
-		policy.MaxLifetime > maxProofLifetime || policy.ClockSkew < 0 || policy.ClockSkew > maxProofClockSkew ||
+	if len(compact) < 32 || len(compact) > 4096 || now.IsZero() || !ValidProofPolicy(policy) ||
 		!validPurpose(expected.Purpose) || expected.ResourceID == "" || expected.Nonce == "" {
 		return invalid()
 	}
