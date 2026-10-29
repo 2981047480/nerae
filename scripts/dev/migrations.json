@@ -7,6 +7,13 @@
       "module": "auth",
       "file": "0001_device_proof_replay.up.sql",
       "sha256": "6cba67b1cafd09e278921ed2342cff58303e6f44de0c1c0fdfbabe8773685bc0"
+    },
+    {
+      "order": 2,
+      "id": "auth/0002_email_challenge.up.sql",
+      "module": "auth",
+      "file": "0002_email_challenge.up.sql",
+      "sha256": "27bd630cdca2e8cf7e47c710808fea0af4b5dcbe348898b3420c94c95e7dfae2"
     }
   ]
 }
