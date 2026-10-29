@@ -53,8 +53,7 @@ func (s *RecordStore) ReadOrderedFree(ctx context.Context, tx *sql.Tx, subjectID
 // commits group changes and complete entry order together in the caller's tx.
 // The caller MUST roll back on any error. This is not an HTTP idempotency,
 // authorization, age-verification, or migration/recovery boundary.
-// The legacy ApplyBatch method does not maintain ordering and MUST NOT be
-// exposed alongside ordered writes; application wiring must switch together.
+// The group-only helper is private so application callers cannot bypass order.
 func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subjectID, sessionID, expectedVersion uint64, batch domain.Batch, targetOrder []string) (uint64, bool, error) {
 	if s == nil || s.protector == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 || expectedVersion == 0 || targetOrder == nil {
 		return 0, false, ErrInvalid
@@ -98,7 +97,7 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 	orderChanged := !reflect.DeepEqual(oldOrder, projectedOrder)
 	resultVersion, groupsChanged := version, false
 	if len(batch.Sets) != 0 || len(batch.DeleteKeys) != 0 || len(batch.RestoreKeys) != 0 {
-		resultVersion, groupsChanged, err = s.ApplyBatch(ctx, tx, subjectID, sessionID, expectedVersion, batch)
+		resultVersion, groupsChanged, err = s.applyBatchWithoutOrder(ctx, tx, subjectID, sessionID, expectedVersion, batch)
 		if err != nil {
 			return 0, false, err
 		}

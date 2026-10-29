@@ -33,11 +33,12 @@ func NewRecordStore(protector *ExerciseNameProtector) (*RecordStore, error) {
 	return &RecordStore{protector: protector, now: time.Now}, nil
 }
 
-// ApplyBatch performs internal persistence, not authorization. The caller
+// applyBatchWithoutOrder is used only inside the ordered transaction, not as
+// an application entry point. It performs persistence, not authorization. The caller
 // must derive subjectID from a real authenticated session, enforce age and
 // resource access, and roll back on any error. No HTTP idempotency or catalog
 // authorization is implemented here. All transactions lock user before workout.
-func (s *RecordStore) ApplyBatch(ctx context.Context, tx *sql.Tx, subjectID, sessionID, expectedVersion uint64, batch domain.Batch) (uint64, bool, error) {
+func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, subjectID, sessionID, expectedVersion uint64, batch domain.Batch) (uint64, bool, error) {
 	if s == nil || s.protector == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 || expectedVersion == 0 {
 		return 0, false, ErrInvalid
 	}

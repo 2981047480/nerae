@@ -88,7 +88,7 @@ func TestWorkoutRecordTransactions(t *testing.T) {
 			return 0, false, err
 		}
 		defer tx.Rollback()
-		v, changed, err := store.ApplyBatch(ctx, tx, owner, session.ID, version, batch)
+		v, changed, err := store.applyBatchWithoutOrder(ctx, tx, owner, session.ID, version, batch)
 		if err != nil {
 			return 0, false, err
 		}
@@ -196,7 +196,7 @@ func TestWorkoutRecordTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not test wrong key")
 	}
-	if _, _, err := badStore.ApplyBatch(ctx, badTx, user, session.ID, 4, domain.Batch{Sets: []domain.Set{first}}); !errors.Is(err, ErrUnavailable) {
+	if _, _, err := badStore.applyBatchWithoutOrder(ctx, badTx, user, session.ID, 4, domain.Batch{Sets: []domain.Set{first}}); !errors.Is(err, ErrUnavailable) {
 		_ = badTx.Rollback()
 		t.Fatal("wrong key epoch was accepted")
 	}
