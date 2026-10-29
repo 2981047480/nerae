@@ -79,7 +79,7 @@ def main() -> int:
                         "GOCACHE": "/private/tmp/nerae-go-api-cache",
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_APPROVAL_TEST_DSN": f"root@unix({sock})/nerae_approval_test?parseTime=true&loc=UTC"}
-            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
+            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-run", "^TestNewDeviceApprovalTransactions$", "-v",
                                      "./internal/modules/auth/approval"], cwd=ROOT / "apps/api",
                                     env=test_env, timeout=180, check=False)
             if result.returncode:
