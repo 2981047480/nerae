@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  addExercise, addSet, confirmSet, createRecordingDraft, prepareSave as prepareSaveAt,
+  addExercise, addSet, confirmSet, createRecordingDraft, prepareConfirmedSet as prepareConfirmedSetAt,
+  preparePerSetFinish as preparePerSetFinishAt, prepareSave as prepareSaveAt,
   removeUnsubmittedSet, restoreDraft, switchMode, updateSet,
 } from './recording.ts'
 
 const prepareSave = draft => prepareSaveAt(draft, '2026-10-29')
+const prepareConfirmedSet = (draft, entry, key) => prepareConfirmedSetAt(draft, entry, key, '2026-10-29')
+const preparePerSetFinish = draft => preparePerSetFinishAt(draft, '2026-10-29')
 const fresh = () => createRecordingDraft('event-0001', '2026-10-28', 'Asia/Shanghai', '2026-10-29')
 const withExercise = (kind = 'weight') => addExercise(fresh(), 'entry-0001', { source: 'custom', exerciseName: '深蹲' }, kind, 'record-001')
 const setInput = (draft, key, field, value) => updateSet(draft, 'entry-0001', key, field, value)
@@ -63,6 +66,84 @@ test('explicit save includes complete unconfirmed rows and remains repeatable wi
     kind: 'durationPerSide', completed: true, exerciseName: '深蹲', seconds: 45,
   })
   assert.equal(draft.exercises[0].sets[0].confirmed, false)
+})
+
+test('per-set preparation sends only the explicitly confirmed group, including while another is incomplete', () => {
+  let draft = switchMode(withExercise(), 'per_set')
+  draft = addSet(draft, 'entry-0001', 'record-002')
+  draft = setInput(setInput(draft, 'record-001', 'weightKg', '40'), 'record-001', 'reps', '8')
+  draft = setInput(draft, 'record-002', 'weightKg', '30')
+  assert.equal(prepareConfirmedSet(draft, 'entry-0001', 'record-001').ok, false)
+  const marked = confirmSet(draft, 'entry-0001', 'record-001')
+  assert.equal(marked.ok, true)
+  const first = prepareConfirmedSet(marked.draft, 'entry-0001', 'record-001')
+  assert.equal(first.ok, true)
+  assert.equal(first.state, 'send')
+  assert.equal(first.set.recordKey, 'record-001')
+  assert.equal(first.set.weightKg, 40)
+  assert.equal(prepareConfirmedSet(marked.draft, 'entry-0001', 'record-002').ok, false)
+  assert.equal(prepareSave(marked.draft).ok, false)
+
+  const firstAcknowledged = {
+    ...marked.draft, server: { id: '101', version: 2 },
+    exercises: [{ ...marked.draft.exercises[0], sets: marked.draft.exercises[0].sets.map(set =>
+      set.recordKey === 'record-001' ? { ...set, persisted: true, dirty: false } : set) }],
+  }
+  const filled = setInput(firstAcknowledged, 'record-002', 'reps', '6')
+  const unconfirmed = preparePerSetFinish(filled)
+  assert.equal(unconfirmed.ok, false)
+  assert.equal(unconfirmed.issues[0].recordKey, 'record-002')
+  assert.match(unconfirmed.issues[0].message, /记下/)
+  const both = confirmSet(filled, 'entry-0001', 'record-002')
+  assert.equal(both.ok, true)
+  assert.equal(prepareSave(both.draft).ok, false)
+  assert.equal(preparePerSetFinish(both.draft).ok, false)
+  const acknowledged = {
+    ...both.draft, server: { id: '101', version: 3 },
+    exercises: [{ ...both.draft.exercises[0], sets: both.draft.exercises[0].sets.map(set =>
+      ({ ...set, persisted: true, dirty: false })) }],
+  }
+  assert.deepEqual(preparePerSetFinish(acknowledged), { ok: true })
+  assert.deepEqual(prepareConfirmedSet(acknowledged, 'entry-0001', 'record-001'), { ok: true, state: 'already_saved' })
+  const changedAfterSave = setInput(acknowledged, 'record-001', 'reps', '9')
+  const reconfirmed = confirmSet(changedAfterSave, 'entry-0001', 'record-001')
+  assert.equal(reconfirmed.ok, true)
+  assert.equal(preparePerSetFinish(reconfirmed.draft).ok, false)
+  const changed = prepareConfirmedSet(reconfirmed.draft, 'entry-0001', 'record-001')
+  assert.equal(changed.state, 'send')
+  assert.equal(changed.set.reps, 9)
+  const edited = setInput(both.draft, 'record-001', 'reps', '9')
+  assert.equal(prepareConfirmedSet(edited, 'entry-0001', 'record-001').ok, false)
+  assert.equal(preparePerSetFinish(edited).ok, false)
+})
+
+test('switching to after-workout mode makes its explicit save confirm complete rows', () => {
+  let draft = switchMode(withExercise('bodyweight'), 'per_set')
+  draft = setInput(draft, 'record-001', 'reps', '8')
+  assert.equal(prepareSave(draft).ok, false)
+  const after = switchMode(draft, 'after_workout')
+  assert.equal(prepareSave(after).ok, true)
+  assert.equal(prepareConfirmedSet(after, 'entry-0001', 'record-001').ok, false)
+  assert.equal(prepareSave(switchMode(after, 'per_set')).ok, false)
+})
+
+test('blank new rows are ignored but clearing a saved group cannot silently leave the old value', () => {
+  let draft = switchMode(withExercise('bodyweight'), 'per_set')
+  draft = setInput(draft, 'record-001', 'reps', '8')
+  const marked = confirmSet(draft, 'entry-0001', 'record-001')
+  assert.equal(marked.ok, true)
+  const extraBlank = addSet(marked.draft, 'entry-0001', 'record-002')
+  assert.equal(preparePerSetFinish(extraBlank).ok, false)
+  const acknowledged = {
+    ...extraBlank, server: { id: '101', version: 3 },
+    exercises: [{ ...extraBlank.exercises[0], sets: extraBlank.exercises[0].sets.map(set =>
+      set.recordKey === 'record-001' ? { ...set, persisted: true, dirty: false } : set) }],
+  }
+  assert.deepEqual(preparePerSetFinish(acknowledged), { ok: true })
+  const cleared = setInput(acknowledged, 'record-001', 'reps', '')
+  const result = preparePerSetFinish(cleared)
+  assert.equal(result.ok, false)
+  assert.match(result.issues[0].message, /删除流程/)
 })
 
 test('measurements follow the contract and never invent a duration or a missing field', () => {

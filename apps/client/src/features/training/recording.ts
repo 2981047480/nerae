@@ -67,6 +67,15 @@ export type SavePreparation =
   | { ok: true; sets: SetWrite[] }
   | { ok: false; issues: GroupIssue[]; message: string }
 
+export type ConfirmedSetPreparation =
+  | { ok: true; state: 'send'; set: SetWrite }
+  | { ok: true; state: 'already_saved' }
+  | { ok: false; message: string }
+
+export type PerSetFinishPreparation =
+  | { ok: true }
+  | { ok: false; issues: GroupIssue[]; message: string }
+
 function assertKey(key: string): void {
   if (typeof key !== 'string' || key.length < 8 || key.length > 64 || !key.trim()) {
     throw new Error('记录标识无效')
@@ -255,6 +264,51 @@ export function confirmSet(
   return { ok: true, draft: { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) } }
 }
 
+/** Prepare only the group explicitly confirmed in per-set mode; no network write occurs here. */
+export function prepareConfirmedSet(
+  draft: RecordingDraft,
+  exerciseEntryKey: string,
+  recordKey: string,
+  today: string,
+): ConfirmedSetPreparation {
+  try {
+    restoreDraft(draft, today)
+    if (draft.mode !== 'per_set') return { ok: false, message: '请先切换到逐组记录' }
+    const exercise = findExercise(draft, exerciseEntryKey)
+    const set = findSet(exercise, recordKey)
+    if (!set.confirmed) return { ok: false, message: '请先记下这一组' }
+    const checked = validation(exercise, set, exercise.sets.indexOf(set))
+    if (!checked.value) return { ok: false, message: checked.message || '先填写这组的实际数据' }
+    if (set.persisted && !set.dirty) return { ok: true, state: 'already_saved' }
+    return { ok: true, state: 'send', set: checked.value }
+  } catch {
+    return { ok: false, message: '草稿无法校验，请重新读取记录后重试' }
+  }
+}
+
+/** Finishing is allowed only after each nonblank group has been acknowledged by the server. */
+export function preparePerSetFinish(draft: RecordingDraft, today: string): PerSetFinishPreparation {
+  try { restoreDraft(draft, today) }
+  catch { return { ok: false, issues: [], message: '草稿无法校验，请重新读取记录后重试' } }
+  if (draft.mode !== 'per_set') return { ok: false, issues: [], message: '当前不是逐组记录' }
+  const issues: GroupIssue[] = []
+  let savedGroups = 0
+  for (const exercise of draft.exercises) {
+    exercise.sets.forEach((set, index) => {
+      const checked = validation(exercise, set, index)
+      const message = checked.message ||
+        (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined) ||
+        (checked.value && !set.confirmed ? '请先记下这一组' : undefined) ||
+        (checked.value && (!set.persisted || set.dirty) ? '这一组还未保存，请重试' : undefined)
+      if (message) issues.push({ exerciseEntryKey: exercise.exerciseEntryKey, recordKey: set.recordKey, message })
+      else if (checked.value) savedGroups++
+    })
+  }
+  if (issues.length) return { ok: false, issues, message: '请先记下、保存或移除未完成的组' }
+  if (!draft.server || !savedGroups) return { ok: false, issues: [], message: '至少保存一组实际数据后才能完成' }
+  return { ok: true }
+}
+
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -315,13 +369,16 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
 export function prepareSave(draft: RecordingDraft, today: string): SavePreparation {
   try { restoreDraft(draft, today) }
   catch { return { ok: false, issues: [], message: '草稿无法校验，请重新读取记录后重试' } }
+  if (draft.mode !== 'after_workout') return { ok: false, issues: [], message: '逐组记录请逐组记下' }
   const sets: SetWrite[] = []
   const issues: GroupIssue[] = []
   for (const exercise of draft.exercises) {
     exercise.sets.forEach((set, index) => {
       const checked = validation(exercise, set, index)
-      if (checked.value) sets.push(checked.value)
-      if (checked.message) issues.push({ exerciseEntryKey: exercise.exerciseEntryKey, recordKey: set.recordKey, message: checked.message })
+      const message = checked.message ||
+        (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined)
+      if (message) issues.push({ exerciseEntryKey: exercise.exerciseEntryKey, recordKey: set.recordKey, message })
+      else if (checked.value) sets.push(checked.value)
     })
   }
   if (issues.length) return { ok: false, issues, message: '请补齐或移除未完成的组' }
