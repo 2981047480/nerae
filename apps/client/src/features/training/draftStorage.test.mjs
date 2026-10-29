@@ -227,3 +227,16 @@ test('session expiry preserves the latest queued draft for the same subject afte
   assert.equal(restored.draft.exercises[0].sets[0].reps, '9')
   assert.throws(() => old.draft, /账号已变化/)
 })
+
+test('loading an old server-linked draft does not overwrite it when stable order requires reconciliation', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'session-1', isCurrent: () => true }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  const legacy = JSON.parse(JSON.stringify(makeDraft()))
+  legacy.server = { id: '101', version: 2 }
+  delete legacy.exercises[0].sets[0].setIndex
+  const original = JSON.stringify({ schema: 1, subjectId: '101', draft: legacy })
+  storage.data.set(controller.key, original)
+  await assert.rejects(DraftController.load('101', 'event-0001', storage, now, auth), /核对训练组序号/)
+  assert.equal(storage.data.get(controller.key), original)
+})

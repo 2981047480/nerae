@@ -13,6 +13,8 @@ export type ExerciseIdentity =
 
 export interface DraftSet {
   recordKey: string
+  /** Stable server order number; removing another draft row does not renumber it. */
+  setIndex: number
   weightKg: string
   reps: string
   seconds: string
@@ -105,9 +107,10 @@ function findSet(exercise: DraftExercise, key: string): DraftSet {
   return set
 }
 
-function emptySet(recordKey: string): DraftSet {
+function emptySet(recordKey: string, setIndex: number): DraftSet {
   assertKey(recordKey)
-  return { recordKey, weightKg: '', reps: '', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: false }
+  if (!Number.isSafeInteger(setIndex) || setIndex < 1) throw new Error('训练组序号无效')
+  return { recordKey, setIndex, weightKg: '', reps: '', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: false }
 }
 
 function ensureUnusedSetKey(draft: RecordingDraft, recordKey: string): void {
@@ -159,7 +162,7 @@ export function addExercise(
       exerciseEntryKey,
       identity: assertIdentity(identity),
       kind,
-      sets: [emptySet(firstRecordKey)],
+      sets: [emptySet(firstRecordKey, 1)],
     }],
   }
 }
@@ -167,7 +170,9 @@ export function addExercise(
 export function addSet(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string): RecordingDraft {
   const target = findExercise(draft, exerciseEntryKey)
   ensureUnusedSetKey(draft, recordKey)
-  const changed = { ...target, sets: [...target.sets, emptySet(recordKey)] }
+  const maximum = target.sets.reduce((largest, set) => Math.max(largest, set.setIndex), 0)
+  if (!Number.isSafeInteger(maximum) || maximum >= Number.MAX_SAFE_INTEGER) throw new Error('训练组序号不可用')
+  const changed = { ...target, sets: [...target.sets, emptySet(recordKey, maximum + 1)] }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
 }
 
@@ -209,7 +214,7 @@ function decimal(value: string, maxPlaces: number, minimum: number, maximum: num
   return result
 }
 
-function validation(exercise: DraftExercise, set: DraftSet, index: number): { value?: SetWrite; message?: string; blank?: boolean } {
+function validation(exercise: DraftExercise, set: DraftSet): { value?: SetWrite; message?: string; blank?: boolean } {
   const weight = set.weightKg.trim()
   const reps = set.reps.trim()
   const seconds = set.seconds.trim()
@@ -219,7 +224,7 @@ function validation(exercise: DraftExercise, set: DraftSet, index: number): { va
   const result: SetWrite = {
     exerciseEntryKey: exercise.exerciseEntryKey,
     recordKey: set.recordKey,
-    setIndex: index + 1,
+    setIndex: set.setIndex,
     kind: exercise.kind,
     completed: true,
     ...(identity.source === 'catalog' ? { exerciseId: identity.exerciseId } : { exerciseName: identity.exerciseName }),
@@ -257,7 +262,7 @@ export function confirmSet(
 ): { ok: true; draft: RecordingDraft } | { ok: false; message: string } {
   const target = findExercise(draft, exerciseEntryKey)
   const set = findSet(target, recordKey)
-  const checked = validation(target, set, target.sets.indexOf(set))
+  const checked = validation(target, set)
   if (checked.blank || checked.message) return { ok: false, message: checked.message || '先填写这组的实际数据' }
   if (set.confirmed) return { ok: true, draft }
   const changed = { ...target, sets: target.sets.map(item => item === set ? { ...set, confirmed: true } : item) }
@@ -272,12 +277,12 @@ export function prepareConfirmedSet(
   today: string,
 ): ConfirmedSetPreparation {
   try {
-    restoreDraft(draft, today)
+    draft = restoreDraft(draft, today)
     if (draft.mode !== 'per_set') return { ok: false, message: '请先切换到逐组记录' }
     const exercise = findExercise(draft, exerciseEntryKey)
     const set = findSet(exercise, recordKey)
     if (!set.confirmed) return { ok: false, message: '请先记下这一组' }
-    const checked = validation(exercise, set, exercise.sets.indexOf(set))
+    const checked = validation(exercise, set)
     if (!checked.value) return { ok: false, message: checked.message || '先填写这组的实际数据' }
     if (set.persisted && !set.dirty) return { ok: true, state: 'already_saved' }
     return { ok: true, state: 'send', set: checked.value }
@@ -288,14 +293,14 @@ export function prepareConfirmedSet(
 
 /** Finishing is allowed only after each nonblank group has been acknowledged by the server. */
 export function preparePerSetFinish(draft: RecordingDraft, today: string): PerSetFinishPreparation {
-  try { restoreDraft(draft, today) }
+  try { draft = restoreDraft(draft, today) }
   catch { return { ok: false, issues: [], message: '草稿无法校验，请重新读取记录后重试' } }
   if (draft.mode !== 'per_set') return { ok: false, issues: [], message: '当前不是逐组记录' }
   const issues: GroupIssue[] = []
   let savedGroups = 0
   for (const exercise of draft.exercises) {
-    exercise.sets.forEach((set, index) => {
-      const checked = validation(exercise, set, index)
+    exercise.sets.forEach(set => {
+      const checked = validation(exercise, set)
       const message = checked.message ||
         (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined) ||
         (checked.value && !set.confirmed ? '请先记下这一组' : undefined) ||
@@ -351,6 +356,13 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
     if (!['weight', 'perSide', 'bodyweight', 'bodyweightPerSide', 'duration', 'durationPerSide', 'breath'].includes(exercise.kind)) {
       throw new Error('动作计量方式无效')
     }
+    // Old drafts cannot prove whether a write reached the server before a
+    // local acknowledgement. Preserve them and reconcile before assigning indexes.
+    if (exercise.sets.some(group => !object(group))) throw new Error('训练组草稿无效')
+    if (exercise.sets.some(group => object(group) && group.setIndex === undefined)) {
+      throw new Error('旧草稿需要核对训练组序号，原数据仍被保留')
+    }
+    let previousIndex = 0
     for (const group of exercise.sets) {
       if (!object(group) || typeof group.recordKey !== 'string' || typeof group.weightKg !== 'string' ||
         typeof group.reps !== 'string' || typeof group.seconds !== 'string' || typeof group.rpe !== 'string' ||
@@ -358,8 +370,12 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
         throw new Error('训练组草稿无效')
       }
       assertKey(group.recordKey)
+      if (group.persisted && value.server === undefined) throw new Error('已保存的组缺少服务端记录')
       if (groups.has(group.recordKey)) throw new Error('训练组标识重复')
       groups.add(group.recordKey)
+      const index = group.setIndex
+      if (!Number.isSafeInteger(index) || Number(index) <= previousIndex) throw new Error('训练组序号无效或顺序重复')
+      previousIndex = Number(index)
     }
   }
   return value as unknown as RecordingDraft
@@ -367,14 +383,14 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
 
 /** Validate the user's explicit save action; the caller submits and reports the result. */
 export function prepareSave(draft: RecordingDraft, today: string): SavePreparation {
-  try { restoreDraft(draft, today) }
+  try { draft = restoreDraft(draft, today) }
   catch { return { ok: false, issues: [], message: '草稿无法校验，请重新读取记录后重试' } }
   if (draft.mode !== 'after_workout') return { ok: false, issues: [], message: '逐组记录请逐组记下' }
   const sets: SetWrite[] = []
   const issues: GroupIssue[] = []
   for (const exercise of draft.exercises) {
-    exercise.sets.forEach((set, index) => {
-      const checked = validation(exercise, set, index)
+    exercise.sets.forEach(set => {
+      const checked = validation(exercise, set)
       const message = checked.message ||
         (checked.blank && (set.persisted || set.confirmed) ? '已记录的组不能留空，请补齐或通过删除流程移除' : undefined)
       if (message) issues.push({ exerciseEntryKey: exercise.exerciseEntryKey, recordKey: set.recordKey, message })

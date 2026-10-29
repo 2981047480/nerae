@@ -259,3 +259,71 @@ test('a save rechecks the current date instead of trusting a modified draft', ()
   const invalid = { ...withExercise(), date: '2026-10-30' }
   assert.equal(prepareSave(invalid).ok, false)
 })
+
+
+test('removing a blank row does not renumber a saved group or collide with the next confirmed group', () => {
+  let draft = switchMode(withExercise('bodyweight'), 'per_set')
+  draft = addSet(draft, 'entry-0001', 'record-002')
+  draft = setInput(draft, 'record-002', 'reps', '8')
+  draft = confirmSet(draft, 'entry-0001', 'record-002').draft
+  draft = { ...draft, server: { id: '101', version: 2 }, exercises: [{ ...draft.exercises[0], sets: draft.exercises[0].sets.map(set =>
+    set.recordKey === 'record-002' ? { ...set, persisted: true, dirty: false } : set) }] }
+  draft = removeUnsubmittedSet(draft, 'entry-0001', 'record-001')
+  draft = addSet(draft, 'entry-0001', 'record-003')
+  draft = setInput(draft, 'record-003', 'reps', '6')
+  draft = confirmSet(draft, 'entry-0001', 'record-003').draft
+  assert.deepEqual(draft.exercises[0].sets.map(set => set.setIndex), [2, 3])
+  const pending = prepareConfirmedSet(draft, 'entry-0001', 'record-003')
+  assert.equal(pending.state, 'send')
+  assert.equal(pending.set.setIndex, 3)
+  assert.deepEqual(prepareConfirmedSet(draft, 'entry-0001', 'record-002'), { ok: true, state: 'already_saved' })
+  const after = prepareSave(switchMode(draft, 'after_workout'))
+  assert.deepEqual(after.sets.map(set => set.setIndex), [2, 3])
+})
+
+test('legacy drafts without a local server marker also require reconciliation', () => {
+  let draft = addSet(withExercise('bodyweight'), 'entry-0001', 'record-002')
+  draft = setInput(draft, 'record-001', 'reps', '8')
+  const legacy = JSON.parse(JSON.stringify(draft))
+  for (const group of legacy.exercises[0].sets) delete group.setIndex
+  const before = JSON.stringify(legacy)
+  assert.throws(() => restoreDraft(legacy, '2026-10-29'), /核对训练组序号/)
+  assert.equal(prepareSave(legacy).ok, false)
+  assert.equal(JSON.stringify(legacy), before)
+})
+
+test('legacy drafts with a server session require reconciliation and retain their raw contents', () => {
+  let draft = withExercise('bodyweight')
+  draft = setInput(draft, 'record-001', 'reps', '8')
+  const legacy = JSON.parse(JSON.stringify(draft))
+  legacy.server = { id: '101', version: 2 }
+  delete legacy.exercises[0].sets[0].setIndex
+  const before = JSON.stringify(legacy)
+  assert.throws(() => restoreDraft(legacy, '2026-10-29'), /核对训练组序号/)
+  assert.equal(prepareSave(legacy).ok, false)
+  assert.equal(JSON.stringify(legacy), before)
+})
+
+test('recovery rejects missing, duplicate, descending or unsafe indexes instead of renumbering saved work', () => {
+  const source = addSet(withExercise('bodyweight'), 'entry-0001', 'record-002')
+  for (const indexes of [[1, 1], [2, 1], [1, null], [1, Number.MAX_SAFE_INTEGER + 1], [1, undefined]]) {
+    const damaged = JSON.parse(JSON.stringify(source))
+    for (let i = 0; i < indexes.length; i++) {
+      if (indexes[i] === undefined) delete damaged.exercises[0].sets[i].setIndex
+      else damaged.exercises[0].sets[i].setIndex = indexes[i]
+    }
+    assert.throws(() => restoreDraft(damaged, '2026-10-29'))
+    assert.equal(prepareSave(damaged).ok, false)
+  }
+  const capped = JSON.parse(JSON.stringify(source))
+  capped.exercises[0].sets[1].setIndex = Number.MAX_SAFE_INTEGER
+  assert.throws(() => addSet(capped, 'entry-0001', 'record-003'), /序号不可用/)
+})
+
+
+test('a locally restored group cannot claim server acknowledgement without a server session', () => {
+  const damaged = JSON.parse(JSON.stringify(withExercise('bodyweight')))
+  damaged.exercises[0].sets[0].persisted = true
+  assert.throws(() => restoreDraft(damaged, '2026-10-29'), /缺少服务端记录/)
+  assert.equal(prepareSave(damaged).ok, false)
+})
