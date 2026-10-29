@@ -9,3 +9,5 @@
 验证：`node --test --test-reporter=dot apps/client/src/features/training/*.test.mjs` 66 项通过；锁定版 `apps/client/node_modules/.bin/vue-tsc --noEmit -p apps/client/tsconfig.json` 通过；`git diff --check` 通过。锁定的 uni 编译器分别构建 App 和小程序资源；初次普通权限构建因隔离工作树不可写而报 EPERM，改用获准权限后通过。测试使用合成请求端口，不是实际 HTTP 服务。
 
 未完成：实际页面、登录、HTTP 业务端点、请求幂等和持久待发队列、在途编辑与回执合并、删除/恢复交互、跨端未确认草稿和冲突恢复均未接线或验收。服务端目前仅接受自定义动作，动作库权限与数据仍待实现。当前合同允许响应可选字段缺省；当明确提交的值或需要比较的值缺省时，客户端返回需要核对的状态，不把合法但证据不足的响应当成确认。需要服务端接口与实际恢复流程联调。真实设备、真实登录和跨设备同步尚未验证，资源构建不等于 iOS 安装包。本卡不能标为 accepted。
+
+集成复验：合入提交 `2b1e360` 后，66 项记录测试、vue-tsc、`scripts/plan.py check` 和 App/小程序资源构建通过。集成验证仍是本地模块与合成请求端口，不是端到端或真机验收。
