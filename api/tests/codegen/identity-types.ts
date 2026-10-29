@@ -6,6 +6,8 @@ type Identity = components['schemas']['IdentityItem'];
 type Link = components['schemas']['IdentityLinkStart'];
 type Recovery = components['schemas']['RecoveryCodeUseRequest'];
 type Setup = components['schemas']['RecoveryCodeIssueRequest'];
+type EmailChallenge = components['schemas']['EmailLoginChallengeRequest'];
+type EmailLogin = components['schemas']['EmailLoginRequest'];
 
 declare const outcome: Outcome;
 if (outcome.status === 'approval_required') {
@@ -19,6 +21,9 @@ if (outcome.status === 'approval_required') {
 }
 const phone: Identity = { id: 'opaque', kind: 'phone', phoneLast4: '8000' };
 const mini: Identity = { id: 'opaque', kind: 'wechat_mini' };
+const email: Identity = { id: 'opaque', kind: 'email', emailMasked: 'p***@example.com' };
+const emailLink: Link = { kind: 'email', email: 'person@example.com', expectedVersion: 1 };
+const emailChallenge: EmailChallenge = { email: 'person@example.com', devicePublicKey: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } };
 const replace: Link = { kind: 'phone', intent: 'replace', phone: '+8613800138000', expectedVersion: 1 };
 const recovery: Recovery = { approvalSecret: 'secret', recoveryCode: 'code', deviceProof: 'proof' };
 const setup: Setup = { expectedGeneration: 0, confirmed: true };
@@ -28,4 +33,6 @@ const missingIntent: Link = { kind: 'phone', phone: '+8613800138000', expectedVe
 const rejectedSetup: Setup = { expectedGeneration: 0, confirmed: false };
 // @ts-expect-error Recovery requires proof of the same device key.
 const missingProof: Recovery = { approvalSecret: 'secret', recoveryCode: 'code' };
-void [phone, mini, replace, recovery, setup, missingIntent, rejectedSetup, missingProof];
+// @ts-expect-error Email login also requires proof of the target device key.
+const noEmailProof: EmailLogin = { challengeId: 'challenge', code: '123456' };
+void [phone, mini, email, emailLink, emailChallenge, replace, recovery, setup, missingIntent, rejectedSetup, missingProof, noEmailProof];

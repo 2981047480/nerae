@@ -34,6 +34,40 @@ class IdentityContractTests(ContractCase):
             with self.subTest(value=bad):
                 self.assertInvalid(request, bad)
 
+    def test_beta_email_login_binds_challenge_and_device_proof(self):
+        path = '/auth/email/challenges'
+        request = self.contract.request(path, 'post')
+        valid = {'email': 'person@example.com', 'devicePublicKey': self.public_key}
+        self.assertMissingRejected(request, valid, ('email', 'devicePublicKey'))
+        for bad in (dict(valid, email='not-an-address'), dict(valid, email='a@@example.com'),
+                    dict(valid, email='person@example.com\r\nBcc:other@example.com'),
+                    dict(valid, userId='101'), dict(valid, devicePublicKey=dict(self.public_key, d='private'))):
+            self.assertInvalid(request, bad)
+        response = self.contract.response(path, 'post', '202')
+        challenge = {'challengeId': self.challenge_id, 'nonce': self.secret, 'expiresAt': '2026-10-29T12:00:00Z'}
+        self.assertValid(response, challenge)
+        self.assertInvalid(response, dict(challenge, code='123456'))
+        self.assertInvalid(response, dict(challenge, userId='101'))
+        login = self.contract.request('/auth/email-login', 'post')
+        submitted = {'challengeId': self.challenge_id, 'code': '123456', 'deviceProof': self.proof}
+        self.assertMissingRejected(login, submitted, submitted.keys())
+        self.assertInvalid(login, dict(submitted, code='123'))
+        self.assertInvalid(login, dict(submitted, email='person@example.com'))
+
+    def test_beta_email_link_and_masked_identity(self):
+        start = self.contract.request('/me/identity-links', 'post')
+        valid = {'kind': 'email', 'email': 'person@example.com', 'expectedVersion': 1}
+        self.assertMissingRejected(start, valid, valid.keys())
+        self.assertInvalid(start, dict(valid, userId='101'))
+        claim = self.contract.request('/auth/identity-link-claims', 'post')
+        proof = {'kind': 'email', 'linkId': self.link_id, 'linkSecret': self.secret, 'code': '123456'}
+        self.assertMissingRejected(claim, proof, proof.keys())
+        self.assertInvalid(claim, dict(proof, code='123'))
+        result = self.contract.response('/me/identities', 'get')
+        self.assertValid(result, {'version': 1, 'items': [{'id': self.link_id, 'kind': 'email', 'emailMasked': 'p***@example.com'}]})
+        self.assertInvalid(result, {'version': 1, 'items': [{'id': self.link_id, 'kind': 'email', 'emailMasked': 'person@example.com'}]})
+        self.assertInvalid(result, {'version': 1, 'items': [{'id': self.link_id, 'kind': 'email', 'emailMasked': 'p***@example.com', 'email': 'person@example.com'}]})
+
     def test_phone_login_requires_sms_code_and_device_proof(self):
         request = self.contract.request('/auth/phone-login', 'post')
         valid = {'challengeId': self.challenge_id, 'code': '123456', 'deviceProof': self.proof}
@@ -44,17 +78,19 @@ class IdentityContractTests(ContractCase):
                 self.assertInvalid(request, bad)
 
     def test_unapproved_login_cannot_include_token_or_user(self):
-        result = self.contract.response('/auth/phone-login', 'post')
         pending = {'status': 'approval_required', 'approvalId': self.approval_id,
                    'approvalSecret': self.secret, 'nonce': self.secret,
                    'comparisonCode': '123456', 'expiresAt': '2026-10-28T12:00:00Z'}
         success = {'status': 'authenticated', 'token': 'test-session-token', 'expiresIn': 3600,
                    'user': {'id': '101', 'nickname': '测试用户', 'roles': ['student']}}
-        self.assertMissingRejected(result, pending, pending.keys())
-        self.assertValid(result, success)
-        self.assertInvalid(result, dict(pending, token='must-not-be-returned'))
-        self.assertInvalid(result, dict(pending, user=success['user']))
-        self.assertInvalid(result, {'status': 'authenticated', 'token': 'token'})
+        for path in ('/auth/phone-login', '/auth/email-login'):
+            with self.subTest(path=path):
+                result = self.contract.response(path, 'post')
+                self.assertMissingRejected(result, pending, pending.keys())
+                self.assertValid(result, success)
+                self.assertInvalid(result, dict(pending, token='must-not-be-returned'))
+                self.assertInvalid(result, dict(pending, user=success['user']))
+                self.assertInvalid(result, {'status': 'authenticated', 'token': 'token'})
 
     def test_approval_decision_requires_explicit_comparison_for_approval(self):
         request = self.contract.request('/me/login-approvals/{id}/decision', 'post')
@@ -136,7 +172,9 @@ class IdentityContractTests(ContractCase):
             self.assertInvalid(request, bad)
 
     def test_sensitive_auth_success_responses_disallow_http_caching(self):
-        for path, method, status in (('/auth/phone/challenges', 'post', '202'),
+        for path, method, status in (('/auth/email/challenges', 'post', '202'),
+                                     ('/auth/email-login', 'post', '200'),
+                                     ('/auth/phone/challenges', 'post', '202'),
                                      ('/auth/phone-login', 'post', '200'),
                                      ('/auth/login-approvals/{id}/exchange', 'post', '200'),
                                      ('/auth/wechat-login', 'post', '200')):
@@ -146,7 +184,8 @@ class IdentityContractTests(ContractCase):
             self.assertEqual(header['schema']['enum'], ['no-store'])
 
     def test_public_and_authenticated_boundaries_and_retry_keys_are_explicit(self):
-        public = [('/auth/phone/challenges', 'post'), ('/auth/phone-login', 'post'),
+        public = [('/auth/email/challenges', 'post'), ('/auth/email-login', 'post'),
+                  ('/auth/phone/challenges', 'post'), ('/auth/phone-login', 'post'),
                   ('/auth/login-approvals/{id}/exchange', 'post'),
                   ('/auth/identity-link-claims', 'post'), ('/auth/identity-link-claims/{id}/status', 'post')]
         for path, method in public:

@@ -54,6 +54,10 @@ func TestIdentitySchemasWithGoValidator(t *testing.T) {
 	}{
 		{"masked phone", "IdentityItem", `{"id":"AAAAAAAAAAAAAAAAAAAAAA","kind":"phone","phoneLast4":"8000"}`, true},
 		{"full phone", "IdentityItem", `{"id":"AAAAAAAAAAAAAAAAAAAAAA","kind":"phone","phoneLast4":"+8613800138000"}`, false},
+		{"masked email", "IdentityItem", `{"id":"AAAAAAAAAAAAAAAAAAAAAA","kind":"email","emailMasked":"p***@example.com"}`, true},
+		{"full email", "IdentityItem", `{"id":"AAAAAAAAAAAAAAAAAAAAAA","kind":"email","emailMasked":"person@example.com"}`, false},
+		{"email link", "IdentityLinkStart", `{"kind":"email","email":"person@example.com","expectedVersion":1}`, true},
+		{"email login missing proof", "EmailLoginRequest", `{"challengeId":"AAAAAAAAAAAAAAAAAAAAAA","code":"123456"}`, false},
 		{"wechat openid", "IdentityItem", `{"id":"AAAAAAAAAAAAAAAAAAAAAA","kind":"wechat_mini","openid":"private"}`, false},
 		{"replace phone", "IdentityLinkStart", `{"kind":"phone","intent":"replace","phone":"+8613800138000","expectedVersion":1}`, true},
 		{"missing intent", "IdentityLinkStart", `{"kind":"phone","phone":"+8613800138000","expectedVersion":1}`, false},

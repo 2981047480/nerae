@@ -1,4 +1,6 @@
 {
+  "POST /auth/email/challenges": "postAuthEmailChallenges",
+  "POST /auth/email-login": "postAuthEmailLogin",
   "POST /auth/wechat-login": "postAuthWechatLogin",
   "GET /me": "getMe",
   "PATCH /me": "patchMe",
