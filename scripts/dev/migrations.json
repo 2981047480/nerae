@@ -14,6 +14,20 @@
       "module": "auth",
       "file": "0002_email_challenge.up.sql",
       "sha256": "cf8b0a95dcdb5e1c4c1bd01153ae76d175add8851ac7351c5eb42b86a3a266c4"
+    },
+    {
+      "order": 3,
+      "id": "user/0001_user.up.sql",
+      "module": "user",
+      "file": "0001_user.up.sql",
+      "sha256": "a02b69a38e87b8bec9ff10f1bee380451fe4d359ca00b8863a5835c4f9f756ec"
+    },
+    {
+      "order": 4,
+      "id": "auth/0003_email_identity.up.sql",
+      "module": "auth",
+      "file": "0003_email_identity.up.sql",
+      "sha256": "373e34b4915f595b18c8c5dc911ecabc32a6e45f350027891c372d188b50f38e"
     }
   ]
 }

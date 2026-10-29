@@ -12,4 +12,6 @@
 - `auth/0003_email_identity.up.sql`：`373e34b4915f595b18c8c5dc911ecabc32a6e45f350027891c372d188b50f38e`
 - `mysql_smoke.py`：`3786695ac28a9ecbcce67b2014cd1e32e78f4a482d356a0ac1bbd3ae98ba0393`
 
+集成提交 `e5bdb94` 的上述同一文件版本再次通过隔离 MySQL 验证；补齐用户和身份迁移的全局顺序后，迁移清单检查报告 4 项有效，`python3 -B scripts/plan.py check` 报告有效。该集成复测不代表任务已完成最终接受。
+
 设备批准、恢复码、会话、年龄准入、跨挑战限流、发信联动、幂等响应和认证 HTTP 均未完成；不得将内部解析结果当作外部登录成功。尚未验证真实邮箱登录、跨设备同步或 App 安装。
