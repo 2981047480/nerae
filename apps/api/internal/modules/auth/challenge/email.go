@@ -267,6 +267,17 @@ func (p *ReceiptProof) ForTransaction(ctx context.Context, tx *sql.Tx) (ReceiptP
 	return p.store.verifyReceiptProof(ctx, tx, p.scope, p.challengeID, p.compact)
 }
 
+// ForRequest additionally binds the revalidated proof to the exact compact
+// signature and challenge in the request whose receipt is being checked.
+// It does not compare the code or idempotency key; the receipt binding must
+// independently match the full request before any credential is released.
+func (p *ReceiptProof) ForRequest(ctx context.Context, tx *sql.Tx, challengeID, compact string) (ReceiptProofDetails, error) {
+	if p == nil || !hmac.Equal([]byte(p.challengeID), []byte(challengeID)) || !hmac.Equal([]byte(p.compact), []byte(compact)) {
+		return ReceiptProofDetails{}, ErrReceiptProofRejected
+	}
+	return p.ForTransaction(ctx, tx)
+}
+
 func (s *Store) verifyReceiptProof(ctx context.Context, tx *sql.Tx, scope [32]byte, challengeID, compact string) (ReceiptProofDetails, error) {
 	var details ReceiptProofDetails
 	if s == nil || s.replay == nil || s.identities == nil || s.now == nil || ctx == nil || tx == nil ||

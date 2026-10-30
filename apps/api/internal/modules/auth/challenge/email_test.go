@@ -762,6 +762,19 @@ func TestEmailReceiptProofRevalidation(t *testing.T) {
 		_ = tx.Rollback()
 		t.Fatal("revalidated proof was not bound to the original device and challenge")
 	}
+	if _, err := validated.ForRequest(ctx, tx, challengeID, proof); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("original request proof did not match")
+	}
+	alternateSignature := testProof(t, private, challengeID, nonce, "receipt-proof-jti", now)
+	if _, err := validated.ForRequest(ctx, tx, challengeID, alternateSignature); !errors.Is(err, ErrReceiptProofRejected) {
+		_ = tx.Rollback()
+		t.Fatal("a newly signed proof with the same JTI matched the original compact proof")
+	}
+	if _, err := validated.ForRequest(ctx, tx, replacementID, proof); !errors.Is(err, ErrReceiptProofRejected) {
+		_ = tx.Rollback()
+		t.Fatal("proof matched a different challenge")
+	}
 	if _, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET nonce=? WHERE challenge_id=?`, strings.Repeat("x", 43), challengeID); err != nil {
 		_ = tx.Rollback()
 		t.Fatal(err)
