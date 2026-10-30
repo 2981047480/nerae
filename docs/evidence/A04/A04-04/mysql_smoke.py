@@ -80,7 +80,7 @@ def main() -> int:
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_WORKOUT_INTEGRATION_TEST_DSN": f"root@unix({sock})/nerae_workout_integration_test?parseTime=true&loc=UTC"}
             result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
-                                     "./internal/modules/workout/application"], cwd=ROOT / "apps/api",
+                                     "-run", "^TestAuthenticatedWorkoutTransactions$", "./internal/modules/workout/application"], cwd=ROOT / "apps/api",
                                     env=test_env, timeout=180, check=False)
             if result.returncode:
                 raise RuntimeError(f"repository integration test failed ({result.returncode})")

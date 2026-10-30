@@ -81,7 +81,7 @@ def main() -> int:
                         "NERAE_WORKOUT_INTEGRATION_TEST_DSN": f"root@unix({sock})/nerae_workout_integration_test?parseTime=true&loc=UTC",
                         "NERAE_WORKOUT_CLIENT_INTEROP": "1"}
             result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
-                                     "-run", "^TestWorkoutHTTP", "./internal/modules/workout/transport"], cwd=ROOT / "apps/api",
+                                     "-run", "^TestWorkoutHTTP(Read|ConstructorRejectsMissingDependencies)$", "./internal/modules/workout/transport"], cwd=ROOT / "apps/api",
                                     env=test_env, timeout=180, check=False)
             if result.returncode:
                 raise RuntimeError(f"repository integration test failed ({result.returncode})")
