@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginledger"
 	"nerae/api/internal/modules/auth/loginreceipt"
 	"nerae/api/internal/modules/auth/repository"
 )
@@ -562,6 +564,344 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		t.Fatal("could not complete the device revocation test")
 	}
 	checkDenied(ErrInvalidSession)
+}
+
+func TestSessionReceiptRecovery(t *testing.T) {
+	db := sessionTestDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
+	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
+	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
+	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	resolver, _ := identity.NewResolver(protector)
+	codec, _ := NewTokenCodec(bytes.Repeat([]byte{5}, 32), TokenPolicy{MaxLifetime: time.Hour})
+	store, _ := NewStore(resolver, codec)
+	crypto, err := loginreceipt.New(loginreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{6}, 32),
+		RequestHMACKey: bytes.Repeat([]byte{7}, 32), AES256GCMKey: bytes.Repeat([]byte{8}, 32)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ledger, err := loginledger.NewStore(crypto, protector, "session-receipt-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	initTx, err := db.BeginTx(ctx, nil)
+	if err != nil || ledger.Initialize(ctx, initTx) != nil || initTx.Commit() != nil {
+		t.Fatal("isolated receipt initialization failed")
+	}
+	recoverer, err := NewReceiptRecoverer(store, ledger, challenges, crypto)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepare := func(email string, requestKey string) (*sql.Tx, ReceiptCandidate, Issued, loginreceipt.Request, [32]byte, loginreceipt.Binding) {
+		t.Helper()
+		private, public := testDevice(t)
+		id, _ := domain.GenerateChallengeID()
+		nonce, _ := domain.GenerateChallengeNonce()
+		issueTx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := challenges.Issue(ctx, issueTx, challenge.IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
+			_ = issueTx.Rollback()
+			t.Fatal("challenge issue failed")
+		}
+		if err := issueTx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+		signed := testProof(t, private, id, nonce)
+		request := loginreceipt.Request{IdempotencyKey: requestKey, ChallengeID: id, Code: "012345", DeviceProof: signed}
+		binding, err := crypto.Summarize(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		scope, err := protector.Index(email)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		handle, err := ledger.Lock(ctx, tx, scope, binding)
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatal("receipt reservation failed")
+		}
+		attempt, err := challenges.Attempt(ctx, tx, challenge.AttemptInput{ChallengeID: id, Code: request.Code, DeviceProof: signed})
+		if err != nil || !attempt.Verified || attempt.Proof == nil {
+			_ = tx.Rollback()
+			t.Fatal("synthetic challenge verification failed")
+		}
+		issued, err := store.IssueEmail(ctx, tx, attempt.Proof)
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatal("synthetic session issue failed")
+		}
+		expiry := time.Now().UTC().Add(2 * time.Minute).Truncate(time.Microsecond)
+		sealed, err := issued.SealForReceipt(ctx, tx, attempt.Proof, crypto, binding, expiry)
+		if err != nil || ledger.Put(ctx, tx, handle, loginreceipt.ResultAuthenticated, sealed.Reference(), sealed.ExpiresAt(), sealed.Ciphertext()) != nil {
+			_ = tx.Rollback()
+			t.Fatal("synthetic receipt write failed")
+		}
+		handle, err = ledger.Lock(ctx, tx, scope, binding)
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatal("stored receipt lookup failed")
+		}
+		proof, err := challenges.VerifyReceiptProof(ctx, tx, scope, id, signed)
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatal("proof recheck failed")
+		}
+		candidate, err := recoverer.Recover(ctx, tx, handle, proof, request)
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatalf("session receipt recovery failed: %v", err)
+		}
+		return tx, candidate, issued, request, scope, binding
+	}
+	tx, candidate, issued, request, scope, binding := prepare("receipt-session@example.test", "AQEBAQEBAQEBAQEBAQEBAQ")
+	if token, err := candidate.AfterCommit(ctx, db); err == nil || token != "" {
+		_ = tx.Rollback()
+		t.Fatal("uncommitted receipt released a token")
+	}
+	if _, err := json.Marshal(candidate); err == nil || strings.Contains(fmt.Sprintf("%+v", candidate), request.DeviceProof) {
+		_ = tx.Rollback()
+		t.Fatal("receipt candidate exposed sensitive material")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	token, err := candidate.AfterCommit(ctx, db)
+	if err != nil || token == "" {
+		t.Fatal("committed valid receipt did not recover a token")
+	}
+	original, err := issued.AfterCommit(ctx, db)
+	if err != nil || token != original {
+		t.Fatal("receipt did not recover the originally issued token")
+	}
+	claims, err := codec.Verify(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var deviceID, identityID []byte
+	if err := db.QueryRowContext(ctx, `SELECT device_id, identity_id FROM auth_session WHERE id=?`, []byte(claims.SessionID)).Scan(&deviceID, &identityID); err != nil {
+		t.Fatal(err)
+	}
+	changes := []struct {
+		change, restore string
+		args            []any
+	}{
+		{`UPDATE user SET status='disabled' WHERE id=?`, `UPDATE user SET status='active' WHERE id=?`, []any{claims.SubjectID}},
+		{`UPDATE user SET token_version=token_version+1 WHERE id=?`, `UPDATE user SET token_version=token_version-1 WHERE id=?`, []any{claims.SubjectID}},
+		{`UPDATE login_identity SET state='revoked' WHERE id=?`, `UPDATE login_identity SET state='active' WHERE id=?`, []any{identityID}},
+		{`UPDATE trusted_device SET state='revoked' WHERE id=?`, `UPDATE trusted_device SET state='active' WHERE id=?`, []any{deviceID}},
+		{`UPDATE auth_session SET state='revoked', revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, `UPDATE auth_session SET state='active', revoked_at=NULL WHERE id=?`, []any{[]byte(claims.SessionID)}},
+	}
+	for _, item := range changes {
+		if _, err := db.ExecContext(ctx, item.change, item.args...); err != nil {
+			t.Fatal(err)
+		}
+		if value, err := candidate.AfterCommit(ctx, db); !errors.Is(err, ErrInvalidSession) || value != "" {
+			t.Fatal("revoked receipt released a token")
+		}
+		if _, err := db.ExecContext(ctx, item.restore, item.args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Hold a real user-row lock, revoke inside that transaction and ensure a
+	// concurrent receipt recovery observes the revocation after waiting.
+	gate, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gate.ExecContext(ctx, `UPDATE user SET status='disabled' WHERE id=?`, claims.SubjectID); err != nil {
+		_ = gate.Rollback()
+		t.Fatal(err)
+	}
+	type replayOutcome struct {
+		token string
+		err   error
+	}
+	waiting := make(chan replayOutcome, 1)
+	go func() {
+		value, err := candidate.AfterCommit(ctx, db)
+		waiting <- replayOutcome{value, err}
+	}()
+	deadline := time.Now().Add(5 * time.Second)
+	blocked := 0
+	for time.Now().Before(deadline) {
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID)
+			FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+			WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='user'`).Scan(&blocked); err != nil {
+			_ = gate.Rollback()
+			t.Fatal("could not observe the receipt recovery lock wait")
+		}
+		if blocked > 0 {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if blocked == 0 {
+		_ = gate.Rollback()
+		t.Fatal("receipt recovery did not wait for the account lock")
+	}
+	if err := gate.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case result := <-waiting:
+		if !errors.Is(result.err, ErrInvalidSession) || result.token != "" {
+			t.Fatal("receipt recovery ignored the account revocation after lock wait")
+		}
+	case <-ctx.Done():
+		t.Fatal("receipt recovery did not finish after the lock was released")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE user SET status='active' WHERE id=?`, claims.SubjectID); err != nil {
+		t.Fatal(err)
+	}
+	// Move the injectable session clock past expiration at different stages of
+	// replay, including immediately after commit; any observed expiry must fail
+	// closed rather than return an already-expired credential.
+	for advanceAt := int32(1); advanceAt <= 15; advanceAt++ {
+		var calls atomic.Int32
+		var advanced atomic.Bool
+		store.now = func() time.Time {
+			if calls.Add(1) >= advanceAt {
+				advanced.Store(true)
+				return claims.ExpiresAt
+			}
+			return time.Now().UTC()
+		}
+		value, err := candidate.AfterCommit(ctx, db)
+		if advanced.Load() && (err == nil || value != "") {
+			store.now = time.Now
+			t.Fatal("session expired during receipt recovery but a token was released")
+		}
+	}
+	store.now = time.Now
+	// The proof has a shorter lifetime than the receipt and session. Advance
+	// only that far: even a commit that completes after proof expiry must not
+	// release the otherwise-live token.
+	proofExpiredAt := time.Now().UTC().Add(95 * time.Second)
+	observedAdvance := false
+	for advanceAt := int32(1); advanceAt <= 15; advanceAt++ {
+		var calls atomic.Int32
+		var advanced atomic.Bool
+		store.now = func() time.Time {
+			if calls.Add(1) >= advanceAt {
+				advanced.Store(true)
+				return proofExpiredAt
+			}
+			return time.Now().UTC()
+		}
+		value, err := candidate.AfterCommit(ctx, db)
+		if advanced.Load() {
+			observedAdvance = true
+			if err == nil || value != "" {
+				store.now = time.Now
+				t.Fatal("expired device proof released a still-live session receipt")
+			}
+		}
+	}
+	store.now = time.Now
+	if !observedAdvance {
+		t.Fatal("proof-expiry clock was never exercised")
+	}
+
+	verifyTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handle, err := ledger.Lock(ctx, verifyTx, scope, binding)
+	if err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal(err)
+	}
+	proof, err := challenges.VerifyReceiptProof(ctx, verifyTx, scope, request.ChallengeID, request.DeviceProof)
+	if err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal(err)
+	}
+	changedRequest := request
+	changedRequest.Code = "999999"
+	if _, err := recoverer.Recover(ctx, verifyTx, handle, proof, changedRequest); !errors.Is(err, ErrInvalidSession) {
+		_ = verifyTx.Rollback()
+		t.Fatal("changed request recovered a receipt")
+	}
+	otherTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := recoverer.Recover(ctx, otherTx, handle, proof, request); !errors.Is(err, ErrSessionUnavailable) {
+		_ = otherTx.Rollback()
+		_ = verifyTx.Rollback()
+		t.Fatal("cross-transaction receipt or proof was accepted")
+	}
+	_ = otherTx.Rollback()
+	keyDigest := binding.IdempotencyDigest()
+	if _, err := verifyTx.ExecContext(ctx, `UPDATE auth_email_login_receipt SET created_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 2 MINUTE), expires_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 MINUTE) WHERE email_scope=? AND request_key_hmac=?`, scope[:], keyDigest[:]); err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := recoverer.Recover(ctx, verifyTx, handle, proof, request); !errors.Is(err, ErrInvalidSession) {
+		_ = verifyTx.Rollback()
+		t.Fatal("expired receipt recovered a token")
+	}
+	_ = verifyTx.Rollback()
+
+	cancelTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelHandle, err := ledger.Lock(ctx, cancelTx, scope, binding)
+	if err != nil {
+		_ = cancelTx.Rollback()
+		t.Fatal(err)
+	}
+	cancelProof, err := challenges.VerifyReceiptProof(ctx, cancelTx, scope, request.ChallengeID, request.DeviceProof)
+	if err != nil {
+		_ = cancelTx.Rollback()
+		t.Fatal(err)
+	}
+	canceled, stop := context.WithCancel(ctx)
+	stop()
+	if _, err := recoverer.Recover(canceled, cancelTx, cancelHandle, cancelProof, request); !errors.Is(err, ErrSessionUnavailable) {
+		_ = cancelTx.Rollback()
+		t.Fatal("storage/context failure was classified as an invalid session")
+	}
+	_ = cancelTx.Rollback()
+
+	var ciphertext []byte
+	if err := db.QueryRowContext(ctx, `SELECT response_enc FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], keyDigest[:]).Scan(&ciphertext); err != nil {
+		t.Fatal(err)
+	}
+	corrupt := append([]byte(nil), ciphertext...)
+	corrupt[len(corrupt)-1] ^= 1
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET response_enc=? WHERE email_scope=? AND request_key_hmac=?`, corrupt, scope[:], keyDigest[:]); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := candidate.AfterCommit(ctx, db); err == nil || value != "" {
+		t.Fatal("tampered ciphertext released a token")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET response_enc=? WHERE email_scope=? AND request_key_hmac=?`, ciphertext, scope[:], keyDigest[:]); err != nil {
+		t.Fatal(err)
+	}
+	rolledTx, rolledCandidate, _, _, _, _ := prepare("receipt-session-rollback@example.test", "AgICAgICAgICAgICAgICAg")
+	if err := rolledTx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := rolledCandidate.AfterCommit(ctx, db); err == nil || value != "" {
+		t.Fatal("rolled-back receipt released a token")
+	}
 }
 
 func TestAuthenticationClassifiesBrokenCodecAsUnavailable(t *testing.T) {

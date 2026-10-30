@@ -69,7 +69,7 @@ def main() -> int:
                 time.sleep(0.2)
             else:
                 raise RuntimeError("private MySQL did not become ready")
-            migration = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql", "user/0001_user.up.sql", "auth/0003_email_identity.up.sql", "auth/0004_auth_session.up.sql"))
+            migration = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql", "user/0001_user.up.sql", "auth/0003_email_identity.up.sql", "auth/0004_auth_session.up.sql", "auth/0009_email_login_receipt.up.sql"))
             sql = "CREATE DATABASE nerae_auth_session_test;\nUSE nerae_auth_session_test;\n" + migration
             apply = subprocess.run(mysql, input=sql, text=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, env=env, timeout=20, check=False)
