@@ -667,6 +667,17 @@ func TestSessionReceiptRecovery(t *testing.T) {
 		}
 		return tx, candidate, issued, request, scope, binding
 	}
+	// Establish a repeatable-read snapshot before the session is created, as a
+	// concurrent retry can do while it waits on the same login receipt.
+	snapshotTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var priorSessions int
+	if err := snapshotTx.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session`).Scan(&priorSessions); err != nil {
+		_ = snapshotTx.Rollback()
+		t.Fatal(err)
+	}
 	tx, candidate, issued, request, scope, binding := prepare("receipt-session@example.test", "AQEBAQEBAQEBAQEBAQEBAQ")
 	if token, err := candidate.AfterCommit(ctx, db); err == nil || token != "" {
 		_ = tx.Rollback()
@@ -677,11 +688,33 @@ func TestSessionReceiptRecovery(t *testing.T) {
 		t.Fatal("receipt candidate exposed sensitive material")
 	}
 	if err := tx.Commit(); err != nil {
+		_ = snapshotTx.Rollback()
+		t.Fatal(err)
+	}
+	snapshotHandle, err := ledger.Lock(ctx, snapshotTx, scope, binding)
+	if err != nil {
+		_ = snapshotTx.Rollback()
+		t.Fatal("stale snapshot could not lock the committed receipt")
+	}
+	snapshotProof, err := challenges.VerifyReceiptProof(ctx, snapshotTx, scope, request.ChallengeID, request.DeviceProof)
+	if err != nil {
+		_ = snapshotTx.Rollback()
+		t.Fatal("stale snapshot could not recheck the committed proof")
+	}
+	snapshotCandidate, err := recoverer.Recover(ctx, snapshotTx, snapshotHandle, snapshotProof, request)
+	if err != nil {
+		_ = snapshotTx.Rollback()
+		t.Fatalf("stale snapshot could not read the committed session: %v", err)
+	}
+	if err := snapshotTx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	token, err := candidate.AfterCommit(ctx, db)
 	if err != nil || token == "" {
 		t.Fatal("committed valid receipt did not recover a token")
+	}
+	if value, err := snapshotCandidate.AfterCommit(ctx, db); err != nil || value != token {
+		t.Fatal("stale snapshot did not recover the same committed token")
 	}
 	original, err := issued.AfterCommit(ctx, db)
 	if err != nil || token != original {

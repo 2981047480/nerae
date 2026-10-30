@@ -237,7 +237,7 @@ func (r *ReceiptRecoverer) Recover(ctx context.Context, tx *sql.Tx, handle *logi
 		return ReceiptCandidate{}, ErrInvalidSession
 	}
 	reference := record.ResultReference()
-	owner, deviceID, err := r.sessions.authorizeReceiptReference(ctx, tx, reference, proofDetails)
+	authority, err := r.sessions.authorizeReceiptReference(ctx, tx, reference, proofDetails)
 	if err != nil {
 		return ReceiptCandidate{}, err
 	}
@@ -264,15 +264,7 @@ func (r *ReceiptRecoverer) Recover(ctx context.Context, tx *sql.Tx, handle *logi
 		return ReceiptCandidate{}, ErrSessionUnavailable
 	}
 	token := string(plaintext.Bytes())
-	principal, err := r.sessions.Authenticate(ctx, tx, token)
-	if err != nil {
-		return ReceiptCandidate{}, err
-	}
-	details, err := principal.ForTransaction(ctx, tx)
-	if err != nil || details.SubjectID != owner || details.DeviceID != deviceID || details.SessionID != reference {
-		return ReceiptCandidate{}, ErrSessionUnavailable
-	}
-	if _, _, err := r.sessions.authorizeReceiptReference(ctx, tx, reference, proofDetails); err != nil {
+	if err := r.sessions.verifyReceiptToken(token, reference, authority); err != nil {
 		return ReceiptCandidate{}, err
 	}
 	finalRecord, _, _, err := handle.RecheckExisting(ctx, tx)
@@ -292,13 +284,15 @@ func (r *ReceiptRecoverer) Recover(ctx context.Context, tx *sql.Tx, handle *logi
 	}
 	// The final proof lookup can itself wait. Do not rely on the earlier
 	// session check if its token or account state changed in the meantime.
-	finalPrincipal, err := r.sessions.Authenticate(ctx, tx, token)
+	finalAuthority, err := r.sessions.authorizeReceiptReference(ctx, tx, reference, finalProof)
 	if err != nil {
 		return ReceiptCandidate{}, err
 	}
-	finalDetails, err := finalPrincipal.ForTransaction(ctx, tx)
-	if err != nil || finalDetails.SubjectID != owner || finalDetails.DeviceID != deviceID || finalDetails.SessionID != reference {
-		return ReceiptCandidate{}, ErrSessionUnavailable
+	if finalAuthority != authority {
+		return ReceiptCandidate{}, ErrInvalidSession
+	}
+	if err := r.sessions.verifyReceiptToken(token, reference, finalAuthority); err != nil {
+		return ReceiptCandidate{}, err
 	}
 	if now := r.sessions.now().UTC(); now.IsZero() || !finalRecord.ExpiresAt().After(now) {
 		return ReceiptCandidate{}, ErrInvalidSession
@@ -368,73 +362,87 @@ func receiptRowError(err error) error {
 	return ErrSessionUnavailable
 }
 
-// authorizeReceiptReference checks current state before the encrypted token
-// can be opened. Lock order matches Authenticate: identity -> user -> device
-// -> session; the caller already holds the challenge and receipt locks.
-func (s *Store) authorizeReceiptReference(ctx context.Context, tx *sql.Tx, reference string, proof challenge.ReceiptProofDetails) (uint64, string, error) {
+type receiptAuthority struct {
+	userID        uint64
+	deviceID      string
+	tokenVersion  uint64
+	authenticated time.Time
+	expiresAt     time.Time
+}
+
+func (s *Store) verifyReceiptToken(token, reference string, authority receiptAuthority) error {
+	claims, err := s.verifySessionToken(token)
+	if err != nil {
+		return err
+	}
+	userID, err := strconv.ParseUint(claims.SubjectID, 10, 64)
+	if err != nil || userID != authority.userID || claims.SessionID != reference || claims.TokenVersion != authority.tokenVersion ||
+		!claims.IssuedAt.Equal(authority.authenticated) || !claims.ExpiresAt.Equal(authority.expiresAt) {
+		return ErrInvalidSession
+	}
+	return nil
+}
+
+// authorizeReceiptReference uses current locking reads, even when the caller
+// already established a repeatable-read snapshot before another login commit.
+// Order is identity -> user -> device -> session; challenge and receipt locks
+// are already held by the caller.
+func (s *Store) authorizeReceiptReference(ctx context.Context, tx *sql.Tx, reference string, proof challenge.ReceiptProofDetails) (receiptAuthority, error) {
+	var authority receiptAuthority
 	if s == nil || s.now == nil || ctx == nil || tx == nil || !validSessionID(reference) || proof.Scope == ([32]byte{}) || proof.Fingerprint == ([32]byte{}) || proof.ChallengeID == "" {
-		return 0, "", ErrSessionUnavailable
+		return authority, ErrSessionUnavailable
 	}
 	var userID uint64
-	var identityID, deviceID []byte
-	err := tx.QueryRowContext(ctx, `SELECT user_id, identity_id, device_id FROM auth_session WHERE id = ?`, []byte(reference)).Scan(&userID, &identityID, &deviceID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, "", ErrInvalidSession
-	}
-	if err != nil || userID == 0 || len(identityID) == 0 || len(deviceID) == 0 {
-		return 0, "", ErrSessionUnavailable
-	}
-	var identityUser uint64
-	var identityState, identityKind string
-	var providerScope, identityIndex []byte
-	err = tx.QueryRowContext(ctx, `SELECT user_id, state, kind, provider_scope, subject_lookup_hmac FROM login_identity WHERE id = ? FOR UPDATE`, identityID).
-		Scan(&identityUser, &identityState, &identityKind, &providerScope, &identityIndex)
+	var identityID []byte
+	err := tx.QueryRowContext(ctx, `SELECT id, user_id FROM login_identity WHERE kind='email' AND provider_scope='beta-email'
+		AND subject_lookup_hmac=? AND active_slot=1 FOR UPDATE`, proof.Scope[:]).Scan(&identityID, &userID)
 	if err != nil {
-		return 0, "", receiptRowError(err)
+		return authority, receiptRowError(err)
 	}
-	if identityUser != userID || identityState != "active" || identityKind != "email" || string(providerScope) != "beta-email" || !hmac.Equal(identityIndex, proof.Scope[:]) {
-		return 0, "", ErrInvalidSession
+	if userID == 0 || len(identityID) == 0 {
+		return authority, ErrSessionUnavailable
 	}
 	var status string
 	var tokenVersion uint64
 	err = tx.QueryRowContext(ctx, `SELECT status, token_version FROM user WHERE id = ? FOR UPDATE`, userID).Scan(&status, &tokenVersion)
 	if err != nil {
-		return 0, "", receiptRowError(err)
+		return authority, receiptRowError(err)
 	}
 	if status != "active" || tokenVersion == 0 {
-		return 0, "", ErrInvalidSession
+		return authority, ErrInvalidSession
 	}
 	var deviceUser uint64
 	var deviceState string
-	var fingerprint []byte
-	err = tx.QueryRowContext(ctx, `SELECT user_id, state, key_fingerprint FROM trusted_device WHERE id = ? FOR UPDATE`, deviceID).Scan(&deviceUser, &deviceState, &fingerprint)
+	var deviceID []byte
+	err = tx.QueryRowContext(ctx, `SELECT id, user_id, state FROM trusted_device WHERE key_fingerprint = ? FOR UPDATE`, proof.Fingerprint[:]).Scan(&deviceID, &deviceUser, &deviceState)
 	if err != nil {
-		return 0, "", receiptRowError(err)
+		return authority, receiptRowError(err)
 	}
-	if deviceUser != userID || deviceState != "active" || !hmac.Equal(fingerprint, proof.Fingerprint[:]) {
-		return 0, "", ErrInvalidSession
+	if deviceUser != userID || deviceState != "active" || len(deviceID) == 0 {
+		return authority, ErrInvalidSession
 	}
 	var rowUser, rowVersion uint64
 	var rowIdentity, rowDevice, challengeID []byte
-	var state, expiryRaw string
-	err = tx.QueryRowContext(ctx, `SELECT user_id, identity_id, device_id, login_challenge_id, token_version, state, CAST(expires_at AS CHAR)
-		FROM auth_session WHERE id = ? FOR UPDATE`, []byte(reference)).Scan(&rowUser, &rowIdentity, &rowDevice, &challengeID, &rowVersion, &state, &expiryRaw)
+	var state, authenticatedRaw, expiryRaw string
+	err = tx.QueryRowContext(ctx, `SELECT user_id, identity_id, device_id, login_challenge_id, token_version, state, CAST(authenticated_at AS CHAR), CAST(expires_at AS CHAR)
+		FROM auth_session WHERE id = ? FOR UPDATE`, []byte(reference)).Scan(&rowUser, &rowIdentity, &rowDevice, &challengeID, &rowVersion, &state, &authenticatedRaw, &expiryRaw)
 	if err != nil {
-		return 0, "", receiptRowError(err)
+		return authority, receiptRowError(err)
 	}
 	if rowUser != userID || !hmac.Equal(rowIdentity, identityID) || !hmac.Equal(rowDevice, deviceID) ||
 		!hmac.Equal(challengeID, []byte(proof.ChallengeID)) || rowVersion != tokenVersion || state != "active" {
-		return 0, "", ErrInvalidSession
+		return authority, ErrInvalidSession
 	}
+	authenticated, authErr := time.Parse("2006-01-02 15:04:05.999999", authenticatedRaw)
 	expires, err := time.Parse("2006-01-02 15:04:05.999999", expiryRaw)
 	now := s.now().UTC()
-	if err != nil || now.IsZero() {
-		return 0, "", ErrSessionUnavailable
+	if err != nil || authErr != nil || now.IsZero() {
+		return authority, ErrSessionUnavailable
 	}
 	if !expires.After(now) {
-		return 0, "", ErrInvalidSession
+		return authority, ErrInvalidSession
 	}
-	return userID, string(deviceID), nil
+	return receiptAuthority{userID: userID, deviceID: string(deviceID), tokenVersion: tokenVersion, authenticated: authenticated, expiresAt: expires}, nil
 }
 
 // IssueEmail only accepts a verified challenge from this live transaction.
