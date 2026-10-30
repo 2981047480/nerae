@@ -217,8 +217,13 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		_ = tx.Rollback()
 		t.Fatal(err)
 	}
+	capped, err := issued.SealForReceipt(ctx, tx, proof, crypto, binding, time.Now().UTC().Add(2*time.Hour).Truncate(time.Microsecond))
+	if err != nil || !capped.ExpiresAt().Equal(issuedClaims.ExpiresAt) {
+		_ = tx.Rollback()
+		t.Fatal("session receipt lifetime exceeded the session lifetime")
+	}
 	sealed, err := issued.SealForReceipt(ctx, tx, proof, crypto, binding, expires)
-	if err != nil || sealed.Reference() != issuedClaims.SessionID || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(issued.token.ForResponse())) {
+	if err != nil || sealed.Reference() != issuedClaims.SessionID || !sealed.ExpiresAt().Equal(expires) || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(issued.token.ForResponse())) {
 		_ = tx.Rollback()
 		t.Fatal("session receipt was not encrypted or bound to its session")
 	}

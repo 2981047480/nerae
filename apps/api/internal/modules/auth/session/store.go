@@ -82,6 +82,7 @@ func (i Issued) AfterCommit(ctx context.Context, db *sql.DB) (string, error) {
 type SealedReceipt struct {
 	reference string
 	sealed    loginreceipt.Sealed
+	expiresAt time.Time
 }
 
 func (SealedReceipt) String() string                    { return "SealedSessionReceipt{redacted}" }
@@ -90,13 +91,15 @@ func (SealedReceipt) MarshalJSON() ([]byte, error)      { return nil, ErrSession
 func (SealedReceipt) LogValue() slog.Value              { return slog.StringValue("SealedSessionReceipt{redacted}") }
 func (r SealedReceipt) Reference() string               { return r.reference }
 func (r SealedReceipt) Ciphertext() loginreceipt.Sealed { return r.sealed }
+func (r SealedReceipt) ExpiresAt() time.Time            { return r.expiresAt }
 
 // SealForReceipt encrypts an issued token while its original transaction and
 // verified email proof are still live. The caller must use a binding derived
 // from the exact login request, persist the returned ciphertext in this same
 // transaction, and release no credential until commit and a fresh replay-time
 // signature, receipt, and authorization recheck. This method never returns a
-// token or asserts that the transaction will commit.
+// token or asserts that the transaction will commit. The returned expiration
+// is capped at the session's own expiration.
 func (i Issued) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge.VerifiedEmail, crypto *loginreceipt.Crypto, binding loginreceipt.Binding, expires time.Time) (SealedReceipt, error) {
 	if ctx == nil || tx == nil || i.sourceTx != tx || i.store == nil || i.store.now == nil || proof == nil || crypto == nil || i.token.ForResponse() == "" {
 		return SealedReceipt{}, ErrSessionUnavailable
@@ -110,8 +113,11 @@ func (i Issued) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge
 		return SealedReceipt{}, ErrSessionUnavailable
 	}
 	claims, err := i.store.verifySessionToken(i.token.ForResponse())
-	if err != nil || !expires.After(i.store.now().UTC()) || expires.After(claims.ExpiresAt) {
+	if err != nil {
 		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	if expires.After(claims.ExpiresAt) {
+		expires = claims.ExpiresAt
 	}
 	principal, err := i.store.Authenticate(ctx, tx, i.token.ForResponse())
 	if err != nil {
@@ -156,7 +162,7 @@ func (i Issued) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge
 	if err != nil {
 		return SealedReceipt{}, ErrSessionUnavailable
 	}
-	return SealedReceipt{reference: claims.SessionID, sealed: sealed}, nil
+	return SealedReceipt{reference: claims.SessionID, sealed: sealed, expiresAt: expires}, nil
 }
 
 // IssueEmail only accepts a verified challenge from this live transaction.
