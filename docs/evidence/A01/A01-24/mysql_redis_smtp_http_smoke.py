@@ -32,6 +32,7 @@ MIGRATIONS = (
     "auth/0007_email_outbox.up.sql",
     "auth/0008_email_challenge_request.up.sql",
     "auth/0009_email_login_receipt.up.sql",
+    "transport/0001_idempotency.up.sql",
 )
 
 
@@ -88,13 +89,13 @@ def run() -> int:
                         "NERAE_EMAIL_DELIVERY_E2E_TEST_DSN": f"root@unix({mysql_socket})/nerae_a01_24_test?parseTime=true&loc=UTC",
                         "NERAE_EMAIL_DELIVERY_E2E_REDIS_SOCKET": str(redis_socket)}
             test = subprocess.run([str(GO), "test", "-mod=readonly", "-race", "-count=1", "-v",
-                                   "-run", "^TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS$", "./internal/modules/auth/transport"],
+                                   "-run", "^TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS$", "./internal/modules/auth/transport"],
                                   cwd=ROOT / "apps/api", env=test_env, timeout=420,
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
             print(test.stdout, end="")
             if test.returncode:
-                raise RuntimeError(f"delivery-to-/me integration test failed ({test.returncode})")
-            marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me -> versioned age declaration"
+                raise RuntimeError(f"auth-to-workout integration test failed ({test.returncode})")
+            marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP"
             if marker not in test.stdout:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],

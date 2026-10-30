@@ -47,12 +47,15 @@ import (
 	"nerae/api/internal/modules/auth/ratelimit"
 	"nerae/api/internal/modules/auth/repository"
 	"nerae/api/internal/modules/auth/session"
+	workoutapp "nerae/api/internal/modules/workout/application"
+	workoutrepo "nerae/api/internal/modules/workout/repository"
+	workouttransport "nerae/api/internal/modules/workout/transport"
 )
 
 // This test-only assembly exercises the real challenge issuer, outbox worker,
 // local TLS SMTP adapter, login coordinator, HTTP handlers and /me handler.
 // It does not mount production routes or contact an external mail service.
-func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
+func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	dsn := os.Getenv("NERAE_EMAIL_DELIVERY_E2E_TEST_DSN")
 	redisSocket := os.Getenv("NERAE_EMAIL_DELIVERY_E2E_REDIS_SOCKET")
 	if dsn == "" || redisSocket == "" {
@@ -216,7 +219,7 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("login coordinator setup failed")
 	}
-	validator, err := middleware.NewSchemaValidator(16<<10, 2048)
+	validator, err := middleware.NewSchemaValidator(4<<20, 100000)
 	if err != nil {
 		t.Fatal("schema validator setup failed")
 	}
@@ -236,11 +239,66 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("age verification handler setup failed")
 	}
+	exerciseProtector, err := workoutrepo.NewExerciseNameProtector(bytes.Repeat([]byte{0x51}, 32), "a01-24-workout-test-key")
+	if err != nil {
+		t.Fatal("workout exercise protector setup failed")
+	}
+	workoutInitTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("workout exercise-key transaction failed")
+	}
+	if err := exerciseProtector.InitializeExerciseKey(ctx, workoutInitTx); err != nil {
+		_ = workoutInitTx.Rollback()
+		t.Fatal("workout exercise-key initialization failed")
+	}
+	if err := workoutInitTx.Commit(); err != nil {
+		t.Fatal("workout exercise-key commit failed")
+	}
+	records, err := workoutrepo.NewRecordStore(exerciseProtector)
+	if err != nil {
+		t.Fatal("workout record store setup failed")
+	}
+	workoutService, err := workoutapp.New(sessions, workoutrepo.NewSessionStore(), records)
+	if err != nil {
+		t.Fatal("workout service setup failed")
+	}
+	workoutExecutor, err := workoutapp.NewWorkoutExecutor(sessions, bytes.Repeat([]byte{0x52}, 32), bytes.Repeat([]byte{0x53}, 32), "a01-24-workout-v1", time.Hour)
+	if err != nil {
+		t.Fatal("workout idempotency executor setup failed")
+	}
+	workoutKeyTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("workout idempotency-key transaction failed")
+	}
+	if err := workoutExecutor.InitializeKey(ctx, workoutKeyTx); err != nil {
+		_ = workoutKeyTx.Rollback()
+		t.Fatal("workout idempotency-key initialization failed")
+	}
+	if err := workoutKeyTx.Commit(); err != nil {
+		t.Fatal("workout idempotency-key commit failed")
+	}
+	workoutWriteHandler, err := workouttransport.NewWriteHandler(db, workoutService, validator, workoutExecutor)
+	if err != nil {
+		t.Fatal("workout write handler setup failed")
+	}
+	workoutReadHandler, err := workouttransport.NewReadHandler(db, workoutService, validator)
+	if err != nil {
+		t.Fatal("workout read handler setup failed")
+	}
+	workoutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			workoutReadHandler.ServeHTTP(w, r)
+			return
+		}
+		workoutWriteHandler.ServeHTTP(w, r)
+	})
 	mux := http.NewServeMux()
 	mux.Handle(emailChallengesPath, challengeHandler)
 	mux.Handle(emailLoginPath, loginHandler)
 	mux.Handle("/me", meHandler)
 	mux.Handle(ageVerifyPath, ageHandler)
+	mux.Handle("/me/sessions", workoutHandler)
+	mux.Handle("/me/sessions/", workoutHandler)
 	server := httptest.NewTLSServer(mux)
 	defer server.Close()
 
@@ -388,6 +446,50 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 		}
 		return response.StatusCode, response.Header.Clone(), payload
 	}
+	type workoutHTTPResult struct {
+		status  int
+		headers http.Header
+		body    []byte
+	}
+	responseSecrets := []string{success.Token}
+	workoutRequest := func(method, path string, body []byte, token, key string) workoutHTTPResult {
+		t.Helper()
+		var requestBody io.Reader
+		if body != nil {
+			requestBody = bytes.NewReader(body)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, server.URL+path, requestBody)
+		if err != nil {
+			t.Fatal("workout HTTP request setup failed")
+		}
+		if body != nil {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		if key != "" {
+			req.Header.Set("Idempotency-Key", key)
+		}
+		response, err := server.Client().Do(req)
+		if err != nil {
+			t.Fatal("workout local TLS request failed")
+		}
+		payload, readErr := io.ReadAll(io.LimitReader(response.Body, 1<<20))
+		_ = response.Body.Close()
+		if readErr != nil {
+			t.Fatal("workout HTTP response read failed")
+		}
+		if response.Header.Get("Cache-Control") != "no-store" {
+			t.Fatalf("workout response status %d was cacheable", response.StatusCode)
+		}
+		for _, secret := range responseSecrets {
+			if secret != "" && bytes.Contains(payload, []byte(secret)) {
+				t.Fatal("workout HTTP response leaked a bearer token")
+			}
+		}
+		return workoutHTTPResult{status: response.StatusCode, headers: response.Header.Clone(), body: payload}
+	}
 	ageBody := []byte(`{"isAdult":true,"expectedVersion":1}`)
 	status, ageHeaders, ageResponse := postAge(server.Client(), server.URL, success.Token, ageBody)
 	var declaredUser api.User
@@ -436,6 +538,142 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 		declaredUser.Id != success.User.Id || declaredUser.AgeVerified == nil || !*declaredUser.AgeVerified || declaredUser.AgeDeclarationVersion == nil || *declaredUser.AgeDeclarationVersion != 5 {
 		t.Fatal("current versioned self-declaration did not recover after explicit state review")
 	}
+
+	workoutDate := time.Now().UTC().Format("2006-01-02")
+	createBody, err := json.Marshal(map[string]any{"source": "free", "date": workoutDate, "timeZone": "UTC", "clientEventId": "a01-24-workout-event-001"})
+	if err != nil {
+		t.Fatal("workout creation body encoding failed")
+	}
+	createKey := randomIdempotencyKey(t)
+	created := workoutRequest(http.MethodPost, "/me/sessions", createBody, success.Token, createKey)
+	var createdDetail struct {
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+		Version int    `json:"version"`
+	}
+	if created.status != http.StatusCreated || created.headers.Get("Idempotency-Key-Expires-At") == "" ||
+		json.Unmarshal(created.body, &createdDetail) != nil || createdDetail.ID == "" || createdDetail.Status != "in_progress" || createdDetail.Version != 1 {
+		t.Fatalf("authenticated workout creation failed: %d %s", created.status, created.body)
+	}
+	createReplay := workoutRequest(http.MethodPost, "/me/sessions", createBody, success.Token, createKey)
+	if createReplay.status != http.StatusCreated || !bytes.Equal(createReplay.body, created.body) || createReplay.headers.Get("Idempotency-Key-Expires-At") != created.headers.Get("Idempotency-Key-Expires-At") {
+		t.Fatal("same-key workout creation replay differed from its original response")
+	}
+	setPath := "/me/sessions/" + createdDetail.ID + "/sets"
+	setBody := []byte(`{"expectedVersion":1,"exerciseEntryKeys":["a01-24-entry-001"],"sets":[{"recordKey":"a01-24-record-001","exerciseEntryKey":"a01-24-entry-001","exerciseName":"卧推","kind":"weight","setIndex":1,"weightKg":42.50,"reps":8,"rpe":7.5,"completed":true}]}`)
+	setKey := randomIdempotencyKey(t)
+	// Training-after batch save and per-set confirmation both map to this same write endpoint.
+	saved := workoutRequest(http.MethodPost, setPath, setBody, success.Token, setKey)
+	var savedDetail struct {
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+		Version int    `json:"version"`
+		Sets    []struct {
+			RecordKey string      `json:"recordKey"`
+			WeightKg  json.Number `json:"weightKg"`
+			Completed bool        `json:"completed"`
+		} `json:"sets"`
+	}
+	if saved.status != http.StatusOK || saved.headers.Get("Idempotency-Key-Expires-At") == "" || json.Unmarshal(saved.body, &savedDetail) != nil ||
+		savedDetail.ID != createdDetail.ID || savedDetail.Status != "in_progress" || savedDetail.Version != 2 || len(savedDetail.Sets) != 1 ||
+		savedDetail.Sets[0].RecordKey != "a01-24-record-001" || savedDetail.Sets[0].WeightKg.String() != "42.50" || !savedDetail.Sets[0].Completed {
+		t.Fatalf("authenticated workout set write failed or lost exact data: %d %s", saved.status, saved.body)
+	}
+	setReplay := workoutRequest(http.MethodPost, setPath, setBody, success.Token, setKey)
+	if setReplay.status != http.StatusOK || !bytes.Equal(setReplay.body, saved.body) || setReplay.headers.Get("Idempotency-Key-Expires-At") != saved.headers.Get("Idempotency-Key-Expires-At") {
+		t.Fatal("same-key workout set replay differed from its original response")
+	}
+	readPath := "/me/sessions/" + createdDetail.ID
+	ownerRead := workoutRequest(http.MethodGet, readPath, nil, success.Token, "")
+	var readDetail struct {
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+		Version int    `json:"version"`
+		Sets    []struct {
+			RecordKey string      `json:"recordKey"`
+			WeightKg  json.Number `json:"weightKg"`
+		} `json:"sets"`
+	}
+	if ownerRead.status != http.StatusOK || json.Unmarshal(ownerRead.body, &readDetail) != nil || readDetail.ID != createdDetail.ID ||
+		readDetail.Status != "in_progress" || readDetail.Version != 2 || len(readDetail.Sets) != 1 || readDetail.Sets[0].RecordKey != "a01-24-record-001" || readDetail.Sets[0].WeightKg.String() != "42.50" {
+		t.Fatalf("owner readback differed from saved response: %d %s", ownerRead.status, ownerRead.body)
+	}
+
+	// Authenticate a second synthetic principal through the same challenge, SMTP, and login HTTP path.
+	otherDevice, otherPublicKey := emailLoginHTTPDevice(t)
+	otherEmail := "a01-24-other@example.test"
+	otherChallengeBody, err := json.Marshal(map[string]any{"email": otherEmail, "devicePublicKey": map[string]string{
+		"kty": otherPublicKey.Kty, "crv": otherPublicKey.Crv, "x": otherPublicKey.X, "y": otherPublicKey.Y,
+	}})
+	if err != nil {
+		t.Fatal("second synthetic challenge body encoding failed")
+	}
+	otherChallengeKey := randomIdempotencyKey(t)
+	status, otherChallengeHeaders, otherChallengeResponse := post(emailChallengesPath, otherChallengeBody, otherChallengeKey)
+	var otherIssued api.EmailLoginChallenge
+	if status != http.StatusAccepted || otherChallengeHeaders.Get("Cache-Control") != "no-store" || json.Unmarshal(otherChallengeResponse, &otherIssued) != nil || otherIssued.ChallengeId == "" || otherIssued.Nonce == "" {
+		t.Fatalf("second subject challenge failed: %d %s", status, otherChallengeResponse)
+	}
+	if err := worker.RunOnce(ctx); err != nil {
+		t.Fatal("second outbox worker iteration failed")
+	}
+	var otherMessage localSMTPMessage
+	select {
+	case otherMessage = <-smtpMessages:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for second synthetic SMTP message")
+	}
+	otherCode := deliveredCode(t, otherMessage.message, otherEmail)
+	expectedOtherCode, err := deriver.Derive(string(otherIssued.ChallengeId), "email_login", 6)
+	if err != nil || otherMessage.err != nil || otherCode != expectedOtherCode || smtpConnections.Load() != 2 {
+		t.Fatal("second SMTP-delivered code did not match its challenge")
+	}
+	otherLoginBody, err := json.Marshal(map[string]string{"challengeId": string(otherIssued.ChallengeId), "code": otherCode,
+		"deviceProof": emailLoginHTTPProof(t, otherDevice, string(otherIssued.ChallengeId), string(otherIssued.Nonce))})
+	if err != nil {
+		t.Fatal("second synthetic login body encoding failed")
+	}
+	status, otherLoginHeaders, otherLoginResponse := post(emailLoginPath, otherLoginBody, emailLoginHTTPKey(t))
+	var otherSuccess api.PhoneAuthSuccess
+	if status != http.StatusOK || otherLoginHeaders.Get("Cache-Control") != "no-store" || json.Unmarshal(otherLoginResponse, &otherSuccess) != nil ||
+		otherSuccess.Status != api.Authenticated || otherSuccess.Token == "" || otherSuccess.User.Id == "" || otherSuccess.User.Id == success.User.Id {
+		t.Fatalf("second synthetic email account did not authenticate independently: %d %s", status, otherLoginResponse)
+	}
+	responseSecrets = append(responseSecrets, otherSuccess.Token)
+	otherAgeStatus, otherAgeHeaders, otherAgeResponse := postAge(server.Client(), server.URL, otherSuccess.Token, []byte(`{"isAdult":true,"expectedVersion":1}`))
+	var otherUser api.User
+	if otherAgeStatus != http.StatusOK || otherAgeHeaders.Get("Cache-Control") != "no-store" || json.Unmarshal(otherAgeResponse, &otherUser) != nil || otherUser.Id != otherSuccess.User.Id {
+		t.Fatal("second synthetic subject could not establish its own age declaration")
+	}
+	foreignRead := workoutRequest(http.MethodGet, readPath, nil, otherSuccess.Token, "")
+	if foreignRead.status != http.StatusNotFound || bytes.Contains(foreignRead.body, []byte("a01-24-record-001")) || bytes.Contains(foreignRead.body, []byte("42.50")) || bytes.Contains(foreignRead.body, []byte("卧推")) {
+		t.Fatalf("another authenticated subject could read or infer the workout: %d %s", foreignRead.status, foreignRead.body)
+	}
+	finishPath := "/me/sessions/" + createdDetail.ID + "/finish"
+	finishBody := []byte(`{"expectedVersion":2}`)
+	finishKey := randomIdempotencyKey(t)
+	finished := workoutRequest(http.MethodPost, finishPath, finishBody, success.Token, finishKey)
+	var finishedDetail struct {
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+		Version int    `json:"version"`
+	}
+	if finished.status != http.StatusOK || json.Unmarshal(finished.body, &finishedDetail) != nil || finishedDetail.ID != createdDetail.ID || finishedDetail.Status != "completed" || finishedDetail.Version != 3 {
+		t.Fatalf("authenticated workout finish failed: %d %s", finished.status, finished.body)
+	}
+	finishReplay := workoutRequest(http.MethodPost, finishPath, finishBody, success.Token, finishKey)
+	if finishReplay.status != http.StatusOK || !bytes.Equal(finishReplay.body, finished.body) {
+		t.Fatal("same-key workout finish replay differed from its original response")
+	}
+	finalRead := workoutRequest(http.MethodGet, readPath, nil, success.Token, "")
+	var finalDetail struct {
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+		Version int    `json:"version"`
+	}
+	if finalRead.status != http.StatusOK || json.Unmarshal(finalRead.body, &finalDetail) != nil || finalDetail.ID != createdDetail.ID || finalDetail.Status != "completed" || finalDetail.Version != 3 {
+		t.Fatalf("finished workout HTTP readback failed: %d %s", finalRead.status, finalRead.body)
+	}
 	declinedBody := []byte(`{"isAdult":false,"expectedVersion":5}`)
 	status, declinedHeaders, declinedResponse := postAge(server.Client(), server.URL, success.Token, declinedBody)
 	if status != http.StatusUnprocessableEntity || declinedHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(declinedResponse, []byte(success.Token)) {
@@ -479,7 +717,7 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 		t.Fatal("unavailable login service did not fail closed")
 	}
 
-	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me -> versioned age declaration; synthetic test-only services")
+	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP; synthetic test-only services")
 }
 
 func postWithHandler(t *testing.T, ctx context.Context, handler http.Handler, path string, body []byte, key string) (int, http.Header, []byte) {

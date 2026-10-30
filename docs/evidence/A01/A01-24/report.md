@@ -81,3 +81,16 @@ SHA-256:
 - `apps/api/internal/modules/auth/transport/age_verify_test.go`: `2c44ddce348a86f936367d17c5eb684900f70bae40abc0ee1eab40f94accb4ec`
 - `apps/api/internal/modules/auth/transport/email_delivery_login_e2e_test.go`: `384a8b46055b5a5377950de49cce22e77fc6b9815ab89a0c45223b6efa2f75ec`
 - `docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py`: `ac9da5e8395a147f4a5050483002fb5bbcf1f07b6f436f76ee439b02dd3c7eb6`
+
+## Authentication-to-workout HTTP integration · 2026-10-31
+
+At integration baseline `97813ba4164964f5494b5d3d248549d6997d1ce4`, the existing test and harness were extended to include the workout HTTP handlers. One `httptest` TLS process now assembles challenge, login, age-declaration, workout-read, and workout-write handlers over the same private MySQL and Redis instances. The local TLS SMTP sink receives challenge mail from the real worker; the test uses the delivered synthetic code to log in, declares age, then creates a free workout, replays the same create key, writes a set batch and replays that key, reads the saved set, finishes and replays the finish key. It then completes a second synthetic challenge/SMTP/login/age flow and confirms that second authenticated subject receives a generic 404 for the first subject's workout detail without record values.
+
+The A01-24 harness now applies `transport/0001_idempotency.up.sql` and targets `TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS`. It ran once with `require_escalated` local authorization against the harness's fresh socket-only MySQL and Redis plus loopback TLS SMTP; exit code `0`. The test emitted the required PASS marker and ran under Go `-race`. It did not contact public networks, real mailboxes, production routes, or existing databases. `git diff --check` passed. The earlier A01-24 sandbox SIGSEGV evidence remains historical and was not recreated during this run.
+
+This test proves a synthetic same-process HTTP integration. The workout batch endpoint is shared by the two recording modes, but neither UI mode nor a real dual-device flow was exercised. Local synthetic accounts and SMTP do not establish user identity in production, deployment routing, or real mail delivery.
+
+SHA-256:
+
+- `apps/api/internal/modules/auth/transport/email_delivery_login_e2e_test.go`: `874566b34d9ab4c4d10a7671686da0dfd66f56bbd228a8abea6b22f2137d2132`
+- `docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py`: `348f36179283c5135693c0f35bc609ec87c0b644a7c3c84422a124469bf366ea`
