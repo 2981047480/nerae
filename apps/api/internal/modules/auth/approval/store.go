@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,6 +21,7 @@ import (
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginreceipt"
 	"nerae/api/internal/modules/auth/session"
 )
 
@@ -125,6 +127,7 @@ type Pending struct {
 	tokenVersion    uint64
 	identityVersion uint64
 	fingerprint     [32]byte
+	scope           [32]byte
 }
 
 func (Pending) String() string               { return "PendingApproval{redacted}" }
@@ -203,7 +206,70 @@ func (s *Store) BeginEmail(ctx context.Context, tx *sql.Tx, proof *challenge.Ver
 		return Pending{}, ErrUnavailable
 	}
 	return Pending{store: s, sourceTx: tx, data: data, userID: userID, identityID: string(identityID), challengeID: challengeID,
-		tokenVersion: tokenVersion, identityVersion: identityVersion, fingerprint: verified.Fingerprint}, nil
+		tokenVersion: tokenVersion, identityVersion: identityVersion, fingerprint: verified.Fingerprint, scope: verified.Index}, nil
+}
+
+// SealedReceipt holds an encrypted approval response and a non-bearer
+// reference. It does not prove commit or authorize replay.
+type SealedReceipt struct {
+	reference string
+	sealed    loginreceipt.Sealed
+}
+
+func (SealedReceipt) String() string               { return "SealedApprovalReceipt{redacted}" }
+func (SealedReceipt) GoString() string             { return "SealedApprovalReceipt{redacted}" }
+func (SealedReceipt) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
+func (SealedReceipt) LogValue() slog.Value {
+	return slog.StringValue("SealedApprovalReceipt{redacted}")
+}
+func (r SealedReceipt) Reference() string               { return r.reference }
+func (r SealedReceipt) Ciphertext() loginreceipt.Sealed { return r.sealed }
+
+type receiptPayload struct {
+	Version        int       `json:"version"`
+	Secret         string    `json:"secret"`
+	Nonce          string    `json:"nonce"`
+	ComparisonCode string    `json:"comparisonCode"`
+	ExpiresAt      time.Time `json:"expiresAt"`
+}
+
+// SealForReceipt encrypts a newly pending approval only in its originating
+// transaction. The caller must bind the exact login request, persist the result
+// in the same transaction, and never release it before commit and fresh proof,
+// receipt, account and approval authorization checks.
+func (p Pending) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge.VerifiedEmail, crypto *loginreceipt.Crypto, binding loginreceipt.Binding, expires time.Time) (SealedReceipt, error) {
+	if ctx == nil || tx == nil || p.sourceTx != tx || p.store == nil || proof == nil || crypto == nil || binding.ChallengeID() != p.challengeID {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	verified, err := proof.ForTransaction(ctx, tx)
+	if err != nil || verified.Index != p.scope || verified.Fingerprint != p.fingerprint {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	challengeID, err := proof.ChallengeIDForTransaction(ctx, tx)
+	if err != nil || challengeID != p.challengeID || p.validatePending(ctx, tx, true) != nil {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	if _, err := proof.ForTransaction(ctx, tx); err != nil {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	now := p.store.now().UTC()
+	if now.IsZero() || !expires.After(now) || expires.After(p.data.ExpiresAt) {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	aad, err := crypto.NewContext(p.scope[:], binding, loginreceipt.ResultApprovalRequired, p.data.ID, expires)
+	if err != nil {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	payload, err := json.Marshal(receiptPayload{Version: 1, Secret: p.data.Secret, Nonce: p.data.Nonce,
+		ComparisonCode: p.data.ComparisonCode, ExpiresAt: p.data.ExpiresAt})
+	if err != nil {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	sealed, err := crypto.Seal(aad, payload)
+	if err != nil {
+		return SealedReceipt{}, ErrUnavailable
+	}
+	return SealedReceipt{reference: p.data.ID, sealed: sealed}, nil
 }
 
 // AfterCommit releases the polling secret only after a fresh transaction
@@ -221,19 +287,37 @@ func (p Pending) AfterCommit(ctx context.Context, db *sql.DB) (Data, error) {
 		return Data{}, ErrUnavailable
 	}
 	defer tx.Rollback()
-	var identityUser uint64
-	var identityState string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM login_identity WHERE id = ? FOR UPDATE`, []byte(p.identityID)).Scan(&identityUser, &identityState); err != nil || identityUser != p.userID || identityState != "active" {
+	if err := p.validatePending(ctx, tx, false); err != nil {
 		return Data{}, ErrUnavailable
+	}
+	if err := tx.Commit(); err != nil {
+		return Data{}, ErrUnavailable
+	}
+	return p.data, nil
+}
+
+// validatePending locks current identity -> user -> approval state. Callers
+// still need to verify the request proof and a matching receipt independently.
+func (p Pending) validatePending(ctx context.Context, tx *sql.Tx, requirePending bool) error {
+	if p.store == nil || p.store.now == nil || ctx == nil || tx == nil || p.userID == 0 || p.data.ID == "" || p.scope == ([32]byte{}) {
+		return ErrUnavailable
+	}
+	var identityUser uint64
+	var identityState, identityKind string
+	var providerScope, identityIndex []byte
+	if err := tx.QueryRowContext(ctx, `SELECT user_id, state, kind, provider_scope, subject_lookup_hmac FROM login_identity WHERE id = ? FOR UPDATE`, []byte(p.identityID)).
+		Scan(&identityUser, &identityState, &identityKind, &providerScope, &identityIndex); err != nil || identityUser != p.userID || identityState != "active" ||
+		identityKind != "email" || string(providerScope) != "beta-email" || !hmac.Equal(identityIndex, p.scope[:]) {
+		return ErrUnavailable
 	}
 	var status string
 	var tokenVersion, identityVersion uint64
 	if err := tx.QueryRowContext(ctx, `SELECT status, token_version, identity_version FROM user WHERE id = ? FOR UPDATE`, p.userID).
 		Scan(&status, &tokenVersion, &identityVersion); err != nil || status != "active" || tokenVersion != p.tokenVersion || identityVersion != p.identityVersion {
-		return Data{}, ErrUnavailable
+		return ErrUnavailable
 	}
 	if p.store.checkEpoch(ctx, tx) != nil {
-		return Data{}, ErrUnavailable
+		return ErrUnavailable
 	}
 	var userID, rowTokenVersion, rowIdentityVersion uint64
 	var identityID, challengeID, fingerprint, secretDigest, keyID, nonce []byte
@@ -245,17 +329,15 @@ func (p Pending) AfterCommit(ctx context.Context, db *sql.DB) (Data, error) {
 		userID != p.userID || string(identityID) != p.identityID || string(challengeID) != p.challengeID || rowTokenVersion != p.tokenVersion ||
 		rowIdentityVersion != p.identityVersion || !hmac.Equal(fingerprint, p.fingerprint[:]) || !hmac.Equal(secretDigest, p.store.digest(p.data.ID, p.data.Secret)) ||
 		string(keyID) != p.store.keyID || string(nonce) != p.data.Nonce || code != p.data.ComparisonCode ||
-		(state != "pending" && state != "approved" && state != "denied") {
-		return Data{}, ErrUnavailable
+		(state != "pending" && state != "approved" && state != "denied") || requirePending && state != "pending" {
+		return ErrUnavailable
 	}
 	expires, err := time.Parse("2006-01-02 15:04:05.000000", expiresRaw)
-	if err != nil || !expires.Equal(p.data.ExpiresAt) || !expires.After(p.store.now().UTC()) {
-		return Data{}, ErrUnavailable
+	now := p.store.now().UTC()
+	if err != nil || now.IsZero() || !expires.Equal(p.data.ExpiresAt) || !expires.After(now) {
+		return ErrUnavailable
 	}
-	if err := tx.Commit(); err != nil {
-		return Data{}, ErrUnavailable
-	}
-	return p.data, nil
+	return nil
 }
 
 type Decision string

@@ -26,6 +26,7 @@ import (
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginreceipt"
 	"nerae/api/internal/modules/auth/repository"
 	"nerae/api/internal/modules/auth/session"
 )
@@ -183,6 +184,12 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	if claims.SubjectID == otherClaims.SubjectID {
 		t.Fatal("isolated subjects were not distinct")
 	}
+	receiptCrypto, err := loginreceipt.New(loginreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{8}, 32),
+		RequestHMACKey: bytes.Repeat([]byte{9}, 32), AES256GCMKey: bytes.Repeat([]byte{10}, 32)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testReceipt := true
 	begin := func() (Pending, Data) {
 		t.Helper()
 		id, signed := issueChallenge("first@example.test", newKey, newPublic)
@@ -191,6 +198,70 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		if err != nil {
 			_ = tx.Rollback()
 			t.Fatal("could not begin approval")
+		}
+		var sealed SealedReceipt
+		var binding loginreceipt.Binding
+		var receiptExpiry time.Time
+		if testReceipt {
+			binding, err = receiptCrypto.Summarize(loginreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ", ChallengeID: id, Code: "012345", DeviceProof: signed})
+			if err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			receiptExpiry = time.Now().UTC().Add(2 * time.Minute).Truncate(time.Microsecond)
+			wrongBinding, err := receiptCrypto.Summarize(loginreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ", ChallengeID: strings.Repeat("z", 32), Code: "012345", DeviceProof: signed})
+			if err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			if _, err := pending.SealForReceipt(ctx, tx, proof, receiptCrypto, wrongBinding, receiptExpiry); !errors.Is(err, ErrUnavailable) {
+				_ = tx.Rollback()
+				t.Fatal("approval accepted a different challenge binding")
+			}
+			otherTx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			if _, err := pending.SealForReceipt(ctx, otherTx, proof, receiptCrypto, binding, receiptExpiry); !errors.Is(err, ErrUnavailable) {
+				_ = otherTx.Rollback()
+				_ = tx.Rollback()
+				t.Fatal("approval sealed in a different transaction")
+			}
+			_ = otherTx.Rollback()
+			if _, err := tx.ExecContext(ctx, `UPDATE login_identity SET state = 'revoked' WHERE id = ?`, []byte(pending.identityID)); err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			if _, err := pending.SealForReceipt(ctx, tx, proof, receiptCrypto, binding, receiptExpiry); !errors.Is(err, ErrUnavailable) {
+				_ = tx.Rollback()
+				t.Fatal("approval sealed after identity revocation")
+			}
+			if _, err := tx.ExecContext(ctx, `UPDATE login_identity SET state = 'active' WHERE id = ?`, []byte(pending.identityID)); err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			if _, err := tx.ExecContext(ctx, `UPDATE auth_login_approval SET state = 'approved', decision_session_id = ?, decided_at = UTC_TIMESTAMP(6) WHERE id = ?`, []byte(claims.SessionID), []byte(pending.data.ID)); err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			if _, err := pending.SealForReceipt(ctx, tx, proof, receiptCrypto, binding, receiptExpiry); !errors.Is(err, ErrUnavailable) {
+				_ = tx.Rollback()
+				t.Fatal("already-decided approval was sealed as a newly pending result")
+			}
+			if _, err := tx.ExecContext(ctx, `UPDATE auth_login_approval SET state = 'pending', decision_session_id = NULL, decided_at = NULL WHERE id = ?`, []byte(pending.data.ID)); err != nil {
+				_ = tx.Rollback()
+				t.Fatal(err)
+			}
+			sealed, err = pending.SealForReceipt(ctx, tx, proof, receiptCrypto, binding, receiptExpiry)
+			if err != nil || sealed.Reference() != pending.data.ID || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(pending.data.Secret)) {
+				_ = tx.Rollback()
+				t.Fatal("approval receipt was not encrypted or bound to its approval")
+			}
+			if _, err := json.Marshal(sealed); err == nil || strings.Contains(fmt.Sprintf("%+v", sealed), pending.data.Secret) {
+				_ = tx.Rollback()
+				t.Fatal("approval receipt formatting exposed the secret")
+			}
 		}
 		if _, err := pending.AfterCommit(ctx, db); err == nil {
 			_ = tx.Rollback()
@@ -203,9 +274,42 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		if err != nil || data.ID == "" || len(data.Secret) < 40 || len(data.Nonce) < 40 || len(data.ComparisonCode) != 6 {
 			t.Fatal("committed approval did not release expected data")
 		}
+		if testReceipt {
+			verifyTx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := challenges.VerifyReceiptProof(ctx, verifyTx, pending.scope, id, signed); err != nil || pending.validatePending(ctx, verifyTx, false) != nil {
+				_ = verifyTx.Rollback()
+				t.Fatal("could not revalidate proof and approval before test decryption")
+			}
+			aad, err := receiptCrypto.NewContext(pending.scope[:], binding, loginreceipt.ResultApprovalRequired, sealed.Reference(), receiptExpiry)
+			if err != nil {
+				_ = verifyTx.Rollback()
+				t.Fatal(err)
+			}
+			plain, err := receiptCrypto.Open(aad, sealed.Ciphertext())
+			var payload receiptPayload
+			if err != nil || json.Unmarshal(plain.Bytes(), &payload) != nil || payload.Version != 1 || payload.Secret != data.Secret ||
+				payload.Nonce != data.Nonce || payload.ComparisonCode != data.ComparisonCode || !payload.ExpiresAt.Equal(data.ExpiresAt) {
+				_ = verifyTx.Rollback()
+				t.Fatal("encrypted approval receipt did not preserve committed data")
+			}
+			_ = verifyTx.Rollback()
+			testReceipt = false
+		}
 		return pending, data
 	}
 	pending, data := begin()
+	if _, err := db.ExecContext(ctx, `UPDATE login_identity SET subject_lookup_hmac = ? WHERE id = ?`, bytes.Repeat([]byte{11}, 32), []byte(pending.identityID)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pending.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("approval secret released after the email identity changed")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE login_identity SET subject_lookup_hmac = ? WHERE id = ?`, pending.scope[:], []byte(pending.identityID)); err != nil {
+		t.Fatal(err)
+	}
 	var secretDigest []byte
 	if err := db.QueryRowContext(ctx, `SELECT secret_digest FROM auth_login_approval WHERE id = ?`, []byte(data.ID)).Scan(&secretDigest); err != nil ||
 		len(secretDigest) != sha256.Size || !hmac.Equal(secretDigest, store.digest(data.ID, data.Secret)) || bytes.Equal(secretDigest, []byte(data.Secret)) {
@@ -366,11 +470,24 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		_ = reuseTx.Rollback()
 		t.Fatal("could not prepare repeated approval")
 	}
+	rollbackBinding, err := receiptCrypto.Summarize(loginreceipt.Request{IdempotencyKey: "AgICAgICAgICAgICAgICAg", ChallengeID: id, Code: "012345", DeviceProof: signed})
+	if err != nil {
+		_ = reuseTx.Rollback()
+		t.Fatal(err)
+	}
+	rollbackExpiry := time.Now().UTC().Add(2 * time.Minute).Truncate(time.Microsecond)
+	if _, err := first.SealForReceipt(ctx, reuseTx, proof, receiptCrypto, rollbackBinding, rollbackExpiry); err != nil {
+		_ = reuseTx.Rollback()
+		t.Fatal("could not seal rollback approval fixture")
+	}
 	if _, err := store.BeginEmail(ctx, reuseTx, proof); !errors.Is(err, ErrUnavailable) {
 		_ = reuseTx.Rollback()
 		t.Fatal("one challenge created multiple approvals")
 	}
 	_ = reuseTx.Rollback()
+	if _, err := first.SealForReceipt(ctx, reuseTx, proof, receiptCrypto, rollbackBinding, rollbackExpiry); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("ended transaction could still seal an approval")
+	}
 	if _, err := first.AfterCommit(ctx, db); err == nil {
 		t.Fatal("rolled-back approval released its secret")
 	}
