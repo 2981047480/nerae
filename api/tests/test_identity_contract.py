@@ -20,6 +20,19 @@ class IdentityContractTests(ContractCase):
             self.assertTrue(header['required'])
             self.assertEqual(header['schema']['enum'], ['no-store'])
 
+    def test_adult_declaration_requires_current_safe_version(self):
+        request = self.contract.request('/me/age-verify', 'post')
+        self.assertValid(request, {'isAdult': True, 'expectedVersion': 1})
+        self.assertValid(request, {'isAdult': True, 'expectedVersion': 9007199254740991})
+        for bad in ({'isAdult': True}, {'expectedVersion': 1}, {'isAdult': False, 'expectedVersion': 1},
+                    {'isAdult': True, 'expectedVersion': 0}, {'isAdult': True, 'expectedVersion': 9007199254740992},
+                    {'isAdult': True, 'expectedVersion': 1.5}, {'isAdult': True, 'expectedVersion': 1, 'userId': '101'}):
+            self.assertInvalid(request, bad)
+        user = self.contract.response('/me', 'get')
+        self.assertValid(user, {'id': '101', 'nickname': '', 'roles': [], 'ageVerified': False, 'ageDeclarationVersion': 1})
+        self.assertInvalid(user, {'id': '101', 'nickname': '', 'roles': [], 'ageDeclarationVersion': 0})
+        self.assertInvalid(user, {'id': '101', 'nickname': '', 'roles': [], 'ageDeclarationVersion': 9007199254740992})
+
     def test_wechat_login_remains_its_own_operation_and_rejects_spoofed_identity(self):
         path = '/auth/wechat-login'
         self.assertEqual(self.contract.operation(path, 'post')['operationId'], 'postAuthWechatLogin')

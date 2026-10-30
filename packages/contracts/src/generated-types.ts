@@ -824,7 +824,7 @@ export interface paths {
         put?: never;
         /**
          * 记录18+自我声明
-         * @description 这是用户自我声明，不是身份或精确年龄核验；首期18-28是目标人群，不额外收集完整出生日期用于营销。
+         * @description 这是用户自我声明，不是身份或精确年龄核验；首期18-28是目标人群，不额外收集完整出生日期用于营销。提交须携带从当前账号资料读取的声明版本；版本冲突或提交结果不明确时先重新读取当前状态，不得自动重新声明。
          */
         post: operations["postMeAgeVerify"];
         delete?: never;
@@ -3131,6 +3131,11 @@ export interface components {
             roles: ("student" | "coach")[];
             /** @description 历史字段名；当前仅表示本人明确提交了 18+ 自我声明，不代表已进行证件、身份或精确年龄核验。声明更正及撤回的 HTTP 入口仍需另行定义和验收。 */
             ageVerified?: boolean;
+            /**
+             * Format: int64
+             * @description 18+ 自我声明的当前版本；提交声明时使用，不能从本机猜测。实际接线返回该字段后方可使用版本化声明。
+             */
+            ageDeclarationVersion?: number;
             /** @enum {string} */
             status?: "active" | "disabled";
         };
@@ -3723,6 +3728,11 @@ export interface components {
         AgeAttestation: {
             /** @enum {boolean} */
             isAdult: true;
+            /**
+             * Format: int64
+             * @description 从当前认证账号资料读取的声明版本。
+             */
+            expectedVersion: number;
         };
         AllergyProfileUpdate: {
             expectedVersion: number;

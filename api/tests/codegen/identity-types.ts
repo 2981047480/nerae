@@ -8,6 +8,7 @@ type Recovery = components['schemas']['RecoveryCodeUseRequest'];
 type Setup = components['schemas']['RecoveryCodeIssueRequest'];
 type EmailChallenge = components['schemas']['EmailLoginChallengeRequest'];
 type EmailLogin = components['schemas']['EmailLoginRequest'];
+type AgeAttestation = components['schemas']['AgeAttestation'];
 
 declare const outcome: Outcome;
 if (outcome.status === 'approval_required') {
@@ -27,6 +28,7 @@ const emailChallenge: EmailChallenge = { email: 'person@example.com', devicePubl
 const replace: Link = { kind: 'phone', intent: 'replace', phone: '+8613800138000', expectedVersion: 1 };
 const recovery: Recovery = { approvalSecret: 'secret', recoveryCode: 'code', deviceProof: 'proof' };
 const setup: Setup = { expectedGeneration: 0, confirmed: true };
+const age: AgeAttestation = { isAdult: true, expectedVersion: 1 };
 // @ts-expect-error A phone link must distinguish adding from replacing.
 const missingIntent: Link = { kind: 'phone', phone: '+8613800138000', expectedVersion: 1 };
 // @ts-expect-error User confirmation is required before issuing a recovery code.
@@ -35,4 +37,6 @@ const rejectedSetup: Setup = { expectedGeneration: 0, confirmed: false };
 const missingProof: Recovery = { approvalSecret: 'secret', recoveryCode: 'code' };
 // @ts-expect-error Email login also requires proof of the target device key.
 const noEmailProof: EmailLogin = { challengeId: 'challenge', code: '123456' };
-void [phone, mini, email, emailLink, emailChallenge, replace, recovery, setup, missingIntent, rejectedSetup, missingProof, noEmailProof];
+// @ts-expect-error An adult declaration must use the current version.
+const ageWithoutVersion: AgeAttestation = { isAdult: true };
+void [phone, mini, email, emailLink, emailChallenge, replace, recovery, setup, age, missingIntent, rejectedSetup, missingProof, noEmailProof, ageWithoutVersion];

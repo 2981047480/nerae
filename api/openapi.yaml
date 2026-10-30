@@ -2220,7 +2220,7 @@ paths:
       tags:
       - Me
       summary: 记录18+自我声明
-      description: 这是用户自我声明，不是身份或精确年龄核验；首期18-28是目标人群，不额外收集完整出生日期用于营销。
+      description: 这是用户自我声明，不是身份或精确年龄核验；首期18-28是目标人群，不额外收集完整出生日期用于营销。提交须携带从当前账号资料读取的声明版本；版本冲突或提交结果不明确时先重新读取当前状态，不得自动重新声明。
       responses:
         '200':
           description: 成功
@@ -9400,6 +9400,12 @@ components:
         ageVerified:
           type: boolean
           description: 历史字段名；当前仅表示本人明确提交了 18+ 自我声明，不代表已进行证件、身份或精确年龄核验。声明更正及撤回的 HTTP 入口仍需另行定义和验收。
+        ageDeclarationVersion:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: 18+ 自我声明的当前版本；提交声明时使用，不能从本机猜测。实际接线返回该字段后方可使用版本化声明。
         status:
           type: string
           enum:
@@ -11266,8 +11272,15 @@ components:
           type: boolean
           enum:
           - true
+        expectedVersion:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: 从当前认证账号资料读取的声明版本。
       required:
       - isAdult
+      - expectedVersion
     AllergyProfileUpdate:
       type: object
       additionalProperties: false
