@@ -70,6 +70,13 @@
       "module": "workout",
       "file": "0003_workout_exercise_order.up.sql",
       "sha256": "5cd355feb72e34b9f5dd102124a85c521da7f9ca34aa1d126ddb5588e3a2ec70"
+    },
+    {
+      "order": 11,
+      "id": "transport/0001_idempotency.up.sql",
+      "module": "transport",
+      "file": "0001_idempotency.up.sql",
+      "sha256": "5d9d7bf7212434406bffe844c90e87ff473c4e7d8a8f8340833f0c1846950c64"
     }
   ]
 }
