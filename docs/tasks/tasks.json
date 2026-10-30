@@ -146,6 +146,7 @@
         "F02-01",
         "F02-02",
         "F02-03",
+        "F02-04",
         "F02-I",
         "F02-00"
       ],
@@ -157,12 +158,14 @@
         "apps/api/internal/gen/",
         "apps/api/internal/server/",
         "apps/api/internal/middleware/",
+        "apps/api/internal/idempotency/",
         "scripts/codegen/",
         "api/tests/",
         "docs/evidence/F02/",
         "apps/api/migrations/transport/",
         "tests/integration/transport/",
         "scripts/integration/transport/",
+        "scripts/dev/migrations.json",
         "docs/evidence/F02/F02-01/",
         "docs/evidence/F02/F02-02/",
         "docs/evidence/F02/F02-03/",
@@ -197,8 +200,8 @@
         "生成器兼容与旧依赖安全检查；授权不能只靠 schema"
       ],
       "effort_days": [
-        4,
-        9.5
+        5,
+        12.5
       ],
       "flow_ids": [
         "F01",
@@ -2959,7 +2962,10 @@
       "model_policy": "implementation",
       "owner": "/root (Codex Lead)",
       "write_allowlist": [
-        "scripts/dev/",
+        "scripts/dev/migrate.go",
+        "scripts/dev/migrate_test.go",
+        "scripts/dev/workspace.py",
+        "scripts/dev/tests/",
         "infra/compose/",
         "docs/engineering/environments.md",
         "docs/evidence/F01/F01-04/"
@@ -2981,7 +2987,8 @@
         "迁移执行器空库与重复执行负例"
       ],
       "risks": [
-        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。"
+        "估工为有效人日假设；缺命令、依赖、数据或验证能力必须明确报告。",
+        "全局迁移清单由 Lead 在具体迁移任务中串行维护；本卡验证执行器读取和拒绝异常清单。"
       ],
       "effort_days": [
         1,
@@ -3371,7 +3378,8 @@
       "batch": "foundation",
       "status": "planned",
       "depends_on": [
-        "F02-02"
+        "F02-02",
+        "F02-04"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -7386,6 +7394,39 @@
       "effort_days": [1, 3],
       "flow_ids": ["F01", "F02"],
       "forbidden": ["不接触已有业务数据库", "不挂到公网", "不从客户端主体或角色头推导授权"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "F02-04",
+      "title": "已认证数据库写入的事务幂等基础",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": ["F01-01", "F01-02", "F01-03", "K01-01", "Q02-02"],
+      "acceptance_requires": ["F02-02", "K01-02"],
+      "parent": "F02",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "ebb125f",
+      "write_allowlist": ["apps/api/internal/idempotency/", "apps/api/migrations/transport/0001_idempotency.up.sql", "scripts/dev/migrations.json", "docs/evidence/F02/F02-04/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/ENGINEERING_STANDARDS.md", "api/openapi.yaml", "docs/数据模型与ER设计.md", "apps/api/internal/modules/auth/session/store.go", "apps/api/internal/modules/workout/application/ordered_workout.go"],
+      "deliverables": "实现仅用于已认证同库事务写入的 MySQL 幂等基础：由真实会话派生主体，同事务保存业务变更和加密结果，重放前复查权限；保留期由配置显式提供。",
+      "acceptance": [
+        "隔离 MySQL 验证两连接同键同摘要只执行一次、不同摘要冲突、主体和具体路径隔离、失败回滚以及响应丢失后的同键重放",
+        "请求摘要使用服务端密钥 HMAC，敏感结果加密；重放前重新验证会话及资源授权，失权不返回缓存正文",
+        "不硬编码待确认的 24 小时期限；匿名邮箱挑战、外部发信、Redis 和实际训练 HTTP 接线不在本卡，不宣称全接口幂等完成"
+      ],
+      "verification_commands": ["隔离 MySQL 并发与失败恢复测试", "Go race 和任务图校验"],
+      "risks": ["训练服务现自行提交事务，后续必须由同一事务执行器接入；真实邮箱登录需要独立的匿名挑战幂等与发信 outbox。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01", "F02", "F04"],
+      "forbidden": ["不接触已有业务数据库", "不发送真实邮件", "不将请求正文、令牌或加密密钥写入日志"],
       "evidence": [],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
