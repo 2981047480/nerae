@@ -84,6 +84,13 @@ func TestInputValidationKeySeparationAndRedaction(t *testing.T) {
 			t.Fatal("authentication purposes shared a counter key")
 		}
 	}
+	loginIdentityKeys, err := limiter.identityRedisKeys(EmailLogin, input.EmailIndex, input.DeviceFingerprint)
+	loginEntryKeys, errEntry := limiter.ipGlobalRedisKeys(EmailLogin, input.SourceIP)
+	if err != nil || errEntry != nil || len(loginIdentityKeys) != 2 || len(loginEntryKeys) != 2 ||
+		loginKeys[0] != loginIdentityKeys[0] || loginKeys[1] != loginIdentityKeys[1] ||
+		loginKeys[2] != loginEntryKeys[0] || loginKeys[3] != loginEntryKeys[1] {
+		t.Fatal("two-stage keys did not exactly match the compatible four-dimension keys")
+	}
 	withMappedIP := input
 	withMappedIP.SourceIP = netip.MustParseAddr("::ffff:198.51.100.9")
 	mappedKeys, _, err := limiter.redisKeys(EmailChallenge, withMappedIP)
@@ -231,11 +238,14 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		p := policy(20, 20, 2, 3, 3*time.Second)
 		limiter := newTestLimiter(t, client, p, p)
 		known := testInput("known-shared", "2001:db8:1:2::7")
-		if err := limiter.Allow(context.Background(), EmailLogin, known); err != nil {
-			t.Fatal("known challenge request was denied")
+		if err := limiter.AllowLoginEntry(context.Background(), known.SourceIP); err != nil {
+			t.Fatal("known challenge entry budget was denied")
 		}
-		if err := limiter.AllowUnknownChallenge(context.Background(), known.SourceIP); err != nil {
-			t.Fatal("unknown challenge did not share available IP/global capacity")
+		if err := limiter.AllowLoginIdentityDimensions(context.Background(), known.EmailIndex, known.DeviceFingerprint); err != nil {
+			t.Fatal("known challenge identity dimensions were denied")
+		}
+		if err := limiter.AllowLoginEntry(context.Background(), known.SourceIP); err != nil {
+			t.Fatal("unknown challenge entry budget did not share available IP/global capacity")
 		}
 		keys, _, err := limiter.redisKeys(EmailLogin, known)
 		if err != nil {
@@ -245,19 +255,19 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		if err != nil || len(unknownKeys) != 2 || keys[2] != unknownKeys[0] || keys[3] != unknownKeys[1] {
 			t.Fatal("unknown challenge did not use the exact shared login IP/global keys")
 		}
-		if !errors.Is(limiter.Allow(context.Background(), EmailLogin, testInput("known-ip-limit", "2001:db8:1:2::8")), ErrLimited) {
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), netip.MustParseAddr("2001:db8:1:2::8")), ErrLimited) {
 			t.Fatal("known and unknown challenges did not share the IPv6 prefix IP limit")
 		}
-		if err := limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("2001:db8:2::1")); err != nil {
+		if err := limiter.AllowLoginEntry(context.Background(), netip.MustParseAddr("2001:db8:2::1")); err != nil {
 			t.Fatal("IP-limited request partially consumed the global counter")
 		}
-		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("2001:db8:3::1")), ErrLimited) {
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), netip.MustParseAddr("2001:db8:3::1")), ErrLimited) {
 			t.Fatal("unknown challenge requests did not share the global counter")
 		}
 		if err := client.Set(context.Background(), keys[2], "2", 3*time.Second).Err(); err != nil {
 			t.Fatal("could not seed isolated IP counter")
 		}
-		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), known.SourceIP), ErrLimited) {
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), known.SourceIP), ErrLimited) {
 			t.Fatal("unknown challenge did not fail at the IP threshold")
 		}
 		if got, err := client.Get(context.Background(), keys[3]).Result(); err != nil || got != "3" {
@@ -276,11 +286,10 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 			wg.Add(1)
 			go func(index int) {
 				defer wg.Done()
-				var err error
-				if index%2 == 0 {
-					err = limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("192.0.2.199"))
-				} else {
-					err = limiter.Allow(context.Background(), EmailLogin, testInput(fmt.Sprintf("mixed-%d", index), "192.0.2.199"))
+				err := limiter.AllowLoginEntry(context.Background(), netip.MustParseAddr("192.0.2.199"))
+				if err == nil && index%2 == 1 {
+					item := testInput(fmt.Sprintf("mixed-%d", index), "192.0.2.199")
+					err = limiter.AllowLoginIdentityDimensions(context.Background(), item.EmailIndex, item.DeviceFingerprint)
 				}
 				mu.Lock()
 				defer mu.Unlock()
@@ -303,7 +312,7 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 	t.Run("unknown challenge validates IP and fails closed when Redis is unavailable", func(t *testing.T) {
 		limiter := newTestLimiter(t, client, policy(2, 2, 2, 2, time.Second), policy(2, 2, 2, 2, time.Second))
 		for _, ip := range []netip.Addr{{}, netip.IPv4Unspecified(), netip.MustParseAddr("ff02::1"), netip.MustParseAddr("fe80::1%en0")} {
-			if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrInvalid) {
+			if !errors.Is(limiter.AllowLoginEntry(context.Background(), ip), ErrInvalid) {
 				t.Fatal("invalid IP accepted for unknown challenge")
 			}
 		}
@@ -312,8 +321,12 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 			t.Fatal("could not close isolated test client")
 		}
 		unavailable := newTestLimiter(t, closed, policy(2, 2, 2, 2, time.Second), policy(2, 2, 2, 2, time.Second))
-		if !errors.Is(unavailable.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("198.51.100.54")), ErrUnavailable) {
+		if !errors.Is(unavailable.AllowLoginEntry(context.Background(), netip.MustParseAddr("198.51.100.54")), ErrUnavailable) {
 			t.Fatal("unknown challenge did not fail closed on Redis error")
+		}
+		if !errors.Is(unavailable.AllowLoginIdentityDimensions(context.Background(), testInput("unavailable-identity", "198.51.100.54").EmailIndex,
+			testInput("unavailable-identity", "198.51.100.54").DeviceFingerprint), ErrUnavailable) {
+			t.Fatal("known challenge dimensions did not fail closed on Redis error")
 		}
 	})
 
@@ -328,7 +341,7 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		if err := client.Set(context.Background(), keys[0], "not-a-counter", 3*time.Second).Err(); err != nil {
 			t.Fatal("could not seed malformed private IP counter")
 		}
-		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrUnavailable) {
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), ip), ErrUnavailable) {
 			t.Fatal("unknown challenge accepted a malformed IP counter")
 		}
 		if exists, err := client.Exists(context.Background(), keys[1]).Result(); err != nil || exists != 0 {
@@ -339,11 +352,58 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 			t.Fatal("could not seed wrong-type private global counter")
 		}
 		_ = client.PExpire(context.Background(), keys[1], 3*time.Second).Err()
-		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrUnavailable) {
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), ip), ErrUnavailable) {
 			t.Fatal("unknown challenge accepted a wrong-type global counter")
 		}
 		if exists, err := client.Exists(context.Background(), keys[0]).Result(); err != nil || exists != 0 {
 			t.Fatal("wrong-type global counter partially created the IP counter")
+		}
+	})
+
+	t.Run("each login stage is atomic and charges only its own dimensions", func(t *testing.T) {
+		p := policy(1, 2, 1, 10, 3*time.Second)
+		limiter := newTestLimiter(t, client, p, p)
+		first := testInput("stage-first", "198.51.100.101")
+		if err := limiter.AllowLoginEntry(context.Background(), first.SourceIP); err != nil {
+			t.Fatal("first entry budget was denied")
+		}
+		entryKeys, err := limiter.ipGlobalRedisKeys(EmailLogin, first.SourceIP)
+		if err != nil {
+			t.Fatal("entry key derivation failed")
+		}
+		if !errors.Is(limiter.AllowLoginEntry(context.Background(), first.SourceIP), ErrLimited) {
+			t.Fatal("entry IP cap was not enforced")
+		}
+		if err := limiter.AllowLoginEntry(context.Background(), netip.MustParseAddr("198.51.100.102")); err != nil {
+			t.Fatal("entry IP rejection partially consumed the global quota")
+		}
+		if count, err := client.Get(context.Background(), entryKeys[1]).Result(); err != nil || count != "2" {
+			t.Fatal("entry-stage quota did not match accepted requests")
+		}
+
+		if err := limiter.AllowLoginIdentityDimensions(context.Background(), first.EmailIndex, first.DeviceFingerprint); err != nil {
+			t.Fatal("first known identity dimensions were denied")
+		}
+		if !errors.Is(limiter.AllowLoginIdentityDimensions(context.Background(), first.EmailIndex, sha256.Sum256([]byte("device:second"))), ErrLimited) {
+			t.Fatal("identity email cap was not enforced")
+		}
+		secondEmail := sha256.Sum256([]byte("email:second"))
+		secondDevice := sha256.Sum256([]byte("device:second"))
+		if err := limiter.AllowLoginIdentityDimensions(context.Background(), secondEmail, secondDevice); err != nil {
+			t.Fatal("identity rejection partially consumed the device quota")
+		}
+		identityKeys, err := limiter.identityRedisKeys(EmailLogin, secondEmail, secondDevice)
+		if err != nil {
+			t.Fatal("identity key derivation failed")
+		}
+		if emailCount, err := client.Get(context.Background(), identityKeys[0]).Result(); err != nil || emailCount != "1" {
+			t.Fatal("identity-stage counters were not charged atomically")
+		}
+		if deviceCount, err := client.Get(context.Background(), identityKeys[1]).Result(); err != nil || deviceCount != "1" {
+			t.Fatal("identity-stage rejection partially consumed its device dimension")
+		}
+		if globalCount, err := client.Get(context.Background(), entryKeys[1]).Result(); err != nil || globalCount != "2" {
+			t.Fatal("known identity stage double-charged the entry global counter")
 		}
 	})
 

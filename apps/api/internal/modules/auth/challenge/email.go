@@ -217,40 +217,69 @@ func (s *Store) ReceiptScope(ctx context.Context, tx *sql.Tx, challengeID string
 	return scope, true, nil
 }
 
-// RateLimitDetails returns only server-stored opaque limiter inputs for an
-// email challenge. The values are not proof of identity or authorization and
-// must only be passed to the anonymous rate limiter.
-func (s *Store) RateLimitDetails(ctx context.Context, tx *sql.Tx, challengeID string) ([32]byte, [32]byte, bool, error) {
-	var index, fingerprint [32]byte
+// LoginDimensionRateLimiter is the narrow sink for opaque challenge metadata.
+// Implementations should only charge the email/device rate-limit dimensions.
+type LoginDimensionRateLimiter interface {
+	AllowLoginIdentityDimensions(context.Context, [32]byte, [32]byte) error
+}
+
+// RateLimitMetadata contains only server-derived anonymous limiter keys. It
+// does not prove identity or authorization and exposes them only to the narrow
+// login limiter interface.
+type RateLimitMetadata struct {
+	emailIndex        [32]byte
+	deviceFingerprint [32]byte
+}
+
+func (RateLimitMetadata) String() string               { return "EmailChallengeRateLimitMetadata{redacted}" }
+func (RateLimitMetadata) GoString() string             { return "EmailChallengeRateLimitMetadata{redacted}" }
+func (RateLimitMetadata) MarshalJSON() ([]byte, error) { return []byte(`"[REDACTED]"`), nil }
+func (RateLimitMetadata) LogValue() slog.Value {
+	return slog.StringValue("EmailChallengeRateLimitMetadata{redacted}")
+}
+
+// ApplyLoginDimensionLimit passes opaque values only to the narrowly typed
+// rate-limit sink; callers cannot extract either key from the metadata value.
+func (m RateLimitMetadata) ApplyLoginDimensionLimit(ctx context.Context, limiter LoginDimensionRateLimiter) error {
+	if ctx == nil || limiter == nil || m.emailIndex == ([32]byte{}) || m.deviceFingerprint == ([32]byte{}) {
+		return ErrChallengeStore
+	}
+	return limiter.AllowLoginIdentityDimensions(ctx, m.emailIndex, m.deviceFingerprint)
+}
+
+// RateLimitDetails returns server-stored opaque limiter inputs for an email
+// challenge. This metadata is only for limiting, not proof or authorization.
+func (s *Store) RateLimitDetails(ctx context.Context, tx *sql.Tx, challengeID string) (RateLimitMetadata, bool, error) {
+	var metadata RateLimitMetadata
 	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
-		return index, fingerprint, false, ErrChallengeStore
+		return metadata, false, ErrChallengeStore
 	}
 	var storedIndex, storedFingerprint, ciphertext, storedKeyID []byte
 	err := tx.QueryRowContext(ctx, `SELECT email_index, key_fingerprint, email_ciphertext, email_key_id
 		FROM auth_email_login_challenge WHERE challenge_id = ?`, challengeID).
 		Scan(&storedIndex, &storedFingerprint, &ciphertext, &storedKeyID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return index, fingerprint, false, nil
+		return metadata, false, nil
 	}
-	if err != nil || len(storedIndex) != len(index) || len(storedFingerprint) != len(fingerprint) ||
+	if err != nil || len(storedIndex) != len(metadata.emailIndex) || len(storedFingerprint) != len(metadata.deviceFingerprint) ||
 		len(ciphertext) == 0 || len(storedKeyID) == 0 {
-		return index, fingerprint, false, ErrChallengeStore
+		return metadata, false, ErrChallengeStore
 	}
 	currentKeyID, _, err := s.identities.KeyEpoch()
 	if err != nil || string(storedKeyID) != currentKeyID {
-		return index, fingerprint, false, ErrChallengeStore
+		return metadata, false, ErrChallengeStore
 	}
-	copy(index[:], storedIndex)
-	copy(fingerprint[:], storedFingerprint)
-	if index == ([32]byte{}) || fingerprint == ([32]byte{}) {
-		return [32]byte{}, [32]byte{}, false, ErrChallengeStore
+	copy(metadata.emailIndex[:], storedIndex)
+	copy(metadata.deviceFingerprint[:], storedFingerprint)
+	if metadata.emailIndex == ([32]byte{}) || metadata.deviceFingerprint == ([32]byte{}) {
+		return RateLimitMetadata{}, false, ErrChallengeStore
 	}
 	// Ensure the persisted identity material still belongs to the configured
 	// protector, but discard the plaintext; it is never returned to callers.
-	if _, err := s.identities.Open(index, ciphertext); err != nil {
-		return [32]byte{}, [32]byte{}, false, ErrChallengeStore
+	if _, err := s.identities.Open(metadata.emailIndex, ciphertext); err != nil {
+		return RateLimitMetadata{}, false, ErrChallengeStore
 	}
-	return index, fingerprint, true, nil
+	return metadata, true, nil
 }
 
 // ReceiptProof is a transaction-bound revalidation of a previously consumed

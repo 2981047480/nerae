@@ -127,9 +127,9 @@ func New(client redis.Scripter, config Config) (*Limiter, error) {
 		v6PrefixBits: config.IPv6PrefixBits, challenge: config.EmailChallenge, login: config.EmailLogin}, nil
 }
 
-// Allow atomically checks email, device, trusted IP and global fixed-window
-// counters before changing any of them. Errors never identify the exceeded
-// dimension or expose Redis errors or key material.
+// Allow is the compatible one-stage API: it atomically checks and charges all
+// four dimensions. A login coordinator using AllowLoginEntry must not call
+// Allow for the same request, because that would charge IP/global twice.
 func (l *Limiter) Allow(ctx context.Context, purpose Purpose, input Input) error {
 	if l == nil || nilInterface(l.client) || ctx == nil {
 		return ErrUnavailable
@@ -141,10 +141,10 @@ func (l *Limiter) Allow(ctx context.Context, purpose Purpose, input Input) error
 	return l.allow(ctx, keys, []DimensionPolicy{policy.Email, policy.Device, policy.IP, policy.Global})
 }
 
-// AllowUnknownChallenge applies the same login IP and global counters used by
-// Allow when the challenge lookup found no row. It creates no attacker-selected
-// email or device keys.
-func (l *Limiter) AllowUnknownChallenge(ctx context.Context, sourceIP netip.Addr) error {
+// AllowLoginEntry charges the shared IP and global login budgets before a
+// coordinator reads a challenge from MySQL. Every login request, known or
+// unknown, must pass this stage first.
+func (l *Limiter) AllowLoginEntry(ctx context.Context, sourceIP netip.Addr) error {
 	if l == nil || nilInterface(l.client) || ctx == nil {
 		return ErrUnavailable
 	}
@@ -156,6 +156,26 @@ func (l *Limiter) AllowUnknownChallenge(ctx context.Context, sourceIP netip.Addr
 		return ErrInvalid
 	}
 	return l.allow(ctx, keys, []DimensionPolicy{l.login.IP, l.login.Global})
+}
+
+// AllowUnknownChallenge is retained for source compatibility. New callers
+// should invoke AllowLoginEntry before any challenge lookup for every request.
+func (l *Limiter) AllowUnknownChallenge(ctx context.Context, sourceIP netip.Addr) error {
+	return l.AllowLoginEntry(ctx, sourceIP)
+}
+
+// AllowLoginIdentityDimensions atomically charges only email and device for a
+// known challenge after the entry budget and challenge lookup. It must not be
+// followed by Allow for that request, which would double-charge IP/global.
+func (l *Limiter) AllowLoginIdentityDimensions(ctx context.Context, emailIndex, deviceFingerprint [32]byte) error {
+	if l == nil || nilInterface(l.client) || ctx == nil {
+		return ErrUnavailable
+	}
+	keys, err := l.identityRedisKeys(EmailLogin, emailIndex, deviceFingerprint)
+	if err != nil {
+		return ErrInvalid
+	}
+	return l.allow(ctx, keys, []DimensionPolicy{l.login.Email, l.login.Device})
 }
 
 func (l *Limiter) allow(ctx context.Context, keys []string, dimensions []DimensionPolicy) error {
@@ -213,6 +233,16 @@ func (l *Limiter) ipGlobalRedisKeys(purpose Purpose, sourceIP netip.Addr) ([]str
 	return []string{
 		l.redisKey(l.keys.ip[:], purpose, "ip", ipValue),
 		l.redisKey(l.keys.global[:], purpose, "global", []byte("all")),
+	}, nil
+}
+
+func (l *Limiter) identityRedisKeys(purpose Purpose, emailIndex, deviceFingerprint [32]byte) ([]string, error) {
+	if l == nil || purpose != EmailLogin && purpose != EmailChallenge || emailIndex == ([32]byte{}) || deviceFingerprint == ([32]byte{}) {
+		return nil, ErrInvalid
+	}
+	return []string{
+		l.redisKey(l.keys.email[:], purpose, "email", emailIndex[:]),
+		l.redisKey(l.keys.device[:], purpose, "device", deviceFingerprint[:]),
 	}, nil
 }
 

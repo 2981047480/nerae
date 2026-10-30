@@ -63,6 +63,12 @@ func openPrivateDB(t *testing.T) *sql.DB {
 	return db
 }
 
+type loginDimensionRateLimiterFunc func(context.Context, [32]byte, [32]byte) error
+
+func (f loginDimensionRateLimiterFunc) AllowLoginIdentityDimensions(ctx context.Context, emailIndex, deviceFingerprint [32]byte) error {
+	return f(ctx, emailIndex, deviceFingerprint)
+}
+
 func testKey(t *testing.T) (*ecdsa.PrivateKey, domain.DevicePublicJWK) {
 	t.Helper()
 	private, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -208,19 +214,30 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gotIndex, gotFingerprint, found, err := store.RateLimitDetails(ctx, metadataTx, first)
+	metadata, found, err := store.RateLimitDetails(ctx, metadataTx, first)
 	_ = metadataTx.Rollback()
 	expectedFingerprint, fingerprintErr := domain.DeviceKeyFingerprint(public)
-	if err != nil || !found || gotIndex != index || fingerprintErr != nil || gotFingerprint != expectedFingerprint {
+	var limiterIndex, limiterFingerprint [32]byte
+	applyErr := metadata.ApplyLoginDimensionLimit(ctx, loginDimensionRateLimiterFunc(func(_ context.Context, gotIndex, gotFingerprint [32]byte) error {
+		limiterIndex, limiterFingerprint = gotIndex, gotFingerprint
+		return nil
+	}))
+	if err != nil || !found || fingerprintErr != nil || applyErr != nil || limiterIndex != index || limiterFingerprint != expectedFingerprint {
 		t.Fatal("server-stored limiter metadata did not match the issued challenge")
+	}
+	encodedMetadata, encodeErr := json.Marshal(metadata)
+	if encodeErr != nil || strings.Contains(string(encodedMetadata), string(index[:])) ||
+		strings.Contains(fmt.Sprintf("%#v", metadata), string(expectedFingerprint[:])) ||
+		metadata.LogValue().String() != "EmailChallengeRateLimitMetadata{redacted}" {
+		t.Fatal("opaque limiter metadata formatting exposed a stored key")
 	}
 	missingMetadataTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	missingIndex, missingFingerprint, missing, err := store.RateLimitDetails(ctx, missingMetadataTx, strings.Repeat("Z", 32))
+	missingMetadata, missing, err := store.RateLimitDetails(ctx, missingMetadataTx, strings.Repeat("Z", 32))
 	_ = missingMetadataTx.Rollback()
-	if err != nil || missing || missingIndex != ([32]byte{}) || missingFingerprint != ([32]byte{}) {
+	if err != nil || missing || missingMetadata != (RateLimitMetadata{}) {
 		t.Fatal("unknown challenge exposed or returned limiter metadata")
 	}
 	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET key_fingerprint=? WHERE challenge_id=?`, make([]byte, 32), first); err != nil {
@@ -230,7 +247,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, malformedFound, malformedErr := store.RateLimitDetails(ctx, malformedMetadataTx, first)
+	_, malformedFound, malformedErr := store.RateLimitDetails(ctx, malformedMetadataTx, first)
 	_ = malformedMetadataTx.Rollback()
 	if malformedFound || !errors.Is(malformedErr, ErrChallengeStore) {
 		t.Fatal("malformed persisted fingerprint was accepted for limiting")
@@ -245,7 +262,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, mismatchFound, mismatchErr := store.RateLimitDetails(ctx, mismatchTx, first)
+	_, mismatchFound, mismatchErr := store.RateLimitDetails(ctx, mismatchTx, first)
 	_ = mismatchTx.Rollback()
 	if mismatchFound || !errors.Is(mismatchErr, ErrChallengeStore) {
 		t.Fatal("challenge encrypted under a different persistent key was accepted")
@@ -260,7 +277,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, ciphertextFound, ciphertextErr := store.RateLimitDetails(ctx, corruptCiphertextTx, first)
+	_, ciphertextFound, ciphertextErr := store.RateLimitDetails(ctx, corruptCiphertextTx, first)
 	_ = corruptCiphertextTx.Rollback()
 	if ciphertextFound || !errors.Is(ciphertextErr, ErrChallengeStore) {
 		t.Fatal("challenge ciphertext inconsistent with the persistent identity key was accepted")
@@ -305,7 +322,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, _, missingRateLimitErr := store.RateLimitDetails(ctx, missingRateLimitTx, first)
+	_, _, missingRateLimitErr := store.RateLimitDetails(ctx, missingRateLimitTx, first)
 	_ = missingRateLimitTx.Rollback()
 	if !errors.Is(missingRateLimitErr, ErrChallengeStore) {
 		t.Fatal("rate limiter metadata accepted a missing identity key epoch")
