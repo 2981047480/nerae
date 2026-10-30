@@ -1,0 +1,30 @@
+import { DeviceKeyPurpose, DeviceKeyResult } from './interface.uts'
+
+const emptyPublicKey = {
+	kty: 'EC',
+	crv: 'P-256',
+	x: '',
+	y: ''
+}
+
+function unsupported(): DeviceKeyResult {
+	return {
+		ok: false,
+		errorCode: 'unsupported_platform',
+		alias: '',
+		publicKey: emptyPublicKey,
+		proof: ''
+	}
+}
+
+export function createNewDeviceKey(): DeviceKeyResult {
+	return unsupported()
+}
+
+export function readExistingDevicePublicKey(_alias: string): DeviceKeyResult {
+	return unsupported()
+}
+
+export function signExistingDeviceProof(_alias: string, _purpose: DeviceKeyPurpose, _resourceId: string, _nonce: string): DeviceKeyResult {
+	return unsupported()
+}

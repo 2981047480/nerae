@@ -1,0 +1,9 @@
+{
+  "id": "nerae-device-key",
+  "displayName": "Nerae Device Key",
+  "version": "0.1.0",
+  "description": "Secure Enclave device key and proof bridge for iOS",
+  "uni_modules": {
+    "type": "uts"
+  }
+}

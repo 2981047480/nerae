@@ -1,0 +1,21 @@
+export type DeviceKeyPurpose = 'email_login' | 'phone_login' | 'approval_exchange' | 'recovery_code'
+
+export type DevicePublicKey = {
+	kty: string
+	crv: string
+	x: string
+	y: string
+}
+
+/** All operations return an explicit result. Error details from Security.framework are never exposed. */
+export type DeviceKeyResult = {
+	ok: boolean
+	errorCode: string
+	alias: string
+	publicKey: DevicePublicKey
+	proof: string
+}
+
+export type CreateNewDeviceKey = () => DeviceKeyResult
+export type ReadExistingDevicePublicKey = (alias: string) => DeviceKeyResult
+export type SignExistingDeviceProof = (alias: string, purpose: DeviceKeyPurpose, resourceId: string, nonce: string) => DeviceKeyResult
