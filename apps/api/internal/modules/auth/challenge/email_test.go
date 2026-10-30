@@ -573,6 +573,49 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if !errors.Is(err, ErrChallengeStore) {
 		t.Fatal("tampered encrypted email was accepted")
 	}
+
+	// Simulate a clock advancing while database locks are being acquired.
+	// A pre-lock timestamp must never authorize an expired challenge.
+	email = "after-lock@example.test"
+	afterLockID := strings.Repeat("R", 32)
+	issue(afterLockID)
+	afterLockProof := testProof(t, private, afterLockID, nonce, "after-lock-expiry", now)
+	var calls atomic.Int32
+	store.now = func() time.Time {
+		if calls.Add(1) == 1 {
+			return now
+		}
+		return now.Add(5 * time.Minute)
+	}
+	result, err = attempt(afterLockID, "012345", afterLockProof, now, true)
+	assertRejected(result, err, false)
+	store.now = func() time.Time { return time.Unix(0, clock.Load()).UTC() }
+
+	// Simulate expiry during the replay-marker insertion. The required error
+	// forces rollback; afterward the same proof remains usable at valid time.
+	email = "after-marker@example.test"
+	afterMarkerID := strings.Repeat("S", 32)
+	issue(afterMarkerID)
+	afterMarkerProof := testProof(t, private, afterMarkerID, nonce, "after-marker-expiry", now)
+	calls.Store(0)
+	store.now = func() time.Time {
+		if calls.Add(1) <= 2 {
+			return now
+		}
+		return now.Add(5 * time.Minute)
+	}
+	result, err = attempt(afterMarkerID, "999999", afterMarkerProof, now, true)
+	if !errors.Is(err, ErrChallengeStore) || result.Verified || result.Changed {
+		t.Fatal("expiry during replay-marker insertion did not require rollback")
+	}
+	store.now = func() time.Time { return time.Unix(0, clock.Load()).UTC() }
+	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, afterMarkerID).Scan(&wrongAttempts); err != nil || wrongAttempts != 0 {
+		t.Fatal("expired attempt changed the wrong-code counter")
+	}
+	result, err = attempt(afterMarkerID, "012345", afterMarkerProof, now, true)
+	if err != nil || !result.Verified || result.Proof == nil {
+		t.Fatal("rolled-back stale proof marker prevented a valid retry")
+	}
 }
 
 func TestChallengeInputFormattingIsRedacted(t *testing.T) {

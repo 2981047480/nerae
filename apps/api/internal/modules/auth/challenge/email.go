@@ -262,6 +262,12 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if s.policy.MaxAttempts < maxAttempts {
 		maxAttempts = s.policy.MaxAttempts
 	}
+	// Slot and challenge locks can block long enough for a challenge or proof
+	// to expire. Never validate them against a timestamp taken before the wait.
+	now = s.now().UTC()
+	if now.IsZero() {
+		return rejected, ErrChallengeStore
+	}
 	if consumed || attempts >= maxAttempts || now.Before(created) || !expires.After(now) {
 		return rejected, nil
 	}
@@ -293,6 +299,16 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 		}
 		return rejected, ErrChallengeStore
 	}
+	// Inserting the replay marker may itself wait on a concurrent transaction.
+	// If validity elapsed, require rollback so no stale marker or count commits.
+	finished := s.now().UTC()
+	if finished.IsZero() || finished.Before(created) || !expires.After(finished) {
+		return rejected, ErrChallengeStore
+	}
+	if _, err := domain.VerifyDeviceProof(input.DeviceProof, key, expectation, finished, proofPolicy); err != nil {
+		return rejected, ErrChallengeStore
+	}
+	now = finished
 	correct, err := s.hasher.Verify(input.ChallengeID, "email_login", input.Code, digest)
 	if err != nil || !correct {
 		if _, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET attempts = attempts + 1 WHERE challenge_id = ?`, input.ChallengeID); err != nil {
