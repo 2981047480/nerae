@@ -8,6 +8,9 @@ const expectedSubjectId = '812'
 const user = { id: expectedSubjectId, nickname: '', roles: ['student'], ageVerified: false, status: 'active', avatarUrl: null }
 const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
 const response = (status = 200, body = user, responseHeaders = headers) => ({ status, headers: responseHeaders, body })
+const requestId = 'a'.repeat(32)
+const unauthenticatedBody = { code: 'UNAUTHENTICATED', message: '请先登录', requestId }
+const unauthenticatedHeaders = { ...headers, 'x-request-id': requestId }
 
 test('200 with no-store and a contract User for the expected subject restores a safe copy', async () => {
   const verifier = createCurrentUserVerifier(async candidate => {
@@ -50,7 +53,10 @@ test('mismatch and non-401 failures preserve the vault entry but never activate 
       return { ok: true, errorCode: '', found: false, value: '' }
     },
   }
-  for (const failedResponse of [response(200, { ...user, id: '813' }), response(403, { code: 'FORBIDDEN' })]) {
+  for (const failedResponse of [
+    response(200, { ...user, id: '813' }), response(403, { code: 'FORBIDDEN' }),
+    response(401, {}, unauthenticatedHeaders),
+  ]) {
     const coordinator = new AuthSessionCoordinator(vault, createCurrentUserVerifier(async () => failedResponse))
     assert.deepEqual(await coordinator.restore(), { status: 'unavailable', reason: 'verification' })
     assert.equal(stored, original)
@@ -58,13 +64,24 @@ test('mismatch and non-401 failures preserve the vault entry but never activate 
   }
 })
 
-test('only explicit 401 with a valid no-store response revokes the saved credential', async () => {
-  const verifier = createCurrentUserVerifier(async () => response(401, { code: 'UNAUTHORIZED' }))
+test('only contract-valid UNAUTHENTICATED 401 revokes the saved credential', async () => {
+  const verifier = createCurrentUserVerifier(async () => response(401, unauthenticatedBody, unauthenticatedHeaders))
   assert.deepEqual(await verifier(token, expectedSubjectId), { status: 'revoked' })
-  const badHeaders = createCurrentUserVerifier(async () => response(401, { code: 'UNAUTHORIZED' }, {
-    'content-type': 'application/json', 'cache-control': 'public',
-  }))
-  assert.deepEqual(await badHeaders(token, expectedSubjectId), { status: 'unavailable' })
+  const invalid401s = [
+    response(401, {}, unauthenticatedHeaders),
+    response(401, { ...unauthenticatedBody, code: 'UNAUTHORIZED' }, unauthenticatedHeaders),
+    response(401, { code: 'UNAUTHENTICATED', requestId }, unauthenticatedHeaders),
+    response(401, { ...unauthenticatedBody, requestId: 'not-an-id' }, unauthenticatedHeaders),
+    response(401, { ...unauthenticatedBody, details: [] }, unauthenticatedHeaders),
+    response(401, unauthenticatedBody, { ...headers, 'x-request-id': 'b'.repeat(32) }),
+    response(401, unauthenticatedBody, headers),
+    response(401, unauthenticatedBody, { ...unauthenticatedHeaders, 'cache-control': 'public' }),
+    response(401, null, unauthenticatedHeaders),
+  ]
+  for (const invalid of invalid401s) {
+    const badVerifier = createCurrentUserVerifier(async () => invalid)
+    assert.deepEqual(await badVerifier(token, expectedSubjectId), { status: 'unavailable' })
+  }
   const malformedBody = createCurrentUserVerifier(async () => response(401, null))
   assert.deepEqual(await malformedBody(token, expectedSubjectId), { status: 'unavailable' })
 })

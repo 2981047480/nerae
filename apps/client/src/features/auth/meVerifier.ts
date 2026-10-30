@@ -28,6 +28,16 @@ function noStore(headers: unknown): boolean {
     /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentType[0][1].trim())
 }
 
+function isServerUnauthenticated(body: unknown, headers: unknown): boolean {
+  if (!isObject(body) || !isObject(headers) || body.code !== 'UNAUTHENTICATED' ||
+    typeof body.message !== 'string' || body.message.length > 2048 ||
+    typeof body.requestId !== 'string' || !/^[a-f0-9]{32}$/.test(body.requestId) ||
+    !['code', 'message', 'requestId'].every(key => Object.prototype.hasOwnProperty.call(body, key))) return false
+  if ('details' in body && !isObject(body.details)) return false
+  const requestIds = Object.entries(headers).filter(([name]) => name.toLowerCase() === 'x-request-id')
+  return requestIds.length === 1 && requestIds[0][1] === body.requestId
+}
+
 function parseCurrentUser(value: unknown): AuthUser | undefined {
   if (!isObject(value)) return undefined
   if (!validSubjectId(value.id) ||
@@ -61,7 +71,9 @@ export function createCurrentUserVerifier(readCurrentUser: CurrentUserReadPort):
       const response = await readCurrentUser(accessToken)
       if (!isObject(response) || !Number.isInteger(response.status) || response.status < 100 || response.status > 599 ||
         !noStore(response.headers) || !isObject(response.body)) return { status: 'unavailable' }
-      if (response.status === 401) return { status: 'revoked' }
+      if (response.status === 401) {
+        return isServerUnauthenticated(response.body, response.headers) ? { status: 'revoked' } : { status: 'unavailable' }
+      }
       if (response.status !== 200) return { status: 'unavailable' }
       const user = parseCurrentUser(response.body)
       if (!user || user.id !== expectedSubjectId) return { status: 'unavailable' }

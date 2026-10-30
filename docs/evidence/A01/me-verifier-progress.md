@@ -20,10 +20,14 @@ change. Status: **partial; no backend or device integration claimed**.
   Bearer ...` and `Cache-Control: no-store`, and returns validated status,
   response headers, and parsed JSON. The caller cannot supply a URL or origin.
 - The verifier requires JSON content type and `Cache-Control: no-store` before
-  classifying a response. Only a valid HTTP 401 maps to `revoked`; 403, 429,
-  server failures, redirects, malformed responses, subject mismatch, and
-  transport errors map to `unavailable`. Thus they do not clear or activate the
-  stored credential.
+  classifying a response. A 401 maps to `revoked` only when its Error object has
+  `code: UNAUTHENTICATED`, string `message`, a 32-character lowercase hex
+  `requestId`, and a matching `X-Request-ID` response header; optional `details`
+  must be an object. This follows `middleware.WriteError`'s response and
+  `NewRequestID` generation. Empty, differently coded, or malformed 401s remain
+  `unavailable`; 403, 429, server failures, redirects, malformed responses,
+  subject mismatch, and transport errors also remain unavailable, preserving
+  the saved credential.
 - Contract follow-up: neither the inline `/me` 200 response nor its 401
   `Unauthorized` component currently declares `Cache-Control: no-store`; the
   client fails closed and returns `unavailable` if the service omits it. The
