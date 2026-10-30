@@ -7372,8 +7372,8 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "4e07639",
-      "write_allowlist": ["apps/api/internal/modules/workout/transport/", "docs/evidence/A04/A04-07/"],
+      "base_revision": "8ea6abd",
+      "write_allowlist": ["apps/api/internal/modules/workout/transport/", "apps/api/internal/modules/workout/application/visible_read.go", "docs/evidence/A04/A04-07/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "apps/api/internal/middleware/auth.go", "apps/api/internal/middleware/schema.go", "apps/api/internal/modules/workout/application/list.go", "apps/api/internal/modules/workout/application/ordered_workout.go"],
       "deliverables": "将已有本人自由训练列表和详情服务转换成经响应契约校验的 HTTP 读取处理器，供真实 App 和小程序使用；仅在隔离测试路由中装配。",
       "acceptance": [
