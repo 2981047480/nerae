@@ -77,6 +77,13 @@
       "module": "transport",
       "file": "0001_idempotency.up.sql",
       "sha256": "5d9d7bf7212434406bffe844c90e87ff473c4e7d8a8f8340833f0c1846950c64"
+    },
+    {
+      "order": 12,
+      "id": "auth/0007_email_outbox.up.sql",
+      "module": "auth",
+      "file": "0007_email_outbox.up.sql",
+      "sha256": "4c0ac773cf29977aa46ab54647a82473a4aa234922b6eaee91342e5580a5a80b"
     }
   ]
 }
