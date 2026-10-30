@@ -204,6 +204,74 @@ func TestEmailChallengeTransaction(t *testing.T) {
 
 	first := strings.Repeat("A", 32)
 	issue(first)
+	metadataTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotIndex, gotFingerprint, found, err := store.RateLimitDetails(ctx, metadataTx, first)
+	_ = metadataTx.Rollback()
+	expectedFingerprint, fingerprintErr := domain.DeviceKeyFingerprint(public)
+	if err != nil || !found || gotIndex != index || fingerprintErr != nil || gotFingerprint != expectedFingerprint {
+		t.Fatal("server-stored limiter metadata did not match the issued challenge")
+	}
+	missingMetadataTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	missingIndex, missingFingerprint, missing, err := store.RateLimitDetails(ctx, missingMetadataTx, strings.Repeat("Z", 32))
+	_ = missingMetadataTx.Rollback()
+	if err != nil || missing || missingIndex != ([32]byte{}) || missingFingerprint != ([32]byte{}) {
+		t.Fatal("unknown challenge exposed or returned limiter metadata")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET key_fingerprint=? WHERE challenge_id=?`, make([]byte, 32), first); err != nil {
+		t.Fatal("could not seed malformed challenge metadata")
+	}
+	malformedMetadataTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, malformedFound, malformedErr := store.RateLimitDetails(ctx, malformedMetadataTx, first)
+	_ = malformedMetadataTx.Rollback()
+	if malformedFound || !errors.Is(malformedErr, ErrChallengeStore) {
+		t.Fatal("malformed persisted fingerprint was accepted for limiting")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET key_fingerprint=? WHERE challenge_id=?`, expectedFingerprint[:], first); err != nil {
+		t.Fatal("could not restore isolated challenge metadata")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET email_key_id='wrong-key' WHERE challenge_id=?`, first); err != nil {
+		t.Fatal("could not seed mismatched challenge key id")
+	}
+	mismatchTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, mismatchFound, mismatchErr := store.RateLimitDetails(ctx, mismatchTx, first)
+	_ = mismatchTx.Rollback()
+	if mismatchFound || !errors.Is(mismatchErr, ErrChallengeStore) {
+		t.Fatal("challenge encrypted under a different persistent key was accepted")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET email_key_id='test-key' WHERE challenge_id=?`, first); err != nil {
+		t.Fatal("could not restore isolated challenge key id")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET email_ciphertext=? WHERE challenge_id=?`, []byte("corrupt"), first); err != nil {
+		t.Fatal("could not seed mismatched challenge ciphertext")
+	}
+	corruptCiphertextTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, ciphertextFound, ciphertextErr := store.RateLimitDetails(ctx, corruptCiphertextTx, first)
+	_ = corruptCiphertextTx.Rollback()
+	if ciphertextFound || !errors.Is(ciphertextErr, ErrChallengeStore) {
+		t.Fatal("challenge ciphertext inconsistent with the persistent identity key was accepted")
+	}
+	_, validCiphertext, err := protector.Protect(email)
+	if err != nil {
+		t.Fatal("could not restore isolated challenge ciphertext")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_challenge SET email_ciphertext=? WHERE challenge_id=?`, validCiphertext, first); err != nil {
+		t.Fatal("could not restore isolated challenge ciphertext")
+	}
 	// Losing the epoch after challenge data exists must reject authentication
 	// and must not let either Issue or the bootstrapper recreate it.
 	var epochTag []byte
@@ -233,6 +301,15 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		t.Fatal("Attempt accepted a missing identity epoch")
 	}
 	_ = missingAttemptTx.Rollback()
+	missingRateLimitTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, _, missingRateLimitErr := store.RateLimitDetails(ctx, missingRateLimitTx, first)
+	_ = missingRateLimitTx.Rollback()
+	if !errors.Is(missingRateLimitErr, ErrChallengeStore) {
+		t.Fatal("rate limiter metadata accepted a missing identity key epoch")
+	}
 	reinitTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)

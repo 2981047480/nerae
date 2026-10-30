@@ -227,6 +227,126 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		}
 	})
 
+	t.Run("unknown challenge shares login IP and global counters atomically", func(t *testing.T) {
+		p := policy(20, 20, 2, 3, 3*time.Second)
+		limiter := newTestLimiter(t, client, p, p)
+		known := testInput("known-shared", "2001:db8:1:2::7")
+		if err := limiter.Allow(context.Background(), EmailLogin, known); err != nil {
+			t.Fatal("known challenge request was denied")
+		}
+		if err := limiter.AllowUnknownChallenge(context.Background(), known.SourceIP); err != nil {
+			t.Fatal("unknown challenge did not share available IP/global capacity")
+		}
+		keys, _, err := limiter.redisKeys(EmailLogin, known)
+		if err != nil {
+			t.Fatal("known challenge Redis key derivation failed")
+		}
+		unknownKeys, err := limiter.ipGlobalRedisKeys(EmailLogin, known.SourceIP)
+		if err != nil || len(unknownKeys) != 2 || keys[2] != unknownKeys[0] || keys[3] != unknownKeys[1] {
+			t.Fatal("unknown challenge did not use the exact shared login IP/global keys")
+		}
+		if !errors.Is(limiter.Allow(context.Background(), EmailLogin, testInput("known-ip-limit", "2001:db8:1:2::8")), ErrLimited) {
+			t.Fatal("known and unknown challenges did not share the IPv6 prefix IP limit")
+		}
+		if err := limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("2001:db8:2::1")); err != nil {
+			t.Fatal("IP-limited request partially consumed the global counter")
+		}
+		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("2001:db8:3::1")), ErrLimited) {
+			t.Fatal("unknown challenge requests did not share the global counter")
+		}
+		if err := client.Set(context.Background(), keys[2], "2", 3*time.Second).Err(); err != nil {
+			t.Fatal("could not seed isolated IP counter")
+		}
+		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), known.SourceIP), ErrLimited) {
+			t.Fatal("unknown challenge did not fail at the IP threshold")
+		}
+		if got, err := client.Get(context.Background(), keys[3]).Result(); err != nil || got != "3" {
+			t.Fatal("an IP rejection partially incremented the shared global counter")
+		}
+	})
+
+	t.Run("known and unknown login requests share concurrent global bound", func(t *testing.T) {
+		p := policy(1000, 1000, 1000, 7, 5*time.Second)
+		limiter := newTestLimiter(t, client, p, p)
+		const attempts = 40
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		allowed, limited, failed := 0, 0, 0
+		for i := 0; i < attempts; i++ {
+			wg.Add(1)
+			go func(index int) {
+				defer wg.Done()
+				var err error
+				if index%2 == 0 {
+					err = limiter.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("192.0.2.199"))
+				} else {
+					err = limiter.Allow(context.Background(), EmailLogin, testInput(fmt.Sprintf("mixed-%d", index), "192.0.2.199"))
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				switch {
+				case err == nil:
+					allowed++
+				case errors.Is(err, ErrLimited):
+					limited++
+				default:
+					failed++
+				}
+			}(i)
+		}
+		wg.Wait()
+		if allowed != 7 || limited != attempts-7 || failed != 0 {
+			t.Fatalf("known/unknown requests did not share one atomic quota: allowed=%d limited=%d failed=%d", allowed, limited, failed)
+		}
+	})
+
+	t.Run("unknown challenge validates IP and fails closed when Redis is unavailable", func(t *testing.T) {
+		limiter := newTestLimiter(t, client, policy(2, 2, 2, 2, time.Second), policy(2, 2, 2, 2, time.Second))
+		for _, ip := range []netip.Addr{{}, netip.IPv4Unspecified(), netip.MustParseAddr("ff02::1"), netip.MustParseAddr("fe80::1%en0")} {
+			if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrInvalid) {
+				t.Fatal("invalid IP accepted for unknown challenge")
+			}
+		}
+		closed := redis.NewClient(&redis.Options{Network: "unix", Addr: socket})
+		if err := closed.Close(); err != nil {
+			t.Fatal("could not close isolated test client")
+		}
+		unavailable := newTestLimiter(t, closed, policy(2, 2, 2, 2, time.Second), policy(2, 2, 2, 2, time.Second))
+		if !errors.Is(unavailable.AllowUnknownChallenge(context.Background(), netip.MustParseAddr("198.51.100.54")), ErrUnavailable) {
+			t.Fatal("unknown challenge did not fail closed on Redis error")
+		}
+	})
+
+	t.Run("unknown challenge rejects corrupt counters without partial writes", func(t *testing.T) {
+		p := policy(10, 10, 10, 10, 3*time.Second)
+		limiter := newTestLimiter(t, client, p, p)
+		ip := netip.MustParseAddr("203.0.113.77")
+		keys, err := limiter.ipGlobalRedisKeys(EmailLogin, ip)
+		if err != nil {
+			t.Fatal("could not derive isolated unknown-challenge counters")
+		}
+		if err := client.Set(context.Background(), keys[0], "not-a-counter", 3*time.Second).Err(); err != nil {
+			t.Fatal("could not seed malformed private IP counter")
+		}
+		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrUnavailable) {
+			t.Fatal("unknown challenge accepted a malformed IP counter")
+		}
+		if exists, err := client.Exists(context.Background(), keys[1]).Result(); err != nil || exists != 0 {
+			t.Fatal("malformed IP counter partially created the global counter")
+		}
+		_ = client.Del(context.Background(), keys[0]).Err()
+		if err := client.RPush(context.Background(), keys[1], "wrong-type").Err(); err != nil {
+			t.Fatal("could not seed wrong-type private global counter")
+		}
+		_ = client.PExpire(context.Background(), keys[1], 3*time.Second).Err()
+		if !errors.Is(limiter.AllowUnknownChallenge(context.Background(), ip), ErrUnavailable) {
+			t.Fatal("unknown challenge accepted a wrong-type global counter")
+		}
+		if exists, err := client.Exists(context.Background(), keys[0]).Result(); err != nil || exists != 0 {
+			t.Fatal("wrong-type global counter partially created the IP counter")
+		}
+	})
+
 	t.Run("denial does not partially consume other dimensions", func(t *testing.T) {
 		config := validConfig(t)
 		config.EmailChallenge = policy(20, 20, 20, 1, 3*time.Second)

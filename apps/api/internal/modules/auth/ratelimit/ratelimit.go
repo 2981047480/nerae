@@ -138,8 +138,29 @@ func (l *Limiter) Allow(ctx context.Context, purpose Purpose, input Input) error
 	if err != nil {
 		return ErrInvalid
 	}
-	args := make([]interface{}, 0, 8)
-	for _, dimension := range []DimensionPolicy{policy.Email, policy.Device, policy.IP, policy.Global} {
+	return l.allow(ctx, keys, []DimensionPolicy{policy.Email, policy.Device, policy.IP, policy.Global})
+}
+
+// AllowUnknownChallenge applies the same login IP and global counters used by
+// Allow when the challenge lookup found no row. It creates no attacker-selected
+// email or device keys.
+func (l *Limiter) AllowUnknownChallenge(ctx context.Context, sourceIP netip.Addr) error {
+	if l == nil || nilInterface(l.client) || ctx == nil {
+		return ErrUnavailable
+	}
+	if !sourceIP.IsValid() || sourceIP.IsUnspecified() || sourceIP.IsMulticast() || sourceIP.Zone() != "" {
+		return ErrInvalid
+	}
+	keys, err := l.ipGlobalRedisKeys(EmailLogin, sourceIP)
+	if err != nil {
+		return ErrInvalid
+	}
+	return l.allow(ctx, keys, []DimensionPolicy{l.login.IP, l.login.Global})
+}
+
+func (l *Limiter) allow(ctx context.Context, keys []string, dimensions []DimensionPolicy) error {
+	args := make([]interface{}, 0, len(dimensions)*2)
+	for _, dimension := range dimensions {
 		args = append(args, strconv.FormatUint(dimension.Limit, 10), strconv.FormatInt(dimension.Window.Milliseconds(), 10))
 	}
 	result, err := l.client.Eval(ctx, atomicScript, keys, args...).Int64()
@@ -168,17 +189,31 @@ func (l *Limiter) redisKeys(purpose Purpose, input Input) ([]string, Policy, err
 	if purpose == EmailLogin {
 		policy = l.login
 	}
-	ipValue, err := l.ipPayload(input.SourceIP)
+	ipGlobal, err := l.ipGlobalRedisKeys(purpose, input.SourceIP)
 	if err != nil {
 		return nil, Policy{}, ErrInvalid
 	}
 	keys := []string{
 		l.redisKey(l.keys.email[:], purpose, "email", input.EmailIndex[:]),
 		l.redisKey(l.keys.device[:], purpose, "device", input.DeviceFingerprint[:]),
-		l.redisKey(l.keys.ip[:], purpose, "ip", ipValue),
-		l.redisKey(l.keys.global[:], purpose, "global", []byte("all")),
+		ipGlobal[0], ipGlobal[1],
 	}
 	return keys, policy, nil
+}
+
+func (l *Limiter) ipGlobalRedisKeys(purpose Purpose, sourceIP netip.Addr) ([]string, error) {
+	if l == nil || purpose != EmailChallenge && purpose != EmailLogin ||
+		!sourceIP.IsValid() || sourceIP.IsUnspecified() || sourceIP.IsMulticast() || sourceIP.Zone() != "" {
+		return nil, ErrInvalid
+	}
+	ipValue, err := l.ipPayload(sourceIP)
+	if err != nil {
+		return nil, ErrInvalid
+	}
+	return []string{
+		l.redisKey(l.keys.ip[:], purpose, "ip", ipValue),
+		l.redisKey(l.keys.global[:], purpose, "global", []byte("all")),
+	}, nil
 }
 
 func (l *Limiter) ipPayload(address netip.Addr) ([]byte, error) {
@@ -259,11 +294,11 @@ func nilInterface(value any) bool {
 	}
 }
 
-// atomicScript validates all four counters and TTLs before mutating any key.
+// atomicScript validates every supplied counter and TTL before mutating keys.
 // Counts remain small integers to keep Lua's numeric representation exact.
 const atomicScript = `
 local overLimit = false
-for i = 1, 4 do
+for i = 1, #KEYS do
   local limit = tonumber(ARGV[(i - 1) * 2 + 1])
   local window = tonumber(ARGV[(i - 1) * 2 + 2])
   local kind = redis.call('TYPE', KEYS[i]).ok
@@ -280,7 +315,7 @@ for i = 1, 4 do
   end
 end
 if overLimit then return 0 end
-for i = 1, 4 do
+for i = 1, #KEYS do
   local kind = redis.call('TYPE', KEYS[i]).ok
   if kind == 'none' then
     redis.call('SET', KEYS[i], '1', 'PX', ARGV[(i - 1) * 2 + 2])

@@ -217,6 +217,42 @@ func (s *Store) ReceiptScope(ctx context.Context, tx *sql.Tx, challengeID string
 	return scope, true, nil
 }
 
+// RateLimitDetails returns only server-stored opaque limiter inputs for an
+// email challenge. The values are not proof of identity or authorization and
+// must only be passed to the anonymous rate limiter.
+func (s *Store) RateLimitDetails(ctx context.Context, tx *sql.Tx, challengeID string) ([32]byte, [32]byte, bool, error) {
+	var index, fingerprint [32]byte
+	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+		return index, fingerprint, false, ErrChallengeStore
+	}
+	var storedIndex, storedFingerprint, ciphertext, storedKeyID []byte
+	err := tx.QueryRowContext(ctx, `SELECT email_index, key_fingerprint, email_ciphertext, email_key_id
+		FROM auth_email_login_challenge WHERE challenge_id = ?`, challengeID).
+		Scan(&storedIndex, &storedFingerprint, &ciphertext, &storedKeyID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return index, fingerprint, false, nil
+	}
+	if err != nil || len(storedIndex) != len(index) || len(storedFingerprint) != len(fingerprint) ||
+		len(ciphertext) == 0 || len(storedKeyID) == 0 {
+		return index, fingerprint, false, ErrChallengeStore
+	}
+	currentKeyID, _, err := s.identities.KeyEpoch()
+	if err != nil || string(storedKeyID) != currentKeyID {
+		return index, fingerprint, false, ErrChallengeStore
+	}
+	copy(index[:], storedIndex)
+	copy(fingerprint[:], storedFingerprint)
+	if index == ([32]byte{}) || fingerprint == ([32]byte{}) {
+		return [32]byte{}, [32]byte{}, false, ErrChallengeStore
+	}
+	// Ensure the persisted identity material still belongs to the configured
+	// protector, but discard the plaintext; it is never returned to callers.
+	if _, err := s.identities.Open(index, ciphertext); err != nil {
+		return [32]byte{}, [32]byte{}, false, ErrChallengeStore
+	}
+	return index, fingerprint, true, nil
+}
+
 // ReceiptProof is a transaction-bound revalidation of a previously consumed
 // device proof. It cannot issue a session: callers must also match the exact
 // request to a live encrypted receipt and independently recheck current user,
