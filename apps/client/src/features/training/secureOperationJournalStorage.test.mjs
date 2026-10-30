@@ -4,10 +4,18 @@ import { SecureJournalStorageError, SecureOperationJournalStorage } from './secu
 
 const registryKey = (subject = '101', event = 'event-0001') =>
   `nerae.workout.operation.v1.${subject}.${encodeURIComponent(event)}`
-const operation = (subjectId = '101', clientEventId = 'event-0001', revision = 1) => JSON.stringify({
+const freeCreateBody = event => JSON.stringify({ source: 'free', date: '2026-10-31', clientEventId: event, timeZone: 'Asia/Shanghai' })
+const plannedCreateBody = event => JSON.stringify({ source: 'plan', date: '2026-10-31', clientEventId: event,
+  timeZone: 'Asia/Shanghai', planId: '20', planVersion: 3, planDayId: '9', occurrenceId: '11' })
+const setBatchBody = JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+  recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', kind: 'weight', setIndex: 1,
+  weightKg: 42.5, reps: 8, rpe: null, completed: true,
+}], deleteRecordKeys: ['record-002'], restoreRecordKeys: ['record-001'] })
+const finishBody = JSON.stringify({ expectedVersion: 2, date: '2026-10-31', durationMin: null, rpe: 7.5, note: null })
+const operation = (subjectId = '101', clientEventId = 'event-0001', revision = 1, path = '/me/sessions/55/sets', body = setBatchBody) => JSON.stringify({
   schema: 1, subjectId, clientEventId, createdGeneration: 'session-1', revision,
   state: 'ready', createdAt: 1000, expiresAt: 2000,
-  request: { method: 'POST', path: '/me/sessions/55/sets', body: '{"expectedVersion":1}', idempotencyKey: 'idem-key-0001' },
+  request: { method: 'POST', path, body, idempotencyKey: 'idem-key-0001' },
 })
 
 function auth(subjectId = '101', generation = 'session-1') {
@@ -96,6 +104,74 @@ test('keeps canonical Unicode event IDs bound to their exact owner key', async (
   const store = makeStore(native())
   assert.equal(await store.createIfAbsent(key, value), true)
   assert.equal(await store.read(key), value)
+})
+
+test('accepts current free and planned creation fields, nested set writes, and optional finish values', async () => {
+  const backend = native()
+  const store = makeStore(backend)
+  const cases = [
+    [registryKey('101', 'event-0001'), operation('101', 'event-0001', 1, '/me/sessions', freeCreateBody('event-0001'))],
+    [registryKey('101', 'event-0002'), operation('101', 'event-0002', 1, '/me/sessions', plannedCreateBody('event-0002'))],
+    [registryKey('101', 'event-0003'), operation('101', 'event-0003', 1, '/me/sessions/55/sets', setBatchBody)],
+    [registryKey('101', 'event-0004'), operation('101', 'event-0004', 1, '/me/sessions/55/finish', finishBody)],
+    [registryKey('101', 'event-0005'), operation('101', 'event-0005', 1, '/me/sessions/55/sets', JSON.stringify({
+      expectedVersion: 2, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [
+        { recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', kind: 'weight', setIndex: 1,
+          weightKg: 42.5, reps: 8, completed: true },
+        { recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseId: '77', kind: 'bodyweight', setIndex: 2,
+          reps: 12, completed: true },
+      ],
+    }))],
+  ]
+  for (const [key, value] of cases) assert.equal(await store.createIfAbsent(key, value), true)
+  for (const [key, value] of cases) assert.equal(await store.read(key), value)
+})
+
+test('rejects unknown fields independently for create, set batch, nested set, and finish bodies', async () => {
+  const cases = [
+    ['event-0001', '/me/sessions', { source: 'free', date: '2026-10-31', clientEventId: 'event-0001', deviceProof: 'synthetic-proof' }],
+    ['event-0002', '/me/sessions', { source: 'free', date: '2026-10-31', clientEventId: 'event-0002', approvalSecret: 'synthetic-secret' }],
+    ['event-0006', '/me/sessions', { source: 'plan', date: '2026-10-31', clientEventId: 'event-0006',
+      planId: 20, planVersion: 3, planDayId: '9' }],
+    ['event-0003', '/me/sessions/55/sets', { expectedVersion: 1, exerciseEntryKeys: [], deviceProof: 'synthetic-proof' }],
+    ['event-0004', '/me/sessions/55/sets', { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', kind: 'weight', setIndex: 1,
+      weightKg: 42.5, reps: 8, completed: true, approvalSecret: 'synthetic-secret',
+    }] }],
+    ['event-0007', '/me/sessions/55/sets', { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', kind: 'weight', setIndex: 1,
+      weightKg: 42.5, reps: 8, completed: true, meta: { sessionToken: 'synthetic-token' },
+    }] }],
+    ['event-0005', '/me/sessions/55/finish', { expectedVersion: 2, note: 'ok', token: 'synthetic-token' }],
+  ]
+  for (const [event, path, body] of cases) {
+    const backend = native()
+    const store = makeStore(backend)
+    const value = operation('101', event, 1, path, JSON.stringify(body))
+    await assert.rejects(store.createIfAbsent(registryKey('101', event), value),
+      error => error.code === 'invalid_operation')
+    assert.equal(backend.calls, 0)
+  }
+})
+
+test('keeps old valid same-subject journal rows readable after reauthentication', async () => {
+  const key = registryKey('101', 'event-0001')
+  const value = operation('101', 'event-0001', 1, '/me/sessions', freeCreateBody('event-0001'))
+  const backend = native(JSON.stringify({ schema: 1, entries: { [key]: value } }))
+  assert.equal(await makeStore(backend, auth('101', 'session-2')).read(key), value)
+  assert.equal(backend.calls, 0)
+})
+
+test('does not discard legacy stored payloads with newly forbidden unknown fields', async () => {
+  const key = registryKey()
+  const value = operation('101', 'event-0001', 1, '/me/sessions/55/sets', JSON.stringify({
+    expectedVersion: 1, exerciseEntryKeys: [], deviceProof: 'synthetic-proof',
+  }))
+  const original = JSON.stringify({ schema: 1, entries: { [key]: value } })
+  const backend = native(original)
+  await assert.rejects(makeStore(backend).read(key), error => error.code === 'corrupt')
+  assert.equal(backend.value, original)
+  assert.equal(backend.calls, 0)
 })
 
 test('rejects malformed and duplicate-key registries without overwriting the native value', async () => {
@@ -189,28 +265,28 @@ test('session change during CAS reports session_changed and a fresh same-subject
 })
 
 test('accepts a registry of exactly 65,536 UTF-8 bytes and rejects the next byte', async () => {
-  const key = registryKey()
-  const valueAt = size => JSON.stringify({
-    schema: 1, subjectId: '101', clientEventId: 'event-0001', createdGeneration: 'session-1', revision: 1,
-    state: 'ready', createdAt: 1000, expiresAt: 2000,
-    request: { method: 'POST', path: '/me/sessions/55/sets',
-      body: JSON.stringify({ payload: 'x'.repeat(size) }), idempotencyKey: 'idem-key-0001' },
-  })
-  const registryBytes = value => Buffer.byteLength(JSON.stringify({ schema: 1, entries: { [key]: value } }), 'utf8')
-  let low = 0
-  let high = 65_536
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2)
-    if (registryBytes(valueAt(middle)) <= 65_536) low = middle
-    else high = middle - 1
+  const entries = Object.create(null)
+  for (let index = 0; index < 29; index++) {
+    const event = `event-${String(index).padStart(4, '0')}`
+    entries[registryKey('101', event)] = operation('101', event, 1, '/me/sessions/55/finish',
+      JSON.stringify({ expectedVersion: 1, note: 'x'.repeat(1800) }))
   }
-  assert.equal(registryBytes(valueAt(low)), 65_536)
+  const lastEvent = 'event-0029'
+  const lastKey = registryKey('101', lastEvent)
+  entries[lastKey] = operation('101', lastEvent, 1, '/me/sessions/55/finish',
+    JSON.stringify({ expectedVersion: 1, note: 'x'.repeat(1462) }))
+  const registryBytes = value => Buffer.byteLength(value, 'utf8')
+  const exactRegistry = JSON.stringify({ schema: 1, entries })
+  assert.equal(registryBytes(exactRegistry), 65_536)
   const backend = native()
   const store = makeStore(backend)
-  assert.equal(await store.createIfAbsent(key, valueAt(low)), true)
+  backend.value = JSON.stringify({ schema: 1, entries: Object.create(null) })
+  for (const [key, value] of Object.entries(entries)) assert.equal(await store.createIfAbsent(key, value), true)
   assert.equal(Buffer.byteLength(backend.value, 'utf8'), 65_536)
   const secondKey = registryKey('101', 'event-0002')
-  await assert.rejects(store.createIfAbsent(secondKey, operation('101', 'event-0002')), error => error.code === 'too_large')
+  const extraEvent = 'event-0030'
+  await assert.rejects(store.createIfAbsent(registryKey('101', extraEvent), operation('101', extraEvent, 1, '/me/sessions/55/finish',
+    JSON.stringify({ expectedVersion: 1, note: 'x' }))), error => error.code === 'too_large')
   assert.equal(Buffer.byteLength(backend.value, 'utf8'), 65_536)
 })
 

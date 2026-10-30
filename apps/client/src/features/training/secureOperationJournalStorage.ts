@@ -42,7 +42,11 @@ const MAX_BYTES = 65_536
 const MAX_ENTRIES = 64
 const MAX_CAS_ATTEMPTS = 8
 const REGISTRY_KEYS = ['entries', 'schema'] as const
-const FORBIDDEN_BODY_KEYS = new Set(['authorization', 'accesstoken', 'refreshtoken', 'token', 'password', 'secret', 'proof'])
+const FREE_CREATE_KEYS = ['clientEventId', 'date', 'source', 'timeZone'] as const
+const PLANNED_CREATE_KEYS = ['clientEventId', 'date', 'occurrenceId', 'planDayId', 'planId', 'planVersion', 'source', 'timeZone'] as const
+const SET_BATCH_KEYS = ['deleteRecordKeys', 'expectedVersion', 'exerciseEntryKeys', 'restoreRecordKeys', 'sets'] as const
+const SET_WRITE_KEYS = ['completed', 'exerciseEntryKey', 'exerciseId', 'exerciseName', 'kind', 'recordKey', 'reps', 'rpe', 'seconds', 'setIndex', 'weightKg'] as const
+const FINISH_KEYS = ['date', 'durationMin', 'expectedVersion', 'note', 'rpe'] as const
 
 type Registry = { schema: 1; entries: Record<string, string> }
 
@@ -120,10 +124,7 @@ function validateOperation(key: string, value: unknown): asserts value is string
   if (!body || typeof body !== 'object' || Array.isArray(body) || JSON.stringify(body) !== req.body) {
     throw new SecureJournalStorageError('invalid_operation')
   }
-  inspectBody(body)
-  if (req.path === '/me/sessions' && (body as Record<string, unknown>).clientEventId !== owner.eventId) {
-    throw new SecureJournalStorageError('invalid_operation')
-  }
+  validateRequestBody(req.path, body as Record<string, unknown>, owner.eventId)
 }
 
 function exactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
@@ -132,17 +133,94 @@ function exactKeys(value: Record<string, unknown>, keys: readonly string[]): boo
   return actual.length === expected.length && actual.every((key, index) => key === expected[index])
 }
 
-function inspectBody(value: unknown, depth = 0): void {
-  if (depth > 32) throw new SecureJournalStorageError('invalid_operation')
-  if (Array.isArray(value)) {
-    if (value.length > 5000) throw new SecureJournalStorageError('invalid_operation')
-    for (const item of value) inspectBody(item, depth + 1)
-  } else if (value !== null && typeof value === 'object') {
-    for (const [field, child] of Object.entries(value as Record<string, unknown>)) {
-      if (FORBIDDEN_BODY_KEYS.has(field.toLowerCase())) throw new SecureJournalStorageError('invalid_operation')
-      inspectBody(child, depth + 1)
+function objectWithAllowedKeys(value: unknown, allowed: readonly string[], required: readonly string[] = []): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  const keys = Object.keys(record)
+  return keys.every(key => allowed.includes(key)) && required.every(key => Object.prototype.hasOwnProperty.call(record, key))
+}
+
+function validString(value: unknown, min: number, max: number): value is string {
+  return typeof value === 'string' && Array.from(value).length >= min && Array.from(value).length <= max
+}
+
+function validPositiveInteger(value: unknown): value is number {
+  return Number.isSafeInteger(value) && Number(value) >= 1
+}
+
+function validNumericId(value: unknown): value is string {
+  return typeof value === 'string' && /^[1-9]\d{0,19}$/.test(value)
+}
+
+function validUniqueKeyArray(value: unknown, minItems: number, maxItems: number): value is string[] {
+  return Array.isArray(value) && value.length >= minItems && value.length <= maxItems &&
+    value.every(item => validString(item, 8, 64)) && new Set(value).size === value.length
+}
+
+/** Field-shape guard only; OpenAPI/server validation remains authoritative. */
+function validateRequestBody(path: string, body: Record<string, unknown>, eventId: string): void {
+  if (path === '/me/sessions') {
+    const common = body.source === 'free' ? FREE_CREATE_KEYS : body.source === 'plan' ? PLANNED_CREATE_KEYS : null
+    if (!common) throw new SecureJournalStorageError('invalid_operation')
+    const required = body.source === 'free'
+      ? ['source', 'date', 'clientEventId']
+      : ['source', 'date', 'planId', 'planVersion', 'planDayId', 'clientEventId']
+    if (!objectWithAllowedKeys(body, common, required) || body.clientEventId !== eventId ||
+      typeof body.date !== 'string' || !validString(body.clientEventId, 8, 64) ||
+      (body.timeZone !== undefined && !validString(body.timeZone, 1, 64))) {
+      throw new SecureJournalStorageError('invalid_operation')
     }
+    if (body.source === 'plan' && (!validNumericId(body.planId) || !validNumericId(body.planDayId) ||
+      !validPositiveInteger(body.planVersion) || body.occurrenceId !== undefined && !validNumericId(body.occurrenceId))) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    return
   }
+
+  if (path.endsWith('/sets')) {
+    if (!objectWithAllowedKeys(body, SET_BATCH_KEYS, ['expectedVersion', 'exerciseEntryKeys']) ||
+      !validPositiveInteger(body.expectedVersion) || !validUniqueKeyArray(body.exerciseEntryKeys, 0, 2000)) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    if (body.sets !== undefined && (!Array.isArray(body.sets) || body.sets.length < 1 || body.sets.length > 200 ||
+      !body.sets.every(validateSetWrite))) throw new SecureJournalStorageError('invalid_operation')
+    if (body.deleteRecordKeys !== undefined && !validUniqueKeyArray(body.deleteRecordKeys, 1, 200)) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    if (body.restoreRecordKeys !== undefined && (!body.sets || !validUniqueKeyArray(body.restoreRecordKeys, 1, 200))) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    return
+  }
+
+  if (path.endsWith('/finish')) {
+    if (!objectWithAllowedKeys(body, FINISH_KEYS, ['expectedVersion']) || !validPositiveInteger(body.expectedVersion) ||
+      body.date !== undefined && typeof body.date !== 'string' ||
+      body.durationMin !== undefined && body.durationMin !== null && (!Number.isSafeInteger(body.durationMin) || Number(body.durationMin) < 0) ||
+      body.rpe !== undefined && body.rpe !== null && (typeof body.rpe !== 'number' || !Number.isFinite(body.rpe) || body.rpe < 1 || body.rpe > 10) ||
+      body.note !== undefined && body.note !== null && !validString(body.note, 0, 2000)) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    return
+  }
+  throw new SecureJournalStorageError('invalid_operation')
+}
+
+function validateSetWrite(value: unknown): boolean {
+  if (!objectWithAllowedKeys(value, SET_WRITE_KEYS, ['recordKey', 'exerciseEntryKey', 'setIndex', 'kind']) ||
+    !validString(value.recordKey, 8, 64) || !validString(value.exerciseEntryKey, 8, 64) || !validPositiveInteger(value.setIndex) ||
+    !['weight', 'perSide', 'bodyweight', 'bodyweightPerSide', 'duration', 'durationPerSide', 'breath'].includes(String(value.kind))) return false
+  const hasExerciseId = value.exerciseId !== undefined
+  const hasExerciseName = value.exerciseName !== undefined
+  if (hasExerciseId === hasExerciseName ||
+    hasExerciseId && !validNumericId(value.exerciseId) ||
+    hasExerciseName && (!validString(value.exerciseName, 1, 60) || !value.exerciseName.trim()) ||
+    value.weightKg !== undefined && (typeof value.weightKg !== 'number' || !Number.isFinite(value.weightKg) || value.weightKg <= 0 || value.weightKg > 300) ||
+    value.reps !== undefined && (!Number.isSafeInteger(value.reps) || Number(value.reps) < 1 || Number(value.reps) > 100) ||
+    value.seconds !== undefined && (!Number.isSafeInteger(value.seconds) || Number(value.seconds) < 5 || Number(value.seconds) > 600) ||
+    value.rpe !== undefined && value.rpe !== null && (typeof value.rpe !== 'number' || !Number.isFinite(value.rpe) || value.rpe < 1 || value.rpe > 10) ||
+    value.completed !== undefined && value.completed !== true) return false
+  return true
 }
 
 function encodeRegistry(entries: Record<string, string>): string {
