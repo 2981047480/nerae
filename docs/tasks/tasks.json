@@ -159,6 +159,7 @@
         "apps/api/internal/server/",
         "apps/api/internal/middleware/",
         "apps/api/internal/idempotency/",
+        "apps/api/internal/dbtx/",
         "scripts/codegen/",
         "api/tests/",
         "docs/evidence/F02/",
@@ -7414,7 +7415,7 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "ebb125f",
-      "write_allowlist": ["apps/api/internal/idempotency/", "apps/api/migrations/transport/0001_idempotency.up.sql", "scripts/dev/migrations.json", "docs/evidence/F02/F02-04/"],
+      "write_allowlist": ["apps/api/internal/idempotency/", "apps/api/internal/dbtx/", "apps/api/migrations/transport/0001_idempotency.up.sql", "scripts/dev/migrations.json", "docs/evidence/F02/F02-04/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/ENGINEERING_STANDARDS.md", "api/openapi.yaml", "docs/数据模型与ER设计.md", "apps/api/internal/modules/auth/session/store.go", "apps/api/internal/modules/workout/application/ordered_workout.go"],
       "deliverables": "实现仅用于已认证同库事务写入的 MySQL 幂等基础：由真实会话派生主体，同事务保存业务变更和加密结果，重放前复查权限；保留期由配置显式提供。",
       "acceptance": [
