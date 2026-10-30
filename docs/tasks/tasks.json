@@ -504,7 +504,8 @@
         "A01-15",
         "A01-16",
         "A01-17",
-        "A01-18"
+        "A01-18",
+        "A01-19"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -7954,6 +7955,40 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
       "external_prerequisites": []
+    },
+    {
+      "id": "A01-19",
+      "title": "邮箱队列后台执行循环",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": ["F01-02", "K01-01"],
+      "acceptance_requires": ["A01-03", "A01-13", "A01-15"],
+      "parent": "A01",
+      "kind": "task",
+      "role": "worker",
+      "model_policy": "implementation",
+      "owner": "/root/mail_worker（Lead 复核）",
+      "actual_model": "gpt-6-luna（原生子代理）",
+      "actual_reasoning": "medium",
+      "base_revision": "8de48d7",
+      "write_allowlist": ["apps/api/internal/modules/auth/mailworker/", "docs/evidence/A01/A01-19/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "apps/api/cmd/worker/main.go", "apps/api/internal/config/config.go", "apps/api/internal/modules/auth/issuance/outbox.go", "apps/api/internal/modules/auth/mail/smtp.go", "docs/evidence/A01/A01-13/report.md"],
+      "deliverables": "实现可由后续 worker 装配调用的邮箱队列执行循环；本任务不接入生产进程。",
+      "acceptance": [
+        "缺配置或 key epoch 失配失败关闭，不自动创建或重置历史密钥；不把邮箱、验证码、密钥、认证信息、DSN 或底层异常写入日志",
+        "循环先恢复发送超时为 unknown、领取并发送新挑战；已提交未确认结果绝不自动重发，服务取消与关闭不制造假成功",
+        "私有 MySQL 与本机 TLS SMTP sink 验证真实队列发送、失败/unknown、重启恢复与不重复发送；无配置默认不发送，测试不连接真实 QQ",
+        "不接入生产进程；配置与错误不得泄露秘密；真实 SMTP、生产配置、部署和邮箱送达未验证时保持 active"
+      ],
+      "verification_commands": ["worker 配置与循环测试", "私有 MySQL 和本机 TLS SMTP 集成", "Go race"],
+      "risks": ["SMTP 发送和数据库提交非原子；取消或确认丢失必须按 unknown 处理。服务器密钥/证书与供应商尚未配置。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01", "F04"],
+      "forbidden": ["不修改共享 OpenAPI、迁移或 worker 入口", "不连接用户服务器或真实邮箱", "不跳过 TLS 校验或自动重发 unknown"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": ["用户之后启用的 QQ SMTP 与服务端安全配置。"]
     },
     {
       "id": "A01-17",
