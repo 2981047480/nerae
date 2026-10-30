@@ -4,12 +4,12 @@
 
 - 邮箱挑战的内部签发已连接四维限流、短期加密幂等回执与发信队列；集成树私有 MySQL/Redis 测试覆盖同键并发、改变有效请求冲突、锁等待跨过到期、撤销状态、提交成功后确认丢失模拟及失败回滚。[A01-16](evidence/A01/A01-16/report.md) 仍未挂 HTTP、真实邮箱或生产 worker；设备提示仅参与请求摘要，尚未存储展示。
 - 邮箱挑战 HTTP handler 已在集成树使用真实签发组件、本机 TLS 和私有 MySQL/Redis 完成 race 联测，包括同键重放、冲突、限流、非法请求与错误脱敏；实际客户端认证适配器也以合成数据连接该接口验证了挑战及重放；[A01-18](evidence/A01/A01-18/report.md) 只表示请求被接受，尚未挂生产路由或发送真实邮件。
-- 邮箱验证码登录已具备外层事务组合接缝：错误次数提交、回滚和提交后授权复核已在私有 MySQL/race 测试；[A01-11](evidence/A01/A01-11/transaction-seam.md) 仍不提供匿名登录幂等回执、登录 HTTP、真实发信或完整登录。
+- 邮箱验证码登录的早期外层事务组合接缝已验证错误次数提交、回滚和提交后授权复核；[A01-11](evidence/A01/A01-11/transaction-seam.md) 是当时的内部证据，后续回执重放进度见下。
 - 登录挑战在等待数据库锁和写入证明防重标记之后重新检查时效；可控时钟与私有 MySQL 回归通过，未模拟实际锁等待或跨实例时钟偏差。[证据](evidence/A01/A01-04/lock-wait-expiry.md)
-- 集成版本 `4023de6` 修复错误验证码时设备签名可重复使用：每次有效证明与尝试计数同事务消费，回滚后可重试；挑战和登录隔离 MySQL/race 回归通过。登录幂等回执、HTTP 和实际登录仍未完成。[证据](evidence/A01/A01-11/proof-attempt-integration.md)
+- 集成版本 `4023de6` 修复错误验证码时设备签名可重复使用：每次有效证明与尝试计数同事务消费，回滚后可重试；挑战和登录隔离 MySQL/race 回归通过。[证据](evidence/A01/A01-11/proof-attempt-integration.md) 登录回执的后续进度见下，HTTP 和实际登录尚未完成。
 - 设备证明防重在集成版本 `2b59a12` 增加缺失 key epoch 时的历史保护：保留防重记录时拒绝自动重建；集成版隔离 MySQL 防重与邮箱登录事务复测通过。空表仍可首次自动初始化，受控启动和数据恢复待完成。[证据](evidence/A01/A01-02/epoch-history-guard.md)
 - 邮箱队列后台循环已集成至 `ad727bb`：在同版本私有 MySQL 与本机 TLS SMTP sink 验证成功、结果未知与重启不重复；生产 worker 入口尚未装配，也未连接 QQ。[证据](evidence/A01/A01-19/report.md)
-- 登录首次请求已在同一事务组合验证码尝试、会话或新设备待批准申请与加密回执；签名、防重标记、密钥版本及有效期在写入后再次核对。集成提交 `b3c59dc` 的五组隔离 MySQL 回归、完整 Go race 套件和 99 项静态契约检查通过；完整套件中无 DSN 的数据库用例按设计跳过。[事务证据](evidence/A01/A01-11/receipt-atomic.md) / [集成证据](evidence/A01/A01-11/receipt-integration-2026-10-31.md) 已有回执目前保守返回不可用；当前授权复验、安全重放、未知提交恢复及对外凭据释放仍未实现，不能视为真实登录。设备证明[标记](evidence/A01/A01-02/replay-recheck.md)与[签名](evidence/A01/A01-04/receipt-proof-recheck.md)复查、会话和申请回执[封装](evidence/A01/A01-07/session-receipt-seal.md) / [封装](evidence/A01/A01-08/approval-receipt-seal.md)均仅供内部事务组合。
+- 登录首次请求已在同一事务组合验证码尝试、会话或新设备待批准申请与加密回执；相同请求的会话令牌、待批准申请和通用错误结果也已接入提交后授权复验与安全重放。集成提交 `f294817` 的五组隔离 MySQL/race 回归通过，覆盖同键并发、撤权、锁等待、密文篡改、失败回滚与验证码重发。[集成证据](evidence/A01/A01-11/receipt-replay-integration-2026-10-31.md) 此能力仍是内部事务：完整 HTTP 响应及限流、设备批准兑换幂等、真实 SMTP、生产部署和手机端均未接通，不能视为真实登录。
 - 客户端邮箱登录合同适配器已加入，认证成功与设备待批准严格分开，并禁止在普通结果序列化中暴露令牌；合成测试和类型检查通过。[A01-17](evidence/A01/A01-17/report.md) App 原生 HTTPS 适配接缝已实现并通过合成测试，但尚未接登录页面、持久会话、真实服务或原生应用。
 - 客户端入口显式加载锁定的 URL polyfill：真实认证/训练 API 构造器在无原生 URL 的 macOS JavaScriptCore 中通过，App 与小程序 JS 资源验证通过；真实 DCloud App 与手机仍待验证。[证据](evidence/F01/F01-06/report.md)
 - [P02-09](evidence/P02/P02-09/report.md) 加入 iOS/Android 系统安全随机数及微信适配器；在集成树复跑 iOS 未签名 framework、Android Kotlin 编译和小程序资源/合成测试通过，尚未在手机或微信真实运行。P02-10 已实现 iOS/Android 受控 HTTPS 原生桥；集成版本 `bddbec2` 复跑两端本机 TLS 协议测试及 Android UTS 转换通过，iOS 未签名 framework 先前编译通过。两端尚未接业务或真机，Android 尚无 APK/设备验证。
