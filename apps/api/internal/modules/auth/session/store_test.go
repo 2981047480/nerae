@@ -25,6 +25,7 @@ import (
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginreceipt"
 	"nerae/api/internal/modules/auth/repository"
 )
 
@@ -146,6 +147,85 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		_ = tx.Rollback()
 		t.Fatal("could not issue first device session")
 	}
+	crypto, err := loginreceipt.New(loginreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{6}, 32),
+		RequestHMACKey: bytes.Repeat([]byte{7}, 32), AES256GCMKey: bytes.Repeat([]byte{8}, 32)})
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	request := loginreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ", ChallengeID: id, Code: "012345", DeviceProof: signed}
+	binding, err := crypto.Summarize(request)
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal("could not bind synthetic receipt request")
+	}
+	expires := time.Now().UTC().Add(2 * time.Minute).Truncate(time.Microsecond)
+	otherTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := issued.SealForReceipt(ctx, otherTx, proof, crypto, binding, expires); !errors.Is(err, ErrSessionUnavailable) {
+		_ = otherTx.Rollback()
+		_ = tx.Rollback()
+		t.Fatal("issued session sealed in a different transaction")
+	}
+	_ = otherTx.Rollback()
+	wrongRequest := request
+	wrongRequest.ChallengeID = strings.Repeat("z", 32)
+	wrongBinding, err := crypto.Summarize(wrongRequest)
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := issued.SealForReceipt(ctx, tx, proof, crypto, wrongBinding, expires); !errors.Is(err, ErrSessionUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("receipt accepted a different challenge")
+	}
+	var deviceID, identityID []byte
+	issuedClaims, err := codec.Verify(issued.token.ForResponse())
+	if err != nil || tx.QueryRowContext(ctx, `SELECT device_id, identity_id FROM auth_session WHERE id = ?`, []byte(issuedClaims.SessionID)).Scan(&deviceID, &identityID) != nil {
+		_ = tx.Rollback()
+		t.Fatal("could not inspect synthetic session device")
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'revoked' WHERE id = ?`, deviceID); err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := issued.SealForReceipt(ctx, tx, proof, crypto, binding, expires); !errors.Is(err, ErrSessionUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("receipt was sealed after same-transaction device revocation")
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state = 'active' WHERE id = ?`, deviceID); err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	scope, err := protector.Index("person@example.test")
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE login_identity SET subject_lookup_hmac = ? WHERE id = ?`, bytes.Repeat([]byte{9}, 32), identityID); err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := issued.SealForReceipt(ctx, tx, proof, crypto, binding, expires); !errors.Is(err, ErrSessionUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("receipt was sealed after same-transaction identity replacement")
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE login_identity SET subject_lookup_hmac = ? WHERE id = ?`, scope[:], identityID); err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	sealed, err := issued.SealForReceipt(ctx, tx, proof, crypto, binding, expires)
+	if err != nil || sealed.Reference() != issuedClaims.SessionID || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(issued.token.ForResponse())) {
+		_ = tx.Rollback()
+		t.Fatal("session receipt was not encrypted or bound to its session")
+	}
+	if _, err := json.Marshal(sealed); err == nil || strings.Contains(fmt.Sprintf("%+v", sealed), issued.token.ForResponse()) {
+		_ = tx.Rollback()
+		t.Fatal("session receipt formatting exposed sensitive material")
+	}
 	if token, err := issued.AfterCommit(ctx, db); err == nil || token != "" {
 		_ = tx.Rollback()
 		t.Fatal("uncommitted session released a token")
@@ -161,6 +241,34 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not verify issued token")
 	}
+	verifyTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := challenges.VerifyReceiptProof(ctx, verifyTx, scope, id, signed); err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal("could not revalidate the original device proof")
+	}
+	replayPrincipal, err := store.Authenticate(ctx, verifyTx, token)
+	if err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal("could not recheck active session before decrypting test receipt")
+	}
+	if _, err := replayPrincipal.ForTransaction(ctx, verifyTx); err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal("session authorization recheck failed")
+	}
+	aad, err := crypto.NewContext(scope[:], binding, loginreceipt.ResultAuthenticated, sealed.Reference(), expires)
+	if err != nil {
+		_ = verifyTx.Rollback()
+		t.Fatal(err)
+	}
+	decrypted, err := crypto.Open(aad, sealed.Ciphertext())
+	if err != nil || string(decrypted.Bytes()) != token {
+		_ = verifyTx.Rollback()
+		t.Fatal("encrypted receipt did not preserve the committed session token")
+	}
+	_ = verifyTx.Rollback()
 	authTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal("could not begin session authentication")
@@ -175,7 +283,7 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		_ = authTx.Rollback()
 		t.Fatal("session principal has incorrect initial state")
 	}
-	otherTx, err := db.BeginTx(ctx, nil)
+	otherTx, err = db.BeginTx(ctx, nil)
 	if err != nil {
 		_ = authTx.Rollback()
 		t.Fatal("could not create a second transaction")
@@ -293,7 +401,19 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		_ = rolledTx.Rollback()
 		t.Fatal("could not issue rollback fixture")
 	}
+	rolledBinding, err := crypto.Summarize(loginreceipt.Request{IdempotencyKey: "AgICAgICAgICAgICAgICAg", ChallengeID: id, Code: "012345", DeviceProof: signed})
+	if err != nil {
+		_ = rolledTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := rolled.SealForReceipt(ctx, rolledTx, rolledProof, crypto, rolledBinding, expires); err != nil {
+		_ = rolledTx.Rollback()
+		t.Fatal("could not encrypt rollback fixture")
+	}
 	_ = rolledTx.Rollback()
+	if _, err := rolled.SealForReceipt(ctx, rolledTx, rolledProof, crypto, rolledBinding, expires); !errors.Is(err, ErrSessionUnavailable) {
+		t.Fatal("ended transaction could still seal a receipt")
+	}
 	if value, err := rolled.AfterCommit(ctx, db); err == nil || value != "" {
 		t.Fatal("rolled-back session released a token")
 	}

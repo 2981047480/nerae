@@ -13,6 +13,7 @@ import (
 
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginreceipt"
 )
 
 var (
@@ -74,6 +75,88 @@ func (i Issued) AfterCommit(ctx context.Context, db *sql.DB) (string, error) {
 		return "", ErrSessionUnavailable
 	}
 	return i.token.ForResponse(), nil
+}
+
+// SealedReceipt contains only an encrypted token and its non-bearer session
+// reference. It does not prove commit or authorize replay.
+type SealedReceipt struct {
+	reference string
+	sealed    loginreceipt.Sealed
+}
+
+func (SealedReceipt) String() string                    { return "SealedSessionReceipt{redacted}" }
+func (SealedReceipt) GoString() string                  { return "SealedSessionReceipt{redacted}" }
+func (SealedReceipt) MarshalJSON() ([]byte, error)      { return nil, ErrSessionUnavailable }
+func (SealedReceipt) LogValue() slog.Value              { return slog.StringValue("SealedSessionReceipt{redacted}") }
+func (r SealedReceipt) Reference() string               { return r.reference }
+func (r SealedReceipt) Ciphertext() loginreceipt.Sealed { return r.sealed }
+
+// SealForReceipt encrypts an issued token while its original transaction and
+// verified email proof are still live. The caller must use a binding derived
+// from the exact login request, persist the returned ciphertext in this same
+// transaction, and release no credential until commit and a fresh replay-time
+// signature, receipt, and authorization recheck. This method never returns a
+// token or asserts that the transaction will commit.
+func (i Issued) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge.VerifiedEmail, crypto *loginreceipt.Crypto, binding loginreceipt.Binding, expires time.Time) (SealedReceipt, error) {
+	if ctx == nil || tx == nil || i.sourceTx != tx || i.store == nil || i.store.now == nil || proof == nil || crypto == nil || i.token.ForResponse() == "" {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	verified, err := proof.ForTransaction(ctx, tx)
+	if err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	challengeID, err := proof.ChallengeIDForTransaction(ctx, tx)
+	if err != nil || challengeID != binding.ChallengeID() {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	claims, err := i.store.verifySessionToken(i.token.ForResponse())
+	if err != nil || !expires.After(i.store.now().UTC()) || expires.After(claims.ExpiresAt) {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	principal, err := i.store.Authenticate(ctx, tx, i.token.ForResponse())
+	if err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	details, err := principal.ForTransaction(ctx, tx)
+	if err != nil || details.SessionID != claims.SessionID {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	var fingerprint, storedChallenge, identityID []byte
+	if err := tx.QueryRowContext(ctx, `SELECT key_fingerprint FROM trusted_device WHERE id = ? FOR UPDATE`, []byte(details.DeviceID)).Scan(&fingerprint); err != nil ||
+		!hmac.Equal(fingerprint, verified.Fingerprint[:]) {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	if err := tx.QueryRowContext(ctx, `SELECT login_challenge_id, identity_id FROM auth_session WHERE id = ? FOR UPDATE`, []byte(details.SessionID)).Scan(&storedChallenge, &identityID); err != nil ||
+		!hmac.Equal(storedChallenge, []byte(challengeID)) {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	var identityKind string
+	var providerScope, identityIndex []byte
+	if err := tx.QueryRowContext(ctx, `SELECT kind, provider_scope, subject_lookup_hmac FROM login_identity WHERE id = ? FOR UPDATE`, identityID).
+		Scan(&identityKind, &providerScope, &identityIndex); err != nil || identityKind != "email" || string(providerScope) != "beta-email" ||
+		!hmac.Equal(identityIndex, verified.Index[:]) {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	// These checks also catch expiry or state changes made by this transaction
+	// while the identity, device and session locks were acquired.
+	if _, err := proof.ForTransaction(ctx, tx); err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	if _, err := principal.ForTransaction(ctx, tx); err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	if now := i.store.now().UTC(); now.IsZero() || !expires.After(now) {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	aad, err := crypto.NewContext(verified.Index[:], binding, loginreceipt.ResultAuthenticated, claims.SessionID, expires)
+	if err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	sealed, err := crypto.Seal(aad, []byte(i.token.ForResponse()))
+	if err != nil {
+		return SealedReceipt{}, ErrSessionUnavailable
+	}
+	return SealedReceipt{reference: claims.SessionID, sealed: sealed}, nil
 }
 
 // IssueEmail only accepts a verified challenge from this live transaction.
