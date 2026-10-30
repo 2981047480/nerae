@@ -7853,7 +7853,7 @@
     },
     {
       "id": "P02-10",
-      "title": "iOS HTTPS 原生传输安全边界",
+      "title": "iOS / Android HTTPS 原生传输安全边界",
       "batch": "foundation",
       "status": "active",
       "depends_on": ["P02-01", "F01-03"],
@@ -7865,25 +7865,26 @@
       "owner": "/root/foundation_review（Lead 复核）",
       "actual_model": "运行时未报告具体型号",
       "actual_reasoning": "运行时未报告具体强度",
-      "base_revision": "54d2b15",
+      "base_revision": "5ed2dad",
       "write_allowlist": ["apps/client/src/uni_modules/nerae-https/", "docs/evidence/P02/P02-10/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "api/openapi.yaml", "apps/client/src/api/auth/emailAuthApi.ts", "apps/client/src/features/training/recordingApi.ts", "apps/client/src/uni_modules/nerae-device-key/utssdk/interface.uts"],
-      "deliverables": "为 App 提供回调式 UTS 合同与 iOS URLSession 安全 HTTPS 桥，供后续认证和训练接口接入；其他平台明确不支持。",
+      "deliverables": "为 App 提供回调式 UTS 合同与 iOS / Android 安全 HTTPS 桥，供后续认证和训练接口接入；不支持的平台明确失败。",
       "acceptance": [
         "固定调用方配置的 HTTPS origin 与受限相对路径，系统证书链和主机校验；禁止跟随所有重定向、缓存、Cookie、日志和无界响应，不自动重试",
         "异步请求在超时/失败/取消等竞态下至多完成一次，错误仅返回固定类别；按流限制响应，请求/响应正文与凭据不得进入日志",
-        "本机隔离 TLS、非受信证书、不同主机及降级重定向、无 Content-Length 超限、超时/重复回调和 UTS 编译有实际证据；测试专用信任仅存在于测试编译，不改变系统信任",
-        "真实 iPhone、完整 App 构建、Android 与小程序传输接线未验前保持 active，不将未签名 framework 或测试证据称为安装"
+        "本机隔离 TLS、非受信证书、不同主机及降级重定向、无 Content-Length 超限、超时/重复回调和 UTS 编译有实际证据；测试专用信任仅限测试进程，不改变系统信任",
+        "Android 使用系统 TLS 和主机校验，禁重定向、缓存、Cookie 和日志，并对响应按流限额；无法证明安全时失败关闭",
+        "真实 iPhone / Android、完整 App 构建及业务传输接线未验前保持 active，不将未签名 framework 或测试证据称为安装"
       ],
-      "verification_commands": ["iOS 原生及 UTS 编译", "隔离本机 TLS 安全反例和回调测试"],
-      "risks": ["项目 CLI 与 HBuilderX 原生编译器版本不同；UTS 回调和 iOS 系统信任必须真机验证。"],
+      "verification_commands": ["iOS 与 Android 原生及 UTS 编译", "隔离本机 TLS 安全反例和回调测试"],
+      "risks": ["项目 CLI 与 HBuilderX 原生编译器版本不同；UTS 回调和两端系统信任必须真机验证，当前无 Android 真机。"],
       "effort_days": [1, 3],
       "flow_ids": ["F01", "F02"],
       "forbidden": ["不关闭生产 TLS 校验或修改系统信任", "不启动模拟器或安装网页", "不连接真实服务器、QQ 或发送真实邮件", "不接入业务或修改共享依赖"],
       "evidence": [],
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
-      "external_prerequisites": ["iPhone 真机与可签名的 App 安装包。"]
+      "external_prerequisites": ["iPhone 与 Android 真机及可签名的 App 安装包。"]
     },
     {
       "id": "A01-18",
