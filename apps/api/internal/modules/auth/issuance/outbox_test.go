@@ -1,25 +1,36 @@
 package issuance
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/hmac"
 	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"math/big"
+	"mime/quotedprintable"
+	"net"
+	netmail "net/mail"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/mail"
@@ -135,24 +146,17 @@ func openOutboxFixtureWithCodeEpoch(t *testing.T, initializeCodeEpoch bool) *out
 		t.Fatal("challenge store setup failed")
 	}
 	fixture := &outboxFixture{t: t, db: db, ctx: ctx, hasher: hasher, identities: identities, challenges: challengeStore, outbox: outbox, sender: sender}
-	_, identityTag, err := identities.KeyEpoch()
+	initializer, err := bootstrap.NewIdentityEpochInitializer(identities)
 	if err != nil {
-		t.Fatal("identity epoch failed")
+		t.Fatal("identity epoch initializer setup failed")
 	}
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal("epoch transaction failed")
 	}
-	var storedIdentityTag []byte
-	err = tx.QueryRowContext(ctx, `SELECT key_tag FROM auth_email_identity_key_epoch WHERE slot=1 FOR SHARE`).Scan(&storedIdentityTag)
-	if errors.Is(err, sql.ErrNoRows) {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO auth_email_identity_key_epoch(slot,key_tag) VALUES (1,?)`, identityTag[:]); err != nil {
-			_ = tx.Rollback()
-			t.Fatal("identity epoch initialization failed")
-		}
-	} else if err != nil || !hmac.Equal(storedIdentityTag, identityTag[:]) {
+	if err := initializer.Initialize(ctx, tx); err != nil {
 		_ = tx.Rollback()
-		t.Fatal("identity epoch fixture mismatched")
+		t.Fatal("identity epoch initialization failed")
 	}
 	if initializeCodeEpoch {
 		if err := outbox.InitializeCodeKey(ctx, tx); err != nil {
@@ -836,5 +840,153 @@ func TestEmailOutboxValuesAreRedacted(t *testing.T) {
 		if strings.Contains(log.String(), "private@example.test") || strings.Contains(log.String(), "012345") {
 			t.Fatal("sensitive outbox material was logged")
 		}
+	}
+}
+
+// TestEmailOutboxSMTPInterop joins the real outbox to the real SMTP transport.
+// It uses a distinct synthetic database and a locally trusted loopback TLS
+// endpoint; no provider, user mailbox, or external network is involved.
+func TestEmailOutboxSMTPInterop(t *testing.T) {
+	dsn := os.Getenv("NERAE_EMAIL_OUTBOX_SMTP_TEST_DSN")
+	if dsn == "" {
+		t.Skip("isolated SMTP interoperability database is not configured")
+	}
+	t.Setenv("NERAE_EMAIL_OUTBOX_TEST_DSN", dsn)
+	f := openOutboxFixture(t)
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal("could not open local SMTP test listener")
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal("could not create local TLS test key")
+	}
+	cert := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "local smtp test"},
+		NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(time.Hour),
+		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IsCA: true, BasicConstraintsValid: true, IPAddresses: []net.IP{net.ParseIP("127.0.0.1")}}
+	der, err := x509.CreateCertificate(rand.Reader, cert, cert, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal("could not create local TLS test certificate")
+	}
+	certDir := t.TempDir()
+	certPath := filepath.Join(certDir, "test-ca.pem")
+	if err := os.WriteFile(certPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0600); err != nil {
+		t.Fatal("could not save local TLS trust anchor")
+	}
+	// Go's system root loader honors this private, certificate-verifying root
+	// for the test process. This is not a global TLS verification bypass.
+	t.Setenv("SSL_CERT_FILE", certPath)
+	t.Setenv("SSL_CERT_DIR", certDir)
+	t.Setenv("GODEBUG", "x509sslcertoverrideplatform=1")
+	type received struct {
+		message string
+		auth    bool
+		err     error
+	}
+	results := make(chan received, 2)
+	go func() {
+		for index := 0; index < 2; index++ {
+			result := received{}
+			raw, err := listener.Accept()
+			if err != nil {
+				result.err = err
+				results <- result
+				return
+			}
+			conn := tls.Server(raw, &tls.Config{Certificates: []tls.Certificate{{Certificate: [][]byte{der}, PrivateKey: key}}, MinVersion: tls.VersionTLS12})
+			_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+			result.err = conn.Handshake()
+			if result.err == nil {
+				_, result.err = io.WriteString(conn, "220 local test\r\n")
+			}
+			reader := bufio.NewReader(conn)
+			for result.err == nil {
+				line, readErr := reader.ReadString('\n')
+				if readErr != nil {
+					result.err = readErr
+					break
+				}
+				upper := strings.ToUpper(line)
+				switch {
+				case strings.HasPrefix(upper, "EHLO "):
+					_, result.err = io.WriteString(conn, "250-local.test\r\n250-AUTH PLAIN\r\n250 SIZE 10000\r\n")
+				case strings.HasPrefix(upper, "AUTH PLAIN "):
+					result.auth = true
+					_, result.err = io.WriteString(conn, "235 authenticated\r\n")
+				case strings.HasPrefix(upper, "MAIL FROM:"), strings.HasPrefix(upper, "RCPT TO:"):
+					_, result.err = io.WriteString(conn, "250 accepted\r\n")
+				case strings.TrimSpace(upper) == "DATA":
+					_, result.err = io.WriteString(conn, "354 continue\r\n")
+					var body strings.Builder
+					for result.err == nil {
+						line, result.err = reader.ReadString('\n')
+						if result.err != nil || line == ".\r\n" {
+							break
+						}
+						body.WriteString(line)
+					}
+					result.message = body.String()
+					if result.err == nil && index == 0 {
+						_, result.err = io.WriteString(conn, "250 accepted\r\n")
+					} else {
+						// Close before a response to DATA: submission may have happened.
+						_ = conn.Close()
+						results <- result
+						goto nextConnection
+					}
+				case strings.TrimSpace(upper) == "QUIT":
+					_, _ = io.WriteString(conn, "221 bye\r\n")
+					_ = conn.Close()
+					results <- result
+					goto nextConnection
+				default:
+					_, result.err = io.WriteString(conn, "500 unsupported\r\n")
+				}
+			}
+			_ = conn.Close()
+			results <- result
+		nextConnection:
+		}
+	}()
+	mailer, err := mail.NewSMTPMailer(mail.SMTPConfig{Address: listener.Addr().String(), Username: "sender@example.test",
+		Password: "synthetic-password", From: "sender@example.test", Timeout: 5 * time.Second})
+	if err != nil {
+		t.Fatal("could not configure local SMTP transport")
+	}
+	f.outbox, err = NewOutbox(f.outbox.deriver, "outbox-code-v1", f.hasher, f.identities, mailer, 10*time.Second)
+	if err != nil {
+		t.Fatal("could not configure outbox with SMTP transport")
+	}
+	for index, email := range []string{"accepted@example.test", "unknown@example.test"} {
+		id := f.issue(email, true, "derive")
+		code, err := f.outbox.deriver.Derive(id, emailLoginPurpose, 6)
+		if err != nil {
+			t.Fatal("could not derive synthetic test code")
+		}
+		state, err := f.outbox.SendOne(f.ctx, f.db)
+		expected := DeliveryAccepted
+		if index == 1 {
+			expected = DeliveryUnknown
+		}
+		if err != nil || state != expected || f.state(id) != string(expected) {
+			t.Fatalf("outbox did not persist expected local delivery state: index=%d", index)
+		}
+		result := <-results
+		if result.err != nil || !result.auth || result.message == "" {
+			t.Fatalf("local SMTP fixture did not receive the complete message: index=%d", index)
+		}
+		message, err := netmail.ReadMessage(strings.NewReader(result.message))
+		if err != nil {
+			t.Fatal("SMTP body was not a valid message")
+		}
+		body, err := io.ReadAll(quotedprintable.NewReader(message.Body))
+		if err != nil || message.Header.Get("To") != "<"+email+">" || !strings.Contains(string(body), code) {
+			t.Fatal("SMTP message did not contain the matching synthetic recipient and derived code")
+		}
+	}
+	if _, err := f.outbox.ClaimNext(f.ctx, f.db); !errors.Is(err, ErrNoPending) {
+		t.Fatal("accepted or uncertain delivery was retried automatically")
 	}
 }

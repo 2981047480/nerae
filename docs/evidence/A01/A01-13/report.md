@@ -34,3 +34,11 @@ worker 在 SMTP 前检查租约并传入 deadline，但数据库和 SMTP 接受�
 5daba58a1c38c871bf0e6b477ed8d802df3e6e3639a55dc1b2df15e4a3260994  docs/evidence/A01/A01-13/mysql_smoke.py
 4c0ac773cf29977aa46ab54647a82473a4aa234922b6eaee91342e5580a5a80b  apps/api/migrations/auth/0007_email_outbox.up.sql (只读核验)
 ```
+
+## 2026-10-30 身份初始化和 SMTP 实际接缝
+
+Lead 在合入身份 bootstrap 基础后的隔离工作树，将 outbox 夹具从直接写身份 epoch 改为使用 `bootstrap.IdentityEpochInitializer`；独立 MySQL 同时应用 user、邮箱身份与 outbox 迁移。新增一个专用测试数据库，执行真实 `Outbox.SendOne` → `mail.SMTPMailer` → 本机 loopback TLS SMTP 接收器，校验收到的合成收件地址、派生验证码、邮件协议和状态：服务器明确接受时落库 `accepted`；接收 DATA 后断开不回执时落库 `unknown` 且不自动重试。TLS 通过仅用于测试进程的临时自签测试根证书做证书校验，没有关闭证书或主机名验证。没有连接真实供应商或邮箱。
+
+`python3 -B docs/evidence/A01/A01-13/mysql_smoke.py` 授权环境退出 0：两个新建的 socket-only 合成数据库、该端到端测试、其余 outbox race 和本机 SMTP 测试通过。成功后仅移除本次专属实例目录。首次尝试用 `python3 -m py_compile` 检查脚本时，系统 Python 默认缓存目录不可写而退出 1；改为 `python3 -B` 的 AST 解析后通过。
+
+本节更新上文“没有 identity bootstrap / outbox 到 SMTP 端到端测试”的当时状态：现在基础已在隔离测试中接通，但服务启动装配、挑战 HTTP、匿名幂等、队列 worker、真实 SMTP 配置和邮件投递仍未完成。当前该版本 `outbox_test.go` SHA-256 `c5e53d2cc3c5a1f91f67e267c5e15eac9e0ebff5c7db49e3fca01fd38e7aaec0`；`mysql_smoke.py` SHA-256 `eacf4e6aa14e9ee0c377a683724ebd06d60b4b64b6514476cb1081a4378909e2`。

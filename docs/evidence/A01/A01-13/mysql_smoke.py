@@ -73,8 +73,11 @@ def main() -> int:
             migrations = "\n".join((ROOT / "apps/api/migrations" / name).read_text()
                                     for name in ("auth/0001_device_proof_replay.up.sql",
                                                  "auth/0002_email_challenge.up.sql",
+                                                 "user/0001_user.up.sql",
+                                                 "auth/0003_email_identity.up.sql",
                                                  "auth/0007_email_outbox.up.sql"))
-            apply = subprocess.run(mysql, input="CREATE DATABASE nerae_email_outbox_test;\nUSE nerae_email_outbox_test;\n" + migrations,
+            apply = subprocess.run(mysql, input=("CREATE DATABASE nerae_email_outbox_test;\nUSE nerae_email_outbox_test;\n" + migrations +
+                                          "\nCREATE DATABASE nerae_email_smtp_test;\nUSE nerae_email_smtp_test;\n" + migrations),
                                    text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    env=env, timeout=20, check=False)
             if apply.returncode:
@@ -83,7 +86,8 @@ def main() -> int:
             test_env = {**env, "GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off",
                         "GOCACHE": "/private/tmp/nerae-go-api-cache",
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
-                        "NERAE_EMAIL_OUTBOX_TEST_DSN": f"root@unix({sock})/nerae_email_outbox_test?parseTime=true&loc=UTC"}
+                        "NERAE_EMAIL_OUTBOX_TEST_DSN": f"root@unix({sock})/nerae_email_outbox_test?parseTime=true&loc=UTC",
+                        "NERAE_EMAIL_OUTBOX_SMTP_TEST_DSN": f"root@unix({sock})/nerae_email_smtp_test?parseTime=true&loc=UTC"}
             result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
                                      "./internal/modules/auth/issuance", "./internal/modules/auth/mail"],
                                     cwd=ROOT / "apps/api", env=test_env, timeout=240,
