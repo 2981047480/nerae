@@ -33,3 +33,5 @@ Lead 将实际客户端互操作补充为两条路径：逐组各自保存，以
 - `write_test.go`：`888bbf3b21145049ed6ab284e98178830c76c0a42d9db601620ff6d5bfa186b4`
 - `mysql_smoke.py`：`90b14d61c5d4e6d7ed21b33cbcaf60a1351247a91c6ab6b3c97ff4de4b7f7e37`
 - `client_write_interop.mjs`：`79b277eaec1b6e1e42bba2151da97c9060c78ff7d0da6175901bab765975ba8f`
+
+2026-10-30 在集成版本 `00e5da9` 复跑 `python3 -B docs/evidence/A04/A04-09/mysql_smoke.py`，退出 0；私有 MySQL 与本机 TLS 下真实客户端适配器通过训练后批量记录、逐组记录、同键重放、完成及合成会话恢复。测试主体与设备仍为合成数据，恢复使用相同模拟设备密钥，不代表真实登录、两台设备同步或正式页面已接通。
