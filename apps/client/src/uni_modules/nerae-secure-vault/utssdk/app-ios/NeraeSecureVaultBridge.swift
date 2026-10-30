@@ -12,6 +12,7 @@ protocol NeraeVaultBackend {
 enum NeraeVaultError: Error {
     case invalidState
     case unavailable
+    case conflict
 }
 
 struct NeraeVaultNamespace: Equatable {
@@ -116,6 +117,29 @@ final class NeraeCredentialVault {
         try backend.write(data)
     }
 
+    /// Atomic within this vault instance's process-level lock. This is not a
+    /// cross-process compare-and-set guarantee.
+    func compareAndSet(expectedFound: Bool, expectedValue: String, value: String) throws {
+        guard let newData = value.data(using: .utf8), Self.valid(newData) else {
+            throw NeraeVaultError.invalidState
+        }
+        let expectedData: Data?
+        if expectedFound {
+            guard let data = expectedValue.data(using: .utf8), Self.valid(data) else {
+                throw NeraeVaultError.invalidState
+            }
+            expectedData = data
+        } else {
+            guard expectedValue.isEmpty else { throw NeraeVaultError.invalidState }
+            expectedData = nil
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        let actual = try backend.read()
+        guard actual == expectedData else { throw NeraeVaultError.conflict }
+        try backend.write(newData)
+    }
+
     func clear() throws {
         lock.lock()
         defer { lock.unlock() }
@@ -176,9 +200,12 @@ public final class NeraeSecureVaultBridge: NSObject {
         }
     }
 
-    @objc public static func writeDeviceIdentityRegistry(_ value: String) -> String {
+    @objc public static func compareAndSetDeviceIdentityRegistry(
+        _ expectedFound: Bool, expectedValue: String, value: String
+    ) -> String {
         do {
-            try deviceIdentityRegistry.write(value)
+            try deviceIdentityRegistry.compareAndSet(
+                expectedFound: expectedFound, expectedValue: expectedValue, value: value)
             return encode(ok: true)
         } catch {
             return encodeFailure(error)
@@ -188,6 +215,9 @@ public final class NeraeSecureVaultBridge: NSObject {
     private static func encodeFailure(_ error: Error) -> String {
         if let vaultError = error as? NeraeVaultError, case .invalidState = vaultError {
             return encode(ok: false, errorCode: "invalid_state")
+        }
+        if let vaultError = error as? NeraeVaultError, case .conflict = vaultError {
+            return encode(ok: false, errorCode: "conflict")
         }
         return encode(ok: false, errorCode: "unavailable")
     }

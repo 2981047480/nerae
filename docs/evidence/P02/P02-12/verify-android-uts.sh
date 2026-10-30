@@ -68,7 +68,8 @@ const filename = process.env.NERAE_UTS_INPUT
         !wrapperSource.includes('NeraeAndroidSecureVaultBridge.writeAuthenticationState') ||
         !wrapperSource.includes('NeraeAndroidSecureVaultBridge.clearAuthenticationState') ||
         !wrapperSource.includes('NeraeAndroidSecureVaultBridge.readDeviceIdentityRegistry') ||
-        !wrapperSource.includes('NeraeAndroidSecureVaultBridge.writeDeviceIdentityRegistry')) {
+        !wrapperSource.includes('NeraeAndroidSecureVaultBridge.compareAndSetDeviceIdentityRegistry') ||
+        wrapperSource.includes('NeraeAndroidSecureVaultBridge.writeDeviceIdentityRegistry')) {
       throw new Error('generated UTS wrapper does not invoke all five auth/registry operations')
     }
     process.stdout.write(`PASS: HBuilderX ${process.env.HX_Version} generated ${generated.length} Kotlin source file(s); no dex/APK/Keystore was run.\n`)

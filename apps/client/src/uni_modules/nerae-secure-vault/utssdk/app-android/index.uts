@@ -16,7 +16,7 @@ function decode(raw: string, isRead: boolean): SecureVaultResult {
 		if (parsed == null) return failure('bridge_failure')
 		const result = parsed!
 		if (!result.ok) {
-			if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable') return failure('bridge_failure')
+			if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable' && result.errorCode != 'conflict') return failure('bridge_failure')
 			return failure(result.errorCode)
 		}
 		if (result.errorCode.length != 0) return failure('bridge_failure')
@@ -44,6 +44,6 @@ export function readDeviceIdentityRegistry(): SecureVaultResult {
 	return decode(NeraeAndroidSecureVaultBridge.readDeviceIdentityRegistry(UTSAndroid.getAppContext()), true)
 }
 
-export function writeDeviceIdentityRegistry(value: string): SecureVaultResult {
-	return decode(NeraeAndroidSecureVaultBridge.writeDeviceIdentityRegistry(UTSAndroid.getAppContext(), value), false)
+export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.compareAndSetDeviceIdentityRegistry(UTSAndroid.getAppContext(), expectedFound, expectedValue, value), false)
 }

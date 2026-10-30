@@ -9,4 +9,4 @@ export function writeAuthenticationState(_value: string): SecureVaultResult { re
 export function clearAuthenticationState(): SecureVaultResult { return unsupported() }
 
 export function readDeviceIdentityRegistry(): SecureVaultResult { return unsupported() }
-export function writeDeviceIdentityRegistry(_value: string): SecureVaultResult { return unsupported() }
+export function compareAndSetDeviceIdentityRegistry(_expectedFound: boolean, _expectedValue: string, _value: string): SecureVaultResult { return unsupported() }

@@ -153,6 +153,57 @@ internal class NeraeCredentialVault(
 
     fun write(value: String) = synchronized(processLock) {
         val plaintext = validateInput(value)
+        writePlaintext(plaintext)
+    }
+
+    /** Atomic within the supplied process-level lock, not across processes. */
+    fun compareAndSet(expectedFound: Boolean, expectedValue: String, value: String) = synchronized(processLock) {
+        val plaintext = validateInput(value)
+        val expected = if (expectedFound) {
+            validateInput(expectedValue)
+        } else {
+            if (expectedValue.isNotEmpty()) throw VaultFailure("invalid_state")
+            null
+        }
+        var createdKey = false
+        try {
+            val old = storage.read()
+            val key = if (old == null) {
+                // A leftover key without its ciphertext is ambiguous after a
+                // crash or interrupted clear; never silently reuse or replace it.
+                if (keys.existing() != null) throw VaultFailure()
+                if (expected != null) throw VaultFailure("conflict")
+                keys.createHardware().also { createdKey = true }
+            } else {
+                val existingKey = keys.existing() ?: throw VaultFailure()
+                val storedPlaintext = decrypt(old, existingKey)
+                validateStoredJson(storedPlaintext)
+                if (expected == null || !storedPlaintext.contentEquals(expected)) {
+                    throw VaultFailure("conflict")
+                }
+                existingKey
+            }
+            storage.writeAtomically(encrypt(plaintext, key))
+        } catch (failure: VaultFailure) {
+            if (createdKey) discardNewKeyOnlyIfStorageIsStillEmpty()
+            throw failure
+        } catch (_: Exception) {
+            if (createdKey) discardNewKeyOnlyIfStorageIsStillEmpty()
+            throw VaultFailure()
+        }
+    }
+
+    private fun discardNewKeyOnlyIfStorageIsStillEmpty() {
+        try {
+            // A failed atomic write can have an uncertain outcome. Delete the
+            // key only when storage proves no ciphertext was committed.
+            if (storage.read() == null) keys.delete()
+        } catch (_: Exception) {
+            // Preserve potentially committed ciphertext/key state on uncertainty.
+        }
+    }
+
+    private fun writePlaintext(plaintext: ByteArray) {
         try {
             val old = storage.read()
             val key = if (old == null) {
@@ -487,11 +538,13 @@ object NeraeAndroidSecureVaultBridge {
     }
 
     @JvmStatic
-    fun writeDeviceIdentityRegistry(context: Context?, value: String?): String = withSlot(
+    fun compareAndSetDeviceIdentityRegistry(
+        context: Context?, expectedFound: Boolean, expectedValue: String?, value: String?
+    ): String = withSlot(
         context, NeraeVaultSlot.DEVICE_IDENTITY_REGISTRY, registryProcessLock
     ) { vault ->
-        if (value == null) throw VaultFailure("invalid_state")
-        vault.write(value)
+        if (expectedValue == null || value == null) throw VaultFailure("invalid_state")
+        vault.compareAndSet(expectedFound, expectedValue, value)
         encode(ok = true)
     }
 
@@ -513,7 +566,7 @@ object NeraeAndroidSecureVaultBridge {
             )
             action(vault)
         } catch (problem: VaultFailure) {
-            failure(problem.code)
+            if (problem.code == "conflict") conflict() else failure(problem.code)
         } catch (_: Exception) {
             failure("unavailable")
         }
@@ -524,6 +577,9 @@ object NeraeAndroidSecureVaultBridge {
 
     private fun failure(code: String): String = JSONObject()
         .put("ok", false).put("errorCode", code).put("found", false).put("value", "").toString()
+
+    private fun conflict(): String = JSONObject()
+        .put("ok", false).put("errorCode", "conflict").put("found", false).put("value", "").toString()
 
     private fun encode(ok: Boolean, errorCode: String = "", found: Boolean = false, value: String = ""): String =
         JSONObject().put("ok", ok).put("errorCode", errorCode).put("found", found).put("value", value).toString()

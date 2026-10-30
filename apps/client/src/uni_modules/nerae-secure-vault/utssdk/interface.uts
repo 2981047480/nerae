@@ -12,4 +12,9 @@ export type ClearAuthenticationState = () => SecureVaultResult
 
 /** Device identity registry state is stored independently from the login session. */
 export type ReadDeviceIdentityRegistry = () => SecureVaultResult
-export type WriteDeviceIdentityRegistry = (value: string) => SecureVaultResult
+/**
+ * Compare-and-set the complete registry value. When expectedFound is false,
+ * expectedValue must be empty and the registry must be absent. When true, the
+ * exact expectedValue must still be stored. Conflicts return no registry data.
+ */
+export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult
