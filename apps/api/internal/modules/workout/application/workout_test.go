@@ -16,12 +16,14 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -197,6 +199,33 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	snapshot, err := service.ReadFree(ctx, db, tokenAgain, created.ID)
 	if err != nil || snapshot.Version != 2 || snapshot.ClientEventID != input.ClientEventID || len(snapshot.Sets) != 2 || snapshot.Sets[first.RecordKey].WeightKg != "42.50" || snapshot.Sets[first.RecordKey].Exercise.Name != first.Exercise.Name {
 		t.Fatal("another session did not recover the same persisted workout")
+	}
+	ownerID, err := strconv.ParseUint(claimsA.SubjectID, 10, 64)
+	if err != nil || ownerID == 0 {
+		t.Fatal("invalid authenticated subject")
+	}
+	otherID, err := strconv.ParseUint(claimsB.SubjectID, 10, 64)
+	if err != nil || otherID == 0 {
+		t.Fatal("invalid other subject")
+	}
+	if _, err := records.ReadFreeTx(ctx, nil, ownerID, created.ID); !errors.Is(err, repository.ErrInvalid) {
+		t.Fatal("detail reader accepted a missing transaction")
+	}
+	detailTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin detail transaction")
+	}
+	defer detailTx.Rollback()
+	detailView := dbtx.Wrap(detailTx)
+	capabilitySnapshot, err := records.ReadFreeTx(ctx, detailView, ownerID, created.ID)
+	if err != nil || capabilitySnapshot.ClientEventID != input.ClientEventID || len(capabilitySnapshot.Sets) != 2 {
+		t.Fatal("transaction-capability reader did not restore the saved workout")
+	}
+	if _, err := records.ReadFreeTx(ctx, detailView, otherID, created.ID); !errors.Is(err, repository.ErrUnavailable) {
+		t.Fatal("transaction-capability reader returned another subject's workout")
+	}
+	if err := detailTx.Rollback(); err != nil {
+		t.Fatal("could not close detail transaction")
 	}
 	sameSubjectSnapshot, err := service.ReadFree(ctx, db, tokenA, created.ID)
 	if err != nil || sameSubjectSnapshot.ClientEventID != snapshot.ClientEventID {
