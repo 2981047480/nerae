@@ -32,12 +32,17 @@ type Row = dbtx.Row
 type ReadTransaction = dbtx.ReadTransaction
 type Transaction = dbtx.Transaction
 
+// ResultValidator is trusted server code which can reject a reply before it is
+// committed or replayed. It must not log the body or retain the supplied slice.
+type ResultValidator func(status int, ref string, body []byte) error
+
 // StatementPolicy is a fixed set of reviewed, parameterized statements for
 // trusted callbacks. The store copies it at construction; arbitrary strings or
 // SQL assembled from request input are not accepted.
 type StatementPolicy struct {
-	Reads  []string
-	Writes []string
+	Reads          []string
+	Writes         []string
+	ValidateResult ResultValidator
 }
 
 type accessView struct {

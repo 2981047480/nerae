@@ -70,12 +70,14 @@ func (Result) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
 func (Result) LogValue() slog.Value         { return slog.StringValue("IdempotencyResult{redacted}") }
 
 // Authorize must check current permission, age and resource access. Its first
-// check receives an empty resultRef; after mutation or before replay it receives
-// the actual non-secret reference. Lock every mutable permission or ownership
+// check receives an empty resultRef and status 0; after mutation or before
+// replay it receives the actual non-secret reference and response status. A
+// callback must bind successful responses to their resource, and may accept an
+// unscoped reference only for an explicitly non-sensitive failure. Lock every mutable permission or ownership
 // row (FOR UPDATE/SHARE) until commit, or enforce equivalent atomic conditions.
 // Return ErrForbidden for denied access and ErrUnavailable for uncertain
 // failures. Never disclose cached content here.
-type Authorize func(context.Context, ReadTransaction, Actor, string) error
+type Authorize func(context.Context, ReadTransaction, Actor, string, int) error
 
 // Mutate uses only the restricted transaction and performs database-only work.
 // It must validate the operation schema and response and never perform external
@@ -86,15 +88,16 @@ type Authorize func(context.Context, ReadTransaction, Actor, string) error
 type Mutate func(context.Context, Transaction, Actor) (Reply, error)
 
 type Store struct {
-	sessions  *session.Store
-	hashKey   []byte
-	cipherKey []byte
-	keyID     string
-	epoch     [32]byte
-	reads     map[string]struct{}
-	writes    map[string]struct{}
-	ttl       time.Duration
-	now       func() time.Time
+	sessions       *session.Store
+	hashKey        []byte
+	cipherKey      []byte
+	keyID          string
+	epoch          [32]byte
+	reads          map[string]struct{}
+	writes         map[string]struct{}
+	validateResult ResultValidator
+	ttl            time.Duration
+	now            func() time.Time
 }
 
 func (Store) String() string               { return "IdempotencyStore{redacted}" }
@@ -114,7 +117,7 @@ func NewStore(sessions *session.Store, hashKey, cipherKey []byte, keyID string, 
 		return nil, ErrInvalid
 	}
 	s := &Store{sessions: sessions, hashKey: append([]byte(nil), hashKey...), cipherKey: append([]byte(nil), cipherKey...),
-		keyID: keyID, reads: reads, writes: writes, ttl: ttl, now: time.Now}
+		keyID: keyID, reads: reads, writes: writes, validateResult: policy.ValidateResult, ttl: ttl, now: time.Now}
 	mac := hmac.New(sha256.New, s.hashKey)
 	_, _ = mac.Write(framed([]byte("nerae/idempotency/epoch/v1"), []byte(keyID), s.cipherKey))
 	copy(s.epoch[:], mac.Sum(nil))
@@ -340,7 +343,7 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 	readView := accessView{tx: tx, reads: s.reads}
 	view := transactionView{accessView: readView, writes: s.writes}
 	currentActor := Actor{subjectID: before.SubjectID, ageVerified: before.AgeVerified}
-	if err := authorize(ctx, readView, currentActor, ""); err != nil {
+	if err := authorize(ctx, readView, currentActor, "", 0); err != nil {
 		return Result{}, authorizeError(err)
 	}
 	if err := s.checkEpoch(ctx, tx); err != nil {
@@ -419,6 +422,9 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 		if _, err := canonicalJSON(body); err != nil {
 			return Result{}, ErrUnavailable
 		}
+		if s.validateResult != nil && s.validateResult(reply.Status, reply.ResultRef, append([]byte(nil), body...)) != nil {
+			return Result{}, ErrUnavailable
+		}
 		if responseState == "failed" {
 			if _, err := tx.ExecContext(ctx, `ROLLBACK TO SAVEPOINT nerae_idempotency_mutation`); err != nil {
 				return Result{}, ErrUnavailable
@@ -432,7 +438,7 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 			return Result{}, ErrUnavailable
 		}
 		currentActor = Actor{subjectID: live.SubjectID, ageVerified: live.AgeVerified}
-		if err := authorize(ctx, readView, currentActor, reply.ResultRef); err != nil {
+		if err := authorize(ctx, readView, currentActor, reply.ResultRef, reply.Status); err != nil {
 			return Result{}, authorizeError(err)
 		}
 		completed := s.now().UTC().Truncate(time.Microsecond)
@@ -470,11 +476,14 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 			return Result{}, ErrUnavailable
 		}
 		currentActor = Actor{subjectID: live.SubjectID, ageVerified: live.AgeVerified}
-		if err := authorize(ctx, readView, currentActor, string(ref)); err != nil {
+		if err := authorize(ctx, readView, currentActor, string(ref), int(savedStatus.Int64)); err != nil {
 			return Result{}, authorizeError(err)
 		}
 		body, err := s.open(encrypted, associated(before.SubjectID, request, digest, int(savedStatus.Int64), string(ref), savedExpiry))
 		if err != nil {
+			return Result{}, ErrUnavailable
+		}
+		if s.validateResult != nil && s.validateResult(int(savedStatus.Int64), string(ref), append([]byte(nil), body...)) != nil {
 			return Result{}, ErrUnavailable
 		}
 		result = Result{Status: int(savedStatus.Int64), Body: body, ResultRef: string(ref), ExpiresAt: savedExpiry, Replayed: true}

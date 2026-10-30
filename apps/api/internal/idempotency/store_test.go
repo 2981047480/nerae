@@ -16,6 +16,8 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -257,7 +259,7 @@ func (f *idemFixture) actor(t *testing.T) idemActor {
 }
 
 func (f *idemFixture) authorize(actor idemActor) Authorize {
-	return func(ctx context.Context, tx ReadTransaction, principal Actor, _ string) error {
+	return func(ctx context.Context, tx ReadTransaction, principal Actor, _ string, _ int) error {
 		if tx == nil || principal.SubjectID() != actor.subjectID {
 			return ErrForbidden
 		}
@@ -457,10 +459,79 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 		}
 	})
 
+	t.Run("authorization receives committed result status on replay", func(t *testing.T) {
+		var seen []int
+		authorize := func(_ context.Context, _ ReadTransaction, p Actor, _ string, status int) error {
+			if p.SubjectID() != actor.subjectID {
+				return ErrForbidden
+			}
+			seen = append(seen, status)
+			return nil
+		}
+		for _, status := range []int{201, 412} {
+			req := idemRequest("POST", "/synthetic/authorization-status/"+strconv.Itoa(status), "StatusCheckKey-01", []byte(`{"valid":true}`))
+			mutate := func(context.Context, Transaction, Actor) (Reply, error) {
+				return Reply{Status: status, Body: []byte(`{"test":true}`), ResultRef: "scope:user"}, nil
+			}
+			first, err := f.execute(actor, req, authorize, mutate)
+			if err != nil || first.Status != status {
+				t.Fatal("first result failed")
+			}
+			replay, err := f.execute(actor, req, authorize, mutate)
+			if err != nil || !replay.Replayed || replay.Status != status {
+				t.Fatal("replay failed")
+			}
+		}
+		want := []int{0, 201, 0, 201, 0, 412, 0, 412}
+		if !reflect.DeepEqual(seen, want) {
+			t.Fatalf("authorization status sequence: got %v want %v", seen, want)
+		}
+	})
+
+	t.Run("result policy blocks unsafe commit and replay", func(t *testing.T) {
+		var permitted atomic.Bool
+		defer func() { f.store.validateResult = nil }()
+		f.store.validateResult = func(status int, ref string, body []byte) error {
+			if !permitted.Load() || status != 201 || ref != "scope:user" || !bytes.Equal(body, []byte(`{"safe":true}`)) {
+				return ErrInvalid
+			}
+			return nil
+		}
+		req := idemRequest("POST", "/synthetic/guard", "GuardPolicyKey-01", []byte(`{"request":true}`))
+		mutate := func(ctx context.Context, tx Transaction, p Actor) (Reply, error) {
+			if _, err := tx.ExecContext(ctx, testInsertEffectSQL, "guard-policy-effect", p.SubjectID(), req.Method, req.Path, []byte("value")); err != nil {
+				return Reply{}, ErrUnavailable
+			}
+			return Reply{Status: 201, Body: []byte(`{"safe":true}`), ResultRef: "scope:user"}, nil
+		}
+		result, err := f.execute(actor, req, f.authorize(actor), mutate)
+		if !errors.Is(err, ErrUnavailable) || result.Status != 0 || len(result.Body) != 0 {
+			t.Fatal("rejected result escaped")
+		}
+		var count int
+		if err := f.db.QueryRowContext(f.ctx, `SELECT COUNT(*) FROM idempotency_test_effect WHERE event_id=?`, "guard-policy-effect").Scan(&count); err != nil || count != 0 {
+			t.Fatal("rejected result did not roll back mutation")
+		}
+		permitted.Store(true)
+		if _, err := f.execute(actor, req, f.authorize(actor), mutate); err != nil {
+			t.Fatal("permitted result failed")
+		}
+		permitted.Store(false)
+		result, err = f.execute(actor, req, f.authorize(actor), mutate)
+		if !errors.Is(err, ErrUnavailable) || result.Status != 0 || len(result.Body) != 0 {
+			t.Fatal("replay bypassed result policy")
+		}
+		permitted.Store(true)
+		result, err = f.execute(actor, req, f.authorize(actor), mutate)
+		if err != nil || !result.Replayed {
+			t.Fatal("valid replay failed")
+		}
+	})
+
 	t.Run("unregistered SQL is rejected before reaching MySQL", func(t *testing.T) {
 		req := idemRequest("POST", "/synthetic/sql-policy", "SQLPolicyKey-01", []byte(`{"ok":true}`))
 		var callbacks atomic.Int32
-		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, _ string) error {
+		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, _ string, _ int) error {
 			callbacks.Add(1)
 			var one int
 			if err := tx.QueryRowContext(ctx, "SELECT 1").Scan(&one); !errors.Is(err, ErrInvalid) {
@@ -505,7 +576,7 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 			t.Fatal("could not create synthetic authorization resource")
 		}
 		req := idemRequest("POST", "/synthetic/resources/"+resourceID, "ResourceLockKey-01", []byte(`{"change":true}`))
-		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, ref string) error {
+		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, ref string, _ int) error {
 			if p.SubjectID() != actor.subjectID || (ref != "" && ref != resourceID) {
 				return ErrForbidden
 			}
@@ -839,7 +910,7 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 		var allowed atomic.Bool
 		allowed.Store(true)
 		var mutations atomic.Int32
-		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, ref string) error {
+		authorize := func(ctx context.Context, tx ReadTransaction, p Actor, ref string, _ int) error {
 			if p.SubjectID() != actor.subjectID || !allowed.Load() {
 				return ErrForbidden
 			}
@@ -922,7 +993,7 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 		req := idemRequest("POST", "/synthetic/no-token", "NoTokenKey-01", []byte("{}"))
 		var callbacks atomic.Int32
 		result, err := f.store.Execute(f.ctx, f.db, "", req,
-			func(context.Context, ReadTransaction, Actor, string) error { callbacks.Add(1); return nil },
+			func(context.Context, ReadTransaction, Actor, string, int) error { callbacks.Add(1); return nil },
 			func(context.Context, Transaction, Actor) (Reply, error) {
 				callbacks.Add(1)
 				return Reply{Status: 200}, nil
