@@ -7517,7 +7517,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "fa32440",
+      "base_revision": "54b359c",
       "write_allowlist": ["apps/api/internal/modules/workout/application/idempotent_workout.go", "apps/api/internal/modules/workout/application/idempotent_workout_test.go", "docs/evidence/A04/A04-08/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "api/openapi.yaml", "apps/api/internal/idempotency/store.go", "apps/api/internal/modules/workout/application/ordered_workout.go", "apps/api/internal/modules/workout/repository/order.go"],
       "deliverables": "将本人自由记录的创建、实际组顺序保存和确认连接至同一已认证数据库幂等事务能力；提供固定 SQL 策略及事务内授权。",
