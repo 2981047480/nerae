@@ -108,7 +108,7 @@ func TestEmailLoginCoordinatorWithPrivateMySQLAndRedis(t *testing.T) {
 		t.Fatal("receipt login construction failed")
 	}
 
-	newLimiter := func(email, device, ip, global uint64) *ratelimit.Limiter {
+	newLimiterWithWindow := func(email, device, ip, global uint64, window time.Duration) *ratelimit.Limiter {
 		t.Helper()
 		secret := func() []byte {
 			value := make([]byte, 32)
@@ -117,16 +117,19 @@ func TestEmailLoginCoordinatorWithPrivateMySQLAndRedis(t *testing.T) {
 			}
 			return value
 		}
-		policy := ratelimit.Policy{Email: ratelimit.DimensionPolicy{Limit: email, Window: time.Minute},
-			Device: ratelimit.DimensionPolicy{Limit: device, Window: time.Minute},
-			IP:     ratelimit.DimensionPolicy{Limit: ip, Window: time.Minute},
-			Global: ratelimit.DimensionPolicy{Limit: global, Window: time.Minute}}
+		policy := ratelimit.Policy{Email: ratelimit.DimensionPolicy{Limit: email, Window: window},
+			Device: ratelimit.DimensionPolicy{Limit: device, Window: window},
+			IP:     ratelimit.DimensionPolicy{Limit: ip, Window: window},
+			Global: ratelimit.DimensionPolicy{Limit: global, Window: window}}
 		limiter, err := ratelimit.New(rdb, ratelimit.Config{Keys: ratelimit.HMACKeys{EmailIndex: secret(), DeviceFingerprint: secret(),
 			TrustedIP: secret(), Global: secret()}, IPv6PrefixBits: 64, EmailLogin: policy, EmailChallenge: policy})
 		if err != nil {
 			t.Fatal("rate limiter construction failed")
 		}
 		return limiter
+	}
+	newLimiter := func(email, device, ip, global uint64) *ratelimit.Limiter {
+		return newLimiterWithWindow(email, device, ip, global, time.Minute)
 	}
 	newCoordinator := func(limiter *ratelimit.Limiter) *EmailLoginCoordinator {
 		t.Helper()
@@ -235,6 +238,37 @@ func TestEmailLoginCoordinatorWithPrivateMySQLAndRedis(t *testing.T) {
 		changed.Code = "999999"
 		if _, err := invoke(coordinator, key, changed, netip.MustParseAddr("192.0.2.204")); !errors.Is(err, ErrReceiptConflict) {
 			t.Fatal("changed request with a live key did not preserve the receipt conflict classification")
+		}
+	})
+
+	t.Run("rate-limited same-key retry recovers after fixed window", func(t *testing.T) {
+		const window = 250 * time.Millisecond
+		limiter := newLimiterWithWindow(1, 100, 100, 100, window)
+		coordinator := newCoordinator(limiter)
+		private, public := flowDevice(t)
+		id, nonce := issue("coordinator-window-retry@example.test", public)
+		input := challenge.AttemptInput{ChallengeID: id, Code: "012345", DeviceProof: flowProof(t, private, id, nonce)}
+		const key = "Dw8PDw8PDw8PDw8PDw8PDw"
+		ip := netip.MustParseAddr("192.0.2.212")
+		first, err := invoke(coordinator, key, input, ip)
+		firstToken, ok := first.SessionTokenForResponse()
+		if err != nil || first.Kind() != Authenticated || !ok || firstToken == "" {
+			t.Fatal("initial request did not create and release one committed session")
+		}
+		if _, err := invoke(coordinator, key, input, ip); !errors.Is(err, ratelimit.ErrLimited) {
+			t.Fatal("immediate same-key replay did not respect the email rate limit")
+		}
+		if got := count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, id); got != 1 {
+			t.Fatal("rate-limited replay changed the existing session count")
+		}
+		time.Sleep(window + 150*time.Millisecond)
+		recovered, err := invoke(coordinator, key, input, ip)
+		recoveredToken, recoveredOK := recovered.SessionTokenForResponse()
+		if err != nil || !recoveredOK || recoveredToken != firstToken {
+			t.Fatal("same request did not recover its original token after the quota window")
+		}
+		if got := count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, id); got != 1 {
+			t.Fatal("post-window retry created a new session")
 		}
 	})
 

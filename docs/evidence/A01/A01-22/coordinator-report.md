@@ -13,6 +13,7 @@
 - `cd apps/api && GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOMODCACHE=/private/tmp/nerae-go-api-mod GOCACHE=/private/tmp/nerae-go-api-cache /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race -count=1 ./internal/modules/auth/application`：退出码 0。
 - `python3 -B docs/evidence/A01/A01-22/mysql_redis_smoke.py`：退出码 0。新建私有 MySQL 8.4.13 与 Redis 7.4.12，仅 Unix socket；MySQL 禁用网络，Redis 使用 port 0、关闭持久化。Harness 按顺序载入 11 项既有迁移：auth 0001、0002、0003、0004、0005、0006、0009；user 0001；workout 0001、0002、0003。实际运行整个 `auth/application` race 套件，结束后关闭服务并删除本次专属目录。
 - 集成测试覆盖：入口预算耗尽时以 nil DB 参数验证返回限流而无需触碰数据库；已知/未知 challenge；Redis 故障关闭；email/device 限流在登录事务前拒绝；错误验证码尝试与拒绝回执提交一次并可同键恢复；签名无效请求回滚且不改变 attempts/回执；成功令牌提交后释放、同键返回原令牌、变更请求冲突；新设备只返回同键稳定的待批准能力；两路相同请求并发只建立一个 session 并返回同一 token。
+- 同键 429 恢复场景使用独立 limiter 与 `250ms` 固定窗口：首次请求成功后建立一个 session；立即以原始相同 key 和完全相同请求重试，得到 `ratelimit.ErrLimited`，session 仍为 1；等待窗口 `400ms` 后，在 1 分钟设备证明及 2 分钟回执仍有效时，同键重试恢复原 token，session 仍为 1。测试确认已确定的当前策略：同键重放也要通过入口与身份限流；被限流后保留原请求，窗口结束可恢复既有结果。
 - `gofmt` 两个新增 Go 文件：退出码 0；`git diff --check`：退出码 0。
 
 ## 未验证与风险
