@@ -30,16 +30,18 @@ var (
 )
 
 const (
-	maxChallengeID            = 128
-	maxProofBytes             = 4096
-	maxResultReference        = 256
-	maxPlaintext              = 8192
-	receiptVersion       byte = 1
-	gcmNonceSize              = 12
-	gcmTagSize                = 16
-	receiptKeyDomain          = "nerae.auth.login-receipt.key.v1\x00"
-	receiptRequestDomain      = "nerae.auth.login-receipt.request.v1\x00"
-	receiptAADDomain          = "nerae.auth.login-receipt.aad.v1\x00"
+	maxChallengeID             = 128
+	maxProofBytes              = 4096
+	maxResultReference         = 256
+	maxPlaintext               = 8192
+	receiptVersion        byte = 1
+	gcmNonceSize               = 12
+	gcmTagSize                 = 16
+	receiptKeyDomain           = "nerae.auth.login-receipt.key.v1\x00"
+	receiptRequestDomain       = "nerae.auth.login-receipt.request.v1\x00"
+	receiptAADDomain           = "nerae.auth.login-receipt.aad.v1\x00"
+	receiptEpochKeyDomain      = "nerae.auth.login-receipt-epoch-key.v1\x00"
+	receiptEpochDomain         = "nerae.auth.login-receipt-epoch.v1\x00"
 )
 
 type ResultType string
@@ -166,6 +168,51 @@ func New(cfg KeyConfig) (*Crypto, error) {
 	copy(c.requestKey[:], cfg.RequestHMACKey)
 	copy(c.aesKey[:], cfg.AES256GCMKey)
 	return c, nil
+}
+
+// EpochTag returns a non-reversible verifier for all configured receipt keys
+// and the external key identifier. It does not initialize or rotate storage.
+func (c *Crypto) EpochTag(keyID string) ([sha256.Size]byte, error) {
+	if !c.validKeys() || !validKeyID(keyID) {
+		return [sha256.Size]byte{}, ErrConfiguration
+	}
+	keyTags := [3][sha256.Size]byte{
+		epochKeyTag(c.idempotencyKey[:], "idempotency"),
+		epochKeyTag(c.requestKey[:], "request"),
+		epochKeyTag(c.aesKey[:], "aead"),
+	}
+	h := sha256.New()
+	_, _ = io.WriteString(h, receiptEpochDomain)
+	writePart(h, []byte(keyID))
+	for i := range keyTags {
+		writePart(h, keyTags[i][:])
+	}
+	var tag [sha256.Size]byte
+	copy(tag[:], h.Sum(nil))
+	return tag, nil
+}
+
+func epochKeyTag(key []byte, role string) [sha256.Size]byte {
+	h := hmac.New(sha256.New, key)
+	_, _ = io.WriteString(h, receiptEpochKeyDomain)
+	writePart(h, []byte(role))
+	var tag [sha256.Size]byte
+	copy(tag[:], h.Sum(nil))
+	return tag
+}
+
+func validKeyID(value string) bool {
+	if len(value) < 1 || len(value) > 64 {
+		return false
+	}
+	for i := 0; i < len(value); i++ {
+		c := value[i]
+		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+			(c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.') {
+			return false
+		}
+	}
+	return true
 }
 
 // Summarize validates request encoding, then creates domain-separated HMACs.

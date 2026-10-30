@@ -79,6 +79,58 @@ func TestNewRequiresThreeDistinct256BitKeysAndCopiesThem(t *testing.T) {
 	}
 }
 
+func TestEpochTagStableAndBoundToEveryKeyAndKeyID(t *testing.T) {
+	c := newTestCrypto(t)
+	tag, err := c.EpochTag("login-keys.v1")
+	if err != nil {
+		t.Fatal("valid epoch tag configuration rejected")
+	}
+	again, err := c.EpochTag("login-keys.v1")
+	if err != nil || again != tag {
+		t.Fatal("same key set did not produce a stable epoch tag")
+	}
+	if changedID, err := c.EpochTag("login-keys.v2"); err != nil || changedID == tag {
+		t.Fatal("epoch tag did not bind key ID")
+	}
+	base := testKeys()
+	mutations := []func(*KeyConfig){
+		func(k *KeyConfig) { k.IdempotencyHMACKey[0] ^= 0x7f },
+		func(k *KeyConfig) { k.RequestHMACKey[0] ^= 0x7f },
+		func(k *KeyConfig) { k.AES256GCMKey[0] ^= 0x7f },
+	}
+	for i, mutate := range mutations {
+		cfg := KeyConfig{
+			IdempotencyHMACKey: append([]byte(nil), base.IdempotencyHMACKey...),
+			RequestHMACKey:     append([]byte(nil), base.RequestHMACKey...),
+			AES256GCMKey:       append([]byte(nil), base.AES256GCMKey...),
+		}
+		mutate(&cfg)
+		other, err := New(cfg)
+		if err != nil {
+			t.Fatalf("changed key %d made configuration invalid", i)
+		}
+		changedTag, err := other.EpochTag("login-keys.v1")
+		if err != nil || changedTag == tag {
+			t.Fatalf("epoch tag omitted key %d", i)
+		}
+	}
+}
+
+func TestEpochTagRejectsUnsafeIDsAndZeroValueCrypto(t *testing.T) {
+	c := newTestCrypto(t)
+	for _, keyID := range []string{"", strings.Repeat("k", 65), "bad/key", "bad key", "line\nbreak", "关键字"} {
+		if _, err := c.EpochTag(keyID); !errors.Is(err, ErrConfiguration) {
+			t.Fatal("unsafe epoch key ID accepted")
+		}
+	}
+	if _, err := c.EpochTag(strings.Repeat("K", 64)); err != nil {
+		t.Fatal("maximum valid epoch key ID rejected")
+	}
+	if _, err := (&Crypto{}).EpochTag("keys.v1"); !errors.Is(err, ErrConfiguration) {
+		t.Fatal("zero-value crypto returned an epoch tag")
+	}
+}
+
 func TestSummarizeCanonicalValidationAndDomainBinding(t *testing.T) {
 	c := newTestCrypto(t)
 	valid := testRequest()

@@ -8,9 +8,10 @@
 
 - `apps/api/internal/modules/auth/loginreceipt/receipt.go`：实现三把互不相同且非全零的 32 字节密钥配置；长度前缀与独立域分离的幂等键 HMAC、请求 HMAC；规范 raw base64url key 校验、挑战 ID/验证码/ES256 compact proof 的大小和编码校验；版本化 AES-256-GCM nonce+ciphertext；固定长度 scope、两个 HMAC、challengeId、结果类型/引用与精确 UTC 微秒到期的 AAD。
 - `ParseSealed` 检查 blob 版本及最小/最大边界并复制输入，供新进程从持久化字节重建封装值；它不认证密文，仍必须由 `Open` 做 GCM 验证。
+- `EpochTag(keyID)` 对三把密钥分别执行带独立域和角色长度前缀的 HMAC，再将三份 tag 与安全字符 keyID 以长度前缀绑定进最终 SHA-256。只返回不可逆 verifier；不创建/修改数据库 epoch，也不代表密钥轮换或生命周期已接通。
 - 增加 `ResultRejected`：其结果引用必须等于对应 challengeId；拒绝回执只允许空明文，因此不能承载成功凭据，结果类型本身受 AAD 认证。此分类不能替代事务协调器的验证码复验。
 - HMAC/AES 接收的 key 在构造时复制。原始请求、密钥、Binding、上下文、密文及解密 Plaintext 的格式化、JSON、slog 表示均脱敏；错误仅返回固定分类。密钥的随机性/熵由受保护配置来源负责，本包只验证长度和相互不同。
-- `apps/api/internal/modules/auth/loginreceipt/receipt_test.go`：覆盖密钥缺失/长度/全零/重复、规范幂等 key、请求字段摘要绑定、proof 编码/边界、AAD 篡改与跨请求替换、密文逐字节篡改、错误 AES key、nonce 唯一、随机源失败、UTC 微秒到期、输入/输出上限、跨进程重建及脱敏；零值 Crypto 的 AEAD、摘要和解密操作失败闭锁。
+- `apps/api/internal/modules/auth/loginreceipt/receipt_test.go`：覆盖密钥缺失/长度/全零/重复、EpochTag 稳定性和任一密钥/keyID 变化绑定、keyID 校验、规范幂等 key、请求字段摘要绑定、proof 编码/边界、AAD 篡改与跨请求替换、密文逐字节篡改、错误 AES key、nonce 唯一、随机源失败、UTC 微秒到期、输入/输出上限、跨进程重建及脱敏；零值 Crypto 的 AEAD、摘要和解密操作失败闭锁。
 
 ## 验证
 
