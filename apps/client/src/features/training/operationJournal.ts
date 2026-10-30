@@ -1,5 +1,3 @@
-import { isIssuedSnapshot, type ScopedSessionDetail } from './recordingApi.ts'
-
 /**
  * Durable intent journal for one pending training write per account/event.
  * This module does not send requests, hold credentials, validate HTTP replies,
@@ -61,12 +59,11 @@ export interface PendingOperation {
 }
 
 export type ReconciliationDecision =
-  | { readonly verdict: 'applied'; readonly snapshot: ScopedSessionDetail }
+  | { readonly verdict: 'applied'; readonly evidence?: unknown }
   /** Authorizes retry of the exact same key and bytes; it never permits editing them. */
   | { readonly verdict: 'not_applied' }
   | { readonly verdict: 'unknown' }
 export type ReconciliationResult =
-  | { readonly state: 'operation_cleared'; readonly snapshot: ScopedSessionDetail }
   | { readonly state: 'retry_ready' }
   | { readonly state: 'still_uncertain' }
 
@@ -226,9 +223,12 @@ function decode(raw: unknown): StoredOperation {
 }
 
 function freezeOperation(value: StoredOperation): PendingOperation {
-  return Object.freeze({ clientEventId: value.clientEventId, subjectId: value.subjectId,
+  const operation = { clientEventId: value.clientEventId, subjectId: value.subjectId,
     createdGeneration: value.createdGeneration, state: value.state, createdAt: value.createdAt,
-    expiresAt: value.expiresAt, request: Object.freeze({ ...value.request }) })
+    expiresAt: value.expiresAt } as unknown as PendingOperation
+  Object.defineProperty(operation, 'request', { value: Object.freeze({ ...value.request }), enumerable: false,
+    writable: false, configurable: false })
+  return Object.freeze(operation)
 }
 
 function encode(value: StoredOperation): string { return JSON.stringify(value) }
@@ -385,10 +385,10 @@ export class TrainingOperationJournal {
   }
 
   /**
-   * Resolve only with an explicit caller reconciliation based on a fresh,
-   * authenticated RecordingApi snapshot. A raw status/body is never accepted.
-   * `applied` clears only the journal row; caller still merges the verified
-   * snapshot into DraftController before showing the draft as synced.
+   * Inspect using a fresh authenticated RecordingApi read. No currently
+   * available API result is cryptographically/bijectively bound to the stored
+   * request after restart, so an `applied` verdict remains uncertain. A raw
+   * status/body is never accepted. Clearing awaits a request-bound replay seam.
    */
   async reconcile(
     clientEventId: string,
@@ -415,20 +415,9 @@ export class TrainingOperationJournal {
       throw new OperationJournalError('invalid_operation')
     }
     if (decision.verdict === 'applied') {
-      const snapshot = decision.snapshot
-      if (!isIssuedSnapshot(snapshot) || snapshot.lease.subjectId !== lease.subjectId ||
-        snapshot.lease.generation !== lease.generation || snapshot.detail.clientEventId !== clientEventId ||
-        snapshot.detail.source !== 'free' ||
-        (operation.request.path !== '/me/sessions' &&
-          snapshot.detail.id !== operation.request.path.match(/^\/me\/sessions\/(\d+)\//)?.[1])) {
-        throw new OperationJournalError('invalid_operation')
-      }
-      let removed: boolean
-      try { removed = await this.#storage.compareAndSwap(key, String(raw), null) }
-      catch { throw new OperationJournalError('unavailable') }
-      this.#assertLease(lease)
-      if (!removed) throw new OperationJournalError('conflict')
-      return { state: 'operation_cleared', snapshot }
+      // A fresh detail can prove current state but not that this exact body/key
+      // caused it. Keep the intent until a replay API returns bound evidence.
+      return { state: 'still_uncertain' }
     }
     if (decision.verdict === 'unknown') {
       const next: StoredOperation = { ...operation, revision: operation.revision + 1,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { inspect } from 'node:util'
 import { OperationJournalError, TrainingOperationJournal } from './operationJournal.ts'
 import { RecordingApi } from './recordingApi.ts'
 
@@ -62,16 +63,40 @@ function matchingSnapshot(auth, overrides = {}, eventId = 'event-0001') {
   return api.createFreeSession({ date: '2026-10-30', timeZone: 'Asia/Shanghai', clientEventId: eventId }, 'create-key-0001')
 }
 
+function existingSessionSnapshot(auth, overrides = {}) {
+  const credential = auth.current()
+  const apiAuth = {
+    current: () => ({ ...credential, accessToken: 'synthetic-session-token' }),
+    isCurrent: (subjectId, generation) => subjectId === credential.subjectId && generation === credential.generation,
+  }
+  const api = new RecordingApi('https://api.example.org', apiAuth, async () => ({
+    statusCode: 200,
+    data: {
+      id: '42', clientEventId: 'event-0001', date: '2026-10-30', timeZone: 'Asia/Shanghai',
+      status: 'in_progress', source: 'free', version: 3,
+      createdAt: '2026-10-30T08:00:00Z', updatedAt: '2026-10-30T08:00:00Z', recordedAt: null,
+      sets: [{ recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', resolvedExerciseName: '深蹲',
+        setIndex: 1, kind: 'weight', weightKg: 40, reps: 8 }], exerciseEntryKeys: ['entry-0001'], ...overrides,
+    },
+  }), { subjectId: credential.subjectId, generation: credential.generation })
+  return api.readSession('42')
+}
+
 test('staging durably stores exact request before a dispatch permit and never stores credentials', async () => {
   const storage = new MemoryJournalStorage()
   const auth = makeAuth()
   const journal = makeJournal(storage, auth)
   const staged = await journal.stage('event-0001', createRequest())
   assert.equal(staged.state, 'ready')
+  assert.equal(Object.prototype.propertyIsEnumerable.call(staged, 'request'), false)
+  assert.equal(JSON.stringify(staged).includes('Asia/Shanghai'), false)
+  assert.equal(inspect(staged).includes('Asia/Shanghai'), false)
   assert.equal(storage.writes, 1)
   const permit = await journal.beginSend('event-0001')
   assert.deepEqual(permit.operation.request, createRequest())
   assert.equal(permit.isCurrent(), true)
+  assert.equal(JSON.stringify(permit).includes(body), false)
+  assert.equal(inspect(permit).includes('Asia/Shanghai'), false)
   assert.equal(JSON.stringify(permit).includes('accessToken'), false)
   assert.equal([...storage.values.values()].some(value => value.includes('bearer-secret')), false)
   assert.equal([...storage.values.values()].some(value => value.includes('Authorization')), false)
@@ -139,38 +164,42 @@ test('network ambiguity preserves the same bytes and key; it never treats raw 2x
   assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
 })
 
-test('only caller reconciliation with an issued same-account snapshot clears an applied operation', async () => {
+test('an old same-account, same-event snapshot cannot clear a newer write intent', async () => {
   const storage = new MemoryJournalStorage()
   const auth = makeAuth()
   const journal = makeJournal(storage, auth)
-  await journal.stage('event-0001', createRequest())
+  const updateBody = JSON.stringify({ expectedVersion: 3, exerciseEntryKeys: ['entry-0001'],
+    sets: [{ recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲',
+      setIndex: 1, kind: 'weight', weightKg: 50, reps: 8, completed: true }] })
+  const updateRequest = { method: 'POST', path: '/me/sessions/42/sets', body: updateBody, idempotencyKey: 'update-key-0001' }
+  await journal.stage('event-0001', updateRequest)
   const permit = await journal.beginSend('event-0001')
   await journal.markUncertain(permit)
-  let inspected
-  const snapshot = await matchingSnapshot(auth)
+  // This synthetic server response passed through RecordingApi, but is old v3.
+  // It has the same owner, event, and resource; the pending write expected v4.
+  const stale = await existingSessionSnapshot(auth)
+  assert.equal(stale.detail.version, 3)
   const result = await journal.reconcile('event-0001', async operation => {
-    inspected = operation
-    return { verdict: 'applied', snapshot }
+    assert.deepEqual(operation.request, updateRequest)
+    return { verdict: 'applied', evidence: stale }
   })
-  assert.equal(inspected.request.body, body)
-  assert.equal(result.state, 'operation_cleared')
-  assert.equal(result.snapshot.detail.id, '42')
-  assert.equal(await journal.readPending('event-0001'), null)
+  assert.equal(result.state, 'still_uncertain')
+  assert.equal((await journal.readPending('event-0001')).request.body, updateBody)
 })
 
-test('raw response objects and snapshots for another subject or event cannot settle an operation', async () => {
+test('raw responses and issued snapshots cannot settle without request-bound replay evidence', async () => {
   const storage = new MemoryJournalStorage()
   const auth = makeAuth()
   const journal = makeJournal(storage, auth)
   await journal.stage('event-0001', createRequest())
   const permit = await journal.beginSend('event-0001')
   await journal.markUncertain(permit)
-  await assert.rejects(journal.reconcile('event-0001', async () => ({ verdict: 'applied', snapshot: { statusCode: 201, body: {} } })), isJournalError('invalid_operation'))
+  assert.equal((await journal.reconcile('event-0001', async () => ({ verdict: 'applied', evidence: { statusCode: 201, body: {} } }))).state, 'still_uncertain')
   const otherAuth = makeAuth('202', 'other-session')
   const otherSnapshot = await matchingSnapshot(otherAuth)
-  await assert.rejects(journal.reconcile('event-0001', async () => ({ verdict: 'applied', snapshot: otherSnapshot })), isJournalError('invalid_operation'))
+  assert.equal((await journal.reconcile('event-0001', async () => ({ verdict: 'applied', evidence: otherSnapshot }))).state, 'still_uncertain')
   const wrongEvent = await matchingSnapshot(auth, {}, 'event-0002')
-  await assert.rejects(journal.reconcile('event-0001', async () => ({ verdict: 'applied', snapshot: wrongEvent })), isJournalError('invalid_operation'))
+  assert.equal((await journal.reconcile('event-0001', async () => ({ verdict: 'applied', evidence: wrongEvent }))).state, 'still_uncertain')
   assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
 })
 
