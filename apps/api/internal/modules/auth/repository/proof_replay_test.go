@@ -103,6 +103,22 @@ func TestProofReplayTransactions(t *testing.T) {
 		return nil
 	}
 
+	ensure := func(s *ProofReplayStore, key [32]byte, proof domain.VerifiedDeviceProof) error {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		return s.EnsureConsumed(ctx, tx, key, proof, now)
+	}
+	if err := ensure(store, fingerprint, newProof("before-initialization")); !errors.Is(err, ErrReplayStore) {
+		t.Fatal("marker lookup initialized a missing key epoch")
+	}
+	var beforeEpoch int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_device_proof_key_epoch`).Scan(&beforeEpoch); err != nil || beforeEpoch != 0 {
+		t.Fatal("marker lookup modified missing key epoch")
+	}
+
 	// A stale consistent-read snapshot must not hide marker history when the
 	// epoch row is missing. The guard uses a locking/current read.
 	stale, err := db.BeginTx(ctx, nil)
@@ -163,17 +179,32 @@ func TestProofReplayTransactions(t *testing.T) {
 		(second == nil && errors.Is(first, ErrProofAlreadyUsed))) {
 		t.Fatalf("concurrent consumption = (%v, %v), want one success and one duplicate", first, second)
 	}
+	if err := ensure(store, fingerprint, newProof("concurrent")); err != nil {
+		t.Fatal("committed proof marker was not found")
+	}
+	if err := ensure(store, fingerprint, newProof("not-consumed")); !errors.Is(err, ErrProofNotConsumed) {
+		t.Fatal("unconsumed proof marker was accepted")
+	}
+	if err := ensure(store, [32]byte{3}, newProof("concurrent")); !errors.Is(err, ErrProofNotConsumed) {
+		t.Fatal("marker was not bound to device fingerprint")
+	}
 	if err := consume(store, [32]byte{2}, newProof("concurrent"), true); err != nil {
 		t.Fatalf("same JTI on another key: %v", err)
 	}
 	if err := consume(store, fingerprint, newProof("rollback"), false); err != nil {
 		t.Fatalf("first rollback: %v", err)
 	}
+	if err := ensure(store, fingerprint, newProof("rollback")); !errors.Is(err, ErrProofNotConsumed) {
+		t.Fatal("rolled-back proof marker was visible")
+	}
 	if err := consume(store, fingerprint, newProof("rollback"), true); err != nil {
 		t.Fatalf("retry after rollback: %v", err)
 	}
 
 	other, _ := NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
+	if err := ensure(other, fingerprint, newProof("concurrent")); !errors.Is(err, ErrReplayKeyMismatch) {
+		t.Fatal("different epoch key was accepted during marker lookup")
+	}
 	if err := consume(other, fingerprint, newProof("wrong-key"), true); !errors.Is(err, ErrReplayKeyMismatch) {
 		t.Fatalf("unexpected epoch-key result: %v", err)
 	}
@@ -225,6 +256,18 @@ func TestProofReplayTransactions(t *testing.T) {
 	if bytes.Contains(savedDigest, []byte(fractional.JTI)) || len(savedDigest) != 32 {
 		t.Fatal("stored marker exposed raw JTI or had an unexpected digest length")
 	}
+	if err := ensure(store, fingerprint, fractional); err != nil {
+		t.Fatal("fractional retention marker was not accepted")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_device_proof_replay SET retain_until=? WHERE device_fingerprint=? AND jti_digest=?`, utcSQL(fractional.ReplayUntil.Add(-time.Second)), fingerprint[:], digest[:]); err != nil {
+		t.Fatal("cannot create short-retention fixture")
+	}
+	if err := ensure(store, fingerprint, fractional); !errors.Is(err, ErrReplayStore) {
+		t.Fatal("shortened replay retention was accepted")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_device_proof_replay SET retain_until=? WHERE device_fingerprint=? AND jti_digest=?`, utcSQL(want), fingerprint[:], digest[:]); err != nil {
+		t.Fatal("cannot restore synthetic retention marker")
+	}
 
 	// A connection configured with another driver location must write the
 	// same UTC deadline that a different service instance will read.
@@ -266,6 +309,9 @@ func TestProofReplayTransactions(t *testing.T) {
 		if err := consume(candidate, fingerprint, newProof("concurrent"), true); !errors.Is(err, ErrReplayStore) {
 			t.Fatalf("missing epoch with replay history did not fail closed: %v", err)
 		}
+	}
+	if err := ensure(store, fingerprint, newProof("concurrent")); !errors.Is(err, ErrReplayStore) {
+		t.Fatal("marker lookup accepted a missing key epoch")
 	}
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_device_proof_key_epoch`).Scan(&epochCount); err != nil || epochCount != 0 {
 		t.Fatal("missing epoch was recreated despite marker history")

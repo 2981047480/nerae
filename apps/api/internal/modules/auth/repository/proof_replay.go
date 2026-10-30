@@ -17,6 +17,7 @@ import (
 
 var (
 	ErrProofAlreadyUsed  = errors.New("device proof already consumed")
+	ErrProofNotConsumed  = errors.New("device proof marker missing")
 	ErrReplayKeyMismatch = errors.New("device proof replay key mismatch")
 	ErrReplayInput       = errors.New("invalid device proof replay input")
 	ErrReplayStore       = errors.New("device proof replay storage unavailable")
@@ -48,10 +49,7 @@ func NewProofReplayStore(key []byte) (*ProofReplayStore, error) {
 // verify SMS, issue a session, or implement the separate idempotent-response
 // replay and revocation checks required by the login contract.
 func (s *ProofReplayStore) Consume(ctx context.Context, tx *sql.Tx, fingerprint [32]byte, proof domain.VerifiedDeviceProof, now time.Time) error {
-	if s == nil || len(s.key) < 32 || tx == nil || fingerprint == [32]byte{} ||
-		proof.JTI == "" || len(proof.JTI) > 256 || proof.ExpiresAt.IsZero() || proof.ReplayUntil.IsZero() ||
-		now.IsZero() || proof.ExpiresAt.After(domain.DeviceProofLatestExpiry(now)) ||
-		!proof.ReplayUntil.Equal(domain.DeviceProofReplayDeadline(proof.ExpiresAt)) || !proof.ReplayUntil.After(now) {
+	if !s.validProofInput(ctx, tx, fingerprint, proof, now) {
 		return ErrReplayInput
 	}
 	if err := s.checkKeyEpoch(ctx, tx); err != nil {
@@ -75,6 +73,45 @@ func (s *ProofReplayStore) Consume(ctx context.Context, tx *sql.Tx, fingerprint 
 		return ErrReplayStore
 	}
 	return nil
+}
+
+// EnsureConsumed checks a verified proof's existing replay marker without
+// creating one. It is only a storage check: callers must independently verify
+// the signature, request binding, expiry, current authorization and result
+// receipt in the same transaction before releasing any credential. Recheck
+// time-sensitive authorization after lock waits.
+func (s *ProofReplayStore) EnsureConsumed(ctx context.Context, tx *sql.Tx, fingerprint [32]byte, proof domain.VerifiedDeviceProof, now time.Time) error {
+	if !s.validProofInput(ctx, tx, fingerprint, proof, now) {
+		return ErrReplayInput
+	}
+	var epoch []byte
+	if err := tx.QueryRowContext(ctx, `SELECT key_tag FROM auth_device_proof_key_epoch WHERE slot=1 FOR SHARE`).Scan(&epoch); err != nil {
+		return ErrReplayStore
+	}
+	if !hmac.Equal(epoch, s.tag[:]) {
+		return ErrReplayKeyMismatch
+	}
+	digest := s.jtiDigest(fingerprint, proof.JTI)
+	var retainedRaw string
+	err := tx.QueryRowContext(ctx, `SELECT CAST(retain_until AS CHAR) FROM auth_device_proof_replay WHERE device_fingerprint=? AND jti_digest=? FOR UPDATE`, fingerprint[:], digest[:]).Scan(&retainedRaw)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrProofNotConsumed
+	}
+	if err != nil {
+		return ErrReplayStore
+	}
+	retained, err := time.ParseInLocation("2006-01-02 15:04:05.999999", retainedRaw, time.UTC)
+	if err != nil || retained.Before(proof.ReplayUntil) || !retained.After(now.UTC()) {
+		return ErrReplayStore
+	}
+	return nil
+}
+
+func (s *ProofReplayStore) validProofInput(ctx context.Context, tx *sql.Tx, fingerprint [32]byte, proof domain.VerifiedDeviceProof, now time.Time) bool {
+	return s != nil && len(s.key) >= 32 && ctx != nil && tx != nil && fingerprint != ([32]byte{}) &&
+		proof.JTI != "" && len(proof.JTI) <= 256 && !proof.ExpiresAt.IsZero() && !proof.ReplayUntil.IsZero() &&
+		!now.IsZero() && !proof.ExpiresAt.After(domain.DeviceProofLatestExpiry(now)) &&
+		proof.ReplayUntil.Equal(domain.DeviceProofReplayDeadline(proof.ExpiresAt)) && proof.ReplayUntil.After(now)
 }
 
 // DATETIME is timezone-free. Write UTC text so a driver's loc setting cannot
