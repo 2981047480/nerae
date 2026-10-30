@@ -60,9 +60,15 @@ change. Status: **partial; no backend or device integration claimed**.
 
 ## Limits
 
-All network responses in tests are synthetic; no backend request was made. The
-actual `/me` handler, production base URL, SecureVault binding, App runtime,
-iOS/Android device behavior, and end-to-end session restore remain unverified.
+All network responses in these client tests are synthetic; no backend request
+was made. Production base URL, SecureVault binding, App runtime, iOS/Android
+device behavior, and end-to-end session restore remain unverified.
 The verifier does not infer expiry from `expiresIn`; only an explicit 401 can
 invalidate a saved token through this check. Redirect refusal evidence is from
 source inspection, not a live HTTPS redirect test on either platform.
+
+On integration code `7c75dbd`, the 137 related client tests and the full
+`apps/client` `vue-tsc --noEmit -p tsconfig.json` both exited 0. The repository
+now also contains an unmounted `/me` handler and a contract requiring no-store
+on 200 and 401; the client verifier has not yet been connected to that handler
+through a native device, and the production HTTPS origin is not configured.

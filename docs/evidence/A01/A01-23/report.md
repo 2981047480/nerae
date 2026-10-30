@@ -21,6 +21,8 @@ python3 -B docs/evidence/A01/A01-23/mysql_redis_http_smoke.py
 
 退出码：`0`。成功输出标记：`PASS: A01-23 real coordinator, login handler, /me handler and receipt replays over local TLS`。覆盖首次认证响应与 no-store、同键相同请求返回同一 token 且不增加剩余有效期、改变请求的同键冲突、错误验证码同键只记一次并留下拒绝回执、已认证 `/me`、禁用账号后 `/me` 与回执重试拒绝且不返回身份资料/令牌、新设备只获得待批准结果并可重放同一申请、未知请求字段返回 422，以及入口 IP 额度超限在数据库访问前返回 429。
 
+Lead 在集成代码提交 `7c75dbd` 重新运行同一 `python3 -B docs/evidence/A01/A01-23/mysql_redis_http_smoke.py`，退出 0；本机 TLS、私有数据库和 Redis 的上述定向 race 用例再次通过，成功测试目录由脚本清理。
+
 成功 harness 在关闭本次创建的 MySQL/Redis 后移除了自身目录；未连接现有服务。保留的失败现场：
 
 - `/private/tmp/nerae-a01-23-mysql-gbemp59u`：默认沙箱里的 MySQL 初始化发生 SIGSEGV；未启动 Redis。
