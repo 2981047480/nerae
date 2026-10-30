@@ -618,6 +618,222 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 }
 
+func TestEmailReceiptProofRevalidation(t *testing.T) {
+	db := openPrivateDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
+	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
+	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
+	store, err := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
+		DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Truncate(time.Second)
+	var clock atomic.Int64
+	clock.Store(now.UnixNano())
+	store.now = func() time.Time { return time.Unix(0, clock.Load()).UTC() }
+	initializer, err := bootstrap.NewIdentityEpochInitializer(protector)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := initializer.Initialize(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("identity epoch bootstrap failed")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	private, public := testKey(t)
+	fingerprint, err := domain.DeviceKeyFingerprint(public)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Initialize the replay epoch independently of other test functions.
+	bootstrapProof := domain.VerifiedDeviceProof{JTI: "receipt-test-bootstrap", ExpiresAt: now.Add(time.Minute)}
+	bootstrapProof.ReplayUntil = domain.DeviceProofReplayDeadline(bootstrapProof.ExpiresAt)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := replay.Consume(ctx, tx, fingerprint, bootstrapProof, now); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("replay epoch bootstrap failed")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	const email = "receipt-proof@example.test"
+	challengeID := strings.Repeat("a", 32)
+	replacementID := strings.Repeat("b", 32)
+	nonce := strings.Repeat("n", 43)
+	scope, err := protector.Index(email)
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue := func(id string) {
+		t.Helper()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := store.Issue(ctx, tx, IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
+			_ = tx.Rollback()
+			t.Fatal("challenge issue failed")
+		}
+		if err := tx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	issue(challengeID)
+	proof := testProof(t, private, challengeID, nonce, "receipt-proof-jti", now)
+	input := AttemptInput{ChallengeID: challengeID, Code: "999999", DeviceProof: proof}
+	// A proof consumed in a rolled-back attempt must not be recoverable.
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt, err := store.Attempt(ctx, tx, input)
+	if err != nil || !attempt.Changed || attempt.Verified {
+		_ = tx.Rollback()
+		t.Fatal("wrong-code fixture did not consume a proof")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	check := func(compact string) error {
+		t.Helper()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		_, err = store.VerifyReceiptProof(ctx, tx, scope, challengeID, compact)
+		return err
+	}
+	if err := check(proof); !errors.Is(err, ErrReceiptProofRejected) {
+		t.Fatal("rolled-back replay marker was accepted")
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt, err = store.Attempt(ctx, tx, input)
+	if err != nil || !attempt.Changed || attempt.Verified {
+		_ = tx.Rollback()
+		t.Fatal("wrong-code attempt was not recorded")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	otherKey, _ := testKey(t)
+	if err := check(testProof(t, otherKey, challengeID, nonce, "receipt-proof-jti", now)); !errors.Is(err, ErrReceiptProofRejected) {
+		t.Fatal("signature from another device was accepted")
+	}
+	if err := check(testProof(t, private, challengeID, nonce, "never-consumed-jti", now)); !errors.Is(err, ErrReceiptProofRejected) {
+		t.Fatal("unconsumed signed proof was accepted")
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotScope, found, err := store.ReceiptScope(ctx, tx, challengeID)
+	if err != nil || !found || gotScope != scope {
+		_ = tx.Rollback()
+		t.Fatal("protected challenge scope was not found")
+	}
+	_, found, err = store.ReceiptScope(ctx, tx, strings.Repeat("z", 32))
+	if err != nil || found {
+		_ = tx.Rollback()
+		t.Fatal("unknown challenge produced a scope")
+	}
+	validated, err := store.VerifyReceiptProof(ctx, tx, scope, challengeID, proof)
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal("consumed proof was not revalidated")
+	}
+	details, err := validated.ForTransaction(ctx, tx)
+	if err != nil || details.Scope != scope || details.Fingerprint != fingerprint || details.ChallengeID != challengeID {
+		_ = tx.Rollback()
+		t.Fatal("revalidated proof was not bound to the original device and challenge")
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET nonce=? WHERE challenge_id=?`, strings.Repeat("x", 43), challengeID); err != nil {
+		_ = tx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := validated.ForTransaction(ctx, tx); !errors.Is(err, ErrReceiptProofRejected) {
+		_ = tx.Rollback()
+		t.Fatal("transaction-local challenge change was not rechecked")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validated.ForTransaction(ctx, tx); !errors.Is(err, ErrChallengeStore) {
+		t.Fatal("proof escaped its finished transaction")
+	}
+	issue(replacementID)
+	if err := check(proof); err != nil {
+		t.Fatal("original consumed proof could not be rechecked after slot replacement")
+	}
+	// Once consumed, the challenge deadline does not by itself invalidate a
+	// still-live proof used to check an existing receipt. This is not a new
+	// login and the caller still has to validate the receipt and authorization.
+	store.policy.ChallengeTTL = 30 * time.Second
+	shortID := strings.Repeat("c", 32)
+	issue(shortID)
+	shortProof := testProof(t, private, shortID, nonce, "short-challenge-jti", now)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt, err = store.Attempt(ctx, tx, AttemptInput{ChallengeID: shortID, Code: "999999", DeviceProof: shortProof})
+	if err != nil || !attempt.Changed || attempt.Verified {
+		_ = tx.Rollback()
+		t.Fatal("short challenge fixture was not consumed")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	clock.Store(now.Add(31 * time.Second).UnixNano())
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.VerifyReceiptProof(ctx, tx, scope, shortID, shortProof); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("valid proof was rejected only because the original challenge expired")
+	}
+	_ = tx.Rollback()
+	clock.Store(now.Add(2 * time.Minute).UnixNano())
+	if err := check(proof); !errors.Is(err, ErrReceiptProofRejected) {
+		t.Fatal("expired signed proof was accepted")
+	}
+	clock.Store(now.UnixNano())
+	var calls atomic.Int32
+	store.now = func() time.Time {
+		if calls.Add(1) == 1 {
+			return now
+		}
+		return now.Add(2 * time.Minute)
+	}
+	if err := check(proof); !errors.Is(err, ErrReceiptProofRejected) {
+		t.Fatal("proof expiry after marker lookup was not rechecked")
+	}
+	for _, value := range []any{validated, details} {
+		if _, err := json.Marshal(value); err == nil {
+			t.Fatal("receipt proof was JSON-serializable")
+		}
+		if strings.Contains(fmt.Sprintf("%+v", value), proof) {
+			t.Fatal("formatted receipt proof exposed a signed proof")
+		}
+	}
+}
+
 func TestChallengeInputFormattingIsRedacted(t *testing.T) {
 	input := IssueInput{Email: "person@example.test", Code: "012345", Nonce: "private-nonce"}
 	attempt := AttemptInput{Code: "012345", DeviceProof: "private-proof"}

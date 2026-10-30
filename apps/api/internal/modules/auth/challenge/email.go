@@ -13,7 +13,10 @@ import (
 	"nerae/api/internal/modules/auth/repository"
 )
 
-var ErrChallengeStore = errors.New("email challenge unavailable")
+var (
+	ErrChallengeStore       = errors.New("email challenge unavailable")
+	ErrReceiptProofRejected = errors.New("email receipt proof rejected")
+)
 
 type Store struct {
 	hasher     *domain.EmailCodeHasher
@@ -189,6 +192,161 @@ func (v *VerifiedEmail) ForTransaction(ctx context.Context, tx *sql.Tx) (Verifie
 	}
 	return VerifiedEmailDetails{Index: v.index, Ciphertext: append([]byte(nil), v.ciphertext...), KeyID: v.keyID,
 		Fingerprint: v.fingerprint, PublicKey: v.publicKey}, nil
+}
+
+// ReceiptScope returns only the protected lookup scope for a challenge. It is
+// not a proof of identity and must not be exposed as an account lookup. The
+// receipt store must check the challenge and scope again under its row locks.
+func (s *Store) ReceiptScope(ctx context.Context, tx *sql.Tx, challengeID string) ([32]byte, bool, error) {
+	var scope [32]byte
+	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+		return scope, false, ErrChallengeStore
+	}
+	var stored []byte
+	err := tx.QueryRowContext(ctx, `SELECT email_index FROM auth_email_login_challenge WHERE challenge_id = ?`, challengeID).Scan(&stored)
+	if errors.Is(err, sql.ErrNoRows) {
+		return scope, false, nil
+	}
+	if err != nil || len(stored) != len(scope) {
+		return scope, false, ErrChallengeStore
+	}
+	copy(scope[:], stored)
+	if scope == ([32]byte{}) {
+		return scope, false, ErrChallengeStore
+	}
+	return scope, true, nil
+}
+
+// ReceiptProof is a transaction-bound revalidation of a previously consumed
+// device proof. It cannot issue a session: callers must also match the exact
+// request to a live encrypted receipt and independently recheck current user,
+// identity, device, session or approval authorization before releasing it.
+type ReceiptProof struct {
+	store       *Store
+	tx          *sql.Tx
+	scope       [32]byte
+	challengeID string
+	compact     string
+}
+
+type ReceiptProofDetails struct {
+	Scope       [32]byte
+	Fingerprint [32]byte
+	ChallengeID string
+}
+
+func (ReceiptProof) String() string                      { return "EmailReceiptProof{redacted}" }
+func (ReceiptProof) GoString() string                    { return "EmailReceiptProof{redacted}" }
+func (ReceiptProof) MarshalJSON() ([]byte, error)        { return nil, ErrChallengeStore }
+func (ReceiptProof) LogValue() slog.Value                { return slog.StringValue("EmailReceiptProof{redacted}") }
+func (ReceiptProofDetails) String() string               { return "EmailReceiptProofDetails{redacted}" }
+func (ReceiptProofDetails) GoString() string             { return "EmailReceiptProofDetails{redacted}" }
+func (ReceiptProofDetails) MarshalJSON() ([]byte, error) { return nil, ErrChallengeStore }
+func (ReceiptProofDetails) LogValue() slog.Value {
+	return slog.StringValue("EmailReceiptProofDetails{redacted}")
+}
+
+// VerifyReceiptProof revalidates the original signed proof and its existing
+// replay marker in this transaction. It may inspect an older challenge after a new one
+// replaces the slot; it never accepts that old challenge for a new login.
+// Call only after reserving the corresponding exact-request receipt.
+func (s *Store) VerifyReceiptProof(ctx context.Context, tx *sql.Tx, scope [32]byte, challengeID, compact string) (*ReceiptProof, error) {
+	if _, err := s.verifyReceiptProof(ctx, tx, scope, challengeID, compact); err != nil {
+		return nil, err
+	}
+	return &ReceiptProof{store: s, tx: tx, scope: scope, challengeID: challengeID, compact: compact}, nil
+}
+
+// ForTransaction repeats the check after any further lock waits and detects
+// changes made by this transaction itself. It does not check a receipt or grant
+// access to credentials. The originating transaction must still be active.
+func (p *ReceiptProof) ForTransaction(ctx context.Context, tx *sql.Tx) (ReceiptProofDetails, error) {
+	if p == nil || p.store == nil || tx == nil || p.tx != tx {
+		return ReceiptProofDetails{}, ErrChallengeStore
+	}
+	return p.store.verifyReceiptProof(ctx, tx, p.scope, p.challengeID, p.compact)
+}
+
+func (s *Store) verifyReceiptProof(ctx context.Context, tx *sql.Tx, scope [32]byte, challengeID, compact string) (ReceiptProofDetails, error) {
+	var details ReceiptProofDetails
+	if s == nil || s.replay == nil || s.identities == nil || s.now == nil || ctx == nil || tx == nil ||
+		scope == ([32]byte{}) || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+		return details, ErrChallengeStore
+	}
+	// Preserve the shared identity epoch -> slot -> challenge -> replay order.
+	var activeID []byte
+	err := tx.QueryRowContext(ctx, `SELECT challenge_id FROM auth_email_login_slot WHERE email_index = ? FOR UPDATE`, scope[:]).Scan(&activeID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return details, ErrReceiptProofRejected
+	}
+	if err != nil || !opaque(string(activeID), 22, 128) {
+		return details, ErrChallengeStore
+	}
+	var storedIndex, ciphertext, keyID, nonce, fingerprint []byte
+	var x, y, createdRaw, expiresRaw string
+	var maxLifetimeNS, clockSkewNS int64
+	err = tx.QueryRowContext(ctx, `SELECT email_index, email_ciphertext, email_key_id, nonce, public_x, public_y, key_fingerprint,
+		proof_max_lifetime_ns, proof_clock_skew_ns, CAST(created_at AS CHAR), CAST(expires_at AS CHAR)
+		FROM auth_email_login_challenge WHERE challenge_id = ? FOR UPDATE`, challengeID).
+		Scan(&storedIndex, &ciphertext, &keyID, &nonce, &x, &y, &fingerprint, &maxLifetimeNS, &clockSkewNS, &createdRaw, &expiresRaw)
+	if errors.Is(err, sql.ErrNoRows) {
+		return details, ErrReceiptProofRejected
+	}
+	if err != nil || len(storedIndex) != len(scope) || !hmac.Equal(storedIndex, scope[:]) || len(fingerprint) != 32 || !opaque(string(nonce), 43, 256) {
+		return details, ErrChallengeStore
+	}
+	currentKeyID, _, err := s.identities.KeyEpoch()
+	if err != nil || string(keyID) != currentKeyID {
+		return details, ErrChallengeStore
+	}
+	if _, err := s.identities.Open(scope, ciphertext); err != nil {
+		return details, ErrChallengeStore
+	}
+	// The original challenge deadline controlled its first consumption. A
+	// receipt retry does not consume it again; the signed proof and receipt
+	// must still be live, and current authorization must be checked separately.
+	created, createdErr := time.Parse("2006-01-02 15:04:05.999999", createdRaw)
+	expires, expiresErr := time.Parse("2006-01-02 15:04:05.999999", expiresRaw)
+	policy := domain.ProofPolicy{MaxLifetime: time.Duration(maxLifetimeNS), ClockSkew: time.Duration(clockSkewNS)}
+	if createdErr != nil || expiresErr != nil || !expires.After(created) || expires.Sub(created) > 30*time.Minute || !domain.ValidProofPolicy(policy) || !domain.ValidProofPolicy(s.policy.DeviceProof) {
+		return details, ErrChallengeStore
+	}
+	if s.policy.DeviceProof.MaxLifetime < policy.MaxLifetime {
+		policy.MaxLifetime = s.policy.DeviceProof.MaxLifetime
+	}
+	if s.policy.DeviceProof.ClockSkew < policy.ClockSkew {
+		policy.ClockSkew = s.policy.DeviceProof.ClockSkew
+	}
+	key := domain.DevicePublicJWK{Kty: "EC", Crv: "P-256", X: x, Y: y}
+	actualFingerprint, err := domain.DeviceKeyFingerprint(key)
+	if err != nil || !hmac.Equal(actualFingerprint[:], fingerprint) {
+		return details, ErrChallengeStore
+	}
+	expected := domain.ProofExpectation{Purpose: "email_login", ResourceID: challengeID, Nonce: string(nonce)}
+	now := s.now().UTC()
+	if now.IsZero() || now.Before(created) {
+		return details, ErrChallengeStore
+	}
+	proof, err := domain.VerifyDeviceProof(compact, key, expected, now, policy)
+	if err != nil {
+		return details, ErrReceiptProofRejected
+	}
+	if err := s.replay.EnsureConsumed(ctx, tx, actualFingerprint, proof, now); err != nil {
+		if errors.Is(err, repository.ErrProofNotConsumed) {
+			return details, ErrReceiptProofRejected
+		}
+		return details, ErrChallengeStore
+	}
+	// The marker lookup may have waited. Revalidate the signed proof using a
+	// fresh clock reading before returning even this non-authorizing handle.
+	finished := s.now().UTC()
+	if finished.IsZero() || finished.Before(created) {
+		return details, ErrChallengeStore
+	}
+	if _, err := domain.VerifyDeviceProof(compact, key, expected, finished, policy); err != nil {
+		return details, ErrReceiptProofRejected
+	}
+	return ReceiptProofDetails{Scope: scope, Fingerprint: actualFingerprint, ChallengeID: challengeID}, nil
 }
 
 // Attempt returns the same rejected result for unknown, expired, superseded,
