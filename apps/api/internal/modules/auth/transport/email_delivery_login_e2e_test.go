@@ -490,6 +490,22 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		}
 		return workoutHTTPResult{status: response.StatusCode, headers: response.Header.Clone(), body: payload}
 	}
+	beforeAgeBody, err := json.Marshal(map[string]any{"source": "free", "date": time.Now().UTC().Format("2006-01-02"),
+		"timeZone": "UTC", "clientEventId": "a01-24-before-age-001"})
+	if err != nil {
+		t.Fatal("pre-declaration workout body encoding failed")
+	}
+	if result := workoutRequest(http.MethodPost, "/me/sessions", beforeAgeBody, "", randomIdempotencyKey(t)); result.status != http.StatusUnauthorized {
+		t.Fatalf("anonymous workout creation did not fail closed: %d", result.status)
+	}
+	if result := workoutRequest(http.MethodPost, "/me/sessions", beforeAgeBody, success.Token, randomIdempotencyKey(t)); result.status != http.StatusForbidden {
+		t.Fatalf("workout creation before age declaration did not fail closed: %d", result.status)
+	}
+	var deniedCount int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE client_event_id = ?`,
+		[]byte("a01-24-before-age-001")).Scan(&deniedCount); err != nil || deniedCount != 0 {
+		t.Fatal("denied anonymous or pre-declaration creation left a workout")
+	}
 	ageBody := []byte(`{"isAdult":true,"expectedVersion":1}`)
 	status, ageHeaders, ageResponse := postAge(server.Client(), server.URL, success.Token, ageBody)
 	var declaredUser api.User
@@ -558,6 +574,11 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	createReplay := workoutRequest(http.MethodPost, "/me/sessions", createBody, success.Token, createKey)
 	if createReplay.status != http.StatusCreated || !bytes.Equal(createReplay.body, created.body) || createReplay.headers.Get("Idempotency-Key-Expires-At") != created.headers.Get("Idempotency-Key-Expires-At") {
 		t.Fatal("same-key workout creation replay differed from its original response")
+	}
+	var createdCount int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id = ? AND client_event_id = ?`,
+		success.User.Id, []byte("a01-24-workout-event-001")).Scan(&createdCount); err != nil || createdCount != 1 {
+		t.Fatal("same-key creation replay did not preserve exactly one workout")
 	}
 	setPath := "/me/sessions/" + createdDetail.ID + "/sets"
 	setBody := []byte(`{"expectedVersion":1,"exerciseEntryKeys":["a01-24-entry-001"],"sets":[{"recordKey":"a01-24-record-001","exerciseEntryKey":"a01-24-entry-001","exerciseName":"卧推","kind":"weight","setIndex":1,"weightKg":42.50,"reps":8,"rpe":7.5,"completed":true}]}`)
@@ -651,6 +672,16 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	}
 	finishPath := "/me/sessions/" + createdDetail.ID + "/finish"
 	finishBody := []byte(`{"expectedVersion":2}`)
+	if foreignWrite := workoutRequest(http.MethodPost, setPath, setBody, otherSuccess.Token, randomIdempotencyKey(t)); foreignWrite.status != http.StatusForbidden {
+		t.Fatalf("another authenticated subject could attempt a workout set write: %d", foreignWrite.status)
+	}
+	if foreignFinish := workoutRequest(http.MethodPost, finishPath, finishBody, otherSuccess.Token, randomIdempotencyKey(t)); foreignFinish.status != http.StatusForbidden {
+		t.Fatalf("another authenticated subject could attempt to finish the workout: %d", foreignFinish.status)
+	}
+	ownerAfterForeignWrites := workoutRequest(http.MethodGet, readPath, nil, success.Token, "")
+	if ownerAfterForeignWrites.status != http.StatusOK || !bytes.Equal(ownerAfterForeignWrites.body, ownerRead.body) {
+		t.Fatal("foreign write attempts changed the owner's workout")
+	}
 	finishKey := randomIdempotencyKey(t)
 	finished := workoutRequest(http.MethodPost, finishPath, finishBody, success.Token, finishKey)
 	var finishedDetail struct {
@@ -695,6 +726,18 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	}
 	if err := db.QueryRowContext(ctx, `SELECT age_declaration_version, age_verified_at IS NOT NULL FROM user WHERE id = ?`, success.User.Id).Scan(&ageVersion, &ageVerified); err != nil || ageVersion != 5 || !ageVerified {
 		t.Fatal("revoked session changed declaration state")
+	}
+	if revokedRead := workoutRequest(http.MethodGet, readPath, nil, success.Token, ""); revokedRead.status != http.StatusUnauthorized {
+		t.Fatalf("revoked session could read workout data: %d", revokedRead.status)
+	}
+	if revokedReplay := workoutRequest(http.MethodPost, finishPath, finishBody, success.Token, finishKey); revokedReplay.status != http.StatusUnauthorized {
+		t.Fatalf("revoked session could replay workout result: %d", revokedReplay.status)
+	}
+	var finalStatus string
+	var finalVersion int
+	if err := db.QueryRowContext(ctx, `SELECT status, version FROM workout_session WHERE id = ? AND user_id = ?`,
+		createdDetail.ID, success.User.Id).Scan(&finalStatus, &finalVersion); err != nil || finalStatus != "completed" || finalVersion != 3 {
+		t.Fatal("revoked session changed the completed workout")
 	}
 
 	closedDB, err := sql.Open("mysql", dsn)

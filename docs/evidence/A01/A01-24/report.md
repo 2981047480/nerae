@@ -94,3 +94,9 @@ SHA-256:
 
 - `apps/api/internal/modules/auth/transport/email_delivery_login_e2e_test.go`: `874566b34d9ab4c4d10a7671686da0dfd66f56bbd228a8abea6b22f2137d2132`
 - `docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py`: `348f36179283c5135693c0f35bc609ec87c0b644a7c3c84422a124469bf366ea`
+
+## Lead integration recheck and negative cases · 2026-10-31
+
+The independently reviewed test was integrated at `0c02981`. Lead then added checks in the same TLS/MySQL fixture: anonymous creation returns 401, creation before the subject's adult declaration returns 403, neither rejected creation leaves a workout, replayed creation leaves exactly one owner/event row, a second authenticated subject cannot write sets or finish the owner's workout, and the owner still reads the identical record after those denied writes. After the original bearer session is revoked, its workout read and exact-key finish replay both return 401; the stored record remains completed at version 3.
+
+`python3 -B docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py` ran with local authorization after the last database assertions: exit `0`, including the focused Go race test and required PASS marker. It created private socket-only services and the loopback TLS SMTP sink, and removed only its own successful fresh fixture. No external mail, production process or mobile device was involved. The tested candidate Go test SHA-256 is `df69638c1ed6b6e3969f472877c891cda4c66fa31eb122a12bc61bb5165098e2`; the harness remains `348f36179283c5135693c0f35bc609ec87c0b644a7c3c84422a124469bf366ea`.
