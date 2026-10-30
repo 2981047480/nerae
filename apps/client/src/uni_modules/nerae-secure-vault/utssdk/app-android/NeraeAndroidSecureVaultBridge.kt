@@ -30,8 +30,18 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 
 private const val KEYSTORE = "AndroidKeyStore"
-private const val VAULT_KEY_ALIAS = "com.nerae.secure-vault.authentication-state.aes-gcm.v1"
-private const val FILE_NAME = "nerae-auth-state.v1.enc"
+
+/** Fixed storage identities; callers cannot supply aliases or filesystem paths. */
+internal enum class NeraeVaultSlot(val keyAlias: String, val fileName: String) {
+    AUTHENTICATION_STATE(
+        "com.nerae.secure-vault.authentication-state.aes-gcm.v1",
+        "nerae-auth-state.v1.enc"
+    ),
+    DEVICE_IDENTITY_REGISTRY(
+        "com.nerae.secure-vault.device-identity-registry.aes-gcm.v1",
+        "nerae-device-identity-registry.v1.enc"
+    )
+}
 private const val AES_TRANSFORMATION = "AES/GCM/NoPadding"
 private const val KEY_SIZE_BITS = 256
 private const val GCM_TAG_BITS = 128
@@ -236,7 +246,8 @@ internal class NeraeCredentialVault(
     }
 }
 
-private class AndroidVaultStorage(context: Context) : VaultStorage {
+private class AndroidVaultStorage(context: Context, slot: NeraeVaultSlot) : VaultStorage {
+    private val fileName = slot.fileName
     private val appContext: Context
     private val directory: File
     private val baseFile: File
@@ -250,9 +261,9 @@ private class AndroidVaultStorage(context: Context) : VaultStorage {
             ensureUserUnlocked(appContext)
             directory = appContext.noBackupFilesDir.canonicalFile
             if (!directory.isDirectory || !directory.canRead() || !directory.canWrite()) throw VaultFailure()
-            baseFile = File(directory, FILE_NAME)
-            newFile = File(directory, "$FILE_NAME.new")
-            legacyBackupFile = File(directory, "$FILE_NAME.bak")
+            baseFile = File(directory, fileName)
+            newFile = File(directory, "$fileName.new")
+            legacyBackupFile = File(directory, "$fileName.bak")
             validateAtomicPaths()
             atomicFile = AtomicFile(baseFile)
         } catch (_: Exception) {
@@ -352,12 +363,12 @@ private class AndroidVaultStorage(context: Context) : VaultStorage {
     }
 }
 
-private class AndroidVaultKeys : VaultKeys {
+private class AndroidVaultKeys(private val slot: NeraeVaultSlot) : VaultKeys {
     override fun existing(): SecretKey? {
         try {
             val store = loadStore()
-            if (!store.containsAlias(VAULT_KEY_ALIAS)) return null
-            val key = store.getKey(VAULT_KEY_ALIAS, null) as? SecretKey ?: throw VaultFailure()
+            if (!store.containsAlias(slot.keyAlias)) return null
+            val key = store.getKey(slot.keyAlias, null) as? SecretKey ?: throw VaultFailure()
             verifyHardware(key)
             return key
         } catch (failure: VaultFailure) {
@@ -369,12 +380,12 @@ private class AndroidVaultKeys : VaultKeys {
 
     override fun createHardware(): SecretKey {
         try {
-            if (loadStore().containsAlias(VAULT_KEY_ALIAS)) throw VaultFailure()
+            if (loadStore().containsAlias(slot.keyAlias)) throw VaultFailure()
             val key = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 try {
                     generateKey(true)
                 } catch (_: StrongBoxUnavailableException) {
-                    if (loadStore().containsAlias(VAULT_KEY_ALIAS)) throw VaultFailure()
+                    if (loadStore().containsAlias(slot.keyAlias)) throw VaultFailure()
                     generateKey(false) // TEE may still be available; verify below.
                 }
             } else {
@@ -385,7 +396,7 @@ private class AndroidVaultKeys : VaultKeys {
             } catch (_: Exception) {
                 // This exact alias was created by this call. Remove an
                 // unverifiable/software key; never fall back to it.
-                try { loadStore().deleteEntry(VAULT_KEY_ALIAS) } catch (_: Exception) { }
+                try { loadStore().deleteEntry(slot.keyAlias) } catch (_: Exception) { }
                 throw VaultFailure()
             }
             return key
@@ -399,8 +410,8 @@ private class AndroidVaultKeys : VaultKeys {
     override fun delete() {
         try {
             val store = loadStore()
-            if (store.containsAlias(VAULT_KEY_ALIAS)) store.deleteEntry(VAULT_KEY_ALIAS)
-            if (store.containsAlias(VAULT_KEY_ALIAS)) throw VaultFailure()
+            if (store.containsAlias(slot.keyAlias)) store.deleteEntry(slot.keyAlias)
+            if (store.containsAlias(slot.keyAlias)) throw VaultFailure()
         } catch (failure: VaultFailure) {
             throw failure
         } catch (_: Exception) {
@@ -410,7 +421,7 @@ private class AndroidVaultKeys : VaultKeys {
 
     private fun generateKey(strongBox: Boolean): SecretKey {
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE)
-        val builder = KeyGenParameterSpec.Builder(VAULT_KEY_ALIAS,
+        val builder = KeyGenParameterSpec.Builder(slot.keyAlias,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setKeySize(KEY_SIZE_BITS)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
@@ -460,16 +471,46 @@ object NeraeAndroidSecureVaultBridge {
     }
 
     @JvmStatic
-    fun clearAuthenticationState(context: Context?): String = withVault(context) { vault ->
+    fun clearAuthenticationState(context: Context?): String = withSlot(
+        context, NeraeVaultSlot.AUTHENTICATION_STATE, authenticationProcessLock
+    ) { vault ->
         vault.clear()
         encode(ok = true)
     }
 
-    private fun withVault(context: Context?, action: (NeraeCredentialVault) -> String): String {
+    @JvmStatic
+    fun readDeviceIdentityRegistry(context: Context?): String = withSlot(
+        context, NeraeVaultSlot.DEVICE_IDENTITY_REGISTRY, registryProcessLock
+    ) { vault ->
+        val result = vault.read()
+        encode(ok = true, found = result.found, value = result.value)
+    }
+
+    @JvmStatic
+    fun writeDeviceIdentityRegistry(context: Context?, value: String?): String = withSlot(
+        context, NeraeVaultSlot.DEVICE_IDENTITY_REGISTRY, registryProcessLock
+    ) { vault ->
+        if (value == null) throw VaultFailure("invalid_state")
+        vault.write(value)
+        encode(ok = true)
+    }
+
+    private fun withVault(context: Context?, action: (NeraeCredentialVault) -> String): String =
+        withSlot(context, NeraeVaultSlot.AUTHENTICATION_STATE, authenticationProcessLock, action)
+
+    private fun withSlot(
+        context: Context?,
+        slot: NeraeVaultSlot,
+        processLock: Any,
+        action: (NeraeCredentialVault) -> String
+    ): String {
         if (context == null) return failure("unavailable")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return failure("unavailable")
         return try {
-            val vault = NeraeCredentialVault(AndroidVaultStorage(context), AndroidVaultKeys(), processLock, AndroidJsonObjectValidator)
+            val vault = NeraeCredentialVault(
+                AndroidVaultStorage(context, slot), AndroidVaultKeys(slot), processLock,
+                AndroidJsonObjectValidator
+            )
             action(vault)
         } catch (problem: VaultFailure) {
             failure(problem.code)
@@ -478,7 +519,8 @@ object NeraeAndroidSecureVaultBridge {
         }
     }
 
-    private val processLock = Any()
+    private val authenticationProcessLock = Any()
+    private val registryProcessLock = Any()
 
     private fun failure(code: String): String = JSONObject()
         .put("ok", false).put("errorCode", code).put("found", false).put("value", "").toString()

@@ -9,3 +9,7 @@ export type SecureVaultResult = {
 export type ReadAuthenticationState = () => SecureVaultResult
 export type WriteAuthenticationState = (value: string) => SecureVaultResult
 export type ClearAuthenticationState = () => SecureVaultResult
+
+/** Device identity registry state is stored independently from the login session. */
+export type ReadDeviceIdentityRegistry = () => SecureVaultResult
+export type WriteDeviceIdentityRegistry = (value: string) => SecureVaultResult

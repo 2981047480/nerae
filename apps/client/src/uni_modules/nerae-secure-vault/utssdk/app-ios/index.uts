@@ -37,3 +37,10 @@ export function writeAuthenticationState(value: string): SecureVaultResult {
 export function clearAuthenticationState(): SecureVaultResult {
   return decode(NeraeSecureVaultBridge.clearAuthenticationState(), false)
 }
+
+export function readDeviceIdentityRegistry(): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.readDeviceIdentityRegistry(), true)
+}
+export function writeDeviceIdentityRegistry(value: string): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.writeDeviceIdentityRegistry(value), false)
+}

@@ -14,19 +14,30 @@ enum NeraeVaultError: Error {
     case unavailable
 }
 
-final class NeraeKeychainBackend: NeraeVaultBackend {
-    private let service: String
-    private let account = "authentication-state"
+struct NeraeVaultNamespace: Equatable {
+    let service: String
+    let account: String
+}
 
-    init(service: String) {
-        self.service = service
+enum NeraeVaultNamespaces {
+    static let authenticationState = NeraeVaultNamespace(
+        service: "com.nerae.authentication-state.v1", account: "authentication-state")
+    static let deviceIdentityRegistry = NeraeVaultNamespace(
+        service: "com.nerae.device-identity-registry.v1", account: "device-identity-registry")
+}
+
+final class NeraeKeychainBackend: NeraeVaultBackend {
+    private let namespace: NeraeVaultNamespace
+
+    init(namespace: NeraeVaultNamespace) {
+        self.namespace = namespace
     }
 
     private func query() -> [String: Any] {
         return [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrService as String: namespace.service,
+            kSecAttrAccount as String: namespace.account,
             kSecAttrSynchronizable as String: kCFBooleanFalse as Any
         ]
     }
@@ -122,13 +133,16 @@ final class NeraeCredentialVault {
 
 @objc(NeraeSecureVaultBridge)
 public final class NeraeSecureVaultBridge: NSObject {
-    private static let vault = NeraeCredentialVault(
-        backend: NeraeKeychainBackend(service: "com.nerae.authentication-state.v1")
+    private static let authenticationStateVault = NeraeCredentialVault(
+        backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.authenticationState)
+    )
+    private static let deviceIdentityRegistry = NeraeCredentialVault(
+        backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.deviceIdentityRegistry)
     )
 
     @objc public static func readAuthenticationState() -> String {
         do {
-            let result = try vault.read()
+            let result = try authenticationStateVault.read()
             return encode(ok: true, found: result.found, value: result.value)
         } catch {
             return encodeFailure(error)
@@ -137,7 +151,7 @@ public final class NeraeSecureVaultBridge: NSObject {
 
     @objc public static func writeAuthenticationState(_ value: String) -> String {
         do {
-            try vault.write(value)
+            try authenticationStateVault.write(value)
             return encode(ok: true)
         } catch {
             return encodeFailure(error)
@@ -146,7 +160,25 @@ public final class NeraeSecureVaultBridge: NSObject {
 
     @objc public static func clearAuthenticationState() -> String {
         do {
-            try vault.clear()
+            try authenticationStateVault.clear()
+            return encode(ok: true)
+        } catch {
+            return encodeFailure(error)
+        }
+    }
+
+    @objc public static func readDeviceIdentityRegistry() -> String {
+        do {
+            let result = try deviceIdentityRegistry.read()
+            return encode(ok: true, found: result.found, value: result.value)
+        } catch {
+            return encodeFailure(error)
+        }
+    }
+
+    @objc public static func writeDeviceIdentityRegistry(_ value: String) -> String {
+        do {
+            try deviceIdentityRegistry.write(value)
             return encode(ok: true)
         } catch {
             return encodeFailure(error)

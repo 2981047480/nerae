@@ -39,3 +39,11 @@ export function writeAuthenticationState(value: string): SecureVaultResult {
 export function clearAuthenticationState(): SecureVaultResult {
 	return decode(NeraeAndroidSecureVaultBridge.clearAuthenticationState(UTSAndroid.getAppContext()), false)
 }
+
+export function readDeviceIdentityRegistry(): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.readDeviceIdentityRegistry(UTSAndroid.getAppContext()), true)
+}
+
+export function writeDeviceIdentityRegistry(value: string): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.writeDeviceIdentityRegistry(UTSAndroid.getAppContext(), value), false)
+}

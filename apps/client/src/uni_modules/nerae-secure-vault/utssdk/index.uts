@@ -7,3 +7,6 @@ function unsupported(): SecureVaultResult {
 export function readAuthenticationState(): SecureVaultResult { return unsupported() }
 export function writeAuthenticationState(_value: string): SecureVaultResult { return unsupported() }
 export function clearAuthenticationState(): SecureVaultResult { return unsupported() }
+
+export function readDeviceIdentityRegistry(): SecureVaultResult { return unsupported() }
+export function writeDeviceIdentityRegistry(_value: string): SecureVaultResult { return unsupported() }
