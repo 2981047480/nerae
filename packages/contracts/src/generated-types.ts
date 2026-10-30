@@ -3324,6 +3324,8 @@ export interface components {
         };
         /** @description 可恢复或处理冲突的完整记录，始终包含当前实际组及其动作条目顺序；completed必须至少有一组。exerciseEntryKeys与sets所属条目集合精确一致，sets按动作顺序及各动作内setIndex升序返回；这些跨字段不变量由运行时校验。未确认草稿不是实际组，其单独同步能力不可由此接口推定。 */
         WorkoutSessionDetail: components["schemas"]["WorkoutSession"] & {
+            /** @description 创建记录时的稳定事件标识；仅授权主体可读取，用于跨设备恢复同一记录，不构成凭据。 */
+            readonly clientEventId: string;
             sets: components["schemas"]["WorkoutSetRecord"][];
             exerciseEntryKeys: components["schemas"]["WorkoutExerciseEntryOrder"];
         };

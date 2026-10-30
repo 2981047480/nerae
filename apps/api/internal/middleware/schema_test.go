@@ -16,7 +16,7 @@ import (
 )
 
 const validBatch = `{"expectedVersion":1,"exerciseEntryKeys":["entry-0001"],"sets":[{"exerciseEntryKey":"entry-0001","recordKey":"record-001","exerciseName":"深蹲","setIndex":1,"kind":"weight","weightKg":50.5,"reps":8}]}`
-const validDetail = `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"in_progress","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","recordedAt":null,"sets":[],"exerciseEntryKeys":[]}`
+const validDetail = `{"id":"101","date":"2026-10-20","timeZone":"Asia/Shanghai","status":"in_progress","source":"free","version":1,"createdAt":"2026-10-20T10:00:00Z","updatedAt":"2026-10-20T10:00:00Z","recordedAt":null,"clientEventId":"event-test-001","sets":[],"exerciseEntryKeys":[]}`
 
 func validator(t *testing.T, limit int64) *SchemaValidator {
 	t.Helper()
@@ -108,7 +108,7 @@ func TestResponseValidationAfterEncoding(t *testing.T) {
 	if _, err := v.EncodeResponse("WorkoutSessionDetail", valid); err != nil {
 		t.Fatalf("valid response rejected: %v", err)
 	}
-	for _, field := range []string{"createdAt", "updatedAt", "recordedAt", "exerciseEntryKeys"} {
+	for _, field := range []string{"createdAt", "updatedAt", "recordedAt", "clientEventId", "exerciseEntryKeys"} {
 		copy := make(map[string]any)
 		for key, value := range valid {
 			copy[key] = value
@@ -117,6 +117,17 @@ func TestResponseValidationAfterEncoding(t *testing.T) {
 		if _, err := v.EncodeResponse("WorkoutSessionDetail", copy); !errors.Is(err, ErrInvalidResponse) {
 			t.Fatalf("missing %s accepted: %v", field, err)
 		}
+	}
+	var generated gen.WorkoutSessionDetail
+	if err := json.Unmarshal([]byte(validDetail), &generated); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := v.EncodeResponse("WorkoutSessionDetail", generated); err != nil {
+		t.Fatalf("valid generated response rejected: %v", err)
+	}
+	generated.ClientEventId = nil
+	if _, err := v.EncodeResponse("WorkoutSessionDetail", generated); !errors.Is(err, ErrInvalidResponse) {
+		t.Fatalf("generated response without event identity accepted: %v", err)
 	}
 	if _, err := v.EncodeResponse("WorkoutSessionDetail", gen.WorkoutSessionDetail{}); !errors.Is(err, ErrInvalidResponse) {
 		t.Fatalf("generated zero value accepted: %v", err)
