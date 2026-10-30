@@ -21,6 +21,7 @@ import (
 var (
 	ErrLedger   = errors.New("email login receipt ledger unavailable")
 	ErrConflict = errors.New("email login receipt conflicts")
+	ErrExpired  = errors.New("email login receipt expired")
 	ErrExisting = errors.New("email login receipt already exists")
 )
 
@@ -71,6 +72,26 @@ func (h *Handle) ExistingRecord() (Record, bool) {
 		return Record{}, false
 	}
 	return *h.existing, true
+}
+
+// RecheckExisting repeats the locked receipt lookup in the original live
+// transaction and never deletes an expired row. The returned protected scope,
+// binding and ciphertext do not authorize decryption or credential release;
+// callers must still reverify the exact signed request and current authority.
+// On any error, the caller must roll back the transaction.
+func (h *Handle) RecheckExisting(ctx context.Context, tx *sql.Tx) (Record, [sha256.Size]byte, loginreceipt.Binding, error) {
+	if h == nil || h.store == nil || h.tx == nil || h.tx != tx || ctx == nil || h.existing == nil {
+		return Record{}, [sha256.Size]byte{}, loginreceipt.Binding{}, ErrLedger
+	}
+	refreshed, err := h.store.lock(ctx, tx, h.scope, h.binding, false)
+	if err != nil {
+		return Record{}, [sha256.Size]byte{}, loginreceipt.Binding{}, err
+	}
+	record, ok := refreshed.ExistingRecord()
+	if !ok {
+		return Record{}, [sha256.Size]byte{}, loginreceipt.Binding{}, ErrLedger
+	}
+	return record, h.scope, h.binding, nil
 }
 
 // Record contains ciphertext and non-secret lookup metadata only. Use its
@@ -145,6 +166,10 @@ func (s *Store) Initialize(ctx context.Context, tx *sql.Tx) error {
 // If the slot has since advanced, only an exact, still-live existing receipt
 // may be returned; a missing or expired receipt cannot be created for that stale challenge.
 func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, binding loginreceipt.Binding) (*Handle, error) {
+	return s.lock(ctx, tx, scope, binding, true)
+}
+
+func (s *Store) lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, binding loginreceipt.Binding, replaceExpired bool) (*Handle, error) {
 	if !s.valid() || ctx == nil || tx == nil || allZero(scope[:]) || !validChallengeID(binding.ChallengeID()) ||
 		binding.IdempotencyDigest() == ([sha256.Size]byte{}) || binding.RequestDigest() == ([sha256.Size]byte{}) {
 		return nil, ErrLedger
@@ -217,6 +242,9 @@ func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 		return nil, ErrLedger
 	}
 	if !expires.After(now) {
+		if !replaceExpired {
+			return nil, ErrExpired
+		}
 		if !slotMatchesChallenge {
 			return nil, ErrConflict
 		}

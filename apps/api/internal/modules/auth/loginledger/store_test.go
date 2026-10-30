@@ -163,6 +163,72 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 		t.Fatalf("receipt recovery failed: %v", err)
 	}
 
+	// Rechecking must remain bound to the original live transaction, detect
+	// transaction-local changes, and never delete a receipt merely because it
+	// expired while another authorization check was waiting.
+	checkTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkedHandle, err := store.Lock(ctx, checkTx, scope, binding)
+	if err != nil {
+		_ = checkTx.Rollback()
+		t.Fatal(err)
+	}
+	rechecked, checkedScope, checkedBinding, err := checkedHandle.RecheckExisting(ctx, checkTx)
+	if err != nil || checkedScope != scope || checkedBinding.RequestDigest() != binding.RequestDigest() ||
+		checkedBinding.IdempotencyDigest() != binding.IdempotencyDigest() || rechecked.ResultReference() != "session-ref-1" {
+		_ = checkTx.Rollback()
+		t.Fatal("existing receipt recheck did not retain its transaction binding")
+	}
+	otherTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = checkTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, _, _, err := checkedHandle.RecheckExisting(ctx, otherTx); !errors.Is(err, ErrLedger) {
+		_ = otherTx.Rollback()
+		_ = checkTx.Rollback()
+		t.Fatal("receipt handle was usable in a different transaction")
+	}
+	_ = otherTx.Rollback()
+	requestKey := binding.IdempotencyDigest()
+	if _, err := checkTx.ExecContext(ctx, `UPDATE auth_email_login_receipt SET request_hmac=? WHERE email_scope=? AND request_key_hmac=?`, bytes32(0xef), scope[:], requestKey[:]); err != nil {
+		_ = checkTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, _, _, err := checkedHandle.RecheckExisting(ctx, checkTx); !errors.Is(err, ErrConflict) {
+		_ = checkTx.Rollback()
+		t.Fatal("receipt recheck accepted a changed request digest")
+	}
+	_ = checkTx.Rollback()
+	if _, _, _, err := checkedHandle.RecheckExisting(ctx, checkTx); !errors.Is(err, ErrLedger) {
+		t.Fatal("receipt recheck accepted an ended transaction")
+	}
+	expiryTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expiryHandle, err := store.Lock(ctx, expiryTx, scope, binding)
+	if err != nil {
+		_ = expiryTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := expiryTx.ExecContext(ctx, `UPDATE auth_email_login_receipt SET created_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 2 MINUTE), expires_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 MINUTE) WHERE email_scope=? AND request_key_hmac=?`, scope[:], requestKey[:]); err != nil {
+		_ = expiryTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, _, _, err := expiryHandle.RecheckExisting(ctx, expiryTx); !errors.Is(err, ErrExpired) {
+		_ = expiryTx.Rollback()
+		t.Fatal("expired receipt remained available for recheck")
+	}
+	var stillPresent int
+	if err := expiryTx.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], requestKey[:]).Scan(&stillPresent); err != nil || stillPresent != 1 {
+		_ = expiryTx.Rollback()
+		t.Fatal("expiry recheck deleted the existing receipt")
+	}
+	_ = expiryTx.Rollback()
+
 	conflicting := makeBinding(t, crypto, challengeID, "AQEBAQEBAQEBAQEBAQEBAQ", "654321", "eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ4In0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, conflicting); return err }); !errors.Is(err, ErrConflict) {
 		t.Fatal("same-key changed request did not conflict")
