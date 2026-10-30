@@ -3,11 +3,13 @@
 package approval
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -21,11 +23,15 @@ import (
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
+	"nerae/api/internal/modules/auth/loginledger"
 	"nerae/api/internal/modules/auth/loginreceipt"
 	"nerae/api/internal/modules/auth/session"
 )
 
-var ErrUnavailable = errors.New("approval unavailable")
+var (
+	ErrUnavailable    = errors.New("approval unavailable")
+	ErrInvalidReceipt = errors.New("approval receipt invalid")
+)
 
 type Policy struct {
 	Lifetime     time.Duration
@@ -276,6 +282,307 @@ func (p Pending) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challeng
 		return SealedReceipt{}, ErrUnavailable
 	}
 	return SealedReceipt{reference: p.data.ID, sealed: sealed, expiresAt: expires}, nil
+}
+
+// ReceiptRecoverer validates an encrypted new-device approval result. It is
+// not an approval decision, device registration, session, or HTTP endpoint.
+type ReceiptRecoverer struct {
+	approvals  *Store
+	ledger     *loginledger.Store
+	challenges *challenge.Store
+	crypto     *loginreceipt.Crypto
+}
+
+func (ReceiptRecoverer) String() string               { return "ApprovalReceiptRecoverer{redacted}" }
+func (ReceiptRecoverer) GoString() string             { return "ApprovalReceiptRecoverer{redacted}" }
+func (ReceiptRecoverer) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
+func (ReceiptRecoverer) LogValue() slog.Value {
+	return slog.StringValue("ApprovalReceiptRecoverer{redacted}")
+}
+
+func NewReceiptRecoverer(approvals *Store, ledger *loginledger.Store, challenges *challenge.Store, crypto *loginreceipt.Crypto) (*ReceiptRecoverer, error) {
+	if approvals == nil || ledger == nil || challenges == nil || crypto == nil {
+		return nil, ErrUnavailable
+	}
+	return &ReceiptRecoverer{approvals: approvals, ledger: ledger, challenges: challenges, crypto: crypto}, nil
+}
+
+// ReceiptCandidate keeps the approval secret private until a fresh transaction
+// rechecks the committed receipt, original device proof, and authorization.
+type ReceiptCandidate struct {
+	recoverer *ReceiptRecoverer
+	sourceTx  *sql.Tx
+	request   loginreceipt.Request
+	scope     [32]byte
+	binding   loginreceipt.Binding
+	data      Data
+	expiresAt time.Time
+	proof     challenge.ReceiptProofDetails
+}
+
+func (ReceiptCandidate) String() string               { return "ApprovalReceiptCandidate{redacted}" }
+func (ReceiptCandidate) GoString() string             { return "ApprovalReceiptCandidate{redacted}" }
+func (ReceiptCandidate) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
+func (ReceiptCandidate) LogValue() slog.Value {
+	return slog.StringValue("ApprovalReceiptCandidate{redacted}")
+}
+
+// Recover checks exact request, proof and current account/approval state before
+// decrypting. No polling secret or other sensitive value leaves this live tx.
+func (r *ReceiptRecoverer) Recover(ctx context.Context, tx *sql.Tx, handle *loginledger.Handle, proof *challenge.ReceiptProof, request loginreceipt.Request) (ReceiptCandidate, error) {
+	if r == nil || r.approvals == nil || r.ledger == nil || r.challenges == nil || r.crypto == nil || ctx == nil || tx == nil || handle == nil || proof == nil {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	want, err := r.crypto.Summarize(request)
+	if err != nil {
+		return ReceiptCandidate{}, ErrInvalidReceipt
+	}
+	record, scope, binding, err := handle.RecheckExisting(ctx, tx)
+	if err != nil {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	if record.ResultType() != loginreceipt.ResultApprovalRequired || record.ChallengeID() != request.ChallengeID ||
+		binding.ChallengeID() != request.ChallengeID || binding.IdempotencyDigest() != want.IdempotencyDigest() || binding.RequestDigest() != want.RequestDigest() {
+		return ReceiptCandidate{}, ErrInvalidReceipt
+	}
+	proofDetails, err := proof.ForRequest(ctx, tx, request.ChallengeID, request.DeviceProof)
+	if err != nil {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	if proofDetails.Scope != scope {
+		return ReceiptCandidate{}, ErrInvalidReceipt
+	}
+	reference := record.ResultReference()
+	authority, err := r.approvals.authorizeReceipt(ctx, tx, reference, proofDetails)
+	if err != nil {
+		return ReceiptCandidate{}, err
+	}
+	fresh, freshScope, freshBinding, err := handle.RecheckExisting(ctx, tx)
+	if err != nil {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	if freshScope != scope || freshBinding.IdempotencyDigest() != binding.IdempotencyDigest() || freshBinding.RequestDigest() != binding.RequestDigest() ||
+		fresh.ResultType() != record.ResultType() || fresh.ResultReference() != reference || !fresh.ExpiresAt().Equal(record.ExpiresAt()) {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	proofDetails, err = proof.ForRequest(ctx, tx, request.ChallengeID, request.DeviceProof)
+	if err != nil || proofDetails.Scope != scope {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	aad, err := r.crypto.NewContext(scope[:], binding, fresh.ResultType(), reference, fresh.ExpiresAt())
+	if err != nil {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	plain, err := r.crypto.Open(aad, fresh.Sealed())
+	if err != nil {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	raw := plain.Bytes()
+	var payload receiptPayload
+	if json.Unmarshal(raw, &payload) != nil {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	canonical, err := json.Marshal(payload)
+	if err != nil || !bytes.Equal(raw, canonical) || payload.Version != 1 || !authority.matchesPayload(r.approvals, reference, payload) {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	data := Data{ID: reference, Secret: payload.Secret, Nonce: payload.Nonce, ComparisonCode: payload.ComparisonCode, ExpiresAt: payload.ExpiresAt}
+	finalRecord, _, _, err := handle.RecheckExisting(ctx, tx)
+	if err != nil {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	if finalRecord.ResultType() != fresh.ResultType() || finalRecord.ResultReference() != reference || !finalRecord.ExpiresAt().Equal(fresh.ExpiresAt()) ||
+		!hmac.Equal(finalRecord.Sealed().Bytes(), fresh.Sealed().Bytes()) {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	finalProof, err := proof.ForRequest(ctx, tx, request.ChallengeID, request.DeviceProof)
+	if err != nil {
+		return ReceiptCandidate{}, receiptError(err)
+	}
+	if finalProof.Scope != scope || finalProof.Fingerprint != proofDetails.Fingerprint {
+		return ReceiptCandidate{}, ErrUnavailable
+	}
+	finalAuthority, err := r.approvals.authorizeReceipt(ctx, tx, reference, finalProof)
+	if err != nil {
+		return ReceiptCandidate{}, err
+	}
+	if finalAuthority != authority || !finalAuthority.matchesPayload(r.approvals, reference, payload) {
+		return ReceiptCandidate{}, ErrInvalidReceipt
+	}
+	now := r.approvals.now().UTC()
+	if now.IsZero() || !finalRecord.ExpiresAt().After(now) || !data.ExpiresAt.After(now) {
+		return ReceiptCandidate{}, ErrInvalidReceipt
+	}
+	return ReceiptCandidate{recoverer: r, sourceTx: tx, request: request, scope: scope, binding: binding,
+		data: data, expiresAt: finalRecord.ExpiresAt(), proof: finalProof}, nil
+}
+
+// AfterCommit re-reads the committed receipt in a fresh transaction, validates
+// its original proof and current account/approval state, then checks time once
+// more after commit. A rolled-back new approval cannot be recovered.
+func (c ReceiptCandidate) AfterCommit(ctx context.Context, db *sql.DB) (Data, error) {
+	if c.recoverer == nil || c.sourceTx == nil || ctx == nil || db == nil || c.data.ID == "" || c.data.Secret == "" {
+		return Data{}, ErrUnavailable
+	}
+	var live int
+	if err := c.sourceTx.QueryRowContext(ctx, `SELECT 1`).Scan(&live); !errors.Is(err, sql.ErrTxDone) {
+		return Data{}, ErrUnavailable
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return Data{}, ErrUnavailable
+	}
+	defer tx.Rollback()
+	handle, err := c.recoverer.ledger.Lock(ctx, tx, c.scope, c.binding)
+	if err != nil {
+		return Data{}, receiptError(err)
+	}
+	if _, exists := handle.ExistingRecord(); !exists {
+		return Data{}, ErrInvalidReceipt
+	}
+	proof, err := c.recoverer.challenges.VerifyReceiptProof(ctx, tx, c.scope, c.request.ChallengeID, c.request.DeviceProof)
+	if err != nil {
+		return Data{}, receiptError(err)
+	}
+	fresh, err := c.recoverer.Recover(ctx, tx, handle, proof, c.request)
+	if err != nil {
+		return Data{}, err
+	}
+	if fresh.data.ID != c.data.ID || !hmac.Equal([]byte(fresh.data.Secret), []byte(c.data.Secret)) ||
+		!hmac.Equal([]byte(fresh.data.Nonce), []byte(c.data.Nonce)) || fresh.data.ComparisonCode != c.data.ComparisonCode || !fresh.data.ExpiresAt.Equal(c.data.ExpiresAt) {
+		return Data{}, ErrUnavailable
+	}
+	if err := tx.Commit(); err != nil {
+		return Data{}, ErrUnavailable
+	}
+	now := c.recoverer.approvals.now().UTC()
+	if now.IsZero() || !fresh.expiresAt.After(now) || !fresh.data.ExpiresAt.After(now) || fresh.proof.VerifyTimeOnly(now) != nil {
+		return Data{}, ErrInvalidReceipt
+	}
+	return fresh.data, nil
+}
+
+func receiptError(err error) error {
+	if errors.Is(err, loginledger.ErrConflict) || errors.Is(err, loginledger.ErrExpired) || errors.Is(err, challenge.ErrReceiptProofRejected) {
+		return ErrInvalidReceipt
+	}
+	return ErrUnavailable
+}
+
+type receiptAuthority struct {
+	userID          uint64
+	identityID      string
+	tokenVersion    uint64
+	identityVersion uint64
+	state           string
+	secretDigest    [32]byte
+	nonce           string
+	comparisonCode  string
+	expiresAt       time.Time
+}
+
+func (a receiptAuthority) matchesPayload(store *Store, reference string, payload receiptPayload) bool {
+	return store != nil && validReceiptSecret(payload.Secret) && validReceiptSecret(payload.Nonce) && validComparisonCode(payload.ComparisonCode) &&
+		hmac.Equal(a.secretDigest[:], store.digest(reference, payload.Secret)) && hmac.Equal([]byte(a.nonce), []byte(payload.Nonce)) &&
+		a.comparisonCode == payload.ComparisonCode && a.expiresAt.Equal(payload.ExpiresAt)
+}
+
+func validReceiptSecret(value string) bool {
+	decoded, err := base64.RawURLEncoding.Strict().DecodeString(value)
+	return err == nil && len(value) == 43 && len(decoded) == 32 && base64.RawURLEncoding.EncodeToString(decoded) == value
+}
+
+func validComparisonCode(value string) bool {
+	if len(value) != 6 {
+		return false
+	}
+	for _, digit := range value {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// authorizeReceipt uses current locking reads rather than a repeatable-read
+// snapshot. Order is identity -> user -> approval -> target device; receipt and
+// challenge locks were acquired first by the caller.
+func (s *Store) authorizeReceipt(ctx context.Context, tx *sql.Tx, reference string, proof challenge.ReceiptProofDetails) (receiptAuthority, error) {
+	var authority receiptAuthority
+	if s == nil || s.now == nil || ctx == nil || tx == nil || len(reference) < 22 || len(reference) > 128 ||
+		proof.Scope == ([32]byte{}) || proof.Fingerprint == ([32]byte{}) || proof.ChallengeID == "" {
+		return authority, ErrUnavailable
+	}
+	var identityID []byte
+	var userID uint64
+	err := tx.QueryRowContext(ctx, `SELECT id, user_id FROM login_identity WHERE kind='email' AND provider_scope='beta-email'
+		AND subject_lookup_hmac=? AND active_slot=1 FOR UPDATE`, proof.Scope[:]).Scan(&identityID, &userID)
+	if err != nil {
+		return authority, approvalRowError(err)
+	}
+	if len(identityID) == 0 || userID == 0 {
+		return authority, ErrUnavailable
+	}
+	var status string
+	var tokenVersion, identityVersion uint64
+	err = tx.QueryRowContext(ctx, `SELECT status, token_version, identity_version FROM user WHERE id=? FOR UPDATE`, userID).
+		Scan(&status, &tokenVersion, &identityVersion)
+	if err != nil {
+		return authority, approvalRowError(err)
+	}
+	if status != "active" || tokenVersion == 0 || identityVersion == 0 {
+		return authority, ErrInvalidReceipt
+	}
+	if s.checkEpoch(ctx, tx) != nil {
+		return authority, ErrUnavailable
+	}
+	var rowUser, rowTokenVersion, rowIdentityVersion uint64
+	var rowIdentity, challengeID, fingerprint, secretDigest, keyID, nonce []byte
+	var state, comparison, expiresRaw string
+	err = tx.QueryRowContext(ctx, `SELECT user_id, identity_id, challenge_id, token_version, identity_version, target_fingerprint,
+		secret_digest, key_id, nonce, comparison_code, state, CAST(expires_at AS CHAR)
+		FROM auth_login_approval WHERE id=? FOR UPDATE`, []byte(reference)).Scan(&rowUser, &rowIdentity, &challengeID, &rowTokenVersion,
+		&rowIdentityVersion, &fingerprint, &secretDigest, &keyID, &nonce, &comparison, &state, &expiresRaw)
+	if err != nil {
+		return authority, approvalRowError(err)
+	}
+	if rowUser != userID || !hmac.Equal(rowIdentity, identityID) || !hmac.Equal(challengeID, []byte(proof.ChallengeID)) ||
+		rowTokenVersion != tokenVersion || rowIdentityVersion != identityVersion || !hmac.Equal(fingerprint, proof.Fingerprint[:]) ||
+		string(keyID) != s.keyID || len(secretDigest) != 32 || len(nonce) != 43 || len(comparison) != 6 ||
+		(state != "pending" && state != "approved" && state != "denied") {
+		return authority, ErrInvalidReceipt
+	}
+	// A target key that has since been revoked or assigned to another account
+	// must not recover the approval polling secret.
+	var targetUser uint64
+	var targetState string
+	err = tx.QueryRowContext(ctx, `SELECT user_id, state FROM trusted_device WHERE key_fingerprint=? FOR UPDATE`, proof.Fingerprint[:]).Scan(&targetUser, &targetState)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return authority, ErrUnavailable
+	}
+	if err == nil && (targetUser != userID || targetState != "active") {
+		return authority, ErrInvalidReceipt
+	}
+	expires, err := time.Parse("2006-01-02 15:04:05.999999", expiresRaw)
+	now := s.now().UTC()
+	if err != nil || now.IsZero() {
+		return authority, ErrUnavailable
+	}
+	if !expires.After(now) {
+		return authority, ErrInvalidReceipt
+	}
+	copy(authority.secretDigest[:], secretDigest)
+	authority.userID, authority.identityID = userID, string(identityID)
+	authority.tokenVersion, authority.identityVersion = tokenVersion, identityVersion
+	authority.state, authority.nonce, authority.comparisonCode, authority.expiresAt = state, string(nonce), comparison, expires
+	return authority, nil
+}
+
+func approvalRowError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrInvalidReceipt
+	}
+	return ErrUnavailable
 }
 
 // AfterCommit releases the polling secret only after a fresh transaction
