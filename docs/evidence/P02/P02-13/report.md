@@ -19,9 +19,15 @@
 | `bash docs/evidence/P02/P02-13/verify-ios.sh` | 退出码 0；Swift 合成后端覆盖三槽隔离、CAS 冲突、精确 64 KiB、超限、并发 writer、明确写失败和“写入后异常”的未知结果保留。未访问真实 Keychain。 |
 | `bash docs/evidence/P02/P02-13/verify-android.sh` | 退出码 0；Kotlin 源码按 Android API 35 编译，合成后端覆盖相同边界及 Keystore 槽/文件名互异。AES 使用软件测试密钥，未访问设备 Keystore。编译仅有既有 `isInsideSecureHardware` 弃用警告。 |
 | `NERAE_KEEP_P02_13_UTS=1 bash docs/evidence/P02/P02-13/verify-android-uts.sh` | 退出码 0；HBuilderX 5.33 转换生成 Kotlin wrapper，确认 wrapper 调用两个训练 journal 方法；未构建 APK/执行 Keystore。目录保留于 `/private/tmp/nerae-p02-13-android-uts.QucF6CjW`。 |
-| `NERAE_KEEP_P02_13_IOS_UTS=1 bash docs/evidence/P02/P02-13/verify-ios-uts.sh` | 两次均退出码 1。首次 HBuilderX 5.33/Xcode 构建依赖图失败，日志报告共享 DerivedData 的 PIFCache 缺少 `WORKSPACE@v11...-json`，目录保留于 `/private/tmp/nerae-p02-13-ios-uts.VKq8yy6M`。第二次给本轮 `xcodebuild` 指定独立 `/private/tmp` DerivedData，HBuilderX 仍输出“本地Xcode版本需大于等于15.2”，而 wrapper 记录的 Xcode 版本为 26.6，目录和日志保留于 `/private/tmp/nerae-p02-13-ios-uts.7SqxY6ed`。版本检查矛盾未查明。未清理共享缓存，也未得到 framework 编译证据。 |
+| `NERAE_KEEP_P02_13_IOS_UTS=1 bash docs/evidence/P02/P02-13/verify-ios-uts.sh`（授权本机执行） | 最终退出码 0。纯透传 `xcodebuild "$@"` wrapper 保留参数并 tee 日志；framework 为 iPhoneOS arm64，编译接口包含 `readTrainingOperationJournal()` 与 `compareAndSetTrainingOperationJournal(...)`，Swift CAS 桥三参数无外部标签。SHA-256 `1fa8da51a8c41cf821f9817fb55225e8776b9d889e9f6d85ad3f5b571b60559c`；保留 `/private/tmp/nerae-p02-13-ios-uts.xoHPta5g`。 |
 
 首次 Swift 合成运行因测试将仅 `Equatable` 的 namespace 放入 `Set` 而失败，随后改为显式两两比较并通过。首次 Kotlin 合成运行碰到 compile-only `android.jar` 中 Android `JsonReader` stub 不可在 JVM 使用；合成测试换用独立严格 JSON 解析器，生产实现未改变。
+
+## iOS UTS 失败复核与修复
+
+前两次 iOS UTS 失败原因不同：首次日志确实为共享 DerivedData PIFCache 缺少工作区文件；第二次脚本 wrapper 把 `-derivedDataPath` 强加给每次 `xcodebuild`，包括版本探测，HBuilderX 报最低版本检查失败，而被 wrapper 记录的 `xcodebuild` 输出为 26.6。第二次 wrapper 还改写了构建参数，因此不能仅凭该日志断定 HBuilderX 对原生 Xcode 的状态。已将 wrapper 改成纯透传并只捕获输出；获授权本机环境重跑成功，未清理共享缓存。两项变化（wrapper 与执行环境）同时变更，故“强加参数导致版本误判”是有证据支持的主要解释，但不是完全隔离变量的证明。
+
+成功产物及 Swift interface 保留在 `/private/tmp/nerae-p02-13-ios-uts.xoHPta5g`；这只证明 HBuilderX 5.33 能将该模块编译为未签名 iPhoneOS framework，不代表项目锁定工具链、安装、Keychain 运行或真机行为。
 
 ## 限制与接线要求
 

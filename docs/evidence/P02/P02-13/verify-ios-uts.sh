@@ -26,30 +26,11 @@ cp -R "$repo_root/apps/client/src/uni_modules/nerae-secure-vault" "$input_dir/un
 cat > "$work_dir/bin/xcodebuild" <<'WRAPPER'
 #!/bin/bash
 set -o pipefail
-args=()
-has_derived=0
-while (($#)); do
-  case "$1" in
-    -derivedDataPath)
-      args+=("-derivedDataPath" "$NERAE_ISOLATED_DERIVED_DATA")
-      has_derived=1
-      shift 2
-      ;;
-    -derivedDataPath=*)
-      args+=("-derivedDataPath=$NERAE_ISOLATED_DERIVED_DATA")
-      has_derived=1
-      shift
-      ;;
-    *) args+=("$1"); shift ;;
-  esac
-done
-if [[ "$has_derived" == 0 ]]; then args+=("-derivedDataPath" "$NERAE_ISOLATED_DERIVED_DATA"); fi
-/usr/bin/xcodebuild "${args[@]}" 2>&1 | tee -a "$NERAE_XCODEBUILD_LOG"
+/usr/bin/xcodebuild "$@" 2>&1 | tee -a "$NERAE_XCODEBUILD_LOG"
 exit "${PIPESTATUS[0]}"
 WRAPPER
 chmod +x "$work_dir/bin/xcodebuild"
 export PATH="$work_dir/bin:$PATH"
-export NERAE_ISOLATED_DERIVED_DATA="$work_dir/derived-data"
 export NERAE_XCODEBUILD_LOG="$work_dir/xcodebuild.log"
 TMPDIR="$work_dir/tmp" UNI_INPUT_DIR="$input_dir" UNI_OUTPUT_DIR="$output_dir" \
 UNI_HBUILDERX_PLUGINS="$plugins_dir" IOS_STANDARD_BASE_PATH="$base_ipa" IOS_RUNTIME_NASE_PATH="$base_ipa" \
@@ -72,11 +53,18 @@ const filename = process.env.UNI_INPUT_DIR + '/uni_modules/nerae-secure-vault/ut
 })()
 NODE
 binary="$input_dir/unpackage/modules/unimoduleNeraeSecureVault.framework/unimoduleNeraeSecureVault"
+swift_interface="$input_dir/unpackage/modules/unimoduleNeraeSecureVault.framework/Modules/unimoduleNeraeSecureVault.swiftmodule/arm64-apple-ios.private.swiftinterface"
 if [[ ! -f "$binary" ]] || ! file "$binary" | grep -q 'Mach-O 64-bit dynamically linked shared library arm64'; then
   printf 'Expected unsigned iPhoneOS arm64 framework binary was not produced.\n' >&2; exit 1
 fi
 if ! xcrun vtool -show-build "$binary" | grep -Eq 'platform[[:space:]]+IOS$'; then
   printf 'Framework is not an iPhoneOS build.\n' >&2; exit 1
 fi
+if [[ ! -f "$swift_interface" ]] || ! grep -Fq 'public func readTrainingOperationJournal()' "$swift_interface" || \
+   ! grep -Fq 'public func compareAndSetTrainingOperationJournal(_ expectedFound: Swift.Bool, _ expectedValue: Swift.String, _ value: Swift.String)' "$swift_interface" || \
+   ! grep -Fq 'public static func compareAndSetTrainingOperationJournal(_ expectedFound: Swift.Bool, _ expectedValue: Swift.String, _ value: Swift.String)' "$swift_interface"; then
+  printf 'Compiled framework interface omitted the new journal read/CAS methods or exposed parameter labels.\n' >&2; exit 1
+fi
+printf 'PASS: generated iPhoneOS arm64 framework interface exports both journal methods with unlabeled Swift bridge parameters.\n'
 shasum -a 256 "$binary"
 succeeded=1
