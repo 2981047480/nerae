@@ -57,7 +57,7 @@ function object(value: unknown): value is Record<string, unknown> {
 
 function copyUser(value: unknown): AuthUser | undefined {
   if (!object(value) || typeof value.id !== 'string' || !/^[1-9][0-9]{0,19}$/.test(value.id) ||
-    typeof value.nickname !== 'string' || value.nickname.length > 256 || !Array.isArray(value.roles) ||
+    typeof value.nickname !== 'string' || !Array.isArray(value.roles) ||
     !value.roles.every(role => role === 'student' || role === 'coach') ||
     ('ageVerified' in value && typeof value.ageVerified !== 'boolean') ||
     ('status' in value && value.status !== 'active') ||

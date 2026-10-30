@@ -54,6 +54,54 @@ test('recording GET supports exact base path and query and carries no body', asy
   assert.deepEqual(response.data, { ok: true })
 })
 
+test('current-user port is a fixed no-store GET and preserves response headers for verification', async () => {
+  let sent
+  let calls = 0
+  const ports = make((request, callbacks) => {
+    calls++
+    sent = request
+    callbacks.success(ok('me-1', 200,
+      '{"id":"42","nickname":"member","roles":["student"]}',
+      '{"content-type":"application/json","cache-control":"no-store"}'))
+    return 'me-1'
+  })
+  const token = 'synthetic.me.token'
+  const response = await ports.readCurrentUser(token)
+  assert.equal(calls, 1)
+  assert.equal(sent.baseUrl, 'https://api.example.test/v1')
+  assert.equal(sent.path, '/me')
+  assert.equal(sent.method, 'GET')
+  assert.equal(sent.body, '')
+  assert.deepEqual(JSON.parse(sent.headersJson), {
+    Accept: 'application/json', Authorization: `Bearer ${token}`, 'Cache-Control': 'no-store',
+  })
+  assert.equal(response.status, 200)
+  assert.equal(response.headers['cache-control'], 'no-store')
+  assert.deepEqual(response.body, { id: '42', nickname: 'member', roles: ['student'] })
+})
+
+test('current-user port rejects malformed credentials before native access and exposes fixed errors', async () => {
+  let calls = 0
+  const ports = make(() => { calls++; return 'unexpected' })
+  for (const token of ['', 'secret\r\nX-Header: injected']) {
+    await assert.rejects(ports.readCurrentUser(token), error => error instanceof AuthApiError &&
+      error.code === 'invalid_request' && !String(error).includes('secret'))
+  }
+  assert.equal(calls, 0)
+})
+
+test('current-user port returns redirects as responses without following them', async () => {
+  let calls = 0
+  const ports = make((request, callbacks) => {
+    calls++
+    callbacks.success(ok('redirect-1', 302, '{"location":"https://evil.example"}'))
+    return 'redirect-1'
+  })
+  const response = await ports.readCurrentUser('synthetic.token')
+  assert.equal(response.status, 302)
+  assert.equal(calls, 1)
+})
+
 test('rejects cross-origin, downgrade, base-prefix lookalike, fragment and normalized path escape before native call', async () => {
   let calls = 0
   const ports = make((_request, _callbacks) => { calls++; return 'req' })

@@ -18,6 +18,12 @@ export type HttpsCallbacks = { success: (response: HttpsResponse) => void; fail:
 export type NativeHttpsRequestPort = (request: HttpsRequest, callbacks: HttpsCallbacks) => string
 export type NativeHttpsCancelPort = (requestId: string) => void
 
+export interface AuthenticatedMeWireResponse {
+  readonly status: number
+  readonly headers: Readonly<Record<string, string>>
+  readonly body: Readonly<Record<string, unknown>>
+}
+
 const maxBodyBytes = 4 * 1024 * 1024
 const maxHeadersBytes = 20 * 1024
 const responseHeaderNames = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at'])
@@ -345,7 +351,11 @@ function makeNativeRequest(base: ConfiguredBase, port: NativeHttpsRequestPort, c
 
 /** App-only ports over the callback bridge. Construction requires an explicit HTTPS base. */
 export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: NativeHttpsRequestPort,
-  nativeCancel: NativeHttpsCancelPort, timeoutMs = 30_000): { authTransport: SecureAuthTransport; recordingRequest: RequestPort } {
+  nativeCancel: NativeHttpsCancelPort, timeoutMs = 30_000): {
+    authTransport: SecureAuthTransport
+    recordingRequest: RequestPort
+    readCurrentUser(accessToken: string): Promise<AuthenticatedMeWireResponse>
+  } {
   let base: ConfiguredBase
   try {
     base = configuredBase(baseUrl)
@@ -373,5 +383,13 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
     const result = await run(request.method, request.url, request.header, request.data, 'recording')
     return { statusCode: result.status, data: result.body }
   }
-  return { authTransport, recordingRequest }
+  const readCurrentUser = async (accessToken: string): Promise<AuthenticatedMeWireResponse> => {
+    if (typeof accessToken !== 'string' || accessToken.length < 1 || accessToken.length > 8192 ||
+      !/^[\x21-\x7e]+$/.test(accessToken)) throw new AuthApiError('invalid_request')
+    const result = await run('GET', `${base.baseUrl}/me`, {
+      Accept: 'application/json', Authorization: `Bearer ${accessToken}`, 'Cache-Control': 'no-store',
+    }, '', 'auth')
+    return Object.freeze({ status: result.status, headers: result.headers, body: result.body })
+  }
+  return { authTransport, recordingRequest, readCurrentUser }
 }
