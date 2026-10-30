@@ -1,4 +1,4 @@
-import { cancel, request } from '@/uni_modules/nerae-https/utssdk'
+import { cancel, request } from '@/uni_modules/nerae-https'
 import { createAppNativeHttpsPorts } from './nativeHttpsTransport'
 
 /**

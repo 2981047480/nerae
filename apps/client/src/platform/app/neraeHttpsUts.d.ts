@@ -1,4 +1,4 @@
-declare module '@/uni_modules/nerae-https/utssdk' {
+declare module '@/uni_modules/nerae-https' {
   export type HttpsRequest = {
     baseUrl: string
     path: string
