@@ -190,6 +190,9 @@ func (s *Store) lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 	var slotChallenge []byte
 	err := tx.QueryRowContext(ctx, `SELECT challenge_id FROM auth_email_login_slot WHERE email_index=? FOR UPDATE`, scope[:]).Scan(&slotChallenge)
 	if errors.Is(err, sql.ErrNoRows) {
+		if !replaceExpired {
+			return nil, ErrLedger
+		}
 		return nil, ErrConflict
 	}
 	if err != nil {
@@ -198,6 +201,9 @@ func (s *Store) lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 	slotMatchesChallenge := hmac.Equal(slotChallenge, []byte(binding.ChallengeID()))
 	var challengeScope []byte
 	err = tx.QueryRowContext(ctx, `SELECT email_index FROM auth_email_login_challenge WHERE challenge_id=? FOR UPDATE`, []byte(binding.ChallengeID())).Scan(&challengeScope)
+	if !replaceExpired && (errors.Is(err, sql.ErrNoRows) || err == nil && (len(challengeScope) != sha256.Size || !hmac.Equal(challengeScope, scope[:]))) {
+		return nil, ErrLedger
+	}
 	if errors.Is(err, sql.ErrNoRows) || err == nil && (len(challengeScope) != sha256.Size || !hmac.Equal(challengeScope, scope[:])) {
 		return nil, ErrConflict
 	}
@@ -214,7 +220,7 @@ func (s *Store) lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 		FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=? FOR UPDATE`,
 		scope[:], idempotencyDigest[:]).Scan(&storedRequest, &storedChallenge, &rawKind, &reference, &storedKeyID, &ciphertext, &createdRaw, &expiresRaw)
 	if errors.Is(err, sql.ErrNoRows) {
-		if !slotMatchesChallenge {
+		if replaceExpired && !slotMatchesChallenge {
 			return nil, ErrConflict
 		}
 		return handle, nil

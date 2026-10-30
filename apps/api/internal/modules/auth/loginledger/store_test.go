@@ -254,6 +254,22 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, wrongChallenge); return err }); !errors.Is(err, ErrConflict) {
 		t.Fatal("scope/challenge mismatch was not classified as conflict")
 	}
+	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.LockExisting(ctx, tx, scope, wrongChallenge); return err }); !errors.Is(err, ErrLedger) {
+		t.Fatal("existing-only lookup treated a missing challenge as a committed conflict")
+	}
+	missingSlotTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := missingSlotTx.ExecContext(ctx, `DELETE FROM auth_email_login_slot WHERE email_index=?`, scope[:]); err != nil {
+		_ = missingSlotTx.Rollback()
+		t.Fatal(err)
+	}
+	if _, err := store.LockExisting(ctx, missingSlotTx, scope, binding); !errors.Is(err, ErrLedger) {
+		_ = missingSlotTx.Rollback()
+		t.Fatal("existing-only lookup treated a missing slot as a committed conflict")
+	}
+	_ = missingSlotTx.Rollback()
 	if err := withTx(ctx, db, func(tx *sql.Tx) error {
 		h, err := store.Lock(ctx, tx, scope, binding)
 		if err != nil {
@@ -548,6 +564,18 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 	oldChallengeNewKey := makeBinding(t, crypto, challengeID, "BgYGBgYGBgYGBgYGBgYGBg", "777777", bindingProof)
 	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, oldChallengeNewKey); return err }); !errors.Is(err, ErrConflict) {
 		t.Fatal("old challenge was allowed to reserve a new receipt after slot replacement")
+	}
+	if err := withTx(ctx, db, func(tx *sql.Tx) error {
+		h, err := store.LockExisting(ctx, tx, scope, oldChallengeNewKey)
+		if err != nil {
+			return err
+		}
+		if _, exists := h.ExistingRecord(); exists {
+			return ErrLedger
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("missing old receipt was misclassified after slot replacement: %v", err)
 	}
 	if _, err := db.Exec(`UPDATE auth_email_login_receipt SET expires_at=DATE_ADD(created_at, INTERVAL 1 MICROSECOND) WHERE email_scope=? AND request_key_hmac=?`, scope[:], renewedKey[:]); err != nil {
 		t.Fatal("expired stale-slot fixture setup failed")
