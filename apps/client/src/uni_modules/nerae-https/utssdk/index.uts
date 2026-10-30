@@ -1,0 +1,13 @@
+import { HttpsCallbacks, HttpsErrorCode, HttpsFailure, HttpsRequest, HttpsResponse } from './interface.uts'
+
+function fail(requestId: string, code: HttpsErrorCode): HttpsFailure {
+  return { requestId, code }
+}
+
+export function request(_request: HttpsRequest, callbacks: HttpsCallbacks): string {
+  const requestId = ''
+  callbacks.fail(fail(requestId, 'unsupported_platform'))
+  return requestId
+}
+
+export function cancel(_requestId: string): void {}

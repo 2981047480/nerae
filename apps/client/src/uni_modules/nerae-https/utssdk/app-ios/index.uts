@@ -1,0 +1,81 @@
+import { HttpsCallbacks, HttpsErrorCode, HttpsFailure, HttpsRequest, HttpsResponse } from '../interface.uts'
+
+type NativeResult = {
+  ok: boolean
+  requestId: string
+  status: number
+  headersJson: string
+  body: string
+  code: string
+}
+
+function failure(requestId: string, code: HttpsErrorCode): HttpsFailure {
+  const encoded = JSON.stringify({ requestId, code })
+  if (encoded == null) return JSON.parseObject<HttpsFailure>('{"requestId":"","code":"invalid_response"}')!
+  const result = JSON.parseObject<HttpsFailure>(encoded ?? '')
+  if (result != null) return result!
+  return JSON.parseObject<HttpsFailure>('{"requestId":"","code":"invalid_response"}')!
+}
+
+function isErrorCode(value: string): boolean {
+  return value == 'invalid_configuration' || value == 'invalid_request' || value == 'network' ||
+    value == 'timeout' || value == 'cancelled' || value == 'response_too_large' ||
+    value == 'invalid_response' || value == 'unsupported_platform' || value == 'unavailable'
+}
+
+/** Native callbacks are one-shot. Returns the opaque handle for explicit cancellation. */
+export function request(_request: HttpsRequest, callbacks: HttpsCallbacks): string {
+  let settled = false
+  let requestId = ''
+  let payload = ''
+  try {
+    const encodedPayload = JSON.stringify({
+      baseUrl: _request.baseUrl,
+      path: _request.path,
+      method: _request.method,
+      headersJson: _request.headersJson,
+      body: _request.body,
+      timeoutMs: _request.timeoutMs
+    })
+    if (encodedPayload == null) {
+      callbacks.fail(failure('', 'invalid_request'))
+      return ''
+    }
+    payload = encodedPayload ?? ''
+  } catch (_error) {
+    callbacks.fail(failure('', 'invalid_request'))
+    return ''
+  }
+  requestId = NeraeHttpsBridge.request(payload, (raw: string) => {
+    if (settled) return
+    settled = true
+    let parsed: NativeResult | null = null
+    try { parsed = JSON.parseObject<NativeResult>(raw) } catch (_error) { parsed = null }
+    if (parsed == null || parsed!.requestId.length == 0) {
+      callbacks.fail(failure(requestId, 'invalid_response'))
+      return
+    }
+    const result = parsed!
+    if (!result.ok) {
+      callbacks.fail(failure(result.requestId, isErrorCode(result.code) ? result.code as HttpsErrorCode : 'invalid_response'))
+      return
+    }
+    if (!Number.isInteger(result.status) || result.status < 100 || result.status > 599 ||
+        typeof result.body != 'string' || typeof result.headersJson != 'string') {
+      callbacks.fail(failure(result.requestId, 'invalid_response'))
+      return
+    }
+    const response: HttpsResponse = {
+      requestId: result.requestId,
+      status: result.status,
+      headersJson: result.headersJson,
+      body: result.body
+    }
+    callbacks.success(response)
+  })
+  return requestId
+}
+
+export function cancel(requestId: string): void {
+  if (requestId.length > 0) NeraeHttpsBridge.cancel(requestId)
+}

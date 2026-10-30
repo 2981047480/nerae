@@ -1,0 +1,38 @@
+export type HttpsMethod = 'GET' | 'POST'
+
+export type HttpsRequest = {
+  /** HTTPS origin with an optional API path prefix, for example https://api.example/v1. */
+  baseUrl: string
+  /** Absolute route path relative to the configured base path; query is allowed. */
+  path: string
+  method: HttpsMethod
+  /** JSON object text containing request headers. The native bridge validates names and values. */
+  headersJson: string
+  /** UTF-8 request body; GET must not carry a body. */
+  body: string
+  timeoutMs: number
+}
+
+export type HttpsResponse = {
+  requestId: string
+  status: number
+  /** JSON object text containing allowlisted response headers; callers must parse and validate it. */
+  headersJson: string
+  /** Raw UTF-8 response body. The caller validates its own API schema. */
+  body: string
+}
+
+export type HttpsErrorCode = 'unsupported_platform' | 'invalid_configuration' | 'invalid_request' |
+  'network' | 'timeout' | 'cancelled' | 'response_too_large' | 'invalid_response' | 'unavailable'
+
+export type HttpsFailure = { requestId: string; code: HttpsErrorCode }
+export type HttpsSuccessCallback = (response: HttpsResponse) => void
+export type HttpsFailureCallback = (error: HttpsFailure) => void
+export type HttpsCallbacks = { success: HttpsSuccessCallback; fail: HttpsFailureCallback }
+
+export const HTTPS_MAX_REQUEST_BYTES: number = 4 * 1024 * 1024
+export const HTTPS_MAX_RESPONSE_BYTES: number = 4 * 1024 * 1024
+
+/** Submit once; the callback is settled at most once. No transport retry is performed. */
+export type HttpsRequestPort = (request: HttpsRequest, callbacks: HttpsCallbacks) => string
+export type HttpsCancelPort = (requestId: string) => void

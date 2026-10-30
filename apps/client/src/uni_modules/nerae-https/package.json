@@ -1,0 +1,7 @@
+{
+  "id": "nerae-https",
+  "displayName": "Nerae HTTPS",
+  "version": "0.1.0",
+  "description": "Bounded HTTPS transport for Nerae App clients",
+  "uni_modules": { "type": "uts" }
+}
