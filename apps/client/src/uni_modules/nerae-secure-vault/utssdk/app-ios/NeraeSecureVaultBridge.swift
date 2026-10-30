@@ -201,7 +201,7 @@ public final class NeraeSecureVaultBridge: NSObject {
     }
 
     @objc public static func compareAndSetDeviceIdentityRegistry(
-        _ expectedFound: Bool, expectedValue: String, value: String
+        _ expectedFound: Bool, _ expectedValue: String, _ value: String
     ) -> String {
         do {
             try deviceIdentityRegistry.compareAndSet(

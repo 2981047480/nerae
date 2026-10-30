@@ -2,7 +2,7 @@
 
 **阶段：第五轮本地 UI 样机与三端同步实施计划已形成；尚无可用业务服务或正式三端应用。**
 
-- 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机、iOS framework 复验及上层账号映射仍待完成。
+- 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。iOS 的 UTS/Swift 参数标签错误修复后，HBuilderX 5.33 已编出未签名 iPhoneOS framework。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机及上层账号映射仍待完成。
 - App 会话工厂现绑定原生安全 vault 与 `/me` 验证端口，并限制同一 JS 进程仅有一个会话协调器；合成接线测试与 5.26 原生源码生成检查通过。设备密钥新增先持久预留 alias、再创建一次的接口，集成源码的 Swift/Kotlin 合成校验通过。[证据](evidence/A01/app-session-binding.md) 可信服务配置、App 入口、设备映射、真实手机和登录仍未接通。
 - 锁定 5.26 的客户端 UTS 编译依赖已补齐，HTTPS 原生插件改为从插件根目录导入；隔离夹具检查四个插件的 iOS/Android 原生代理和源码及小程序回退通过。此前内部目录导入会被错误编译为不支持平台回退。[证据](evidence/P02/P02-05/uts-import-resolution.md) 这不是原生链接、安装或真机验证，当前正式入口仍为空。
 - 集成代码 `7c75dbd` 已将邮箱登录的限流、事务、回执重放和当前用户读取接成未挂载 HTTP handler；真实组件在本机 TLS、隔离 MySQL/Redis 与 Go race 下验证了成功、失败、同键重试、账号禁用和新设备待批准。[证据](evidence/A01/A01-23/report.md) 客户端新增安全会话协调器及原生 HTTPS `/me` 恢复适配，集成树 137 项相关合成测试与完整客户端类型检查通过；尚未接原生 vault 或页面，也未与真实服务、邮箱或手机联调。[客户端](evidence/A01/me-verifier-progress.md)

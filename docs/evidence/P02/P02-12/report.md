@@ -29,3 +29,9 @@
 ## Lead 集成复验
 
 在集成代码 `16febdd` 加上 Android alias 检查修复的工作树中，`NERAE_KEEP_P02_12_SWIFT=1 bash docs/evidence/P02/P02-12/verify-swift.sh` 与 `NERAE_KEEP_P02_08_VAULT=1 bash docs/evidence/P02/P02-12/verify-kotlin.sh` 均退出 0；夹具分别保留在 `/private/tmp/nerae-p02-12-swift.yr7KM9gR`、`/private/tmp/nerae-p02-08-vault.69XvfBhG`。`python3 scripts/quality/verify_uts_plugin_build.py` 以锁定 5.26 编译并检查 CAS/读取及认证 vault 的 iOS/Android wrapper 和小程序回退，退出 0。后者仅生成源码，未链接 iOS framework 或验证真机。
+
+## iOS framework 接缝修复
+
+先前两次构建停在 Xcode PIF 缓存，无法证明桥接可编译。Lead 采用获授权的本机 Xcode 环境和透传 `xcodebuild` 输出的临时包装器复试，没有清理用户缓存。该次实际进入 Swift 编译，退出 1：生成的 UTS 调用没有参数标签，而 registry CAS 的 Swift 桥声明了后两个标签。完整诊断保留在 `/private/tmp/nerae-vault-xcode-probe.YIEu9Z0G`、`/private/tmp/nerae-p02-12-uts.uijQxh9w`。
+
+将 Swift 桥三个参数改为无外部标签后，以同样的授权环境及保留证据选项重跑 `verify-ios-uts.sh`，退出 0；HBuilderX 5.33.2026102401 / iPhoneOS SDK 26.5 产生 unsigned iPhoneOS arm64 framework，SHA-256 `b8bf4245ab276b374c1f46c2444b5bd19745ed0be8d096f85b463ea2d6ec5d3a`，保留 `/private/tmp/nerae-p02-12-uts.WE8L8yG3` 与 `/private/tmp/nerae-vault-xcode-fixed.XSeEopMS`。这证明该版本可链接 framework，不代表锁定 5.26 的原生 SDK 已验证、签名安装或真实 Keychain 已运行。
