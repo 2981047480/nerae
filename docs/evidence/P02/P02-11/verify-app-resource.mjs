@@ -23,7 +23,6 @@ const context = {
   Pinia: {},
   weex: {},
   plus: {},
-  URL,
   setTimeout,
   clearTimeout,
   setInterval,
@@ -34,6 +33,9 @@ const context = {
 }
 vm.runInNewContext(source, context, { timeout: 5_000, filename: artifact })
 
+if (typeof context.URL !== 'function' || new context.URL('https://api.example.test/v1').hostname !== 'api.example.test') {
+  throw new Error('App entry did not initialize its URL polyfill')
+}
 const probe = context.__p02_11_probe
 if (!probe || typeof probe !== 'object') throw new Error('App entry did not publish its temporary transport probe')
 for (const key of ['factory', 'authTransport', 'recordingRequest', 'nativeRequest', 'nativeCancel']) {
@@ -59,4 +61,4 @@ for (const [name, promise] of [
     }
   }
 }
-console.log('PASS: executed App JS resource called both adapter ports and observed the emitted unsupported-platform bridge result; injected VM globals and this fallback do not prove iOS/Android UTS linking or device networking.')
+console.log('PASS: executed App JS resource called both adapter ports and observed the emitted unsupported-platform bridge result; URL came from the bundled polyfill; injected VM globals and this fallback do not prove iOS/Android UTS linking or device networking.')
