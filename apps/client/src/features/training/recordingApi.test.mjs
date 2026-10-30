@@ -13,6 +13,12 @@ const detail = overrides => ({
   source: 'free', version: 3, createdAt: '2026-10-29T08:00:00Z',
   updatedAt: '2026-10-29T08:00:00Z', recordedAt: null, sets: [], exerciseEntryKeys: [], ...overrides,
 })
+const listedSession = overrides => ({
+  id: '42', date: '2026-10-29', timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 3,
+  createdAt: '2026-10-29T08:00:00Z', updatedAt: '2026-10-29T08:00:00Z', recordedAt: null,
+  ...overrides,
+})
+const sessionPage = (items, overrides) => ({ page: 1, pageSize: 20, total: items.length, items, ...overrides })
 const apiError = code => error => error instanceof RecordingApiError && error.code === code
 const makeApi = (base, leaseAuth, request) => new RecordingApi(base, leaseAuth, request, { subjectId: '101', generation: 'login-1' })
 
@@ -129,6 +135,195 @@ test('missing authentication and insecure or malformed configuration fail closed
   await assert.rejects(api.readSession('42'), apiError('unauthenticated'))
   assert.equal(called, false)
   assert.throws(() => api.readSession('../42'), apiError('invalid_request'))
+})
+
+test('session list sends validated date filters and only returns a vetted summary before reading by ID', async () => {
+  const requests = []
+  const api = makeApi('https://api.example.org/v1', auth, async request => {
+    requests.push(request)
+    if (requests.length === 1) return { statusCode: 200, data: sessionPage([
+      listedSession({ extraSecret: 'must not escape', planId: 'opaque-plan' }),
+    ], { total: 5 }) }
+    return { statusCode: 200, data: detail() }
+  })
+  const page = await api.listSessions({ page: 1, pageSize: 20, from: '2026-10-01', to: '2026-10-31' })
+  assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions?page=1&pageSize=20&from=2026-10-01&to=2026-10-31')
+  assert.equal(requests[0].method, 'GET')
+  assert.equal(requests[0].header.Authorization, 'Bearer real-session-token')
+  assert.deepEqual(page.lease, { subjectId: '101', generation: 'login-1' })
+  assert.ok(!('accessToken' in page.lease))
+  assert.deepEqual(Object.keys(page.items[0]).sort(), [
+    'createdAt', 'date', 'id', 'recordedAt', 'source', 'status', 'timeZone', 'updatedAt', 'version',
+  ])
+  assert.equal(page.total, 5)
+  assert.equal(page.items[0].source, 'free')
+  const loaded = await api.readSession(page.items[0].id)
+  assert.equal(requests[1].url, 'https://api.example.org/v1/me/sessions/42')
+  assert.ok(!('accessToken' in loaded.lease))
+})
+
+test('session list accepts an empty page and completed service records only with recordedAt', async () => {
+  const valid = makeApi('https://api.example.org', auth, async () => ({
+    statusCode: 200,
+    data: sessionPage([listedSession({ status: 'completed', source: 'plan', recordedAt: '2026-10-29T08:05:00Z' })]),
+  }))
+  assert.equal((await valid.listSessions({ page: 1, pageSize: 20 })).items[0].status, 'completed')
+  const empty = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: sessionPage([], { total: 0 }) }))
+  assert.deepEqual((await empty.listSessions({ page: 1, pageSize: 20 })).items, [])
+})
+
+test('session list rejects invalid input, duplicate IDs, malformed records and mismatched pagination', async () => {
+  let calls = 0
+  const api = makeApi('https://api.example.org', auth, async () => { calls++; return { statusCode: 200, data: sessionPage([]) } })
+  for (const input of [
+    { page: 0, pageSize: 20 }, { page: Number.MAX_SAFE_INTEGER + 1, pageSize: 20 },
+    { page: 1, pageSize: 0 }, { page: 1, pageSize: 51 }, { page: 1, pageSize: 20, from: '2026-02-30' },
+    { page: 1, pageSize: 20, from: '2026-11-01', to: '2026-10-01' },
+  ]) await assert.rejects(api.listSessions(input), apiError('invalid_request'))
+  assert.equal(calls, 0)
+
+  const malformedPages = [
+    sessionPage([listedSession(), listedSession()]),
+    sessionPage([], { page: 2 }), sessionPage([], { pageSize: 19 }), sessionPage([], { total: -1 }),
+    sessionPage([listedSession(), listedSession({ id: '43' })], { page: 2, total: 21 }),
+    sessionPage([], { total: Number.MAX_SAFE_INTEGER + 1 }), sessionPage([listedSession()], { pageSize: 0 }),
+    sessionPage([listedSession({ date: '2026-02-30' })]),
+    sessionPage([listedSession({ timeZone: 'No/Such_Zone' })]),
+    sessionPage([listedSession({ status: 'running' })]), sessionPage([listedSession({ source: 'template' })]),
+    sessionPage([listedSession({ version: 0 })]), sessionPage([listedSession({ createdAt: 'yesterday' })]),
+    sessionPage([listedSession({ updatedAt: '2026-10-29T24:00:00Z' })]),
+    sessionPage([listedSession({ recordedAt: 'not-time' })]),
+    sessionPage([listedSession({ status: 'completed', recordedAt: null })]),
+  ]
+  for (const data of malformedPages) {
+    const candidate = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data }))
+    await assert.rejects(candidate.listSessions({ page: 1, pageSize: 20 }), apiError('invalid_response'))
+  }
+})
+
+test('session list snapshots caller parameters before the network await and caps items to the page remainder', async () => {
+  let release
+  let requestSeen
+  const api = makeApi('https://api.example.org', auth, request => {
+    requestSeen = request
+    return new Promise(resolve => { release = resolve })
+  })
+  const input = { page: 2, pageSize: 20, from: '2026-10-01' }
+  const pending = api.listSessions(input)
+  input.page = 1
+  input.pageSize = 50
+  input.from = '2026-01-01'
+  release({ statusCode: 200, data: sessionPage([listedSession()], { page: 2, pageSize: 20, total: 21 }) })
+  const result = await pending
+  assert.equal(requestSeen.url, 'https://api.example.org/me/sessions?page=2&pageSize=20&from=2026-10-01')
+  assert.equal(result.page, 2)
+  assert.equal(result.items.length, 1)
+
+  const hugePage = makeApi('https://api.example.org', auth, async () => ({
+    statusCode: 200,
+    data: sessionPage([], { page: Number.MAX_SAFE_INTEGER, pageSize: 50, total: Number.MAX_SAFE_INTEGER }),
+  }))
+  assert.deepEqual((await hugePage.listSessions({ page: Number.MAX_SAFE_INTEGER, pageSize: 50 })).items, [])
+  const impossibleItem = makeApi('https://api.example.org', auth, async () => ({
+    statusCode: 200,
+    data: sessionPage([listedSession()], { page: Number.MAX_SAFE_INTEGER, pageSize: 50, total: Number.MAX_SAFE_INTEGER }),
+  }))
+  await assert.rejects(impossibleItem.listSessions({ page: Number.MAX_SAFE_INTEGER, pageSize: 50 }), apiError('invalid_response'))
+})
+
+test('session list rejects an account or generation change while the request is in flight', async () => {
+  let generation = 'login-1'
+  let release
+  const leaseAuth = {
+    current: () => ({ ...credential, generation }),
+    isCurrent: (id, captured) => id === '101' && captured === generation,
+  }
+  const api = makeApi('https://api.example.org', leaseAuth, () => new Promise(resolve => { release = resolve }))
+  const pending = api.listSessions({ page: 1, pageSize: 20 })
+  generation = 'login-2'
+  release({ statusCode: 200, data: sessionPage([listedSession()]) })
+  await assert.rejects(pending, apiError('session_changed'))
+
+  let activeSubject = '101'
+  let finish
+  const switchingAccount = {
+    current: () => ({ subjectId: activeSubject, generation: 'login-1', accessToken: 'real-session-token' }),
+    isCurrent: (id, generation) => id === activeSubject && generation === 'login-1',
+  }
+  const otherAccountApi = makeApi('https://api.example.org', switchingAccount, () => new Promise(resolve => { finish = resolve }))
+  const accountPending = otherAccountApi.listSessions({ page: 1, pageSize: 20 })
+  activeSubject = '202'
+  finish({ statusCode: 200, data: sessionPage([listedSession()]) })
+  await assert.rejects(accountPending, apiError('session_changed'))
+})
+
+test('session list does not release a response after its token disappears', async () => {
+  let token = 'real-session-token'
+  let finish
+  const expiringAuth = {
+    current: () => token ? { ...credential, accessToken: token } : null,
+    isCurrent: (id, generation) => id === '101' && generation === 'login-1',
+  }
+  const api = makeApi('https://api.example.org', expiringAuth, () => new Promise(resolve => { finish = resolve }))
+  const pending = api.listSessions({ page: 1, pageSize: 20 })
+  token = ''
+  finish({ statusCode: 200, data: sessionPage([listedSession()]) })
+  await assert.rejects(pending, apiError('session_changed'))
+})
+
+test('detail and list reject responses after a token is replaced within the same subject and generation', async () => {
+  for (const operation of ['list', 'detail']) {
+    let token = 'original-session-token'
+    let release
+    const stableIdentity = {
+      current: () => ({ ...credential, accessToken: token }),
+      isCurrent: (id, generation) => id === '101' && generation === 'login-1',
+    }
+    const api = makeApi('https://api.example.org', stableIdentity, () => new Promise(resolve => { release = resolve }))
+    const pending = operation === 'list'
+      ? api.listSessions({ page: 1, pageSize: 20 })
+      : api.readSession('42')
+    token = 'replacement-session-token'
+    release({ statusCode: 200, data: operation === 'list' ? sessionPage([listedSession()]) : detail() })
+    await assert.rejects(pending, apiError('session_changed'))
+  }
+})
+
+test('detail and list recheck the captured token after parsing the response', async () => {
+  for (const operation of ['list', 'detail']) {
+    let token = 'original-session-token'
+    const stableIdentity = {
+      current: () => ({ ...credential, accessToken: token }),
+      isCurrent: (id, generation) => id === '101' && generation === 'login-1',
+    }
+    const parsedRecord = new Proxy(listedSession(), {
+      get(target, property, receiver) {
+        if (property === 'id') token = 'replacement-session-token'
+        return Reflect.get(target, property, receiver)
+      },
+    })
+    const parsedDetail = new Proxy(detail(), {
+      get(target, property, receiver) {
+        if (property === 'id') token = 'replacement-session-token'
+        return Reflect.get(target, property, receiver)
+      },
+    })
+    const api = makeApi('https://api.example.org', stableIdentity, async () => ({
+      statusCode: 200,
+      data: operation === 'list' ? sessionPage([parsedRecord]) : parsedDetail,
+    }))
+    const pending = operation === 'list'
+      ? api.listSessions({ page: 1, pageSize: 20 })
+      : api.readSession('42')
+    await assert.rejects(pending, apiError('session_changed'))
+  }
+})
+
+test('session list maps unauthenticated and transport failures without exposing credentials', async () => {
+  const unauthorized = makeApi('https://api.example.org', auth, async () => ({ statusCode: 401, data: { token: 'private' } }))
+  await assert.rejects(unauthorized.listSessions({ page: 1, pageSize: 20 }), error => apiError('unauthenticated')(error) && !error.message.includes('private'))
+  const offline = makeApi('https://api.example.org', auth, async () => { throw new Error('real-session-token') })
+  await assert.rejects(offline.listSessions({ page: 1, pageSize: 20 }), error => apiError('network')(error) && !error.message.includes('token'))
 })
 
 test('malformed, incomplete or mismatched server records never become an acknowledgement', async () => {

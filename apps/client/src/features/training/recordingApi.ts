@@ -23,6 +23,35 @@ export interface ScopedSessionDetail {
   detail: WorkoutSessionDetail
 }
 
+export interface WorkoutSessionSummary {
+  id: string
+  date: string
+  timeZone: string
+  status: 'in_progress' | 'completed' | 'skipped'
+  source: 'free' | 'plan'
+  version: number
+  createdAt: string
+  updatedAt: string
+  recordedAt: string | null
+  durationMin?: number | null
+  rpe?: number | null
+}
+
+export interface ScopedSessionPage {
+  lease: RecordingLease
+  page: number
+  pageSize: number
+  total: number
+  items: WorkoutSessionSummary[]
+}
+
+export interface SessionListInput {
+  page: number
+  pageSize: number
+  from?: string
+  to?: string
+}
+
 // A snapshot is only usable in the runtime that received it from this adapter.
 // Restoring from local storage requires a fresh authenticated read.
 const issuedSnapshots = new WeakMap<object, object>()
@@ -299,6 +328,50 @@ export function parseSessionDetail(raw: unknown): WorkoutSessionDetail {
   return raw as unknown as WorkoutSessionDetail
 }
 
+function parseSessionSummary(raw: unknown): WorkoutSessionSummary {
+  if (!object(raw) || !validId(raw.id) || !validDate(raw.date) || !validTimeZone(raw.timeZone) ||
+    !['in_progress', 'completed', 'skipped'].includes(String(raw.status)) ||
+    !['free', 'plan'].includes(String(raw.source)) || !validVersion(raw.version) ||
+    !validDateTime(raw.createdAt) || !validDateTime(raw.updatedAt) ||
+    !(raw.recordedAt === null || validDateTime(raw.recordedAt)) ||
+    (raw.status === 'completed' && raw.recordedAt === null) ||
+    (raw.durationMin !== undefined && raw.durationMin !== null &&
+      (!Number.isSafeInteger(raw.durationMin) || Number(raw.durationMin) < 0)) ||
+    (raw.rpe !== undefined && raw.rpe !== null && !decimal(raw.rpe, 1, 10, 1))) {
+    throw new RecordingApiError('invalid_response')
+  }
+  const summary: WorkoutSessionSummary = {
+    id: raw.id, date: raw.date, timeZone: raw.timeZone,
+    status: raw.status as WorkoutSessionSummary['status'],
+    source: raw.source as WorkoutSessionSummary['source'], version: raw.version,
+    createdAt: raw.createdAt, updatedAt: raw.updatedAt, recordedAt: raw.recordedAt,
+    ...(raw.durationMin === undefined ? {} : { durationMin: raw.durationMin as number | null }),
+    ...(raw.rpe === undefined ? {} : { rpe: raw.rpe as number | null }),
+  }
+  return Object.freeze(summary)
+}
+
+export function parseWorkoutSessionPage(raw: unknown, requestedPage: number, requestedPageSize: number): Omit<ScopedSessionPage, 'lease'> {
+  if (!Number.isSafeInteger(requestedPage) || requestedPage < 1 ||
+    !Number.isSafeInteger(requestedPageSize) || requestedPageSize < 1 || requestedPageSize > 50 ||
+    !object(raw) || !Number.isSafeInteger(raw.page) || raw.page !== requestedPage ||
+    !Number.isSafeInteger(raw.pageSize) || raw.pageSize !== requestedPageSize ||
+    !Number.isSafeInteger(raw.total) || Number(raw.total) < 0 || !Array.isArray(raw.items)) {
+    throw new RecordingApiError('invalid_response')
+  }
+  const total = raw.total as number
+  const offset = requestedPage - 1 > Math.floor(Number.MAX_SAFE_INTEGER / requestedPageSize)
+    ? Number.MAX_SAFE_INTEGER + 1
+    : (requestedPage - 1) * requestedPageSize
+  const maxItems = offset > Number.MAX_SAFE_INTEGER ? 0 : Math.max(0, Math.min(requestedPageSize, total - offset))
+  if (raw.items.length > maxItems) throw new RecordingApiError('invalid_response')
+  const items = raw.items.map(parseSessionSummary)
+  if (items.length > Number(raw.total) || new Set(items.map(item => item.id)).size !== items.length) {
+    throw new RecordingApiError('invalid_response')
+  }
+  return Object.freeze({ page: requestedPage, pageSize: requestedPageSize, total, items: Object.freeze(items) as unknown as WorkoutSessionSummary[] })
+}
+
 /** Compare persisted user-entered values, ignoring the server-owned display name. */
 export function matchesSetPayload(write: SetPayload, found: ServerSet): boolean {
   return found.recordKey === write.recordKey && found.exerciseEntryKey === write.exerciseEntryKey &&
@@ -357,8 +430,8 @@ export class RecordingApi {
     this.request = request
   }
 
-  private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
-    data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
+  private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
+    data?: unknown, idempotencyKey?: string): Promise<{ data: unknown; lease: RecordingLease; isSameCredential: () => boolean }> {
     const credential = this.auth.current()
     if (!credential) throw new RecordingApiError('unauthenticated')
     // Capture scalar values: an auth store may mutate its current object while
@@ -368,8 +441,16 @@ export class RecordingApi {
       typeof accessToken !== 'string' || !accessToken || /[\r\n\s]/.test(accessToken)) {
       throw new RecordingApiError('unauthenticated')
     }
-    if (subjectId !== this.lease.subjectId || generation !== this.lease.generation ||
-      !this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
+    const isSameCredential = (): boolean => {
+      const current = this.auth.current()
+      return Boolean(current && current.subjectId === subjectId && current.generation === generation &&
+        current.accessToken === accessToken && typeof current.accessToken === 'string' &&
+        current.accessToken.length > 0 && !/[\r\n\s]/.test(current.accessToken) &&
+        this.auth.isCurrent(subjectId, generation))
+    }
+    if (subjectId !== this.lease.subjectId || generation !== this.lease.generation || !isSameCredential()) {
+      throw new RecordingApiError('session_changed')
+    }
     if (method === 'POST' && !validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
     const header: Record<string, string> = { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
     if (method === 'POST') {
@@ -384,13 +465,19 @@ export class RecordingApi {
     let response: HttpResponse
     try { response = await this.request({ url: `${this.base}${path}`, method, header, ...(encoded === undefined ? {} : { data: encoded }) }) }
     catch {
-      if (!this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
+      if (!isSameCredential()) throw new RecordingApiError('session_changed')
       throw new RecordingApiError('network')
     }
-    if (!this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
+    if (!isSameCredential()) throw new RecordingApiError('session_changed')
     if (!response || !Number.isInteger(response.statusCode)) throw new RecordingApiError('invalid_response')
     if (response.statusCode < 200 || response.statusCode >= 300) throw responseError(response.statusCode)
     if (response.statusCode !== expectedStatus) throw new RecordingApiError('invalid_response')
+    return { data: response.data, lease: { subjectId, generation }, isSameCredential }
+  }
+
+  private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
+    data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
+    const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey)
     const detail = parseSessionDetail(response.data)
     if (expectedId !== undefined && detail.id !== expectedId) throw new RecordingApiError('invalid_response')
     // Do not let edits to a response object change a later projection.
@@ -399,10 +486,31 @@ export class RecordingApi {
     Object.freeze(immutable.sets)
     Object.freeze(immutable.exerciseEntryKeys)
     Object.freeze(immutable)
-    const scoped = Object.freeze({ lease: Object.freeze({ subjectId, generation }), detail: immutable })
-    if (!this.auth.isCurrent(subjectId, generation)) throw new RecordingApiError('session_changed')
+    const scoped = Object.freeze({ lease: Object.freeze(response.lease), detail: immutable })
+    if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
     issuedSnapshots.set(scoped, this)
     return scoped
+  }
+
+  async listSessions(input: SessionListInput): Promise<ScopedSessionPage> {
+    if (!object(input)) throw new RecordingApiError('invalid_request')
+    const { page, pageSize, from, to } = input
+    if (!Number.isSafeInteger(page) || page < 1 ||
+      !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50 ||
+      (from !== undefined && !validDate(from)) ||
+      (to !== undefined && !validDate(to)) ||
+      (from !== undefined && to !== undefined && from > to)) {
+      throw new RecordingApiError('invalid_request')
+    }
+    const query = [`page=${page}`, `pageSize=${pageSize}`]
+    if (from !== undefined) query.push(`from=${encodeURIComponent(from)}`)
+    if (to !== undefined) query.push(`to=${encodeURIComponent(to)}`)
+    const response = await this.requestJson('GET', `/me/sessions?${query.join('&')}`, 200)
+    const parsed = parseWorkoutSessionPage(response.data, page, pageSize)
+    if (!response.isSameCredential()) {
+      throw new RecordingApiError('session_changed')
+    }
+    return Object.freeze({ lease: Object.freeze(response.lease), ...parsed })
   }
 
   createFreeSession(input: FreeSessionInput, idempotencyKey: string): Promise<ScopedSessionDetail> {
