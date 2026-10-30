@@ -1,0 +1,292 @@
+// Package ratelimit provides an anonymous email-authentication rate-limit
+// primitive. It does not resolve forwarding headers or make auth decisions.
+package ratelimit
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
+	"errors"
+	"hash"
+	"log/slog"
+	"net/netip"
+	"reflect"
+	"strconv"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+var (
+	ErrInvalid     = errors.New("invalid rate limit input")
+	ErrLimited     = errors.New("rate limit reached")
+	ErrUnavailable = errors.New("rate limiter unavailable")
+)
+
+const (
+	EmailChallenge Purpose = "email_challenge"
+	EmailLogin     Purpose = "email_login"
+
+	maxLimit        = uint64(1_000_000)
+	minWindow       = 100 * time.Millisecond
+	maxWindow       = 24 * time.Hour
+	maxStoredCount  = uint64(1_000_000)
+	redisClusterTag = "{auth-rate-v1}"
+)
+
+type Purpose string
+
+type DimensionPolicy struct {
+	Limit  uint64
+	Window time.Duration
+}
+
+type Policy struct {
+	Email  DimensionPolicy
+	Device DimensionPolicy
+	IP     DimensionPolicy
+	Global DimensionPolicy
+}
+
+// HMACKeys must contain independently generated 32-byte secrets. New copies
+// every key, so later mutation of the caller's slices cannot change Redis keys.
+type HMACKeys struct {
+	EmailIndex        []byte
+	DeviceFingerprint []byte
+	TrustedIP         []byte
+	Global            []byte
+}
+
+// Config contains only server-owned limits, trust-boundary prefix settings,
+// and HMAC secrets. It must never be populated from request data.
+type Config struct {
+	Keys           HMACKeys
+	IPv6PrefixBits int
+	EmailChallenge Policy
+	EmailLogin     Policy
+}
+
+// Input contains values derived by trusted server code. SourceIP must already
+// have been resolved using the deployment's trusted network boundary. This
+// package never reads or parses X-Forwarded-For or any other request header.
+type Input struct {
+	EmailIndex        [32]byte
+	DeviceFingerprint [32]byte
+	SourceIP          netip.Addr
+}
+
+type secretKeys struct {
+	email  [32]byte
+	device [32]byte
+	ip     [32]byte
+	global [32]byte
+}
+
+type evaler interface {
+	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
+}
+
+type Limiter struct {
+	client       evaler
+	keys         secretKeys
+	v6PrefixBits int
+	challenge    Policy
+	login        Policy
+}
+
+func (HMACKeys) String() string               { return "RateLimitHMACKeys{redacted}" }
+func (HMACKeys) GoString() string             { return "RateLimitHMACKeys{redacted}" }
+func (HMACKeys) MarshalJSON() ([]byte, error) { return []byte(`"[REDACTED]"`), nil }
+func (HMACKeys) LogValue() slog.Value         { return slog.StringValue("RateLimitHMACKeys{redacted}") }
+func (Config) String() string                 { return "RateLimitConfig{redacted}" }
+func (Config) GoString() string               { return "RateLimitConfig{redacted}" }
+func (Config) MarshalJSON() ([]byte, error)   { return []byte(`"[REDACTED]"`), nil }
+func (Config) LogValue() slog.Value           { return slog.StringValue("RateLimitConfig{redacted}") }
+func (Input) String() string                  { return "RateLimitInput{redacted}" }
+func (Input) GoString() string                { return "RateLimitInput{redacted}" }
+func (Input) MarshalJSON() ([]byte, error)    { return []byte(`"[REDACTED]"`), nil }
+func (Input) LogValue() slog.Value            { return slog.StringValue("RateLimitInput{redacted}") }
+func (*Limiter) String() string               { return "EmailAuthRateLimiter{redacted}" }
+func (*Limiter) GoString() string             { return "EmailAuthRateLimiter{redacted}" }
+func (*Limiter) MarshalJSON() ([]byte, error) { return []byte(`"[REDACTED]"`), nil }
+func (*Limiter) LogValue() slog.Value         { return slog.StringValue("EmailAuthRateLimiter{redacted}") }
+
+// New validates immutable configuration without contacting Redis.
+func New(client redis.Scripter, config Config) (*Limiter, error) {
+	if nilInterface(client) || config.IPv6PrefixBits < 16 || config.IPv6PrefixBits > 128 ||
+		!validPolicy(config.EmailChallenge) || !validPolicy(config.EmailLogin) {
+		return nil, ErrInvalid
+	}
+	keys, ok := copyKeys(config.Keys)
+	if !ok {
+		return nil, ErrInvalid
+	}
+	return &Limiter{client: client, keys: keys,
+		v6PrefixBits: config.IPv6PrefixBits, challenge: config.EmailChallenge, login: config.EmailLogin}, nil
+}
+
+// Allow atomically checks email, device, trusted IP and global fixed-window
+// counters before changing any of them. Errors never identify the exceeded
+// dimension or expose Redis errors or key material.
+func (l *Limiter) Allow(ctx context.Context, purpose Purpose, input Input) error {
+	if l == nil || nilInterface(l.client) || ctx == nil {
+		return ErrUnavailable
+	}
+	keys, policy, err := l.redisKeys(purpose, input)
+	if err != nil {
+		return ErrInvalid
+	}
+	args := make([]interface{}, 0, 8)
+	for _, dimension := range []DimensionPolicy{policy.Email, policy.Device, policy.IP, policy.Global} {
+		args = append(args, strconv.FormatUint(dimension.Limit, 10), strconv.FormatInt(dimension.Window.Milliseconds(), 10))
+	}
+	result, err := l.client.Eval(ctx, atomicScript, keys, args...).Int64()
+	if err != nil {
+		return ErrUnavailable
+	}
+	switch result {
+	case 1:
+		return nil
+	case 0:
+		return ErrLimited
+	default:
+		return ErrUnavailable
+	}
+}
+
+func (l *Limiter) redisKeys(purpose Purpose, input Input) ([]string, Policy, error) {
+	if l == nil || purpose != EmailChallenge && purpose != EmailLogin ||
+		input.EmailIndex == [32]byte{} || input.DeviceFingerprint == [32]byte{} {
+		return nil, Policy{}, ErrInvalid
+	}
+	if !input.SourceIP.IsValid() || input.SourceIP.IsUnspecified() || input.SourceIP.IsMulticast() || input.SourceIP.Zone() != "" {
+		return nil, Policy{}, ErrInvalid
+	}
+	policy := l.challenge
+	if purpose == EmailLogin {
+		policy = l.login
+	}
+	ipValue, err := l.ipPayload(input.SourceIP)
+	if err != nil {
+		return nil, Policy{}, ErrInvalid
+	}
+	keys := []string{
+		l.redisKey(l.keys.email[:], purpose, "email", input.EmailIndex[:]),
+		l.redisKey(l.keys.device[:], purpose, "device", input.DeviceFingerprint[:]),
+		l.redisKey(l.keys.ip[:], purpose, "ip", ipValue),
+		l.redisKey(l.keys.global[:], purpose, "global", []byte("all")),
+	}
+	return keys, policy, nil
+}
+
+func (l *Limiter) ipPayload(address netip.Addr) ([]byte, error) {
+	address = address.Unmap()
+	if !address.IsValid() || address.IsUnspecified() || address.IsMulticast() || address.Zone() != "" {
+		return nil, ErrInvalid
+	}
+	prefixBits := 32
+	family := byte(4)
+	if !address.Is4() {
+		prefixBits = l.v6PrefixBits
+		family = 6
+	}
+	prefix := netip.PrefixFrom(address, prefixBits).Masked()
+	value := []byte{family, byte(prefixBits)}
+	return append(value, prefix.Addr().AsSlice()...), nil
+}
+
+func (l *Limiter) redisKey(key []byte, purpose Purpose, dimension string, value []byte) string {
+	mac := hmac.New(sha256.New, key)
+	writePart(mac, []byte("nerae.auth.email-rate-limit.v1"))
+	writePart(mac, []byte(purpose))
+	writePart(mac, []byte(dimension))
+	writePart(mac, value)
+	return "nerae:auth:rate:" + redisClusterTag + ":" + string(purpose) + ":" + dimension + ":" + hex.EncodeToString(mac.Sum(nil))
+}
+
+func writePart(mac hash.Hash, value []byte) {
+	var size [4]byte
+	binary.BigEndian.PutUint32(size[:], uint32(len(value)))
+	_, _ = mac.Write(size[:])
+	_, _ = mac.Write(value)
+}
+
+func validPolicy(policy Policy) bool {
+	return validDimension(policy.Email) && validDimension(policy.Device) && validDimension(policy.IP) && validDimension(policy.Global)
+}
+
+func validDimension(value DimensionPolicy) bool {
+	return value.Limit >= 1 && value.Limit <= maxLimit && value.Window >= minWindow && value.Window <= maxWindow && value.Window%time.Millisecond == 0
+}
+
+func copyKeys(keys HMACKeys) (secretKeys, bool) {
+	var result secretKeys
+	values := [][]byte{keys.EmailIndex, keys.DeviceFingerprint, keys.TrustedIP, keys.Global}
+	outputs := []*[32]byte{&result.email, &result.device, &result.ip, &result.global}
+	for i, value := range values {
+		if len(value) != 32 {
+			return secretKeys{}, false
+		}
+		var nonzero byte
+		for _, item := range value {
+			nonzero |= item
+		}
+		if nonzero == 0 {
+			return secretKeys{}, false
+		}
+		copy(outputs[i][:], value)
+		for j := 0; j < i; j++ {
+			if hmac.Equal(outputs[i][:], outputs[j][:]) {
+				return secretKeys{}, false
+			}
+		}
+	}
+	return result, true
+}
+
+func nilInterface(value any) bool {
+	if value == nil {
+		return true
+	}
+	reflected := reflect.ValueOf(value)
+	switch reflected.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return reflected.IsNil()
+	default:
+		return false
+	}
+}
+
+// atomicScript validates all four counters and TTLs before mutating any key.
+// Counts remain small integers to keep Lua's numeric representation exact.
+const atomicScript = `
+local overLimit = false
+for i = 1, 4 do
+  local limit = tonumber(ARGV[(i - 1) * 2 + 1])
+  local window = tonumber(ARGV[(i - 1) * 2 + 2])
+  local kind = redis.call('TYPE', KEYS[i]).ok
+  if kind == 'none' then
+    if redis.call('PTTL', KEYS[i]) ~= -2 then return -1 end
+  else
+    if kind ~= 'string' then return -1 end
+    local raw = redis.call('GET', KEYS[i])
+    if not raw or #raw > 7 or string.match(raw, '^[0-9]+$') == nil or (#raw > 1 and string.sub(raw, 1, 1) == '0') then return -1 end
+    local count = tonumber(raw)
+    local ttl = redis.call('PTTL', KEYS[i])
+    if not count or count < 1 or count > 1000000 or count % 1 ~= 0 or ttl <= 0 or ttl > window then return -1 end
+    if count >= limit then overLimit = true end
+  end
+end
+if overLimit then return 0 end
+for i = 1, 4 do
+  local kind = redis.call('TYPE', KEYS[i]).ok
+  if kind == 'none' then
+    redis.call('SET', KEYS[i], '1', 'PX', ARGV[(i - 1) * 2 + 2])
+  else
+    redis.call('INCR', KEYS[i])
+  end
+end
+return 1
+`
