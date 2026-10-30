@@ -233,6 +233,10 @@ type ReceiptProofDetails struct {
 	Scope       [32]byte
 	Fingerprint [32]byte
 	ChallengeID string
+	compact     string
+	publicKey   domain.DevicePublicJWK
+	expectation domain.ProofExpectation
+	policy      domain.ProofPolicy
 }
 
 func (ReceiptProof) String() string                      { return "EmailReceiptProof{redacted}" }
@@ -244,6 +248,16 @@ func (ReceiptProofDetails) GoString() string             { return "EmailReceiptP
 func (ReceiptProofDetails) MarshalJSON() ([]byte, error) { return nil, ErrChallengeStore }
 func (ReceiptProofDetails) LogValue() slog.Value {
 	return slog.StringValue("EmailReceiptProofDetails{redacted}")
+}
+
+// VerifyTimeOnly repeats signature and time validation without consulting the
+// database. It is useful immediately after a slow commit, but is not proof of
+// a committed receipt or current user/device/session authorization.
+func (d ReceiptProofDetails) VerifyTimeOnly(now time.Time) error {
+	if _, err := domain.VerifyDeviceProof(d.compact, d.publicKey, d.expectation, now, d.policy); err != nil {
+		return ErrReceiptProofRejected
+	}
+	return nil
 }
 
 // VerifyReceiptProof revalidates the original signed proof and its existing
@@ -357,7 +371,8 @@ func (s *Store) verifyReceiptProof(ctx context.Context, tx *sql.Tx, scope [32]by
 	if _, err := domain.VerifyDeviceProof(compact, key, expected, finished, policy); err != nil {
 		return details, ErrReceiptProofRejected
 	}
-	return ReceiptProofDetails{Scope: scope, Fingerprint: actualFingerprint, ChallengeID: challengeID}, nil
+	return ReceiptProofDetails{Scope: scope, Fingerprint: actualFingerprint, ChallengeID: challengeID,
+		compact: compact, publicKey: key, expectation: expected, policy: policy}, nil
 }
 
 // Attempt returns the same rejected result for unknown, expired, superseded,

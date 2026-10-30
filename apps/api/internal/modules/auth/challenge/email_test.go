@@ -762,6 +762,18 @@ func TestEmailReceiptProofRevalidation(t *testing.T) {
 		_ = tx.Rollback()
 		t.Fatal("revalidated proof was not bound to the original device and challenge")
 	}
+	if err := details.VerifyTimeOnly(now); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("valid proof snapshot failed its time-only check")
+	}
+	if err := details.VerifyTimeOnly(now.Add(2 * time.Minute)); !errors.Is(err, ErrReceiptProofRejected) {
+		_ = tx.Rollback()
+		t.Fatal("expired proof snapshot passed its time-only check")
+	}
+	if err := (ReceiptProofDetails{}).VerifyTimeOnly(now); !errors.Is(err, ErrReceiptProofRejected) {
+		_ = tx.Rollback()
+		t.Fatal("zero proof snapshot passed its time-only check")
+	}
 	if _, err := validated.ForRequest(ctx, tx, challengeID, proof); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("original request proof did not match")

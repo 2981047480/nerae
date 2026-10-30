@@ -20,3 +20,5 @@ python3 -B docs/evidence/A01/A01-04/mysql_smoke.py
 证明复验不匹配回执摘要，不核对凭据撤销，不解密回执，也不签发或重放会话；协调器必须在同一事务绑定这些步骤，提交后再次核对并处理提交确认未知。当前没有登录 HTTP、真实 QQ 邮箱投递或真机验收。
 
 补充 `ReceiptProof.ForRequest` 将句柄绑定原挑战和完全相同的 compact 签名；不同签名即便由同一私钥对相同 JTI 再次签名也不能混作原请求。独立和完整挑战私有 MySQL race 测试均重跑退出 0。验证码和幂等键仍须由回执摘要独立匹配。
+
+`ReceiptProofDetails.VerifyTimeOnly` 允许在慢提交后仅重验同一签名的时间和密码学有效性；它不核查数据库、不授予身份或会话权限。有效、过期、零值及完整挑战事务在私有 MySQL race 测试通过。
