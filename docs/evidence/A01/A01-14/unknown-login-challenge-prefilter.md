@@ -4,7 +4,7 @@
 
 在基线 `939487db54eeb0dc33e6b7331575a027454952c7` 上新增未挂载的两阶段前置限流能力。`AllowLoginEntry` 必须先于任何 challenge 数据库读取，由全部登录请求共享同一 EmailLogin IP/global 配额。入口通过后，调用方才读取挑战；若找到挑战，读取服务返回脱敏 opaque metadata，调用 `ApplyLoginDimensionLimit` 才会再扣 email/device 维度。邮箱或设备额度超限时入口额度仍已消耗，这是保护数据库的预期行为。未知挑战不创建 email/device 键。
 
-挑战存储可从 `challengeId` 读取服务端保存的固定长度邮箱索引和设备指纹；方法校验身份 key epoch、记录 key ID 与当前持久身份保护器一致，并验证受保护邮箱密文可由该保护器打开。metadata 不暴露键字段，只能通过窄的 limiter 接口传给 email/device 限流方法；格式化、JSON 与 slog 输出均脱敏。它不验证设备证明、不授予身份/权限，也不返回邮箱明文。未知挑战返回零值和 `found=false`，不暴露资料；损坏记录、epoch 或密钥不匹配失败关闭。
+挑战存储可从 `challengeId` 读取服务端保存的固定长度邮箱索引和设备指纹；方法校验身份 key epoch、记录 key ID 与当前持久身份保护器一致，并验证受保护邮箱密文可由该保护器打开。metadata 本身不暴露键字段，格式化、JSON 与 slog 输出均脱敏；调用窄接口时，接收方会看到伪名索引和设备指纹，因此必须是可信 limiter，且不得记录或外泄这两个值。它不验证设备证明、不授予身份/权限，也不返回邮箱明文。未知挑战返回零值和 `found=false`，不暴露资料；损坏记录、epoch 或密钥不匹配失败关闭。
 
 两阶段的 IP/global 与 email/device 分别原子检查并扣减。已知请求两阶段四个 Redis 键与兼容的 `Limiter.Allow` 完全一致；四维 `Allow` 保留旧调用兼容，但同一个新式登录请求不可把它和入口/身份阶段混用，否则会重复扣 IP/global。旧 `AllowUnknownChallenge` 保留为入口阶段兼容别名。Lua 先检查该阶段所有计数和 TTL，再增加，因此超限或损坏计数器不会在该阶段部分增加其他维度。IP 规范化与校验沿用现有逻辑，包括 IPv4-mapped 地址归一化、配置 IPv6 前缀、拒绝未指定/多播/带 zone 地址。
 

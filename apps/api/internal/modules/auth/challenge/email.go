@@ -238,8 +238,9 @@ func (RateLimitMetadata) LogValue() slog.Value {
 	return slog.StringValue("EmailChallengeRateLimitMetadata{redacted}")
 }
 
-// ApplyLoginDimensionLimit passes opaque values only to the narrowly typed
-// rate-limit sink; callers cannot extract either key from the metadata value.
+// ApplyLoginDimensionLimit passes the pseudonymous keys to the supplied trusted
+// limiter. The limiter receives both values and must not log or otherwise
+// expose them; this metadata is not authorization evidence.
 func (m RateLimitMetadata) ApplyLoginDimensionLimit(ctx context.Context, limiter LoginDimensionRateLimiter) error {
 	if ctx == nil || limiter == nil || m.emailIndex == ([32]byte{}) || m.deviceFingerprint == ([32]byte{}) {
 		return ErrChallengeStore
