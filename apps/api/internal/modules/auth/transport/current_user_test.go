@@ -29,7 +29,7 @@ func TestCurrentUserHandlerUsesOnlyAuthenticatedProfile(t *testing.T) {
 		if got != token {
 			t.Fatal("handler did not use bearer token")
 		}
-		return session.ResponseProfile{SubjectID: "101", Nickname: "名称", Roles: []string{"student"}, AgeVerified: true, ExpiresAt: time.Now().Add(time.Minute)}, nil
+		return session.ResponseProfile{SubjectID: "101", Nickname: "名称", Roles: []string{"student"}, AgeVerified: true, AgeDeclarationVersion: 3, ExpiresAt: time.Now().Add(time.Minute)}, nil
 	})
 	handler, err := NewCurrentUserHandler(new(sql.DB), profiler, validator)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestCurrentUserHandlerUsesOnlyAuthenticatedProfile(t *testing.T) {
 	handler.ServeHTTP(w, r)
 	var user api.User
 	if w.Code != http.StatusOK || w.Header().Get("Cache-Control") != "no-store" || json.Unmarshal(w.Body.Bytes(), &user) != nil ||
-		user.Id != "101" || user.Nickname != "名称" || len(user.Roles) != 1 || user.Roles[0] != api.UserRolesStudent || user.AgeVerified == nil || !*user.AgeVerified || called != 1 {
+		user.Id != "101" || user.Nickname != "名称" || len(user.Roles) != 1 || user.Roles[0] != api.UserRolesStudent || user.AgeVerified == nil || !*user.AgeVerified || user.AgeDeclarationVersion == nil || *user.AgeDeclarationVersion != 3 || called != 1 {
 		t.Fatal("current-user response did not use authenticated profile")
 	}
 	if strings.Contains(w.Body.String(), token) || strings.Contains(w.Body.String(), "999") {
@@ -70,6 +70,14 @@ func TestCurrentUserHandlerUsesOnlyAuthenticatedProfile(t *testing.T) {
 				t.Fatal("malformed request reached profile lookup")
 			}
 		})
+	}
+}
+
+func TestResponseUserRejectsInvalidAgeVersions(t *testing.T) {
+	for _, version := range []uint64{0, 1 << 53} {
+		if _, err := responseUser(session.ResponseProfile{SubjectID: "101", AgeDeclarationVersion: version}); !errors.Is(err, session.ErrSessionUnavailable) {
+			t.Fatal("invalid age declaration version must fail closed")
+		}
 	}
 }
 

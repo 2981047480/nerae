@@ -41,6 +41,7 @@ export interface AuthUser {
   readonly nickname: string
   readonly roles: readonly ('student' | 'coach')[]
   readonly ageVerified?: boolean
+  readonly ageDeclarationVersion?: number
   readonly status?: 'active'
   readonly avatarUrl?: string | null
 }
@@ -148,6 +149,7 @@ function parseUser(value: unknown): AuthUser {
     typeof value.nickname !== 'string' || !Array.isArray(value.roles) ||
     !value.roles.every(role => role === 'student' || role === 'coach') ||
     ('ageVerified' in value && typeof value.ageVerified !== 'boolean') ||
+    ('ageDeclarationVersion' in value && (!Number.isSafeInteger(value.ageDeclarationVersion) || Number(value.ageDeclarationVersion) < 1)) ||
     ('status' in value && value.status !== 'active') ||
     ('avatarUrl' in value && value.avatarUrl !== null && typeof value.avatarUrl !== 'string')) {
     throw new AuthApiError('invalid_response')
@@ -155,6 +157,7 @@ function parseUser(value: unknown): AuthUser {
   const roles = Object.freeze([...value.roles]) as readonly ('student' | 'coach')[]
   return Object.freeze({ id: value.id, nickname: value.nickname, roles,
     ...('ageVerified' in value ? { ageVerified: value.ageVerified as boolean } : {}),
+    ...('ageDeclarationVersion' in value ? { ageDeclarationVersion: value.ageDeclarationVersion as number } : {}),
     ...('status' in value ? { status: 'active' as const } : {}),
     ...('avatarUrl' in value ? { avatarUrl: value.avatarUrl as string | null } : {}) })
 }

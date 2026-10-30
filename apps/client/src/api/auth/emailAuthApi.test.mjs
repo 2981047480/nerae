@@ -16,7 +16,7 @@ const proof = 'p'.repeat(15) + '.' + 'q'.repeat(15) + '.' + 'r'.repeat(15)
 const publicKey = { kty: 'EC', crv: 'P-256', x: 'X'.repeat(43), y: 'Y'.repeat(43) }
 const input = { email: 'Person+sample@EXAMPLE.ORG', devicePublicKey: publicKey, deviceLabel: '手机' }
 const challenge = { challengeId, nonce, expiresAt: '2026-10-30T09:00:00Z', retryAfter: '2026-10-30T08:59:00Z' }
-const user = { id: '101', nickname: '', roles: ['student'], ageVerified: false, status: 'active', avatarUrl: null }
+const user = { id: '101', nickname: '', roles: ['student'], ageVerified: false, ageDeclarationVersion: 3, status: 'active', avatarUrl: null }
 const authenticated = { status: 'authenticated', token, expiresIn: 3600, user, onboarded: false }
 const approval = { status: 'approval_required', approvalId, approvalSecret, nonce, comparisonCode: '012345', expiresAt: '2026-10-30T09:00:00Z' }
 const response = (body, status = 200, headers = { 'Cache-Control': 'no-store' }) => ({ status, headers, body })
@@ -50,6 +50,7 @@ test('authentication and approval are distinct; sensitive values are not ordinar
   assert.equal(success.status, 'authenticated')
   assert.equal(success.user.id, '101')
   assert.equal(success.user.ageVerified, false)
+  assert.equal(success.user.ageDeclarationVersion, 3)
   assert.equal(sessionTokenForSecureStorage(success), token)
   assert.ok(!Object.values(success).includes(token))
   assert.throws(() => JSON.stringify(success), /Sensitive authentication result/)
@@ -62,6 +63,12 @@ test('authentication and approval are distinct; sensitive values are not ordinar
   assert.ok(!Object.values(pending).includes(approvalSecret))
   assert.throws(() => JSON.stringify(pending), /Sensitive authentication result/)
   assert.throws(() => sessionTokenForSecureStorage(pending), err('invalid_response'))
+})
+
+test('login rejects an invalid adult declaration version', async () => {
+  for (const ageDeclarationVersion of [0, 1.5, 9007199254740992, '3']) {
+    await assert.rejects(fixedApi(response({ ...authenticated, user: { ...user, ageDeclarationVersion } })).login(login, requestKey), err('invalid_response'))
+  }
 })
 
 test('approval exchange carries the secret only in its body; pending, denied and expired cannot become sessions', async () => {

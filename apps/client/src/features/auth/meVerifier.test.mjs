@@ -5,7 +5,7 @@ import { AuthSessionCoordinator } from './sessionCoordinator.ts'
 
 const token = 'synthetic.persisted.bearer'
 const expectedSubjectId = '812'
-const user = { id: expectedSubjectId, nickname: '', roles: ['student'], ageVerified: false, status: 'active', avatarUrl: null }
+const user = { id: expectedSubjectId, nickname: '', roles: ['student'], ageVerified: false, ageDeclarationVersion: 3, status: 'active', avatarUrl: null }
 const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
 const response = (status = 200, body = user, responseHeaders = headers) => ({ status, headers: responseHeaders, body })
 const requestId = 'a'.repeat(32)
@@ -114,6 +114,8 @@ test('malformed, disabled and unknown User values fail closed; unrecognized fiel
   const badUsers = [
     null, 'not-an-object', { ...user, id: '0' }, { ...user, roles: ['admin'] },
     { ...user, status: 'locked' }, { ...user, status: 'disabled' }, { ...user, ageVerified: 'true' },
+    { ...user, ageDeclarationVersion: 0 }, { ...user, ageDeclarationVersion: 9007199254740992 },
+    { ...user, ageDeclarationVersion: '3' },
     { ...user, avatarUrl: 42 },
   ]
   for (const bad of badUsers) {

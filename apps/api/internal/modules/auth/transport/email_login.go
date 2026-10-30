@@ -216,6 +216,9 @@ func validResponseToken(token string) bool {
 }
 
 func responseUser(profile session.ResponseProfile) (api.User, error) {
+	if profile.AgeDeclarationVersion < 1 || profile.AgeDeclarationVersion > 1<<53-1 {
+		return api.User{}, session.ErrSessionUnavailable
+	}
 	roles := make([]api.UserRoles, 0, len(profile.Roles))
 	for _, role := range profile.Roles {
 		switch role {
@@ -228,8 +231,9 @@ func responseUser(profile session.ResponseProfile) (api.User, error) {
 		}
 	}
 	ageVerified := profile.AgeVerified
+	ageVersion := int64(profile.AgeDeclarationVersion)
 	status := api.UserStatusActive
-	return api.User{Id: profile.SubjectID, Nickname: profile.Nickname, Roles: roles, AgeVerified: &ageVerified, Status: &status}, nil
+	return api.User{Id: profile.SubjectID, Nickname: profile.Nickname, Roles: roles, AgeVerified: &ageVerified, AgeDeclarationVersion: &ageVersion, Status: &status}, nil
 }
 
 func loginErrorKind(err error) middleware.ErrorKind {

@@ -269,7 +269,8 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 	status, headers, body := post(requestBody, idempotencyKey)
 	var first api.PhoneAuthSuccess
 	if status != http.StatusOK || headers.Get("X-Request-ID") == "" || json.Unmarshal(body, &first) != nil ||
-		first.Status != api.Authenticated || first.Token == "" || first.ExpiresIn < 1 || first.User.Id == "" || first.User.Roles == nil {
+		first.Status != api.Authenticated || first.Token == "" || first.ExpiresIn < 1 || first.User.Id == "" || first.User.Roles == nil ||
+		first.User.AgeDeclarationVersion == nil || *first.User.AgeDeclarationVersion != 1 {
 		t.Fatalf("real coordinator login did not return the contract success response: %s", safeEmailLoginHTTPDiagnostic(status, body, first))
 	}
 	firstExpiry := first.ExpiresIn

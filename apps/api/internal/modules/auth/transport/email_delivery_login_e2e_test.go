@@ -336,7 +336,8 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 	status, headers, successBody := post(emailLoginPath, loginBody, loginKey)
 	var success api.PhoneAuthSuccess
 	if status != http.StatusOK || headers.Get("Cache-Control") != "no-store" || json.Unmarshal(successBody, &success) != nil ||
-		success.Status != api.Authenticated || success.Token == "" || success.User.Id == "" || success.ExpiresIn < 1 {
+		success.Status != api.Authenticated || success.Token == "" || success.User.Id == "" || success.ExpiresIn < 1 ||
+		success.User.AgeDeclarationVersion == nil || *success.User.AgeDeclarationVersion != 1 {
 		t.Fatal("delivered code did not authenticate through the real login handler")
 	}
 	status, _, replayBody := post(emailLoginPath, loginBody, loginKey)
@@ -357,7 +358,8 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 	_ = meResponse.Body.Close()
 	var user api.User
 	if readErr != nil || meResponse.StatusCode != http.StatusOK || meResponse.Header.Get("Cache-Control") != "no-store" ||
-		json.Unmarshal(meBody, &user) != nil || user.Id != success.User.Id || bytes.Contains(meBody, []byte(success.Token)) {
+		json.Unmarshal(meBody, &user) != nil || user.Id != success.User.Id || user.AgeDeclarationVersion == nil ||
+		*user.AgeDeclarationVersion != 1 || bytes.Contains(meBody, []byte(success.Token)) {
 		t.Fatal("/me did not authenticate the issued session without exposing its token")
 	}
 

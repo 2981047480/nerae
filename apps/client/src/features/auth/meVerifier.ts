@@ -45,6 +45,7 @@ function parseCurrentUser(value: unknown): AuthUser | undefined {
     !value.roles.every(role => role === 'student' || role === 'coach') ||
     ('avatarUrl' in value && value.avatarUrl !== null && typeof value.avatarUrl !== 'string') ||
     ('ageVerified' in value && typeof value.ageVerified !== 'boolean') ||
+    ('ageDeclarationVersion' in value && (!Number.isSafeInteger(value.ageDeclarationVersion) || Number(value.ageDeclarationVersion) < 1)) ||
     ('status' in value && value.status !== 'active' && value.status !== 'disabled')) return undefined
   if (value.status === 'disabled') return undefined
   return Object.freeze({
@@ -53,6 +54,7 @@ function parseCurrentUser(value: unknown): AuthUser | undefined {
     roles: Object.freeze([...value.roles]) as readonly ('student' | 'coach')[],
     ...('avatarUrl' in value ? { avatarUrl: value.avatarUrl as string | null } : {}),
     ...('ageVerified' in value ? { ageVerified: value.ageVerified as boolean } : {}),
+    ...('ageDeclarationVersion' in value ? { ageDeclarationVersion: value.ageDeclarationVersion as number } : {}),
     ...('status' in value ? { status: 'active' as const } : {}),
   })
 }
