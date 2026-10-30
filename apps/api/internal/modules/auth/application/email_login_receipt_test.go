@@ -136,6 +136,11 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 	if err != nil || result.Kind() != VerificationAuthenticated || !result.CommitRequired() {
 		t.Fatal("first device and encrypted session receipt did not commit together")
 	}
+	outcome, err := result.AfterCommit(ctx, db)
+	firstToken, ok := outcome.SessionTokenForResponse()
+	if err != nil || !ok || firstToken == "" {
+		t.Fatal("committed first-device result did not release a verified token")
+	}
 	if count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, id) != 1 ||
 		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='authenticated'`, id) != 1 {
 		t.Fatal("authenticated session or receipt missing")
@@ -145,8 +150,30 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 		bytes.Contains(ciphertext, []byte(correct.Code)) || bytes.Contains(ciphertext, []byte(correct.DeviceProof)) || bytes.Contains(ciphertext, []byte(correctKey)) {
 		t.Fatal("receipt exposed request material")
 	}
-	if _, err := perform(correctKey, correct, true); !errors.Is(err, ErrReceiptReplayUnavailable) {
-		t.Fatal("existing authenticated receipt did not fail closed")
+	replayed, err := perform(correctKey, correct, true)
+	if err != nil || replayed.Kind() != VerificationAuthenticated || !replayed.CommitRequired() {
+		t.Fatal("exact authenticated request could not be replayed")
+	}
+	replayedOutcome, err := replayed.AfterCommit(ctx, db)
+	replayedToken, ok := replayedOutcome.SessionTokenForResponse()
+	if err != nil || !ok || replayedToken != firstToken {
+		t.Fatal("replay did not return the original committed token")
+	}
+	claims, err := codec.Verify(firstToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE user SET status='disabled' WHERE id=?`, claims.SubjectID); err != nil {
+		t.Fatal(err)
+	}
+	if value, err := replayed.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) || value.Kind() != "" {
+		t.Fatal("post-commit replay ignored a disabled account")
+	}
+	if _, err := perform(correctKey, correct, true); !errors.Is(err, ErrRejected) {
+		t.Fatal("replay did not reject a disabled account")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE user SET status='active' WHERE id=?`, claims.SubjectID); err != nil {
+		t.Fatal(err)
 	}
 	if _, err := json.Marshal(result); err == nil || strings.Contains(fmt.Sprintf("%+v", result), correct.DeviceProof) {
 		t.Fatal("receipt result exposed the signed proof")
@@ -166,6 +193,17 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 		count(`SELECT COUNT(*) FROM auth_login_approval WHERE challenge_id=?`, newID) != 1 {
 		t.Fatal("repeated new-device request created another approval")
 	}
+	// A newer challenge replaces the email slot but does not invalidate an
+	// already committed, still-authorized original session receipt.
+	oldReplay, err := perform(correctKey, correct, true)
+	if err != nil || oldReplay.Kind() != VerificationAuthenticated {
+		t.Fatal("new challenge blocked a valid original session receipt")
+	}
+	oldOutcome, err := oldReplay.AfterCommit(ctx, db)
+	oldToken, ok := oldOutcome.SessionTokenForResponse()
+	if err != nil || !ok || oldToken != firstToken {
+		t.Fatal("new challenge changed the original session result")
+	}
 
 	rollbackKey, rollbackPublic := flowDevice(t)
 	rollbackID, rollbackNonce := issue("receipt-rollback@example.test", rollbackPublic)
@@ -176,6 +214,9 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 		count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, rollbackID) != 0 ||
 		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=?`, rollbackID) != 0 {
 		t.Fatal("rollback left a session or receipt")
+	}
+	if value, err := result.AfterCommit(ctx, db); err == nil || value.Kind() != "" {
+		t.Fatal("rolled-back login released a token")
 	}
 	result, err = perform(rollbackRequestKey, rollbackInput, true)
 	if err != nil || result.Kind() != VerificationAuthenticated || count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, rollbackID) != 1 {
@@ -271,17 +312,22 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 	close(start)
 	workers.Wait()
 	close(results)
-	successes, deferredReplays := 0, 0
+	successes := 0
+	tokens := make([]string, 0, 2)
 	for item := range results {
 		if item.err == nil && item.result.Kind() == VerificationAuthenticated && item.result.CommitRequired() {
 			successes++
-		} else if errors.Is(item.err, ErrReceiptReplayUnavailable) {
-			deferredReplays++
+			outcome, err := item.result.AfterCommit(ctx, db)
+			value, ok := outcome.SessionTokenForResponse()
+			if err != nil || !ok {
+				t.Fatal("concurrent login could not safely release its committed result")
+			}
+			tokens = append(tokens, value)
 		} else {
 			t.Fatalf("unexpected concurrent transaction outcome: %v", item.err)
 		}
 	}
-	if successes != 1 || deferredReplays != 1 || count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, raceID) != 1 ||
+	if successes != 2 || len(tokens) != 2 || tokens[0] != tokens[1] || count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, raceID) != 1 ||
 		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=?`, raceID) != 1 {
 		t.Fatal("same-key concurrency created more than one result")
 	}
