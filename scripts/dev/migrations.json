@@ -98,6 +98,13 @@
       "module": "auth",
       "file": "0009_email_login_receipt.up.sql",
       "sha256": "218b4e8fb03049de5907eee4c2c0d5aeaed5973d49884488b96f60bc86f1bc58"
+    },
+    {
+      "order": 15,
+      "id": "user/0002_age_declaration_version.up.sql",
+      "module": "user",
+      "file": "0002_age_declaration_version.up.sql",
+      "sha256": "6a6bd56a3e8a420d702762e4232c0f8c9b818282e3efba01d600f42cc37df43b"
     }
   ]
 }

@@ -42,3 +42,7 @@ SHA-256 values recorded after verification:
 
 - `apps/api/internal/modules/auth/transport/email_delivery_login_e2e_test.go`: `80bfe50b6e422b43d0450bb8b861f618a93f260f0885b50efe93c3a5ce88d988`
 - `docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py`: `08d943431c835f85f63bb6532e30417a52933910f188ea5bedcdeec08a00c9da`
+
+## Lead integration recheck · 2026-10-31
+
+After the versioned adult-declaration migration and session profile change were integrated, the isolated harness was updated to include `user/0002_age_declaration_version.up.sql`. The same command ran again with private MySQL/Redis and loopback TLS SMTP: exit `0`, including the focused Go race test. The current harness SHA-256 is `e0d35a240da01121ed60bab157f9bb0580931b75270d1c9c0e7cd96ce32ff9d2`. This remains test-only assembly with synthetic identities, not deployed routes or real delivery.

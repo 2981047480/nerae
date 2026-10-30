@@ -10,6 +10,12 @@
 
 不应把这些内部测试或版本化原语称为用户已经确认、HTTP 已可用、训练记录已接通或正式年龄核验。A01-10 原报告保留为历史记录。
 
+## Lead 集成与迁移登记
+
+后续集成删除无版本入口，并在认证会话的 `ProfileForResponse` 中于用户行锁下读取声明版本；锁等待后读取更新、版本边界和会话撤销在 A01-07 隔离 MySQL/race harness 实跑通过。Lead 将 `user/0002_age_declaration_version.up.sql` 追加为全局迁移清单第 15 项，未重排既有项目；`go run ../../scripts/dev/migrate.go check` 退出 0，确认 15 项哈希。新增迁移后，A01-23 与 A01-24 的私有 MySQL/Redis/本机 TLS 联测重新运行，均退出 0。
+
+版本目前仍未进入 OpenAPI 或 HTTP 响应，声明/撤回也没有生产路由；遇到提交结果未知必须先读取当前状态并由本人决定，不能自动重新声明。该内部实现不构成身份或年龄核验。
+
 ## 2026-10-31 · CAS 入口清理跟进
 
 跟进提交删除了公开的无版本 `DeclareAdult` / `ClearAdultDeclaration`，以及仅供这些旧入口调用的无版本事务实现。现在 session 包唯一公开的声明/撤回写入入口都要求 `expectedVersion`。测试使用前一次版本化结果或在认证 bearer 后读取的当前版本；没有生产测试后门。
