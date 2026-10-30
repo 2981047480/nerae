@@ -159,6 +159,15 @@ func TestEmailLoginTransaction(t *testing.T) {
 		}
 		return challenge.AttemptInput{ChallengeID: id, Code: "012345", DeviceProof: flowProof(t, key, id, nonce)}
 	}
+	// Every distinct signed attempt has its own fresh proof identifier.
+	freshProof := func(input challenge.AttemptInput, key *ecdsa.PrivateKey) string {
+		t.Helper()
+		var nonce string
+		if err := db.QueryRowContext(ctx, `SELECT nonce FROM auth_email_login_challenge WHERE challenge_id=?`, input.ChallengeID).Scan(&nonce); err != nil {
+			t.Fatal("cannot read synthetic challenge nonce")
+		}
+		return flowProof(t, key, input.ChallengeID, nonce)
+	}
 	firstKey, firstPublic := flowDevice(t)
 	newKey, newPublic := flowDevice(t)
 	otherKey, otherPublic := flowDevice(t)
@@ -173,6 +182,14 @@ func TestEmailLoginTransaction(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id = ?`, first.ChallengeID).Scan(&attempts); err != nil || attempts != 1 {
 		t.Fatal("wrong-code attempt was not committed")
 	}
+	// A different code cannot reuse the proof already spent on a wrong code.
+	if retry, retryErr := login.VerifyEmail(ctx, db, first); !errors.Is(retryErr, ErrRejected) || retry.Kind() != "" {
+		t.Fatal("wrong-code proof was reused to authenticate")
+	}
+	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id = ?`, first.ChallengeID).Scan(&attempts); err != nil || attempts != 1 {
+		t.Fatal("reused proof changed the wrong-code count")
+	}
+	first.DeviceProof = freshProof(first, firstKey)
 	out, err = login.VerifyEmail(ctx, db, first)
 	firstToken, ok := out.SessionTokenForResponse()
 	if err != nil || !ok || out.Kind() != Authenticated {
@@ -245,6 +262,7 @@ func TestEmailLoginTransaction(t *testing.T) {
 	bad := limited
 	bad.Code = "999999"
 	for i := 0; i < 3; i++ {
+		bad.DeviceProof = freshProof(bad, firstKey)
 		if result, err := login.VerifyEmail(ctx, db, bad); !errors.Is(err, ErrRejected) || result.Kind() != "" {
 			t.Fatal("wrong code did not reject")
 		}
@@ -444,6 +462,11 @@ func TestEmailLoginTransactionSeam(t *testing.T) {
 	}
 	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id = ?`, rollbackInput.ChallengeID).Scan(&attempts); err != nil || attempts != 0 {
 		t.Fatal("outer rollback did not roll back the wrong-code counter")
+	}
+	// Rollback also removes the proof marker, allowing the same proof to be
+	// used with the correct code in a new transaction.
+	if retried, retryErr := login.VerifyEmail(ctx, db, rollbackInput); retryErr != nil || retried.Kind() != Authenticated {
+		t.Fatal("rolled-back proof could not be retried in a fresh transaction")
 	}
 
 	// A successful result is opaque while its transaction is live and after rollback.
