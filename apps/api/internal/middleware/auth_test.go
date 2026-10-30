@@ -13,7 +13,7 @@ func TestBearerHeaderIsStrictAndNeverExposesInputInErrors(t *testing.T) {
 	for _, value := range []string{"Bearer " + token, "bearer  " + token} {
 		header := make(http.Header)
 		header.Set("Authorization", value)
-		got, err := bearer(header)
+		got, err := BearerToken(header)
 		if err != nil || got != token {
 			t.Fatal("valid bearer rejected")
 		}
@@ -25,7 +25,7 @@ func TestBearerHeaderIsStrictAndNeverExposesInputInErrors(t *testing.T) {
 	} {
 		header := make(http.Header)
 		header.Set("Authorization", value)
-		got, err := bearer(header)
+		got, err := BearerToken(header)
 		if got != "" || !errors.Is(err, ErrInvalidBearer) || strings.Contains(err.Error(), "secret-token") {
 			t.Fatal("invalid bearer accepted or leaked")
 		}
@@ -33,7 +33,7 @@ func TestBearerHeaderIsStrictAndNeverExposesInputInErrors(t *testing.T) {
 	header := make(http.Header)
 	header.Add("Authorization", "Bearer "+token)
 	header.Add("Authorization", "Bearer "+token)
-	if _, err := bearer(header); !errors.Is(err, ErrInvalidBearer) {
+	if _, err := BearerToken(header); !errors.Is(err, ErrInvalidBearer) {
 		t.Fatal("multiple credentials accepted")
 	}
 }

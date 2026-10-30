@@ -25,7 +25,7 @@ func AuthenticateRequest(r *http.Request, tx *sql.Tx, sessions *session.Store) (
 	if r == nil || tx == nil || sessions == nil {
 		return nil, ErrAuthUnavailable
 	}
-	token, err := bearer(r.Header)
+	token, err := BearerToken(r.Header)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,10 @@ func AuthFailureKind(err error) ErrorKind {
 	}
 }
 
-func bearer(header http.Header) (string, error) {
+// BearerToken only extracts a syntactically valid credential; callers must
+// authenticate it against live session state and authorize the resource. Never
+// log or persist the returned token.
+func BearerToken(header http.Header) (string, error) {
 	values := header.Values("Authorization")
 	if len(values) != 1 || len(values[0]) > 8200 {
 		return "", ErrInvalidBearer
