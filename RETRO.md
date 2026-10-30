@@ -20,3 +20,9 @@
 ## iOS 原生编译
 
 - HBuilderX CLI 报 iOS UTS 扩展安装中时，扩展可能已在磁盘上；先用 `infra/app/ios/device/verify-uts-probe.sh` 指向官方 HBuilderX 安装，验证插件路径、内置 iPhone 基座及实际生成的 iPhoneOS arm64 framework。插件编译器可能返回无效成功码，必须检查产物；脚本隔离其临时清理目录。HBuilderX 5.33 的探针不能证明项目锁定的 5.26 兼容，也不是签名安装或真机验证。
+- CLI 工程缺 UTS 编译依赖时，可先在隔离副本将 `src` 作为 HBuilderX 项目导入，用 `publish app-ios --type appResource` 验证自带编译器的本地资源与生成源码；必须检查产物并记录版本差异。`launch --compile true` 仍可能先检查 iPhone 基座签名，退出 0 不代表实际编译成功。
+- 查找 Android 交叉编译 Java 时，先检查 HBuilderX 的 `plugins/amazon-corretto`；单独编译 Kotlin 源或生成 UTS 源码均不等于完成 UTS 运行时链接、APK 或真机验证。
+
+## 隔离数据库验证
+
+- 私有 MySQL 初始化在受限沙箱反复出现异常退出时，先检查保留目录日志；可在已授权的隔离本机环境复跑，失败目录保留。同一测试脚本只加载其用例需要的迁移，扩展测试范围时同步补齐迁移；静态通过不能替代数据库结果。

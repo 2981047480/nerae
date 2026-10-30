@@ -30,3 +30,11 @@
 复核 UTS 导出、Swift 桥与三份原生源：创建只在显式新设备入口，读取与签名只查既有别名；桥只返回固定错误码，不输出私钥或原生异常。未发现阻止保存该未接线模块的 P0–P2 问题，但编译不是设备安全验收。
 
 Lead 使用同一 `verify.sh` 首次在受限沙箱编译退出 1，Xcode 的共享 DerivedData PIF 缓存无法访问，诊断保留在 `/private/tmp/nerae-p02-05-uts.K3qHJx4O`。随后在获授权的本机 Xcode 构建环境重跑退出 0，得到 unsigned iPhoneOS arm64 framework；该次哈希 `1bfd5a26684050b66232882ce44ab505f02f6ea438926d46c9052106fa810189`，不同构建哈希不视作可复现构建证明。未调用 Secure Enclave、未安装。
+
+## 2026-10-30 HBuilderX 源码根资源编译探针
+
+按 [DCloud 官方项目说明](https://uniapp.dcloud.net.cn/quickstart) 将 `apps/client/src` 复制到独立临时目录并作为 HBuilderX 项目导入，使其使用 HBuilderX 自带编译器，而非项目锁定的 CLI 编译器。仅在临时副本的页面中加入设备密钥插件导入和编译调用；没有运行或安装该夹具。执行 `cli publish app-ios --type appResource --project /private/tmp/nerae-hx-build-probe.dQ4Je0/nerae-hx-src` 退出 0，日志显示 **5.33（vue3）** 编译及本地资源导出成功。实际产物包括 `app-service.js`、转换后的 iOS `index.swift`（SHA-256 `ac8b5a744a17cb3d43a5a8e284a2b0a875c12bb06fe2997e5ed33a5a0b010b4c`）及 Android `index.kt`（SHA-256 `bccb65abf72b1988640035bfdd9e0c7f052c3d04fb2bf678d2c9da712927fd0e`），以及两端桥源码。临时输出路径及哈希只用于本次证据，不是可复现二进制或交付件。
+
+另执行 `cli launch app-ios --iosTarget device --compile true --continue-on-error false`，CLI 退出 0，但输出说明 iPhone 标准基座未签名并停止，未输出可运行 App；`base info` 报标准基座 `isSigned=false`、自定义基座不存在。重查系统代码签名身份有 1 个有效条目，两个常见描述文件目录未找到 `.mobileprovision`。受限沙箱中的 HBuilderX CLI 因 CPU 特性检测退出 134；以上结果来自授权本机环境。未启动模拟器、上传代码/证书、安装或运行 App。
+
+该探针解决了使用 HBuilderX 自带 5.33 编译器导出夹具资源的路径；它没有证明生产工程与 5.33 在行为上兼容，也没有完成 Android Kotlin 运行时链接、iOS 签名基座、原生应用封装、真实设备密钥或业务登录。CLI 5.26 的缺包问题依旧存在，不能直接以此替代锁定工具链的验收。
