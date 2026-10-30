@@ -232,10 +232,15 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("current-user handler setup failed")
 	}
+	ageHandler, err := NewAgeVerifyHandler(db, sessions, sessions, validator)
+	if err != nil {
+		t.Fatal("age verification handler setup failed")
+	}
 	mux := http.NewServeMux()
 	mux.Handle(emailChallengesPath, challengeHandler)
 	mux.Handle(emailLoginPath, loginHandler)
 	mux.Handle("/me", meHandler)
+	mux.Handle(ageVerifyPath, ageHandler)
 	server := httptest.NewTLSServer(mux)
 	defer server.Close()
 
@@ -363,6 +368,97 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 		t.Fatal("/me did not authenticate the issued session without exposing its token")
 	}
 
+	postAge := func(client *http.Client, baseURL string, token string, body []byte) (int, http.Header, []byte) {
+		t.Helper()
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+ageVerifyPath, bytes.NewReader(body))
+		if err != nil {
+			t.Fatal("age declaration request setup failed")
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("X-User-ID", "999") // response must remain bound to the authenticated bearer
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal("age declaration local TLS request failed")
+		}
+		payload, readErr := io.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if readErr != nil {
+			t.Fatal("age declaration response read failed")
+		}
+		return response.StatusCode, response.Header.Clone(), payload
+	}
+	ageBody := []byte(`{"isAdult":true,"expectedVersion":1}`)
+	status, ageHeaders, ageResponse := postAge(server.Client(), server.URL, success.Token, ageBody)
+	var declaredUser api.User
+	if status != http.StatusOK || ageHeaders.Get("Cache-Control") != "no-store" || json.Unmarshal(ageResponse, &declaredUser) != nil ||
+		declaredUser.Id != success.User.Id || declaredUser.AgeVerified == nil || !*declaredUser.AgeVerified ||
+		declaredUser.AgeDeclarationVersion == nil || *declaredUser.AgeDeclarationVersion != 2 || bytes.Contains(ageResponse, []byte(success.Token)) {
+		t.Fatal("age declaration did not return the authenticated user's current declaration state")
+	}
+	status, staleHeaders, staleResponse := postAge(server.Client(), server.URL, success.Token, ageBody)
+	if status != http.StatusPreconditionFailed || staleHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(staleResponse, []byte(success.Token)) {
+		t.Fatal("stale age declaration version was not rejected without caching")
+	}
+	var ageVersion uint64
+	var ageVerified bool
+	if err := db.QueryRowContext(ctx, `SELECT age_declaration_version, age_verified_at IS NOT NULL FROM user WHERE id = ?`, success.User.Id).Scan(&ageVersion, &ageVerified); err != nil || ageVersion != 2 || !ageVerified {
+		t.Fatal("stale version retry changed the committed age declaration")
+	}
+
+	// Interleave a withdrawal after the affirmative write but before the
+	// handler's mandatory post-commit reauthorization. The handler must return
+	// 412 rather than a stale success body.
+	raceProfiles := ageProfileFunc(func(ctx context.Context, profileDB *sql.DB, token string) (session.ResponseProfile, error) {
+		if _, err := sessions.ClearAdultDeclarationAtVersion(ctx, profileDB, token, 3); err != nil {
+			return session.ResponseProfile{}, err
+		}
+		return sessions.ProfileForResponse(ctx, profileDB, token)
+	})
+	raceAgeHandler, err := NewAgeVerifyHandler(db, sessions, raceProfiles, validator)
+	if err != nil {
+		t.Fatal("concurrent age-state handler setup failed")
+	}
+	raceServer := httptest.NewTLSServer(raceAgeHandler)
+	defer raceServer.Close()
+	raceBody := []byte(`{"isAdult":true,"expectedVersion":2}`)
+	status, raceHeaders, raceResponse := postAge(raceServer.Client(), raceServer.URL, success.Token, raceBody)
+	if status != http.StatusPreconditionFailed || raceHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(raceResponse, []byte(success.Token)) {
+		t.Fatal("concurrent withdrawal after commit produced a stale success response")
+	}
+	if err := db.QueryRowContext(ctx, `SELECT age_declaration_version, age_verified_at IS NOT NULL FROM user WHERE id = ?`, success.User.Id).Scan(&ageVersion, &ageVerified); err != nil || ageVersion != 4 || ageVerified {
+		t.Fatal("interleaved withdrawal did not remain the authoritative current state")
+	}
+
+	validAfterRace := []byte(`{"isAdult":true,"expectedVersion":4}`)
+	status, latestHeaders, latestResponse := postAge(server.Client(), server.URL, success.Token, validAfterRace)
+	if status != http.StatusOK || latestHeaders.Get("Cache-Control") != "no-store" || json.Unmarshal(latestResponse, &declaredUser) != nil ||
+		declaredUser.Id != success.User.Id || declaredUser.AgeVerified == nil || !*declaredUser.AgeVerified || declaredUser.AgeDeclarationVersion == nil || *declaredUser.AgeDeclarationVersion != 5 {
+		t.Fatal("current versioned self-declaration did not recover after explicit state review")
+	}
+	declinedBody := []byte(`{"isAdult":false,"expectedVersion":5}`)
+	status, declinedHeaders, declinedResponse := postAge(server.Client(), server.URL, success.Token, declinedBody)
+	if status != http.StatusUnprocessableEntity || declinedHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(declinedResponse, []byte(success.Token)) {
+		t.Fatal("negative declaration was not rejected generically")
+	}
+	if err := db.QueryRowContext(ctx, `SELECT age_declaration_version, age_verified_at IS NOT NULL FROM user WHERE id = ?`, success.User.Id).Scan(&ageVersion, &ageVerified); err != nil || ageVersion != 5 || !ageVerified {
+		t.Fatal("rejected negative declaration changed account state")
+	}
+	claims, err := codec.Verify(success.Token)
+	if err != nil {
+		t.Fatal("issued session claims could not be verified")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state = 'revoked', revoked_at = UTC_TIMESTAMP(6) WHERE id = ?`, []byte(claims.SessionID)); err != nil {
+		t.Fatal("could not revoke synthetic session")
+	}
+	status, revokedHeaders, revokedResponse := postAge(server.Client(), server.URL, success.Token, []byte(`{"isAdult":true,"expectedVersion":5}`))
+	if status != http.StatusUnauthorized || revokedHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(revokedResponse, []byte(success.Token)) {
+		t.Fatal("revoked session was allowed to declare age")
+	}
+	if err := db.QueryRowContext(ctx, `SELECT age_declaration_version, age_verified_at IS NOT NULL FROM user WHERE id = ?`, success.User.Id).Scan(&ageVersion, &ageVerified); err != nil || ageVersion != 5 || !ageVerified {
+		t.Fatal("revoked session changed declaration state")
+	}
+
 	closedDB, err := sql.Open("mysql", dsn)
 	if err != nil {
 		t.Fatal("unavailable DB handle setup failed")
@@ -383,7 +479,7 @@ func TestEmailChallengeSMTPLoginHTTPToMeOverLocalTLS(t *testing.T) {
 		t.Fatal("unavailable login service did not fail closed")
 	}
 
-	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me; synthetic test-only services")
+	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me -> versioned age declaration; synthetic test-only services")
 }
 
 func postWithHandler(t *testing.T, ctx context.Context, handler http.Handler, path string, body []byte, key string) (int, http.Header, []byte) {

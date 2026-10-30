@@ -94,7 +94,7 @@ def run() -> int:
             print(test.stdout, end="")
             if test.returncode:
                 raise RuntimeError(f"delivery-to-/me integration test failed ({test.returncode})")
-            marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me"
+            marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP replay -> /me -> versioned age declaration"
             if marker not in test.stdout:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],
