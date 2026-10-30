@@ -37,3 +37,7 @@ c4f19a102c84e7fec2bfa0fdeea51d25c02b80d7be13c9f4b1cdeaf312476be7  apps/api/inter
 99bdf08abb064d47992837b5cdc2aa2581cd000c5031990d27d818d3879d335c  apps/api/internal/modules/auth/transport/email_challenge_integration_test.go
 03577c246b7735500b19ee7f5773643fc9afda555b4977ecb7559773e4f27452  docs/evidence/A01/A01-18/mysql_redis_tls_smoke.py
 ```
+
+## 客户端合同接缝
+
+增加 `client_challenge_interop.mjs`，由私有 Go TLS 测试进程启动实际 `EmailAuthApi`，使用合成 P-256 公钥和安全随机请求键，验证 202 挑战、原请求重放及修改设备提示后的 409。信任仅通过 Node 测试进程的临时 CA 配置，证书校验与 `redirect: error` 保持启用。`python3 -B docs/evidence/A01/A01-18/mysql_redis_tls_smoke.py` 在独立工作树和集成树均退出 0，含真实客户端适配器、私有 MySQL/Redis、本机 TLS 和 race 测试。这不验证 iOS 原生请求桥、真实邮箱投递、登录或跨设备同步。前述 SHA 为初版 handler 测试快照；新增接缝后的实际文件以当前 Git 提交为准。

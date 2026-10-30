@@ -6,15 +6,19 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -256,6 +260,32 @@ func TestEmailChallengeHandlerRealIssuerOverLocalTLS(t *testing.T) {
 	_ = failureResponse.Body.Close()
 	if failureResponse.StatusCode != http.StatusServiceUnavailable || failureResponse.Header.Get("Cache-Control") != "no-store" || bytes.Contains(failureBody, []byte(dsn)) {
 		t.Fatal("database failure was not redacted")
+	}
+	if os.Getenv("NERAE_AUTH_CLIENT_INTEROP") == "1" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal("could not locate client interop")
+		}
+		root, err := filepath.Abs(filepath.Join(cwd, "../../../../../.."))
+		if err != nil {
+			t.Fatal("could not locate repository root")
+		}
+		cert, err := x509.ParseCertificate(server.Certificate().Raw)
+		if err != nil {
+			t.Fatal("could not parse isolated server certificate")
+		}
+		caFile := filepath.Join(t.TempDir(), "local-test-ca.pem")
+		if err := os.WriteFile(caFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}), 0600); err != nil {
+			t.Fatal("could not write isolated server trust")
+		}
+		command := exec.CommandContext(ctx, "/opt/homebrew/bin/node", filepath.Join(root, "docs/evidence/A01/A01-18/client_challenge_interop.mjs"))
+		command.Env = append(os.Environ(), "NODE_EXTRA_CA_CERTS="+caFile, "NODE_TLS_REJECT_UNAUTHORIZED=1",
+			"NERAE_AUTH_INTEROP_URL="+server.URL, "NERAE_AUTH_INTEROP_CLIENT_DIR="+filepath.Join(root, "apps/client/src/api/auth"))
+		output, err := command.CombinedOutput()
+		if err != nil || !bytes.Contains(output, []byte("PASS: actual email client adapter")) {
+			t.Fatalf("isolated client interop failed: %s", output)
+		}
+		t.Log("PASS: real client adapter and challenge handler interoperated over isolated TLS")
 	}
 }
 

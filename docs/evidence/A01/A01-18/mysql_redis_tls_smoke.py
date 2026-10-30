@@ -80,7 +80,8 @@ def run() -> int:
             test_env = {**env, "GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off",
                         "GOCACHE": "/private/tmp/nerae-go-api-cache", "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_EMAIL_CHALLENGE_REQUEST_TEST_DSN": f"root@unix({mysql_socket})/nerae_a01_18_test?parseTime=true&loc=UTC",
-                        "NERAE_EMAIL_CHALLENGE_REQUEST_REDIS_SOCKET": str(redis_socket)}
+                        "NERAE_EMAIL_CHALLENGE_REQUEST_REDIS_SOCKET": str(redis_socket),
+                        "NERAE_AUTH_CLIENT_INTEROP": "1"}
             test = subprocess.run([str(GO), "test", "-mod=readonly", "-race", "-count=1", "-v", "./internal/modules/auth/transport"],
                                   cwd=ROOT / "apps/api", env=test_env, timeout=300,
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
