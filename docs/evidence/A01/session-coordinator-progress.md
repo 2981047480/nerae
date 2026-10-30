@@ -21,9 +21,9 @@ or provide a Web fallback. Status: **partial; implementation seam only**.
   credential. This prevents a later restore from reviving the previous account
   when clearing fails after the tombstone write succeeded.
 - The bearer property needed by `RecordingApi` is non-enumerable; active
-  credentials live in a JavaScript private field. Public snapshots and default
-  JSON/inspection output omit it. Vault and verifier exceptions are replaced
-  with fixed results.
+  credentials, the injected vault, and the verifier live in JavaScript private
+  fields. Public snapshots and default JSON/inspection output omit them. Vault
+  and verifier exceptions are replaced with fixed results.
 - `expiresIn` is validated as a positive response field but is not converted to
   an absolute local deadline. The current API does not provide the request
   start instant, and the server's replay semantics are not yet implemented.

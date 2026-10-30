@@ -82,10 +82,10 @@ function decodePersistedEntry(raw: unknown): PersistedEntry | undefined {
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!object(parsed) || parsed.schema !== 1 || JSON.stringify(parsed) !== raw) return undefined
-    if (Object.keys(parsed).length === 2 && parsed.signedOut === true && Object.hasOwn(parsed, 'signedOut')) {
+    if (Object.keys(parsed).length === 2 && parsed.signedOut === true && Object.prototype.hasOwnProperty.call(parsed, 'signedOut')) {
       return { schema: 1, signedOut: true }
     }
-    if (Object.keys(parsed).length === 3 && ['schema', 'subjectId', 'accessToken'].every(key => Object.hasOwn(parsed, key)) &&
+    if (Object.keys(parsed).length === 3 && ['schema', 'subjectId', 'accessToken'].every(key => Object.prototype.hasOwnProperty.call(parsed, key)) &&
       typeof parsed.subjectId === 'string' && /^[1-9][0-9]{0,19}$/.test(parsed.subjectId) && validToken(parsed.accessToken)) {
       return { schema: 1, subjectId: parsed.subjectId, accessToken: parsed.accessToken }
     }
@@ -125,8 +125,8 @@ function newSessionGeneration(): string {
  * client-side deadline is inferred from the server's currently ambiguous expiresIn.
  */
 export class AuthSessionCoordinator implements RecordingAuth {
-  private readonly repository: SecureAuthenticationStateRepository
-  private readonly verifyPersisted: PersistedCredentialVerifier
+  #repository: SecureAuthenticationStateRepository
+  #verifyPersisted: PersistedCredentialVerifier
   #active: ActiveSession | null = null
   private stateValue: SessionCoordinatorState = 'signed_out'
   private revision = 0
@@ -136,8 +136,8 @@ export class AuthSessionCoordinator implements RecordingAuth {
     if (!repository || typeof repository.readAuthenticationState !== 'function' ||
       typeof repository.writeAuthenticationState !== 'function' || typeof repository.clearAuthenticationState !== 'function' ||
       typeof verifyPersisted !== 'function') throw new Error('secure session dependencies unavailable')
-    this.repository = repository
-    this.verifyPersisted = verifyPersisted
+    this.#repository = repository
+    this.#verifyPersisted = verifyPersisted
   }
 
   get state(): SessionCoordinatorState { return this.stateValue }
@@ -195,7 +195,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
       if (!await this.retireVault()) return this.failCurrent(revision, 'storage')
       if (!this.isLatest(revision)) return { status: 'superseded' }
       let written = false
-      try { written = successfulVaultMutation(await this.repository.writeAuthenticationState(persisted)) } catch { written = false }
+      try { written = successfulVaultMutation(await this.#repository.writeAuthenticationState(persisted)) } catch { written = false }
       if (!written) {
         // The old credential was cleared before writing. Attempt cleanup in case the
         // platform reported failure after partially persisting the new value.
@@ -220,7 +220,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
     return this.enqueue(async () => {
       if (!this.isLatest(revision)) return { status: 'superseded' }
       let read: unknown
-      try { read = await this.repository.readAuthenticationState() } catch { return this.failCurrent(revision, 'storage') }
+      try { read = await this.#repository.readAuthenticationState() } catch { return this.failCurrent(revision, 'storage') }
       if (!this.isLatest(revision)) return { status: 'superseded' }
       if (!validVaultRead(read) || !read.ok) return this.failCurrent(revision, 'storage')
       if (!read.found) {
@@ -237,7 +237,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
       }
 
       let check: PersistedCredentialCheck
-      try { check = await this.verifyPersisted(persisted.accessToken, persisted.subjectId) } catch {
+      try { check = await this.#verifyPersisted(persisted.accessToken, persisted.subjectId) } catch {
         return this.failCurrent(revision, 'verification')
       }
       if (!this.isLatest(revision)) return { status: 'superseded' }
@@ -307,14 +307,14 @@ export class AuthSessionCoordinator implements RecordingAuth {
   }
 
   private async clearVault(): Promise<boolean> {
-    try { return successfulVaultMutation(await this.repository.clearAuthenticationState()) } catch { return false }
+    try { return successfulVaultMutation(await this.#repository.clearAuthenticationState()) } catch { return false }
   }
 
   /** Persist a non-secret tombstone before clear, so a failed clear cannot restore an older account. */
   private async retireVault(): Promise<boolean> {
     let tombstoneStored = false
     try {
-      tombstoneStored = successfulVaultMutation(await this.repository.writeAuthenticationState(signedOutTombstone))
+      tombstoneStored = successfulVaultMutation(await this.#repository.writeAuthenticationState(signedOutTombstone))
     } catch { tombstoneStored = false }
     const cleared = await this.clearVault()
     return tombstoneStored || cleared
