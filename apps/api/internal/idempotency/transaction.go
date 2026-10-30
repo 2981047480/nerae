@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"log/slog"
 	"strings"
+
+	"nerae/api/internal/dbtx"
 )
 
 // Actor is produced from the authenticated session within this transaction.
@@ -21,24 +23,14 @@ func (Actor) GoString() string             { return "IdempotencyActor{redacted}"
 func (Actor) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
 func (Actor) LogValue() slog.Value         { return slog.StringValue("IdempotencyActor{redacted}") }
 
-// Row is the scan-only result of a transaction query.
-type Row interface{ Scan(dest ...any) error }
-
-// ReadTransaction exposes only pre-registered SELECT statements. Authorizers
-// must lock every mutable authorization row until transaction commit.
-type ReadTransaction interface {
-	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
-	QueryRowContext(context.Context, string, ...any) Row
-}
-
-// Transaction additionally exposes only pre-registered INSERT/UPDATE/DELETE
-// statements. Neither interface offers Commit or Rollback. This is not a SQL
-// security sandbox: policies must be fixed, audited server code, never user
-// input, and the database account must have only the privileges it needs.
-type Transaction interface {
-	ReadTransaction
-	ExecContext(context.Context, string, ...any) (sql.Result, error)
-}
+// These shared capability types let repositories use either a normal SQL
+// transaction view or this package's policy-restricted view. Authorizers must
+// lock every mutable authorization row until transaction commit. This is not
+// a SQL security sandbox: policies must be fixed, audited server code, never
+// user input, and the database account must have only the privileges it needs.
+type Row = dbtx.Row
+type ReadTransaction = dbtx.ReadTransaction
+type Transaction = dbtx.Transaction
 
 // StatementPolicy is a fixed set of reviewed, parameterized statements for
 // trusted callbacks. The store copies it at construction; arbitrary strings or

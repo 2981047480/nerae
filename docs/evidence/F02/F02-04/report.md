@@ -23,3 +23,13 @@
 - `mysql_smoke.py`：`9da3c102c1a8f3637fad869ba81973b167029384fdfaf5501877dda6f9b4eff8`
 
 训练仓储当前自行接收 `*sql.Tx` 并由服务管理提交，尚未适配受限事务；因此用户的两种训练记录写入还没有通过此幂等执行器。匿名邮箱挑战、验证码/设备凭据响应重放、SMTP outbox、Redis、保留期运营决策、密钥轮换、真实事务提交未知故障注入及生产调度仍待独立完成。不能将本卡当作 F02-03 全卡验收或真实 App 跨端同步。
+
+## 事务能力共享接缝
+
+基线 `73fef01` 新增 `internal/dbtx` 窄接口和普通 SQL 事务适配器，幂等受限视图改用相同接口类型；普通适配器不提供 SQL 白名单，不能代替幂等执行器的受限视图。`Wrap(nil)` 返回 nil，调用方须检查；其他情况要求有效活动事务。Lead 独立审查并由 `/root/foundation_review` 只读复核，无 P0–P2 发现。
+
+`go test -race -count=1 ./internal/dbtx ./internal/idempotency` 退出 0；`python3 -B docs/evidence/F02/F02-04/mysql_smoke.py` 退出 0，隔离 MySQL 的并发和授权测试再次通过。源文件修改仅增加说明注释后重新计算下列哈希；前节哈希描述初次集成版本。训练仓储尚未切换，需在接入后同版重测。
+
+- `dbtx/transaction.go`：`88e15f94a554914690d6ec60dbe419e940685c8782a2d6bc38fd97eedee0f61b`
+- `dbtx/transaction_test.go`：`4328335675da474d18299bef9d267da9d2d765fdc4b79d1ace7fb9d5b12a3f06`
+- `idempotency/transaction.go`：`a06f00f1f0504bd028ce3f3174640225d60dcf1208d52cb7c0bb19c3a69488e2`
