@@ -122,7 +122,7 @@ function newSessionGeneration(): string {
 /**
  * Keeps a verified login in memory and the opaque bearer value only in the injected
  * platform vault. The supplied verifier is required for secure restoration; no
- * client-side deadline is inferred from the server's currently ambiguous expiresIn.
+ * client-side deadline is inferred without the original request start time.
  */
 export class AuthSessionCoordinator implements RecordingAuth {
   #repository: SecureAuthenticationStateRepository

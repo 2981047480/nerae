@@ -26,7 +26,8 @@ or provide a Web fallback. Status: **partial; implementation seam only**.
   and verifier exceptions are replaced with fixed results.
 - `expiresIn` is validated as a positive response field but is not converted to
   an absolute local deadline. The current API does not provide the request
-  start instant, and the server's replay semantics are not yet implemented.
+  start instant; the contract now defines remaining lifetime at response
+  generation, but the login HTTP flow is not yet integrated here.
   Restore therefore relies on an authoritative verifier; active-session expiry
   must be signaled by a future auth integration and passed to
   `invalidateIfCurrent`.
@@ -45,5 +46,5 @@ Android, HTTP, database, or service behavior. If both tombstone write and vault
 clear fail, the coordinator returns unavailable and exposes no in-memory
 credential, but cannot guarantee persistence changed; the platform repository
 must provide reliable secure-store semantics and callers must not treat this
-failure as a completed logout. The planned server `expiresIn` meaning and
-request-time propagation also remain to be finalized.
+failure as a completed logout. Request-time propagation and real server
+integration remain to be implemented.
