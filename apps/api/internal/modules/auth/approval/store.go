@@ -214,6 +214,7 @@ func (s *Store) BeginEmail(ctx context.Context, tx *sql.Tx, proof *challenge.Ver
 type SealedReceipt struct {
 	reference string
 	sealed    loginreceipt.Sealed
+	expiresAt time.Time
 }
 
 func (SealedReceipt) String() string               { return "SealedApprovalReceipt{redacted}" }
@@ -224,6 +225,7 @@ func (SealedReceipt) LogValue() slog.Value {
 }
 func (r SealedReceipt) Reference() string               { return r.reference }
 func (r SealedReceipt) Ciphertext() loginreceipt.Sealed { return r.sealed }
+func (r SealedReceipt) ExpiresAt() time.Time            { return r.expiresAt }
 
 type receiptPayload struct {
 	Version        int       `json:"version"`
@@ -236,7 +238,8 @@ type receiptPayload struct {
 // SealForReceipt encrypts a newly pending approval only in its originating
 // transaction. The caller must bind the exact login request, persist the result
 // in the same transaction, and never release it before commit and fresh proof,
-// receipt, account and approval authorization checks.
+// receipt, account and approval authorization checks. The returned expiration
+// is capped at the approval's own expiration.
 func (p Pending) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challenge.VerifiedEmail, crypto *loginreceipt.Crypto, binding loginreceipt.Binding, expires time.Time) (SealedReceipt, error) {
 	if ctx == nil || tx == nil || p.sourceTx != tx || p.store == nil || proof == nil || crypto == nil || binding.ChallengeID() != p.challengeID {
 		return SealedReceipt{}, ErrUnavailable
@@ -253,7 +256,10 @@ func (p Pending) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challeng
 		return SealedReceipt{}, ErrUnavailable
 	}
 	now := p.store.now().UTC()
-	if now.IsZero() || !expires.After(now) || expires.After(p.data.ExpiresAt) {
+	if expires.After(p.data.ExpiresAt) {
+		expires = p.data.ExpiresAt
+	}
+	if now.IsZero() || !expires.After(now) {
 		return SealedReceipt{}, ErrUnavailable
 	}
 	aad, err := crypto.NewContext(p.scope[:], binding, loginreceipt.ResultApprovalRequired, p.data.ID, expires)
@@ -269,7 +275,7 @@ func (p Pending) SealForReceipt(ctx context.Context, tx *sql.Tx, proof *challeng
 	if err != nil {
 		return SealedReceipt{}, ErrUnavailable
 	}
-	return SealedReceipt{reference: p.data.ID, sealed: sealed}, nil
+	return SealedReceipt{reference: p.data.ID, sealed: sealed, expiresAt: expires}, nil
 }
 
 // AfterCommit releases the polling secret only after a fresh transaction

@@ -253,8 +253,13 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 				_ = tx.Rollback()
 				t.Fatal(err)
 			}
+			capped, err := pending.SealForReceipt(ctx, tx, proof, receiptCrypto, binding, time.Now().UTC().Add(2*time.Hour).Truncate(time.Microsecond))
+			if err != nil || !capped.ExpiresAt().Equal(pending.data.ExpiresAt) {
+				_ = tx.Rollback()
+				t.Fatal("approval receipt lifetime exceeded the approval lifetime")
+			}
 			sealed, err = pending.SealForReceipt(ctx, tx, proof, receiptCrypto, binding, receiptExpiry)
-			if err != nil || sealed.Reference() != pending.data.ID || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(pending.data.Secret)) {
+			if err != nil || sealed.Reference() != pending.data.ID || !sealed.ExpiresAt().Equal(receiptExpiry) || bytes.Contains(sealed.Ciphertext().Bytes(), []byte(pending.data.Secret)) {
 				_ = tx.Rollback()
 				t.Fatal("approval receipt was not encrypted or bound to its approval")
 			}
