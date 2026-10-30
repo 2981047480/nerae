@@ -143,12 +143,19 @@ test('failure statuses map to fixed errors without raw bodies or exceptions', as
     [409, 'conflict'], [410, 'expired'], [422, 'invalid_request'], [429, 'rate_limited'], [500, 'unavailable'],
     [503, 'unavailable'], [302, 'unavailable']])
   for (const [status, code] of expected) {
-    const api = fixedApi(response({ message: token }, status))
+    const requestId = 'a'.repeat(32)
+    const body = status === 401 ? { code: 'UNAUTHENTICATED', message: '验证未通过', requestId } : { message: token }
+    const headers = status === 401 ? { 'Cache-Control': 'no-store', 'Content-Type': 'application/json', 'X-Request-ID': requestId }
+      : { 'Cache-Control': 'no-store' }
+    const api = fixedApi(response(body, status, headers))
     await assert.rejects(api.login(login, requestKey), error => err(code)(error) && error.status === status &&
       !String(error).includes(token) && !JSON.stringify(error).includes(token))
   }
   await assert.rejects(fixedApi({ status: 900, body: token, headers: {} }).login(login, requestKey), err('invalid_response'))
   for (const headers of [{}, { 'Cache-Control': 'public' }, { 'cache-control': 'no-store', 'Cache-Control': 'public' }]) {
     await assert.rejects(fixedApi(response({ message: token }, 401, headers)).login(login, requestKey), err('invalid_response'))
+  }
+  for (const malformed of [{}, { code: 'UNAUTHENTICATED' }, { code: 'UNAUTHENTICATED', message: 'bad', requestId: 'x' }]) {
+    await assert.rejects(fixedApi(response(malformed, 401)).login(login, requestKey), err('invalid_response'))
   }
 })

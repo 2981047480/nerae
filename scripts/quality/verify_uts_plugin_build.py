@@ -15,27 +15,28 @@ ROOT = Path(__file__).resolve().parents[2]
 CLIENT = ROOT / "apps/client"
 PROBE = """<script setup lang="ts">
 import { ref } from 'vue'
-import { createDeviceKeyAtReservedAlias, readExistingDevicePublicKey } from '@/uni_modules/nerae-device-key'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
-import { compareAndSetDeviceIdentityRegistry, readDeviceIdentityRegistry } from '@/uni_modules/nerae-secure-vault'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
 import { createAppSessionCoordinator } from '@/platform/app/nativeSession'
+import { createAppDeviceIdentityCoordinator, signAppEmailLoginChallenge } from '@/platform/app/nativeDeviceIdentity'
+import { createAppEmailLoginFlow } from '@/platform/app/nativeEmailLogin'
+import { createAppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
+import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
 function probe() {
-  result.value = readExistingDevicePublicKey('probe').errorCode +
-    generateSecureRandomRequestKey().errorCode + String(createDeviceKeyAtReservedAlias) +
-    String(compareAndSetDeviceIdentityRegistry) + String(readDeviceIdentityRegistry) +
-    String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator)
+  result.value = generateSecureRandomRequestKey().errorCode + String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator) +
+    String(createAppDeviceIdentityCoordinator) + String(signAppEmailLoginChallenge) + String(createAppEmailLoginFlow) + String(createAppAuthRuntime) +
+    String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
 }
 </script>
 <template><view @tap="probe">{{ result }}</view></template>
 """
 
 PLUGINS = {
-    "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs")),
+    "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs", "signExistingDeviceProofByJs")),
     "nerae-random": ("neraeRandom", ("generateSecureRandomRequestKeyByJs",)),
-    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs")),
+    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs", "readTrainingOperationJournalByJs", "compareAndSetTrainingOperationJournalByJs")),
     "nerae-https": ("neraeHttps", ("requestByJs", "cancelByJs")),
 }
 

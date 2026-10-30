@@ -67,6 +67,115 @@ test('branded authenticated result persists only in the injected vault and token
   assert.ok(!Object.hasOwn(JSON.parse(vault.value), 'expiresIn'))
 })
 
+test('a login install guard rejects logout and renews only after its own failed vault write', async () => {
+  const credential = await authenticated('101', 'synthetic.guard.token')
+  const store = memoryVault()
+  let failWrite = true
+  const originalWrite = store.writeAuthenticationState.bind(store)
+  store.writeAuthenticationState = value => {
+    if (failWrite && value.includes('accessToken')) return { ok: false, errorCode: 'unavailable', found: false, value: '' }
+    return originalWrite(value)
+  }
+  const coordinator = new AuthSessionCoordinator(store, liveVerifier('101', 'synthetic.guard.token'))
+  const guard = coordinator.captureInstallGuard()
+  assert.ok(guard)
+  let invalidations = 0
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { invalidations++ })
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(credential, guard)).status, 'unavailable')
+  assert.equal(invalidations, 0)
+  assert.equal(coordinator.isInstallGuardCurrent(guard), true)
+  failWrite = false
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(credential, guard)).status, 'authenticated')
+  assert.equal(invalidations, 1)
+  assert.equal(coordinator.isInstallGuardCurrent(guard), false)
+  const later = coordinator.captureInstallGuard()
+  await coordinator.logout()
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(credential, later)).status, 'superseded')
+  assert.equal(coordinator.current(), null)
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(credential, {})).status, 'superseded')
+})
+
+test('guard invalidation listeners run synchronously once and cannot break logout', async () => {
+  const coordinator = new AuthSessionCoordinator(memoryVault(), async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  let called = 0
+  const unsubscribe = coordinator.subscribeInstallGuardInvalidation(guard, () => { called++ })
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { throw new Error('synthetic listener failure') })
+  let removed = 0
+  const removeOther = coordinator.subscribeInstallGuardInvalidation(guard, () => { removed++ })
+  removeOther()
+  const pending = coordinator.logout()
+  assert.equal(called, 1)
+  assert.equal(removed, 0)
+  assert.equal((await pending).status, 'signed_out')
+  unsubscribe()
+  await coordinator.logout()
+  assert.equal(called, 1)
+  assert.throws(() => coordinator.subscribeInstallGuardInvalidation(guard, () => {}), /session guard unavailable/)
+  assert.throws(() => coordinator.subscribeInstallGuardInvalidation({}, () => {}), /session guard unavailable/)
+})
+
+test('a reentrant logout from guard invalidation supersedes the earlier install', async () => {
+  const coordinator = new AuthSessionCoordinator(memoryVault(), async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  let logout
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { logout = coordinator.logout() })
+  const credential = await authenticated('101', 'synthetic.guard.token')
+  assert.equal((await coordinator.installAuthenticated(credential)).status, 'superseded')
+  assert.equal((await logout).status, 'signed_out')
+  assert.equal(coordinator.current(), null)
+})
+
+test('a reentrant session change and unsubscribe do not notify the same watcher twice', async () => {
+  const coordinator = new AuthSessionCoordinator(memoryVault(), async () => ({ status: 'unavailable' }))
+  const firstGuard = coordinator.captureInstallGuard()
+  const secondGuard = coordinator.captureInstallGuard()
+  let secondCalls = 0
+  let removedCalls = 0
+  let nested
+  let removeThird
+  coordinator.subscribeInstallGuardInvalidation(firstGuard, () => { removeThird(); nested = coordinator.logout() })
+  coordinator.subscribeInstallGuardInvalidation(secondGuard, () => { secondCalls++ })
+  removeThird = coordinator.subscribeInstallGuardInvalidation(secondGuard, () => { removedCalls++ })
+  const outer = coordinator.logout()
+  assert.equal((await outer).status, 'superseded')
+  assert.equal((await nested).status, 'signed_out')
+  assert.equal(secondCalls, 1)
+  assert.equal(removedCalls, 0)
+})
+
+test('a reentrant logout on guarded install completion cannot publish stale success', async () => {
+  const coordinator = new AuthSessionCoordinator(memoryVault(), async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  let logout
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { logout = coordinator.logout() })
+  const credential = await authenticated('101', 'synthetic.guard.token')
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(credential, guard)).status, 'superseded')
+  assert.equal((await logout).status, 'signed_out')
+  assert.equal(coordinator.current(), null)
+})
+
+test('logout while a guarded install writes cannot renew its old guard', async () => {
+  const store = memoryVault()
+  const writing = deferred()
+  const originalWrite = store.writeAuthenticationState.bind(store)
+  store.writeAuthenticationState = async value => {
+    if (value.includes('accessToken')) await writing.promise
+    return originalWrite(value)
+  }
+  const coordinator = new AuthSessionCoordinator(store, liveVerifier('101', 'synthetic.guard.token'))
+  const guard = coordinator.captureInstallGuard()
+  const installation = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'synthetic.guard.token'), guard)
+  await new Promise(resolve => setImmediate(resolve))
+  const logout = coordinator.logout()
+  writing.resolve()
+  assert.equal((await installation).status, 'superseded')
+  assert.equal((await logout).status, 'signed_out')
+  assert.equal(coordinator.isInstallGuardCurrent(guard), false)
+  assert.equal(coordinator.current(), null)
+  assert.equal(store.value, '')
+})
+
 test('approval result, copied result, and malformed authenticated data cannot be installed', async () => {
   const vault = memoryVault()
   const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))

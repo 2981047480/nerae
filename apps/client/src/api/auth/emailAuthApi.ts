@@ -198,6 +198,18 @@ function noStore(headers: unknown): boolean {
   return found.length === 1 && typeof found[0][1] === 'string' && found[0][1].trim().toLowerCase() === 'no-store'
 }
 
+/** Only the service's structured 401 may settle a failed verification attempt. */
+function authoritativeUnauthorized(response: AuthHttpResponse): boolean {
+  if (!record(response.body) || !record(response.headers) || response.body.code !== 'UNAUTHENTICATED' ||
+    typeof response.body.message !== 'string' || response.body.message.length > 2048 ||
+    typeof response.body.requestId !== 'string' || !/^[a-f0-9]{32}$/.test(response.body.requestId) ||
+    ('details' in response.body && !record(response.body.details))) return false
+  const requestIds = Object.entries(response.headers).filter(([name]) => name.toLowerCase() === 'x-request-id')
+  const contentTypes = Object.entries(response.headers).filter(([name]) => name.toLowerCase() === 'content-type')
+  return requestIds.length === 1 && requestIds[0][1] === response.body.requestId && contentTypes.length === 1 &&
+    typeof contentTypes[0][1] === 'string' && /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentTypes[0][1].trim())
+}
+
 /**
  * All request identifiers and device proofs are supplied by the caller.
  * Never automatically retry: after a transport error or ambiguous response,
@@ -226,6 +238,7 @@ export class EmailAuthApi {
         throw new AuthApiError('invalid_response')
       }
       if (!noStore(response.headers)) throw new AuthApiError('invalid_response')
+      if (response.status === 401 && !authoritativeUnauthorized(response)) throw new AuthApiError('invalid_response', response.status)
       if (response.status < 200 || response.status >= 300) throw responseError(response.status)
       if (response.status !== expectedStatus) throw new AuthApiError('invalid_response')
       return response.body

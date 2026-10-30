@@ -1,0 +1,79 @@
+[
+  {
+    "name": "dot-atom-preserves-local-and-lowercases-domain",
+    "input": "Name+tag@EXAMPLE.COM",
+    "accept": true,
+    "expected": "Name+tag@example.com"
+  },
+  {
+    "name": "dot-atom-rfc-ascii-atext",
+    "input": "A!#$%&'*+-/=?^_`{|}~@EXAMPLE.COM",
+    "accept": true,
+    "expected": "A!#$%&'*+-/=?^_`{|}~@example.com"
+  },
+  {
+    "name": "quoted-local-is-rejected-after-go-unquotes-it",
+    "input": "\"Quoted\"@EXAMPLE.COM",
+    "accept": false
+  },
+  {
+    "name": "quoted-pair-is-rejected-after-go-unescapes-it",
+    "input": "\"Q\\\"uoted\"@EXAMPLE.COM",
+    "accept": false
+  },
+  {
+    "name": "ipv4-domain-literal",
+    "input": "a@[127.0.0.1]",
+    "accept": true,
+    "expected": "a@[127.0.0.1]"
+  },
+  {
+    "name": "ipv6-domain-literal-server-normalization-is-not-idempotent",
+    "input": "User@[IPv6:2001:DB8::1]",
+    "accept": true,
+    "expected": "User@[ipv6:2001:db8::1]",
+    "clientAccept": false,
+    "normalizedStable": false
+  },
+  {
+    "name": "invalid-ipv4-domain-literal",
+    "input": "a@[300.1.1.1]",
+    "accept": false
+  },
+  {
+    "name": "ipv4-leading-zero-is-not-canonical",
+    "input": "a@[127.000.0.1]",
+    "accept": false
+  },
+  {
+    "name": "dot-atom-double-dot",
+    "input": "a..b@example.com",
+    "accept": false
+  },
+  {
+    "name": "display-name-is-not-an-addr-spec",
+    "input": "Name <a@example.com>",
+    "accept": false
+  },
+  {
+    "name": "non-ascii-address",
+    "input": "测试@example.com",
+    "accept": false
+  },
+  {
+    "name": "line-break-injection",
+    "input": "a@example.com\r\nBcc:x@y.z",
+    "accept": false
+  },
+  {
+    "name": "maximum-254-byte-addr-spec",
+    "inputParts": { "local": "a", "domainChar": "X", "domainLength": 252 },
+    "accept": true,
+    "expectedParts": { "local": "a", "domainChar": "x", "domainLength": 252 }
+  },
+  {
+    "name": "over-254-byte-addr-spec",
+    "inputParts": { "local": "a", "domainChar": "X", "domainLength": 253 },
+    "accept": false
+  }
+]

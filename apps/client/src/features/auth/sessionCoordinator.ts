@@ -50,6 +50,10 @@ type PersistedEntry = PersistedSession | { schema: 1; signedOut: true }
 type ActiveSession = PublicSession & { accessToken: string }
 
 let nextGeneration = 0
+type InstallGuardState = { owner: AuthSessionCoordinator; revision: number }
+type InstallGuardWatch = { guard: SessionInstallGuard; invalidate: () => void }
+const installGuards = new WeakMap<object, InstallGuardState>()
+export type SessionInstallGuard = object
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -130,6 +134,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
   #repository: SecureAuthenticationStateRepository
   #verifyPersisted: PersistedCredentialVerifier
   #active: ActiveSession | null = null
+  #installGuardWatches = new Set<InstallGuardWatch>()
   private stateValue: SessionCoordinatorState = 'signed_out'
   private revision = 0
   private storageTail: Promise<void> = Promise.resolve()
@@ -176,8 +181,55 @@ export class AuthSessionCoordinator implements RecordingAuth {
     return Object.freeze({ generation, isCurrent: (subjectId: string, candidate: string) => this.isCurrent(subjectId, candidate) })
   }
 
+  /** Bind an in-flight login to the current session operation revision. */
+  captureInstallGuard(): SessionInstallGuard | null {
+    if (this.stateValue === 'restoring' || this.stateValue === 'installing' || this.stateValue === 'signing_out') return null
+    const guard = Object.freeze({})
+    installGuards.set(guard, { owner: this, revision: this.revision })
+    return guard
+  }
+
+  isInstallGuardCurrent(guard: SessionInstallGuard): boolean {
+    if (!guard || typeof guard !== 'object') return false
+    const state = installGuards.get(guard)
+    return Boolean(state && state.owner === this && state.revision === this.revision)
+  }
+
+  /** Notify a pending login immediately when another session operation starts. */
+  subscribeInstallGuardInvalidation(guard: SessionInstallGuard, invalidate: () => void): () => void {
+    if (!this.isInstallGuardCurrent(guard) || typeof invalidate !== 'function') throw new Error('session guard unavailable')
+    const watch = { guard, invalidate }
+    this.#installGuardWatches.add(watch)
+    return () => { this.#installGuardWatches.delete(watch) }
+  }
+
+  /** An older login response cannot resurrect a session after logout or account switch. */
+  async installAuthenticatedIfCurrent(result: Authenticated, guard: SessionInstallGuard): Promise<SessionCoordinatorResult> {
+    if (!this.isInstallGuardCurrent(guard)) return { status: 'superseded' }
+    const before = this.revision
+    // installAuthenticated starts its own revision synchronously before its first await.
+    const pending = this.#installAuthenticated(result, guard)
+    const started = this.revision
+    const installed = await pending
+    if (installed.status === 'unavailable' && started === before + 1 && this.revision === started) {
+      // Only this failed install may renew the guard; an intervening logout,
+      // restore or account switch must leave it stale.
+      installGuards.set(guard, { owner: this, revision: started })
+    }
+    if (installed.status === 'authenticated') {
+      if (this.revision !== started || !this.isCurrent(installed.session.subjectId, installed.session.generation)) return { status: 'superseded' }
+      this.#invalidateInstallGuards(undefined, guard)
+      if (this.revision !== started || !this.isCurrent(installed.session.subjectId, installed.session.generation)) return { status: 'superseded' }
+    }
+    return installed
+  }
+
   /** Accept only an EmailAuthApi-branded authenticated result, never approval-required or raw data. */
   async installAuthenticated(result: Authenticated): Promise<SessionCoordinatorResult> {
+    return this.#installAuthenticated(result)
+  }
+
+  async #installAuthenticated(result: Authenticated, preservedGuard?: SessionInstallGuard): Promise<SessionCoordinatorResult> {
     let accessToken: string
     let user: AuthUser | undefined
     try {
@@ -190,7 +242,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
       return { status: 'rejected' }
     }
 
-    const revision = this.begin('installing')
+    const revision = this.begin('installing', preservedGuard)
     const persisted = encodePersistedSession(user.id, accessToken)
     return this.enqueue(async () => {
       if (!this.isLatest(revision)) return { status: 'superseded' }
@@ -282,12 +334,22 @@ export class AuthSessionCoordinator implements RecordingAuth {
     })
   }
 
-  private begin(state: SessionCoordinatorState): number {
+  private begin(state: SessionCoordinatorState, preservedGuard?: SessionInstallGuard): number {
     if (this.revision >= Number.MAX_SAFE_INTEGER) throw new Error('session operation unavailable')
-    this.revision++
+    const revision = ++this.revision
     this.#active = null
     this.stateValue = state
-    return this.revision
+    this.#invalidateInstallGuards(preservedGuard)
+    return revision
+  }
+
+  #invalidateInstallGuards(preservedGuard?: SessionInstallGuard, onlyGuard?: SessionInstallGuard): void {
+    for (const watch of [...this.#installGuardWatches]) {
+      if (watch.guard === preservedGuard || (onlyGuard && watch.guard !== onlyGuard)) continue
+      // Another listener may synchronously invalidate or unsubscribe this one.
+      if (!this.#installGuardWatches.delete(watch)) continue
+      try { watch.invalidate() } catch { /* A listener cannot interrupt a session operation. */ }
+    }
   }
 
   private isLatest(revision: number): boolean { return this.revision === revision }
