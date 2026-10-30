@@ -44,6 +44,18 @@ test('real user input and the selected mode restore under the same authenticated
   assert.equal(restored.status, 'saved_locally')
 })
 
+test('Unicode event IDs use character counts consistently for local draft persistence', async () => {
+  const clientEventId = '🧭'.repeat(64)
+  const storage = memoryStore()
+  const auth = { generation: 'session-unicode', isCurrent: (id, generation) => id === '101' && generation === 'session-unicode' }
+  const draft = createRecordingDraft(clientEventId, '2026-10-29', 'Asia/Shanghai', '2026-10-29')
+  const controller = new DraftController('101', draft, storage, now, auth)
+  assert.equal(await controller.persist(), true)
+  const restored = await DraftController.load('101', clientEventId, storage, now, auth)
+  assert.equal(restored.draft.clientEventId, clientEventId)
+  assert.equal(restored.status, 'saved_locally')
+})
+
 test('a failed local write keeps current input and a later retry can succeed', async () => {
   const storage = memoryStore()
   const originalWrite = storage.write

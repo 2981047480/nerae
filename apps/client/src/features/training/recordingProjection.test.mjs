@@ -14,7 +14,7 @@ const hooks = registerHooks({
     return nextResolve(specifier, context)
   },
 })
-const { applySetsAcknowledgement, prepareOrderedAfterWorkout, prepareOrderedConfirmedSet } = await import('./recordingProjection.ts')
+const { applySetsAcknowledgement, prepareOrderedAfterWorkout, prepareOrderedConfirmedSet, restoreConfirmedSession } = await import('./recordingProjection.ts')
 const { RecordingApi } = await import('./recordingApi.ts')
 const { DraftController } = await import('./draftStorage.ts')
 hooks.deregister()
@@ -24,7 +24,7 @@ const lease = { subjectId: '101', generation: 'login-1' }
 const credential = { ...lease, accessToken: 'synthetic-session-token' }
 const auth = { current: () => credential, isCurrent: (id, generation) => id === lease.subjectId && generation === lease.generation }
 const detail = overrides => ({
-  id: '42', date: today, timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 2,
+  id: '42', clientEventId: 'event-0001', date: today, timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 2,
   createdAt: '2026-10-30T01:00:00Z', updatedAt: '2026-10-30T01:00:00Z', recordedAt: null,
   exerciseEntryKeys: ['entry-0001'], sets: [serverA], ...overrides,
 })
@@ -104,6 +104,21 @@ test('stale, incomplete or inconsistent snapshots require reconciliation without
   missingFlag.exercises[0].sets[0].persisted = false
   assert.equal(prepareOrderedConfirmedSet(missingFlag, await scoped(), lease, auth, 'entry-0002', 'record-002', today).reason, 'reconcile_required')
   assert.equal(JSON.stringify(local), before)
+})
+
+test('writes reject a local client event identity that differs from the issued session snapshot', async () => {
+  const snapshot = await scoped()
+  const afterWorkout = { ...draft(), clientEventId: 'event-0002' }
+  const afterBefore = JSON.stringify(afterWorkout)
+  assert.equal(prepareOrderedAfterWorkout(afterWorkout, snapshot, lease, auth, today).reason, 'reconcile_required')
+  assert.equal(JSON.stringify(afterWorkout), afterBefore)
+
+  const perSetDraft = perSet(draft(), 'entry-0002', 'record-002')
+  const wrongEvent = { ...perSetDraft, clientEventId: 'event-0002' }
+  const perSetBefore = JSON.stringify(wrongEvent)
+  assert.equal(prepareOrderedConfirmedSet(wrongEvent, snapshot, lease, auth, 'entry-0002', 'record-002', today).reason,
+    'reconcile_required')
+  assert.equal(JSON.stringify(wrongEvent), perSetBefore)
 })
 
 test('snapshot and draft leases must match the current authenticated login', async () => {
@@ -286,4 +301,134 @@ test('merging into the controller keeps the latest edit visible if local persist
   assert.equal(controller.draft.server.version, 3)
   assert.equal(controller.draft.exercises[1].sets[0].reps, '7')
   assert.equal(controller.draft.exercises[1].sets[0].dirty, true)
+})
+
+test('cross-device restore preserves same-named actions, numeric values, ordering and sparse set indexes', async () => {
+  const firstSparse = { ...serverA, setIndex: 2, kind: 'weight', weightKg: 50, reps: 8 }
+  const secondSparse = { ...serverA, recordKey: 'record-002', setIndex: 7, kind: 'weight', weightKg: 52.5, reps: 6 }
+  const sameNameSecond = { ...serverA, recordKey: 'record-007', exerciseEntryKey: 'entry-0002', setIndex: 3, reps: 5 }
+  const snapshot = await scoped({ sets: [firstSparse, secondSparse, sameNameSecond],
+    exerciseEntryKeys: ['entry-0001', 'entry-0002'], durationMin: 42, rpe: 7.5, note: '服务端已确认' })
+  const result = restoreConfirmedSession(snapshot, auth, today)
+  assert.equal(result.ok, true)
+  assert.equal(result.draft.clientEventId, 'event-0001')
+  assert.equal(result.draft.server.status, 'in_progress')
+  assert.equal(result.draft.exercises.length, 2)
+  assert.deepEqual(result.draft.exercises.map(exercise => exercise.identity), [
+    { source: 'custom', exerciseName: '深蹲' }, { source: 'custom', exerciseName: '深蹲' },
+  ])
+  assert.deepEqual(result.draft.exercises[0].sets.map(group => [group.recordKey, group.setIndex, group.weightKg, group.reps]), [
+    ['record-001', 2, '50', '8'], ['record-002', 7, '52.5', '6'],
+  ])
+  assert.deepEqual(result.draft.exercises[1].sets.map(group => [group.recordKey, group.setIndex, group.reps]), [['record-007', 3, '5']])
+  assert.ok(result.draft.exercises.flatMap(exercise => exercise.sets).every(group => group.persisted && !group.dirty && group.confirmed))
+  assert.deepEqual(result.draft.finish, { durationMin: 42, rpe: 7.5, note: '服务端已确认' })
+})
+
+test('cross-device restore preserves completed status without deriving end time from recordedAt', async () => {
+  const completed = await scoped({ status: 'completed', recordedAt: '2026-10-30T02:03:04Z', sets: [serverA],
+    exerciseEntryKeys: ['entry-0001'], durationMin: null, rpe: null, note: null })
+  const result = restoreConfirmedSession(completed, auth, today)
+  assert.equal(result.ok, true)
+  assert.equal(result.draft.server.status, 'completed')
+  assert.equal(result.draft.finish.durationMin, null)
+  assert.equal(result.draft.finish.rpe, null)
+  assert.equal(result.draft.finish.note, null)
+  assert.equal('recordedAt' in result.draft, false)
+  assert.equal('completedAt' in result.draft, false)
+})
+
+test('cross-device restore retains the frozen catalog display name', async () => {
+  const catalogSet = { ...serverA, exerciseName: undefined, exerciseId: '17', resolvedExerciseName: '冻结名称' }
+  const snapshot = await scoped({ sets: [catalogSet], exerciseEntryKeys: ['entry-0001'] })
+  const result = restoreConfirmedSession(snapshot, auth, today)
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.draft.exercises[0].identity, { source: 'catalog', exerciseId: '17' })
+  assert.equal(result.draft.exercises[0].resolvedExerciseName, '冻结名称')
+})
+
+test('cross-device restore rejects mixed set kinds and unsupported statuses but accepts an empty draft', async () => {
+  const mixed = await scoped({ sets: [serverA, { ...serverA, recordKey: 'record-002', setIndex: 2,
+    kind: 'weight', weightKg: 20, reps: 8 }], exerciseEntryKeys: ['entry-0001'] })
+  assert.equal(restoreConfirmedSession(mixed, auth, today).reason, 'unsupported')
+  assert.equal(restoreConfirmedSession(await scoped({ source: 'plan' }), auth, today).reason, 'unsupported')
+  assert.equal(restoreConfirmedSession(await scoped({ status: 'skipped', sets: [], exerciseEntryKeys: [] }), auth, today).reason, 'unsupported')
+  const completedEmpty = new RecordingApi('https://api.example.org', auth,
+    async () => ({ statusCode: 200, data: detail({ status: 'completed', sets: [], exerciseEntryKeys: [], recordedAt: '2026-10-30T02:03:04Z' }) }), lease)
+  await assert.rejects(completedEmpty.readSession('42'), error => error.code === 'invalid_response')
+  const empty = restoreConfirmedSession(await scoped({ sets: [], exerciseEntryKeys: [] }), auth, today)
+  assert.equal(empty.ok, true)
+  assert.deepEqual(empty.draft.exercises, [])
+})
+
+test('cross-device restore rejects forged snapshots, other accounts, changed sessions and identity/version conflicts', async () => {
+  const issued = await scoped()
+  assert.equal(restoreConfirmedSession({ ...issued }, auth, today).reason, 'invalid_snapshot')
+  const otherLease = { subjectId: '202', generation: 'login-2' }
+  const otherAuth = { current: () => ({ ...otherLease, accessToken: 'other-token' }),
+    isCurrent: (id, generation) => id === otherLease.subjectId && generation === otherLease.generation }
+  const otherSnapshot = await new RecordingApi('https://api.example.org', otherAuth,
+    async () => ({ statusCode: 200, data: detail() }), otherLease).readSession('42')
+  assert.equal(restoreConfirmedSession(otherSnapshot, auth, today).reason, 'session_changed')
+  const switched = { current: () => ({ ...credential, generation: 'login-2' }), isCurrent: () => false }
+  assert.equal(restoreConfirmedSession(issued, switched, today).reason, 'session_changed')
+
+  const local = restoreConfirmedSession(issued, auth, today).draft
+  assert.equal(restoreConfirmedSession(await scoped({ version: 3 }), auth, today, local).reason, 'reconcile_required')
+  assert.equal(restoreConfirmedSession(await scoped({ clientEventId: 'event-0002' }), auth, today, local).reason, 'reconcile_required')
+})
+
+test('cross-device restore preserves unsynced local drafts and requires coordination', async () => {
+  const remote = await scoped()
+  let local = createRecordingDraft('event-0001', today, 'Asia/Shanghai', today)
+  local = addExercise(local, 'entry-0001', { source: 'custom', exerciseName: '深蹲' }, 'bodyweight', 'record-001')
+  local = updateSet(local, 'entry-0001', 'record-001', 'reps', '9')
+  const before = JSON.stringify(local)
+  const result = restoreConfirmedSession(remote, auth, today, local)
+  assert.equal(result.ok, false)
+  assert.equal(result.reason, 'local_unsynced')
+  assert.equal(JSON.stringify(local), before)
+
+  const dirty = restoreConfirmedSession(remote, auth, today).draft
+  const edited = updateSet(dirty, 'entry-0001', 'record-001', 'reps', '10')
+  const dirtyBefore = JSON.stringify(edited)
+  assert.equal(restoreConfirmedSession(remote, auth, today, edited).reason, 'local_unsynced')
+  assert.equal(JSON.stringify(edited), dirtyBefore)
+
+  const emptyAction = removeUnsubmittedSet(local, 'entry-0001', 'record-001')
+  const emptyActionBefore = JSON.stringify(emptyAction)
+  assert.equal(emptyAction.exercises[0].sets.length, 0)
+  assert.equal(restoreConfirmedSession(remote, auth, today, emptyAction).reason, 'local_unsynced')
+  assert.equal(JSON.stringify(emptyAction), emptyActionBefore)
+})
+
+test('restore rechecks the live lease before returning and leaves the supplied draft untouched on a session race', async () => {
+  const snapshot = await scoped()
+  const existing = restoreConfirmedSession(snapshot, auth, today).draft
+  const before = JSON.stringify(existing)
+  let generation = 'login-1'
+  let checks = 0
+  const racingAuth = {
+    current: () => ({ ...credential, generation }),
+    isCurrent: (subjectId, capturedGeneration) => {
+      checks++
+      if (checks === 1) { generation = 'login-2'; return true }
+      return subjectId === '101' && capturedGeneration === generation
+    },
+  }
+  const result = restoreConfirmedSession(snapshot, racingAuth, today, existing)
+  assert.equal(result.ok, false)
+  assert.equal(result.reason, 'session_changed')
+  assert.equal(checks, 2)
+  assert.equal(JSON.stringify(existing), before)
+})
+
+test('a matching clean local draft keeps its selected mode on restore', async () => {
+  const remote = await scoped()
+  const local = switchMode(restoreConfirmedSession(remote, auth, today).draft, 'per_set')
+  const restored = restoreConfirmedSession(remote, auth, today, local)
+  assert.equal(restored.ok, true)
+  assert.equal(restored.draft.mode, 'per_set')
+  assert.equal(restored.draft.server.id, '42')
+  assert.equal(restored.draft.server.version, 2)
 })

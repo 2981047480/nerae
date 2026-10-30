@@ -35,7 +35,7 @@ type DraftEnvelope = { schema: 1; subjectId: string; draft: RecordingDraft }
 
 function storageKey(subjectId: string, clientEventId: string): string {
   if (!/^[1-9]\d{0,19}$/.test(subjectId)) throw new Error('需要已验证的账号才能保存草稿')
-  if (clientEventId.length < 8 || clientEventId.length > 64 || !clientEventId.trim()) {
+  if (Array.from(clientEventId).length < 8 || Array.from(clientEventId).length > 64 || !clientEventId.trim()) {
     throw new Error('记录标识无效')
   }
   return `nerae.workout.draft.v1.${subjectId}.${clientEventId}`

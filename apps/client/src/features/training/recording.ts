@@ -30,6 +30,8 @@ export interface DraftSet {
 export interface DraftExercise {
   exerciseEntryKey: string
   identity: ExerciseIdentity
+  /** Frozen server display name for catalog actions; absent in older drafts. */
+  resolvedExerciseName?: string
   kind: SetKind
   sets: DraftSet[]
 }
@@ -40,7 +42,8 @@ export interface RecordingDraft {
   timeZone: string
   mode: RecordingMode
   /** Added only after a real server response; version is needed for edits. */
-  server?: { id: string; version: number }
+  /** Status belongs to the confirmed server snapshot, never to local timing. */
+  server?: { id: string; version: number; status?: 'in_progress' | 'completed' }
   finish: { durationMin?: number | null; rpe?: number | null; note?: string | null }
   exercises: DraftExercise[]
 }
@@ -79,7 +82,7 @@ export type PerSetFinishPreparation =
   | { ok: false; issues: GroupIssue[]; message: string }
 
 function assertKey(key: string): void {
-  if (typeof key !== 'string' || key.length < 8 || key.length > 64 || !key.trim()) {
+  if (typeof key !== 'string' || Array.from(key).length < 8 || Array.from(key).length > 64 || !key.trim()) {
     throw new Error('记录标识无效')
   }
 }
@@ -331,7 +334,8 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
   createRecordingDraft(value.clientEventId, value.date, value.timeZone, today)
   if (value.server !== undefined && (!object(value.server) || typeof value.server.id !== 'string' ||
     !/^[1-9]\d{0,19}$/.test(value.server.id) || !Number.isSafeInteger(value.server.version) ||
-    Number(value.server.version) < 1)) throw new Error('草稿的服务端版本无效')
+    Number(value.server.version) < 1 || (value.server.status !== undefined &&
+      value.server.status !== 'in_progress' && value.server.status !== 'completed'))) throw new Error('草稿的服务端版本无效')
   const finish = value.finish
   if (finish.durationMin !== undefined && finish.durationMin !== null &&
     (!Number.isSafeInteger(finish.durationMin) || Number(finish.durationMin) < 0)) throw new Error('草稿中的实际时长无效')
@@ -353,6 +357,12 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
     } else if (exercise.identity.source === 'custom' && typeof exercise.identity.exerciseName === 'string') {
       assertIdentity({ source: 'custom', exerciseName: exercise.identity.exerciseName })
     } else throw new Error('动作来源无效')
+    if (exercise.resolvedExerciseName !== undefined &&
+      (typeof exercise.resolvedExerciseName !== 'string' || !exercise.resolvedExerciseName.trim() ||
+        Array.from(exercise.resolvedExerciseName).length > 128 ||
+        (exercise.identity.source === 'custom' && exercise.resolvedExerciseName !== exercise.identity.exerciseName))) {
+      throw new Error('动作显示名称无效')
+    }
     if (!['weight', 'perSide', 'bodyweight', 'bodyweightPerSide', 'duration', 'durationPerSide', 'breath'].includes(exercise.kind)) {
       throw new Error('动作计量方式无效')
     }

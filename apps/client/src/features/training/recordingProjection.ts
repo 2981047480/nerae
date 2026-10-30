@@ -1,6 +1,6 @@
 import {
   prepareConfirmedSet, prepareSave, restoreDraft, validateDraftSet,
-  type DraftExercise, type DraftSet, type GroupIssue, type RecordingDraft, type SetWrite,
+  type DraftExercise, type DraftSet, type ExerciseIdentity, type GroupIssue, type RecordingDraft, type SetWrite,
 } from './recording'
 import {
   acknowledgesSets, isIssuedSnapshot, matchesSetPayload, parseSessionDetail,
@@ -13,6 +13,9 @@ type ProjectionFailure = {
   message: string
   issues?: GroupIssue[]
 }
+export type ConfirmedRestoreResult =
+  | { ok: true; draft: RecordingDraft }
+  | { ok: false; reason: 'invalid_snapshot' | 'session_changed' | 'reconcile_required' | 'local_unsynced' | 'unsupported'; message: string }
 type PreparedBatch = {
   ok: true
   state: 'send'
@@ -37,7 +40,8 @@ function failure(reason: ProjectionFailure['reason']): ProjectionFailure {
 
 function sameIdentity(exercise: DraftExercise, set: ServerSet): boolean {
   return exercise.kind === set.kind && (exercise.identity.source === 'catalog'
-    ? set.exerciseId === exercise.identity.exerciseId && set.exerciseName === undefined
+    ? set.exerciseId === exercise.identity.exerciseId && set.exerciseName === undefined &&
+      (exercise.resolvedExerciseName === undefined || exercise.resolvedExerciseName === set.resolvedExerciseName)
     : set.exerciseName === exercise.identity.exerciseName && set.exerciseId === undefined)
 }
 
@@ -60,6 +64,8 @@ function validateBase(
     remote = parseSessionDetail(snapshot.detail)
   } catch { return failure('invalid_draft') }
   if (!local.server || local.server.id !== remote.id || local.server.version !== remote.version ||
+    local.clientEventId !== remote.clientEventId ||
+    (local.server.status !== undefined && local.server.status !== remote.status) ||
     local.timeZone !== remote.timeZone || remote.source !== 'free' || remote.status === 'skipped') return failure('reconcile_required')
 
   const serverRows = new Map(remote.sets.map(set => [set.recordKey, set]))
@@ -180,10 +186,145 @@ export function applySetsAcknowledgement(
       confirmed: sameInput ? true : group.confirmed })
   }
   if (changed.size !== writes.size) return failure('reconcile_required')
-  const draft: RecordingDraft = { ...base.draft, server: { id: response.detail.id, version: response.detail.version },
+  if (response.detail.clientEventId !== proof.clientEventId) return failure('reconcile_required')
+  if (response.detail.status === 'skipped') return failure('reconcile_required')
+  const draft: RecordingDraft = { ...base.draft, server: { id: response.detail.id, version: response.detail.version,
+    status: response.detail.status },
     exercises: base.draft.exercises.map(exercise => ({ ...exercise,
+      ...(exercise.identity.source === 'catalog' && response.detail.sets.some(set =>
+        set.exerciseEntryKey === exercise.exerciseEntryKey)
+        ? { resolvedExerciseName: response.detail.sets.find(set => set.exerciseEntryKey === exercise.exerciseEntryKey)?.resolvedExerciseName }
+        : {}),
       sets: exercise.sets.map(group => changed.get(group.recordKey) || group) })) }
   try { restoreDraft(draft, today) } catch { return failure('invalid_draft') }
   if (!auth.isCurrent(proof.lease.subjectId, proof.lease.generation)) return failure('session_changed')
   return { ok: true, draft }
+}
+
+function restoreFailure(reason: Exclude<ConfirmedRestoreResult, { ok: true }>['reason']): ConfirmedRestoreResult {
+  const messages = {
+    invalid_snapshot: '服务端记录快照无效，请重新读取',
+    session_changed: '账号或登录会话已变化，请重新登录后读取',
+    reconcile_required: '本机记录与服务端版本或身份不一致，请核对后恢复',
+    local_unsynced: '本机有尚未同步的输入，已保留；请先协调再恢复',
+    unsupported: '该记录包含当前编辑模型无法无损表达的数据',
+  } as const
+  return { ok: false, reason, message: messages[reason] }
+}
+
+/**
+ * Restore only a live, adapter-issued server snapshot. Existing local input is
+ * never replaced when it is unsubmitted or differs from the confirmed server
+ * state. This restores confirmed data only; it cannot recover a remote draft
+ * that was never submitted.
+ */
+export function restoreConfirmedSession(
+  snapshot: ScopedSessionDetail,
+  auth: RecordingAuth,
+  today: string,
+  existingDraft?: RecordingDraft,
+): ConfirmedRestoreResult {
+  if (!isIssuedSnapshot(snapshot)) return restoreFailure('invalid_snapshot')
+  const lease = snapshot.lease
+  const credential = auth?.current()
+  if (!lease || !credential || credential.subjectId !== lease.subjectId || credential.generation !== lease.generation ||
+    !auth.isCurrent(lease.subjectId, lease.generation)) return restoreFailure('session_changed')
+
+  let detail: WorkoutSessionDetail
+  try { detail = parseSessionDetail(snapshot.detail) }
+  catch { return restoreFailure('invalid_snapshot') }
+  if (detail.source !== 'free' || detail.status === 'skipped') return restoreFailure('unsupported')
+
+  let mode: RecordingDraft['mode'] = 'after_workout'
+  if (existingDraft !== undefined) {
+    let local: RecordingDraft
+    try { local = restoreDraft(existingDraft, today) }
+    catch { return restoreFailure('local_unsynced') }
+    if (local.clientEventId !== detail.clientEventId || local.date !== detail.date || local.timeZone !== detail.timeZone) {
+      return restoreFailure('reconcile_required')
+    }
+    if (local.exercises.some(exercise => exercise.sets.length === 0 ||
+      exercise.sets.some(set => !set.persisted || set.dirty))) {
+      return restoreFailure('local_unsynced')
+    }
+    if (local.server && (local.server.id !== detail.id || local.server.version !== detail.version ||
+      (local.server.status !== undefined && local.server.status !== detail.status))) return restoreFailure('reconcile_required')
+    for (const field of ['durationMin', 'rpe', 'note'] as const) {
+      if (local.finish[field] !== undefined && local.finish[field] !== detail[field]) return restoreFailure('local_unsynced')
+    }
+
+    const serverRows = new Map(detail.sets.map(set => [set.recordKey, set]))
+    let localCount = 0
+    for (const exercise of local.exercises) {
+      for (const group of exercise.sets) {
+        localCount++
+        const serverSet = serverRows.get(group.recordKey)
+        if (!serverSet || serverSet.exerciseEntryKey !== exercise.exerciseEntryKey || serverSet.setIndex !== group.setIndex ||
+          !sameIdentity(exercise, serverSet)) return restoreFailure('reconcile_required')
+        const checked = validateDraftSet(exercise, group)
+        if (!checked.value || !matchesSetPayload(checked.value, serverSet)) return restoreFailure('reconcile_required')
+      }
+    }
+    if (localCount !== detail.sets.length ||
+      local.exercises.filter(exercise => exercise.sets.length > 0).map(exercise => exercise.exerciseEntryKey)
+        .some((key, index) => key !== detail.exerciseEntryKeys[index]) ||
+      local.exercises.filter(exercise => exercise.sets.length > 0).length !== detail.exerciseEntryKeys.length) {
+      return restoreFailure('reconcile_required')
+    }
+    mode = local.mode
+  }
+
+  const byEntry = new Map<string, ServerSet[]>()
+  for (const set of detail.sets) {
+    const rows = byEntry.get(set.exerciseEntryKey) || []
+    if (rows.some(row => row.kind !== set.kind)) return restoreFailure('unsupported')
+    rows.push(set)
+    byEntry.set(set.exerciseEntryKey, rows)
+  }
+  const exercises: DraftExercise[] = detail.exerciseEntryKeys.map(exerciseEntryKey => {
+    const rows = byEntry.get(exerciseEntryKey) || []
+    const first = rows[0]
+    if (!first) throw new Error('validated entry must contain a set')
+    const identity: ExerciseIdentity = first.exerciseId !== undefined
+      ? { source: 'catalog', exerciseId: first.exerciseId }
+      : { source: 'custom', exerciseName: first.exerciseName as string }
+    return {
+      exerciseEntryKey,
+      identity,
+      resolvedExerciseName: first.resolvedExerciseName,
+      kind: first.kind,
+      sets: rows.map(set => ({
+        recordKey: set.recordKey,
+        setIndex: set.setIndex,
+        weightKg: set.weightKg === undefined ? '' : String(set.weightKg),
+        reps: set.reps === undefined ? '' : String(set.reps),
+        seconds: set.seconds === undefined ? '' : String(set.seconds),
+        rpe: set.rpe === undefined || set.rpe === null ? '' : String(set.rpe),
+        confirmed: true,
+        persisted: true,
+        dirty: false,
+      })),
+    }
+  })
+  const draft: RecordingDraft = {
+    clientEventId: detail.clientEventId,
+    date: detail.date,
+    timeZone: detail.timeZone,
+    mode,
+    server: { id: detail.id, version: detail.version, status: detail.status },
+    finish: {
+      ...(detail.durationMin === undefined ? {} : { durationMin: detail.durationMin }),
+      ...(detail.rpe === undefined ? {} : { rpe: detail.rpe }),
+      ...(detail.note === undefined ? {} : { note: detail.note }),
+    },
+    exercises,
+  }
+  let restored: RecordingDraft
+  try { restored = restoreDraft(draft, today) }
+  catch { return restoreFailure('invalid_snapshot') }
+  const latestCredential = auth.current()
+  const leaseStillCurrent = auth.isCurrent(lease.subjectId, lease.generation)
+  if (!latestCredential || latestCredential.subjectId !== lease.subjectId ||
+    latestCredential.generation !== lease.generation || !leaseStillCurrent) return restoreFailure('session_changed')
+  return { ok: true, draft: restored }
 }

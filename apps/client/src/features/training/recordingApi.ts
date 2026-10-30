@@ -75,6 +75,8 @@ export class RecordingApiError extends Error {
 
 export interface WorkoutSessionDetail {
   id: string
+  /** Original user-scoped creation key; it is never generated during restore. */
+  clientEventId: string
   date: string
   timeZone: string
   status: 'in_progress' | 'completed' | 'skipped'
@@ -237,7 +239,7 @@ function setPayload(raw: unknown): SetPayload {
 
 /** Fail closed on a malformed response before its version or IDs reach a draft. */
 export function parseSessionDetail(raw: unknown): WorkoutSessionDetail {
-  if (!object(raw) || !validId(raw.id) || !validDate(raw.date) || !validTimeZone(raw.timeZone) ||
+  if (!object(raw) || !validId(raw.id) || !validKey(raw.clientEventId) || !validDate(raw.date) || !validTimeZone(raw.timeZone) ||
     !['in_progress', 'completed', 'skipped'].includes(String(raw.status)) ||
     !['free', 'plan'].includes(String(raw.source)) || !validVersion(raw.version) ||
     !validDateTime(raw.createdAt) || !validDateTime(raw.updatedAt) ||
@@ -409,7 +411,10 @@ export class RecordingApi {
     }
     return this.call('POST', '/me/sessions', 201, undefined, {
       source: 'free', date: input.date, timeZone: input.timeZone, clientEventId: input.clientEventId,
-    }, idempotencyKey)
+    }, idempotencyKey).then(snapshot => {
+      if (snapshot.detail.clientEventId !== input.clientEventId) throw new RecordingApiError('invalid_response')
+      return snapshot
+    })
   }
 
   readSession(id: string): Promise<ScopedSessionDetail> {
@@ -506,7 +511,8 @@ export class RecordingApi {
       const detail = snapshot.detail
       // A successful status alone is not an acknowledgement of these edits.
       // On mismatch the caller must reconcile by reading, not issue a new write.
-      if (detail.version !== expectedVersion + (mustChange ? 1 : 0) ||
+      if (detail.clientEventId !== baseline.detail.clientEventId ||
+        detail.version !== expectedVersion + (mustChange ? 1 : 0) ||
         detail.exerciseEntryKeys.length !== order.length ||
         detail.exerciseEntryKeys.some((key, index) => key !== order[index])) {
         throw new RecordingApiError('invalid_response')
@@ -569,7 +575,8 @@ export class RecordingApi {
         throw new RecordingApiError('session_changed')
       }
       const detail = snapshot.detail
-      if (detail.status !== 'completed' || detail.recordedAt === null || detail.version !== body.expectedVersion + 1 ||
+      if (detail.clientEventId !== baseline.detail.clientEventId || detail.status !== 'completed' ||
+        detail.recordedAt === null || detail.version !== body.expectedVersion + 1 ||
         detail.source !== baseline.detail.source || detail.timeZone !== baseline.detail.timeZone ||
         detail.date !== (body.date ?? baseline.detail.date) || !sameInstant(detail.createdAt, baseline.detail.createdAt) ||
         compareInstants(detail.updatedAt, baseline.detail.updatedAt) === -1 ||

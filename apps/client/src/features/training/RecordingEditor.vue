@@ -30,6 +30,7 @@ const kindLabels: Record<SetKind, string> = {
 }
 
 function nameOf(exercise: DraftExercise): string {
+  if (exercise.resolvedExerciseName) return exercise.resolvedExerciseName
   if (exercise.identity.source === 'custom') return exercise.identity.exerciseName
   return props.exerciseLabels[exercise.exerciseEntryKey] || '动作信息暂不可用'
 }

@@ -9,7 +9,7 @@ const set = {
   resolvedExerciseName: '深蹲', setIndex: 1, kind: 'weight', weightKg: 50, reps: 8,
 }
 const detail = overrides => ({
-  id: '42', date: '2026-10-29', timeZone: 'Asia/Shanghai', status: 'in_progress',
+  id: '42', clientEventId: 'event-0001', date: '2026-10-29', timeZone: 'Asia/Shanghai', status: 'in_progress',
   source: 'free', version: 3, createdAt: '2026-10-29T08:00:00Z',
   updatedAt: '2026-10-29T08:00:00Z', recordedAt: null, sets: [], exerciseEntryKeys: [], ...overrides,
 })
@@ -23,7 +23,9 @@ test('free-session creation sends the actual input with authentication and a cal
     return { statusCode: 201, data: detail() }
   })
   const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
-  assert.equal((await api.createFreeSession(input, 'create-0001')).detail.id, '42')
+  const created = await api.createFreeSession(input, 'create-0001')
+  assert.equal(created.detail.id, '42')
+  assert.equal(created.detail.clientEventId, input.clientEventId)
   assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions')
   assert.equal(requests[0].header.Authorization, 'Bearer real-session-token')
   assert.equal(requests[0].header['Idempotency-Key'], 'create-0001')
@@ -411,4 +413,35 @@ test('finish rejects a backwards update instant but allows equal instants and of
     { ...finished, updatedAt: '2026-10-29T16:00:00.0000009+08:00' } }))
   const badBaseline = await bad.readSession('42')
   await assert.rejects(bad.finishSession('42', { expectedVersion: 3 }, 'finish-0001', badBaseline), apiError('invalid_response'))
+})
+
+test('the original client event identity is required and must survive create, update and finish responses', async () => {
+  for (const invalid of [undefined, '', 'short', 'x'.repeat(65)]) {
+    const raw = { ...detail(), clientEventId: invalid }
+    const api = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: raw }))
+    await assert.rejects(api.readSession('42'), apiError('invalid_response'))
+  }
+
+  const createApi = makeApi('https://api.example.org', auth, async () => ({
+    statusCode: 201, data: detail({ clientEventId: 'event-0002' }),
+  }))
+  await assert.rejects(createApi.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001'), apiError('invalid_response'))
+
+  const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] })
+  const write = { ...set, completed: true }
+  const updateApi = makeApi('https://api.example.org', auth, async request => ({
+    statusCode: 200,
+    data: request.method === 'GET' ? initial : detail({ clientEventId: 'event-0002', version: 4,
+      sets: [set], exerciseEntryKeys: ['entry-0001'] }),
+  }))
+  const baseline = await updateApi.readSession('42')
+  await assert.rejects(updateApi.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+
+  const finishApi = makeApi('https://api.example.org', auth, async request => ({
+    statusCode: 200,
+    data: request.method === 'GET' ? initial : detail({ clientEventId: 'event-0002', status: 'completed', version: 4,
+      recordedAt: '2026-10-29T08:01:00Z', sets: [set], exerciseEntryKeys: ['entry-0001'] }),
+  }))
+  const finishBaseline = await finishApi.readSession('42')
+  await assert.rejects(finishApi.finishSession('42', { expectedVersion: 3 }, 'finish-0001', finishBaseline), apiError('invalid_response'))
 })

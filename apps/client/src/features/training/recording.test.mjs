@@ -195,6 +195,19 @@ test('custom names and catalog IDs are validated without using sample data', () 
   assert.equal(draft.exercises[0].identity.exerciseName, '深蹲')
 })
 
+test('stable keys count Unicode code points at the 8 and 64 character boundaries', () => {
+  const minimum = '🧭'.repeat(8)
+  const maximum = '🧭'.repeat(64)
+  assert.equal(Array.from(minimum).length, 8)
+  assert.equal(minimum.length, 16)
+  assert.doesNotThrow(() => createRecordingDraft(minimum, '2026-10-28', 'Asia/Shanghai', '2026-10-29'))
+  assert.doesNotThrow(() => createRecordingDraft(maximum, '2026-10-28', 'Asia/Shanghai', '2026-10-29'))
+  assert.throws(() => createRecordingDraft('🧭'.repeat(7), '2026-10-28', 'Asia/Shanghai', '2026-10-29'), /标识/)
+  assert.throws(() => createRecordingDraft('🧭'.repeat(65), '2026-10-28', 'Asia/Shanghai', '2026-10-29'), /标识/)
+  const draft = createRecordingDraft('event-0001', '2026-10-28', 'Asia/Shanghai', '2026-10-29')
+  assert.doesNotThrow(() => addExercise(draft, minimum, { source: 'custom', exerciseName: '深蹲' }, 'weight', maximum))
+})
+
 test('invalid or future training dates and invalid timezones are rejected', () => {
   assert.throws(() => createRecordingDraft('event-0001', '2026-02-30', 'Asia/Shanghai', '2026-10-29'), /日期/)
   assert.throws(() => createRecordingDraft('event-0001', '2026-10-30', 'Asia/Shanghai', '2026-10-29'), /日期/)
@@ -253,6 +266,18 @@ test('recovery rejects duplicate identifiers, malformed state and invalid server
   const badVersion = { ...draft, server: { id: '101', version: 0 } }
   assert.throws(() => restoreDraft(badVersion, '2026-10-29'), /版本/)
   assert.throws(() => restoreDraft('{broken', '2026-10-29'), /无法读取/)
+})
+
+test('older server-linked drafts remain readable when the newer status marker is absent', () => {
+  let draft = withExercise('bodyweight')
+  draft = setInput(draft, 'record-001', 'reps', '8')
+  draft = { ...draft, server: { id: '42', version: 2 }, exercises: draft.exercises.map(exercise => ({
+    ...exercise, sets: exercise.sets.map(set => ({ ...set, persisted: true, dirty: false })),
+  })) }
+  const restored = restoreDraft(draft, '2026-10-29')
+  assert.deepEqual(restored.server, { id: '42', version: 2 })
+  assert.equal(restored.exercises[0].sets[0].persisted, true)
+  assert.throws(() => restoreDraft({ ...draft, server: { ...draft.server, status: 'skipped' } }, '2026-10-29'), /服务端版本无效/)
 })
 
 test('a save rechecks the current date instead of trusting a modified draft', () => {
