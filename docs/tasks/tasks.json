@@ -674,7 +674,8 @@
         "A04-04",
         "A04-05",
         "A04-06",
-        "A04-07"
+        "A04-07",
+        "A04-08"
       ],
       "role": "worker",
       "model_policy": "implementation",
@@ -7501,6 +7502,39 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实命令；同类第二次重评；第三次停止该路径并报告阻塞。",
       "external_prerequisites": ["Android 真实硬件、可用 Android Java 与构建工具。"]
+    },
+    {
+      "id": "A04-08",
+      "title": "训练记录写入与认证幂等事务接缝",
+      "batch": "P0-A",
+      "status": "active",
+      "depends_on": ["F01-02", "K01-01"],
+      "acceptance_requires": ["A04-02", "A04-03", "A04-04", "A04-05", "F02-04"],
+      "parent": "A04",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "fa32440",
+      "write_allowlist": ["apps/api/internal/modules/workout/application/idempotent_workout.go", "apps/api/internal/modules/workout/application/idempotent_workout_test.go", "docs/evidence/A04/A04-08/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "api/openapi.yaml", "apps/api/internal/idempotency/store.go", "apps/api/internal/modules/workout/application/ordered_workout.go", "apps/api/internal/modules/workout/repository/order.go"],
+      "deliverables": "将本人自由记录的创建、实际组顺序保存和确认连接至同一已认证数据库幂等事务能力；提供固定 SQL 策略及事务内授权。",
+      "acceptance": [
+        "真实隔离 MySQL 通过认证主体、年龄和记录归属检查；使用真正受限的幂等事务验证同键重放、同键异请求冲突、旧版本拒绝与写入回滚",
+        "重放前复核当前会话与记录归属，撤权或其他主体不能取得缓存正文；不将设备、令牌或训练内容写入日志",
+        "仅为内部事务接缝；HTTP、客户端页面、外部发信和真机尚未接通时不得宣称完整同步"
+      ],
+      "verification_commands": ["隔离 MySQL 中训练与真实幂等执行器接缝测试", "Go race 和任务图检查"],
+      "risks": ["可选完成字段、计划训练、HTTP、可靠端侧待发队列及真实设备验证由后续任务承担。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01", "F02"],
+      "forbidden": ["不接触已有业务数据库", "不绕过认证、成年声明或撤权", "不引入训练计时"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": []
     }
   ],
   "deferred_packages": {
