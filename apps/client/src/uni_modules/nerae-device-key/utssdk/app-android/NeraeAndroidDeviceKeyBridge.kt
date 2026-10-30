@@ -221,9 +221,10 @@ object NeraeAndroidDeviceKeyBridge {
 
     private fun validAlias(alias: String): Boolean {
         if (!validOpaque(alias, 43, 43)) return false
-        // For 32 bytes, the final unpadded base64url character has only two
-        // data bits; canonical encodings therefore end in A, Q, g, or w.
-        return alias.last() == 'A' || alias.last() == 'Q' || alias.last() == 'g' || alias.last() == 'w'
+        // A 32-byte value leaves four data bits in its final base64url
+        // character; the remaining two pad bits must both be zero.
+        val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        return alphabet.indexOf(alias.last()) % 4 == 0
     }
 
     private fun validOpaque(value: String, min: Int, max: Int): Boolean {

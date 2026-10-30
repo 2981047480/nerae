@@ -40,6 +40,12 @@
 
 设备不可用限制：未在 iPhone 或 Android 硬件上验证预留 alias 首次创建、同 alias 并发/重复冲突、Keychain/Keystore 中已存在密钥未被改写、或硬件级别拒绝行为。Swift/Kotlin alias 检查和 UTS 转换不能替代这些真机检查；本任务不构成账号映射持久化或登录恢复实现。
 
+## 2026-10-31 Android alias 编码修复
+
+后续审核发现原 Android canonical 检查只接受四种尾字符，误把 32 字节 base64url 的末位当成只有两位数据；实际末位包含四位数据和两位填充零。此前正例只覆盖 `A`、`Q`，不足以发现该错误；错误会拒绝部分有效随机 alias。已按末位索引可被 4 整除修复。
+
+新增覆盖全部 256 种末字节、全部 64 个尾字符的独立 Base64 编解码比较。修复前 Android 合成检查失败（保留 `/private/tmp/nerae-alias-regression.121D9bpW`）；修复后 Swift 和 Android Kotlin/API 35 检查退出 0，iOS 实现本身无需修改，产物保留 `/private/tmp/nerae-alias-fixed.xfA03wxS`。仍未运行真实设备密钥操作。
+
 ## Lead 复核
 
 复核 UTS 导出、Swift 桥与三份原生源：创建只在显式新设备入口，读取与签名只查既有别名；桥只返回固定错误码，不输出私钥或原生异常。未发现阻止保存该未接线模块的 P0–P2 问题，但编译不是设备安全验收。

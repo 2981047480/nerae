@@ -17,6 +17,7 @@ PROBE = """<script setup lang="ts">
 import { ref } from 'vue'
 import { createDeviceKeyAtReservedAlias, readExistingDevicePublicKey } from '@/uni_modules/nerae-device-key'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
+import { compareAndSetDeviceIdentityRegistry, readDeviceIdentityRegistry } from '@/uni_modules/nerae-secure-vault'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
 import { createAppSessionCoordinator } from '@/platform/app/nativeSession'
 
@@ -24,6 +25,7 @@ const result = ref('')
 function probe() {
   result.value = readExistingDevicePublicKey('probe').errorCode +
     generateSecureRandomRequestKey().errorCode + String(createDeviceKeyAtReservedAlias) +
+    String(compareAndSetDeviceIdentityRegistry) + String(readDeviceIdentityRegistry) +
     String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator)
 }
 </script>
@@ -33,7 +35,7 @@ function probe() {
 PLUGINS = {
     "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs")),
     "nerae-random": ("neraeRandom", ("generateSecureRandomRequestKeyByJs",)),
-    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs")),
+    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs")),
     "nerae-https": ("neraeHttps", ("requestByJs", "cancelByJs")),
 }
 

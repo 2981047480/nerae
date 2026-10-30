@@ -25,3 +25,7 @@
 ## 未验证与风险
 
 没有在真实 iPhone Keychain 或 Android Keystore/TEE/StrongBox 上执行；没有真机/模拟器安装，也没有 APK/IPA。Android 主机 JVM 的软件 AES 只验证加解密与进程锁语义，不证明硬件密钥行为。iOS Swift 源码通过本机 `swiftc` 合成测试，但此次 HBuilderX 生成的 iPhoneOS framework 未能完成。CAS 仅对本 App 进程内通过该静态 vault 实例发起的调用原子；不覆盖多进程并发。真实平台原生 CAS、调用方集成、设备注册生命周期和真机行为仍待后续验证。
+
+## Lead 集成复验
+
+在集成代码 `16febdd` 加上 Android alias 检查修复的工作树中，`NERAE_KEEP_P02_12_SWIFT=1 bash docs/evidence/P02/P02-12/verify-swift.sh` 与 `NERAE_KEEP_P02_08_VAULT=1 bash docs/evidence/P02/P02-12/verify-kotlin.sh` 均退出 0；夹具分别保留在 `/private/tmp/nerae-p02-12-swift.yr7KM9gR`、`/private/tmp/nerae-p02-08-vault.69XvfBhG`。`python3 scripts/quality/verify_uts_plugin_build.py` 以锁定 5.26 编译并检查 CAS/读取及认证 vault 的 iOS/Android wrapper 和小程序回退，退出 0。后者仅生成源码，未链接 iOS framework 或验证真机。
