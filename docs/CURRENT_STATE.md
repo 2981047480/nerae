@@ -5,6 +5,7 @@
 - 邮箱挑战的内部签发已连接四维限流、短期加密幂等回执与发信队列；集成树私有 MySQL/Redis 测试覆盖同键并发、改变有效请求冲突、锁等待跨过到期、撤销状态、提交成功后确认丢失模拟及失败回滚。[A01-16](evidence/A01/A01-16/report.md) 仍未挂 HTTP、真实邮箱或生产 worker；设备提示仅参与请求摘要，尚未存储展示。
 - 邮箱挑战 HTTP handler 已在集成树使用真实签发组件、本机 TLS 和私有 MySQL/Redis 完成 race 联测，包括同键重放、冲突、限流、非法请求与错误脱敏；实际客户端认证适配器也以合成数据连接该接口验证了挑战及重放；[A01-18](evidence/A01/A01-18/report.md) 只表示请求被接受，尚未挂生产路由或发送真实邮件。
 - 邮箱验证码登录已具备外层事务组合接缝：错误次数提交、回滚和提交后授权复核已在私有 MySQL/race 测试；[A01-11](evidence/A01/A01-11/transaction-seam.md) 仍不提供匿名登录幂等回执、登录 HTTP、真实发信或完整登录。
+- 登录挑战在等待数据库锁和写入证明防重标记之后重新检查时效；可控时钟与私有 MySQL 回归通过，未模拟实际锁等待或跨实例时钟偏差。[证据](evidence/A01/A01-04/lock-wait-expiry.md)
 - 集成版本 `4023de6` 修复错误验证码时设备签名可重复使用：每次有效证明与尝试计数同事务消费，回滚后可重试；挑战和登录隔离 MySQL/race 回归通过。登录幂等回执、HTTP 和实际登录仍未完成。[证据](evidence/A01/A01-11/proof-attempt-integration.md)
 - 设备证明防重在集成版本 `2b59a12` 增加缺失 key epoch 时的历史保护：保留防重记录时拒绝自动重建；集成版隔离 MySQL 防重与邮箱登录事务复测通过。空表仍可首次自动初始化，受控启动和数据恢复待完成。[证据](evidence/A01/A01-02/epoch-history-guard.md)
 - 邮箱队列后台循环已集成至 `ad727bb`：在同版本私有 MySQL 与本机 TLS SMTP sink 验证成功、结果未知与重启不重复；生产 worker 入口尚未装配，也未连接 QQ。[证据](evidence/A01/A01-19/report.md)
@@ -17,7 +18,7 @@
 - 集成版本 `03a0411` 已在隔离 MySQL 中接通邮箱挑战、验证码派生和发送队列，并由实际 SMTP 传输类向本机 TLS 接收器提交合成邮件，验证 SMTP 接受与结果未知。[A01-13](evidence/A01/A01-13/report.md) 这不是用户邮箱投递：QQ 邮箱 SMTP 尚待用户开启，登录 HTTP、生产 worker 与匿名认证幂等尚未接线。
 - `32fce75` 将邮箱身份密钥改为显式安全初始化，已有身份或挑战时丢失 epoch 不可重建；认证事务、训练写入和多项私有 MySQL 回归通过。[初始化](evidence/A01/A01-15/report.md) / [挑战回归](evidence/A01/A01-04/strict-epoch-report.md) 邮箱/IP/设备/全局 Redis 限流基础已在隔离实例验证，但尚未接入认证入口。[A01-14](evidence/A01/A01-14/report.md)
 - `aa01f47` / `2419d2e` 分别加入 iOS Keychain 与 Android Keystore 认证状态存储基础；iOS 编译为未签名 framework，Android Kotlin/UTS 转换及合成加密测试通过。[iOS](evidence/P02/P02-07/report.md) / [Android](evidence/P02/P02-08/report.md) 两者尚未接登录，未证明手机硬件或安装包行为；小程序采用独立微信登录，仍缺账号。
-- HBuilderX 5.33 在隔离源码夹具中成功生成包含 iOS 与 Android UTS 原生源码的本地 App 资源；项目 CLI 5.26 与 HBuilderX 的编译器版本不同，资源不是原生安装包。iPhone 标准基座缺有效签名，Mac 现有一个代码签名身份但未发现描述文件；仍需正式项目资源、匹配 SDK、签名包和真机验证。[编译探针](evidence/P02/P02-05/report.md)
+- HBuilderX 5.33 在隔离源码夹具中成功生成包含 iOS 与 Android UTS 原生源码的本地 App 资源；项目 CLI 5.26 与 HBuilderX 的编译器版本不同，资源不是原生安装包。iPhone 标准基座缺有效签名，Mac 现有一个代码签名身份但未发现描述文件；仍需正式项目资源、匹配 SDK、签名包和真机验证。 用户确认只有免费 Apple ID；[Apple 官方说明](https://developer.apple.com/help/account/basics/about-your-developer-account)个人团队可在 Xcode 安装自用测试版，描述文件 7 天后需重新构建安装；本项目是否能使用该签名路径尚未验证。[编译探针](evidence/P02/P02-05/report.md)
 - 2026-10-30 集成版本 `ed94789`：自由记录创建、实际组及顺序保存、完成确认已接入同一认证与幂等数据库事务；在隔离 MySQL 测试了同键并发与重放、旧版本、响应归属、错误回执、跨主体和撤回成年声明。[A04-08](evidence/A04/A04-08/README.md) 后续 HTTP 接线进度见上；真实跨设备登录和页面接线仍未完成。
 - iOS 正式 UTS 设备密钥桥与 Android Keystore 桥已合入。iOS 在 HBuilderX 5.33 编译为未签名 iPhoneOS arm64 framework；Android Kotlin 使用 Corretto 17、Kotlin 1.9.24 和 API 35 编译并通过合成 DER 正反例。[iOS](evidence/P02/P02-05/report.md) / [Android](evidence/P02/P02-06/report.md) 均未完成 UTS 全工程兼容、原生安装包、真机密钥及登录验证；Android 无真机，服务端也尚不验证 Android attestation。
 - 在 `ed94789` 复跑完整 Go race 套件（无测试数据库配置的 DB 用例按设计跳过）、A04-08 隔离 MySQL 测试、94 项训练客户端测试、客户端类型检查、小程序资源编译和任务图检查均通过。小程序资源不是可安装 App；接入正式 UTS 模块后的 App 资源构建仍缺项目锁定版本的 `@dcloudio/uni-uts-v1`，尚未通过。
