@@ -87,8 +87,15 @@ func (s *ProofReplayStore) checkKeyEpoch(ctx context.Context, tx *sql.Tx) error 
 	var stored []byte
 	err := tx.QueryRowContext(ctx, `SELECT key_tag FROM auth_device_proof_key_epoch WHERE slot = 1 FOR SHARE`).Scan(&stored)
 	if errors.Is(err, sql.ErrNoRows) {
-		// The first transaction installs the epoch. A concurrent initializer can
-		// deadlock or conflict; it fails closed and the caller may retry safely.
+		// A lost epoch must never silently install a different key while any
+		// replay marker remains. A locking read observes current committed rows
+		// even if the caller already established a repeatable-read snapshot.
+		var marker int
+		if err := tx.QueryRowContext(ctx, `SELECT 1 FROM auth_device_proof_replay LIMIT 1 FOR UPDATE`).Scan(&marker); !errors.Is(err, sql.ErrNoRows) {
+			return ErrReplayStore
+		}
+		// Empty-store initialization may conflict or deadlock with another
+		// initializer. The entire caller-owned transaction then fails closed.
 		if _, err = tx.ExecContext(ctx, `INSERT INTO auth_device_proof_key_epoch (slot, key_tag) VALUES (1, ?)`, s.tag[:]); err != nil {
 			return ErrReplayStore
 		}

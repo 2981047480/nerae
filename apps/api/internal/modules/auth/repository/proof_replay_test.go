@@ -103,6 +103,32 @@ func TestProofReplayTransactions(t *testing.T) {
 		return nil
 	}
 
+	// A stale consistent-read snapshot must not hide marker history when the
+	// epoch row is missing. The guard uses a locking/current read.
+	stale, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("cannot begin stale-snapshot transaction")
+	}
+	var before int
+	if err := stale.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_device_proof_replay`).Scan(&before); err != nil || before != 0 {
+		_ = stale.Rollback()
+		t.Fatal("expected empty replay table")
+	}
+	syntheticFingerprint := bytes.Repeat([]byte{0x73}, 32)
+	syntheticDigest := bytes.Repeat([]byte{0x74}, 32)
+	if _, err := db.ExecContext(ctx, `INSERT INTO auth_device_proof_replay (device_fingerprint,jti_digest,retain_until,created_at) VALUES (?,?,?,?)`, syntheticFingerprint, syntheticDigest, utcSQL(now.Add(time.Minute)), utcSQL(now)); err != nil {
+		_ = stale.Rollback()
+		t.Fatal("cannot insert synthetic marker")
+	}
+	if err := store.Consume(ctx, stale, fingerprint, newProof("snapshot-guard"), now); !errors.Is(err, ErrReplayStore) {
+		_ = stale.Rollback()
+		t.Fatalf("stale snapshot allowed initialization with marker history: %v", err)
+	}
+	_ = stale.Rollback()
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_device_proof_replay WHERE device_fingerprint=? AND jti_digest=?`, syntheticFingerprint, syntheticDigest); err != nil {
+		t.Fatal("cannot remove synthetic marker")
+	}
+
 	var start sync.WaitGroup
 	start.Add(1)
 	initial := make(chan error, 2)
@@ -228,5 +254,20 @@ func TestProofReplayTransactions(t *testing.T) {
 	timezoneDigest := store.jtiDigest(fingerprint, timezoneProof.JTI)
 	if err := db.QueryRowContext(ctx, `SELECT retain_until FROM auth_device_proof_replay WHERE device_fingerprint = ? AND jti_digest = ?`, fingerprint[:], timezoneDigest[:]).Scan(&retained); err != nil || !retained.Equal(timezoneProof.ReplayUntil) {
 		t.Fatal("driver location changed replay retention")
+	}
+
+	// Simulate accidental loss of the singleton while a consumed proof is
+	// still retained. Neither the old key nor a changed key can reinitialize
+	// it or make the same proof consumable again.
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_device_proof_key_epoch WHERE slot=1`); err != nil {
+		t.Fatal("cannot simulate missing epoch")
+	}
+	for _, candidate := range []*ProofReplayStore{store, other} {
+		if err := consume(candidate, fingerprint, newProof("concurrent"), true); !errors.Is(err, ErrReplayStore) {
+			t.Fatalf("missing epoch with replay history did not fail closed: %v", err)
+		}
+	}
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_device_proof_key_epoch`).Scan(&epochCount); err != nil || epochCount != 0 {
+		t.Fatal("missing epoch was recreated despite marker history")
 	}
 }
