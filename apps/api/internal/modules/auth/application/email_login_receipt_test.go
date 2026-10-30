@@ -108,13 +108,44 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 	if err != nil || result.Kind() != VerificationRejected || !result.CommitRequired() {
 		t.Fatal("wrong attempt and rejection receipt did not commit together")
 	}
+	if value, err := result.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) || value.Kind() != "" {
+		t.Fatal("committed incorrect code did not return the generic rejection")
+	}
 	if count(`SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, id) != 1 ||
 		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='rejected'`, id) != 1 ||
 		count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, id) != 0 {
 		t.Fatal("wrong attempt left an incorrect database state")
 	}
-	if _, err := perform(wrongKey, wrong, true); !errors.Is(err, ErrReceiptReplayUnavailable) {
-		t.Fatal("existing rejection was not held for the future replay path")
+	wrongReplay, err := perform(wrongKey, wrong, true)
+	if err != nil || wrongReplay.Kind() != VerificationRejected || !wrongReplay.CommitRequired() {
+		t.Fatal("same wrong request could not recover its rejection")
+	}
+	if value, err := wrongReplay.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) || value.Kind() != "" {
+		t.Fatal("replayed wrong request did not return the generic rejection")
+	}
+	type rejectedReplayResult struct {
+		result ReceiptTransactionResult
+		err    error
+	}
+	rejectedResults := make(chan rejectedReplayResult, 2)
+	var rejectedWorkers sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		rejectedWorkers.Add(1)
+		go func() {
+			defer rejectedWorkers.Done()
+			value, err := perform(wrongKey, wrong, true)
+			rejectedResults <- rejectedReplayResult{value, err}
+		}()
+	}
+	rejectedWorkers.Wait()
+	close(rejectedResults)
+	for item := range rejectedResults {
+		if item.err != nil || item.result.Kind() != VerificationRejected || !item.result.CommitRequired() {
+			t.Fatal("concurrent rejected request did not recover its result")
+		}
+		if _, err := item.result.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) {
+			t.Fatal("concurrent rejected request did not return a generic rejection")
+		}
 	}
 	result, err = perform("BQUFBQUFBQUFBQUFBQUFBQ", wrong, true)
 	if err != nil || result.Kind() != VerificationRejected || result.CommitRequired() ||
@@ -129,6 +160,35 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 	}
 	if count(`SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, id) != 1 {
 		t.Fatal("repeated wrong request changed attempts")
+	}
+	var rejectedCiphertext []byte
+	if err := db.QueryRowContext(ctx, `SELECT response_enc FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='rejected'`, id).Scan(&rejectedCiphertext); err != nil {
+		t.Fatal(err)
+	}
+	corruptRejected := append([]byte(nil), rejectedCiphertext...)
+	corruptRejected[len(corruptRejected)-1] ^= 1
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET response_enc=? WHERE challenge_id=? AND result_kind='rejected'`, corruptRejected, id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wrongReplay.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("tampered rejection receipt was presented as a verified result")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET response_enc=? WHERE challenge_id=? AND result_kind='rejected'`, rejectedCiphertext, id); err != nil {
+		t.Fatal(err)
+	}
+	var createdRaw, expiresRaw string
+	if err := db.QueryRowContext(ctx, `SELECT CAST(created_at AS CHAR), CAST(expires_at AS CHAR) FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='rejected'`, id).Scan(&createdRaw, &expiresRaw); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET created_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 2 MINUTE), expires_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 MINUTE) WHERE challenge_id=? AND result_kind='rejected'`, id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wrongReplay.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) ||
+		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='rejected'`, id) != 1 {
+		t.Fatal("expired rejection was misclassified or deleted")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_email_login_receipt SET created_at=?, expires_at=? WHERE challenge_id=? AND result_kind='rejected'`, createdRaw, expiresRaw, id); err != nil {
+		t.Fatal(err)
 	}
 	correct := challenge.AttemptInput{ChallengeID: id, Code: "012345", DeviceProof: flowProof(t, firstKey, id, nonce)}
 	const correctKey = "AgICAgICAgICAgICAgICAg"
@@ -287,6 +347,23 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 	result, err = perform(rollbackRequestKey, rollbackInput, true)
 	if err != nil || result.Kind() != VerificationAuthenticated || count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, rollbackID) != 1 {
 		t.Fatal("rolled-back proof could not be retried")
+	}
+	wrongRollbackKey, wrongRollbackPublic := flowDevice(t)
+	wrongRollbackID, wrongRollbackNonce := issue("receipt-wrong-rollback@example.test", wrongRollbackPublic)
+	wrongRollback := challenge.AttemptInput{ChallengeID: wrongRollbackID, Code: "999999", DeviceProof: flowProof(t, wrongRollbackKey, wrongRollbackID, wrongRollbackNonce)}
+	wrongRolled, err := perform("CgoKCgoKCgoKCgoKCgoKCg", wrongRollback, false)
+	if err != nil || wrongRolled.Kind() != VerificationRejected || !wrongRolled.CommitRequired() {
+		t.Fatal("could not prepare rejected rollback fixture")
+	}
+	if _, err := wrongRolled.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) ||
+		count(`SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, wrongRollbackID) != 0 ||
+		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=?`, wrongRollbackID) != 0 {
+		t.Fatal("rolled-back rejection was reported as committed")
+	}
+	_, _ = issue("receipt-wrong-rollback@example.test", wrongRollbackPublic)
+	if _, err := wrongRolled.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) ||
+		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=?`, wrongRollbackID) != 0 {
+		t.Fatal("challenge rotation made a rolled-back rejection appear committed")
 	}
 
 	failureKey, failurePublic := flowDevice(t)

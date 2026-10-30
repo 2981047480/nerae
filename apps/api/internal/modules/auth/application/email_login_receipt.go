@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"crypto/hmac"
 	"database/sql"
 	"errors"
 	"log/slog"
@@ -14,12 +15,7 @@ import (
 	"nerae/api/internal/modules/auth/session"
 )
 
-var (
-	ErrReceiptConflict = errors.New("email login receipt conflicts")
-	// Rejection receipts remain unavailable until their replay path verifies
-	// proof, expiry, transaction commit and the rejection's request binding.
-	ErrReceiptReplayUnavailable = errors.New("email login receipt replay unavailable")
-)
+var ErrReceiptConflict = errors.New("email login receipt conflicts")
 
 // ReceiptLogin coordinates an attempt and its encrypted result receipt in one
 // caller-owned transaction. It is not an HTTP endpoint or rate limiter.
@@ -62,6 +58,7 @@ type ReceiptTransactionResult struct {
 	commitRequired bool
 	session        *session.ReceiptCandidate
 	approval       *approval.ReceiptCandidate
+	rejection      *rejectedReceipt
 }
 
 func (ReceiptTransactionResult) String() string               { return "ReceiptLoginResult{redacted}" }
@@ -76,7 +73,8 @@ func (r ReceiptTransactionResult) CommitRequired() bool   { return r.commitRequi
 // AfterCommit returns a trusted-device token only after the session candidate
 // re-reads the committed receipt and revalidates proof and authorization in a
 // fresh transaction. A new-device approval result releases only its polling
-// capability, never a session. Rejection replay remains unavailable.
+// capability, never a session. A committed rejected attempt returns only the
+// generic rejection after its receipt and original proof have been rechecked.
 func (r ReceiptTransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (Outcome, error) {
 	if !r.commitRequired {
 		return Outcome{}, ErrUnavailable
@@ -106,6 +104,11 @@ func (r ReceiptTransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (
 			return Outcome{}, ErrUnavailable
 		}
 		return Outcome{kind: ApprovalRequired, approval: data}, nil
+	case VerificationRejected:
+		if r.rejection == nil {
+			return Outcome{}, ErrUnavailable
+		}
+		return Outcome{}, r.rejection.afterCommit(ctx, db)
 	default:
 		return Outcome{}, ErrUnavailable
 	}
@@ -117,7 +120,7 @@ func (r ReceiptTransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (
 // must commit or roll back all of them; this method neither commits nor returns
 // a credential. Existing session receipts can be recovered after commit;
 // approval receipts recover only the polling capability; rejection receipts
-// still fail closed.
+// return only a generic rejection after commit.
 func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key string, input challenge.AttemptInput) (ReceiptTransactionResult, error) {
 	if s == nil || s.login == nil || s.ledger == nil || s.crypto == nil || s.sessions == nil || s.approvals == nil || s.now == nil || ctx == nil || tx == nil ||
 		s.retention < time.Second || s.retention > 24*time.Hour || s.retention%time.Microsecond != 0 {
@@ -143,9 +146,6 @@ func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key 
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
 	if record, exists := handle.ExistingRecord(); exists {
-		if record.ResultType() != loginreceipt.ResultAuthenticated && record.ResultType() != loginreceipt.ResultApprovalRequired {
-			return ReceiptTransactionResult{}, ErrReceiptReplayUnavailable
-		}
 		proof, err := s.login.challenges.VerifyReceiptProof(ctx, tx, scope, input.ChallengeID, input.DeviceProof)
 		if errors.Is(err, challenge.ErrReceiptProofRejected) {
 			return ReceiptTransactionResult{}, ErrRejected
@@ -239,10 +239,7 @@ func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key 
 	if finished := s.now().UTC(); finished.IsZero() || !expires.After(finished) {
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
-	if result.Kind() == VerificationAuthenticated || result.Kind() == VerificationApprovalRequired {
-		return s.recoverResult(ctx, tx, checkedHandle, checkedProof, request, kind)
-	}
-	return ReceiptTransactionResult{kind: result.Kind(), commitRequired: true}, nil
+	return s.recoverResult(ctx, tx, checkedHandle, checkedProof, request, kind)
 }
 
 func (s *ReceiptLogin) recoverResult(ctx context.Context, tx *sql.Tx, handle *loginledger.Handle, proof *challenge.ReceiptProof, request loginreceipt.Request, kind loginreceipt.ResultType) (ReceiptTransactionResult, error) {
@@ -265,7 +262,135 @@ func (s *ReceiptLogin) recoverResult(ctx context.Context, tx *sql.Tx, handle *lo
 			return ReceiptTransactionResult{}, ErrUnavailable
 		}
 		return ReceiptTransactionResult{kind: VerificationApprovalRequired, commitRequired: true, approval: &candidate}, nil
+	case loginreceipt.ResultRejected:
+		candidate, err := s.recoverRejection(ctx, tx, handle, proof, request)
+		if err != nil {
+			return ReceiptTransactionResult{}, err
+		}
+		return ReceiptTransactionResult{kind: VerificationRejected, commitRequired: true, rejection: &candidate}, nil
 	default:
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
+}
+
+// rejectedReceipt carries no credential. Its receipt and original proof still
+// have to be verified after commit before a changed attempt is reported.
+type rejectedReceipt struct {
+	service   *ReceiptLogin
+	sourceTx  *sql.Tx
+	request   loginreceipt.Request
+	scope     [32]byte
+	binding   loginreceipt.Binding
+	expiresAt time.Time
+	proof     challenge.ReceiptProofDetails
+}
+
+func (rejectedReceipt) String() string               { return "RejectedLoginReceipt{redacted}" }
+func (rejectedReceipt) GoString() string             { return "RejectedLoginReceipt{redacted}" }
+func (rejectedReceipt) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
+func (rejectedReceipt) LogValue() slog.Value {
+	return slog.StringValue("RejectedLoginReceipt{redacted}")
+}
+
+func (s *ReceiptLogin) recoverRejection(ctx context.Context, tx *sql.Tx, handle *loginledger.Handle, proof *challenge.ReceiptProof, request loginreceipt.Request) (rejectedReceipt, error) {
+	if s == nil || s.crypto == nil || s.now == nil || ctx == nil || tx == nil || handle == nil || proof == nil {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	want, err := s.crypto.Summarize(request)
+	if err != nil {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	record, scope, binding, err := handle.RecheckExisting(ctx, tx)
+	if errors.Is(err, loginledger.ErrExpired) || errors.Is(err, loginledger.ErrConflict) {
+		return rejectedReceipt{}, ErrRejected
+	}
+	if err != nil {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	if record.ResultType() != loginreceipt.ResultRejected || record.ResultReference() != request.ChallengeID || record.ChallengeID() != request.ChallengeID ||
+		binding.ChallengeID() != request.ChallengeID || binding.IdempotencyDigest() != want.IdempotencyDigest() || binding.RequestDigest() != want.RequestDigest() {
+		return rejectedReceipt{}, ErrRejected
+	}
+	checked, err := proof.ForRequest(ctx, tx, request.ChallengeID, request.DeviceProof)
+	if errors.Is(err, challenge.ErrReceiptProofRejected) {
+		return rejectedReceipt{}, ErrRejected
+	}
+	if err != nil || checked.Scope != scope {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	aad, err := s.crypto.NewContext(scope[:], binding, record.ResultType(), record.ResultReference(), record.ExpiresAt())
+	if err != nil {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	plain, err := s.crypto.Open(aad, record.Sealed())
+	if err != nil || len(plain.Bytes()) != 0 {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	fresh, freshScope, freshBinding, err := handle.RecheckExisting(ctx, tx)
+	if errors.Is(err, loginledger.ErrExpired) || errors.Is(err, loginledger.ErrConflict) {
+		return rejectedReceipt{}, ErrRejected
+	}
+	if err != nil || freshScope != scope || freshBinding.IdempotencyDigest() != binding.IdempotencyDigest() || freshBinding.RequestDigest() != binding.RequestDigest() ||
+		fresh.ResultType() != record.ResultType() || fresh.ResultReference() != record.ResultReference() || !fresh.ExpiresAt().Equal(record.ExpiresAt()) ||
+		!hmac.Equal(fresh.Sealed().Bytes(), record.Sealed().Bytes()) {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	checked, err = proof.ForRequest(ctx, tx, request.ChallengeID, request.DeviceProof)
+	if errors.Is(err, challenge.ErrReceiptProofRejected) {
+		return rejectedReceipt{}, ErrRejected
+	}
+	if err != nil || checked.Scope != scope {
+		return rejectedReceipt{}, ErrUnavailable
+	}
+	if now := s.now().UTC(); now.IsZero() || !fresh.ExpiresAt().After(now) {
+		return rejectedReceipt{}, ErrRejected
+	}
+	return rejectedReceipt{service: s, sourceTx: tx, request: request, scope: scope, binding: binding, expiresAt: fresh.ExpiresAt(), proof: checked}, nil
+}
+
+func (r rejectedReceipt) afterCommit(ctx context.Context, db *sql.DB) error {
+	if r.service == nil || r.sourceTx == nil || ctx == nil || db == nil {
+		return ErrUnavailable
+	}
+	var live int
+	if err := r.sourceTx.QueryRowContext(ctx, `SELECT 1`).Scan(&live); !errors.Is(err, sql.ErrTxDone) {
+		return ErrUnavailable
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return ErrUnavailable
+	}
+	defer tx.Rollback()
+	handle, err := r.service.ledger.LockExisting(ctx, tx, r.scope, r.binding)
+	if errors.Is(err, loginledger.ErrExpired) || errors.Is(err, loginledger.ErrConflict) {
+		return ErrRejected
+	}
+	if err != nil {
+		return ErrUnavailable
+	}
+	if _, exists := handle.ExistingRecord(); !exists {
+		return ErrUnavailable
+	}
+	proof, err := r.service.login.challenges.VerifyReceiptProof(ctx, tx, r.scope, r.request.ChallengeID, r.request.DeviceProof)
+	if errors.Is(err, challenge.ErrReceiptProofRejected) {
+		return ErrRejected
+	}
+	if err != nil {
+		return ErrUnavailable
+	}
+	fresh, err := r.service.recoverRejection(ctx, tx, handle, proof, r.request)
+	if err != nil {
+		return err
+	}
+	if !fresh.expiresAt.Equal(r.expiresAt) {
+		return ErrUnavailable
+	}
+	if err := tx.Commit(); err != nil {
+		return ErrUnavailable
+	}
+	now := r.service.now().UTC()
+	if now.IsZero() || !fresh.expiresAt.After(now) || fresh.proof.VerifyTimeOnly(now) != nil {
+		return ErrRejected
+	}
+	return ErrRejected
 }
