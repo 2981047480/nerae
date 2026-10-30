@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise workout ordering on a fresh, private, socket-only MySQL.
+"""Exercise the full workout repository package on a fresh, private, socket-only MySQL.
 
 The script never opens an existing database or a TCP port. It deletes only the
 private directory it just created, and preserves it if any verification fails.
@@ -107,7 +107,7 @@ SELECT (SELECT COUNT(*) FROM set_record), (SELECT COUNT(*) FROM information_sche
                         "GOCACHE": "/private/tmp/nerae-go-api-cache",
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_WORKOUT_TEST_DSN": f"root@unix({sock})/nerae_workout_test?parseTime=true&loc=UTC"}
-            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-run", "^TestOrderedWorkoutTransactions$", "-v",
+            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
                                      "./internal/modules/workout/repository"], cwd=ROOT / "apps/api",
                                     env=test_env, timeout=180, check=False)
             if result.returncode:
@@ -130,7 +130,7 @@ SELECT (SELECT COUNT(*) FROM set_record), (SELECT COUNT(*) FROM information_sche
         if succeeded and (child is None or child.poll() is not None):
             shutil.rmtree(base)
     if succeeded:
-        print("PASS: isolated socket-only MySQL workout ordering verification; test directory removed")
+        print("PASS: isolated socket-only MySQL workout repository verification; test directory removed")
         return 0
     return 1
 

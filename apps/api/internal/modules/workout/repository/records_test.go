@@ -4,16 +4,55 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/workout/domain"
 )
+
+func TestRecordStatementsReturnsDefensiveCopies(t *testing.T) {
+	reads, writes := RecordStatements()
+	if len(reads) != 6 || len(writes) != 7 {
+		t.Fatalf("statement list sizes = %d reads, %d writes", len(reads), len(writes))
+	}
+	for _, statement := range reads {
+		if statement == "" || !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "SELECT ") {
+			t.Fatalf("invalid read statement in policy list: %q", statement)
+		}
+	}
+	for _, statement := range writes {
+		verb := strings.Fields(strings.ToUpper(strings.TrimSpace(statement)))
+		if len(verb) == 0 || (verb[0] != "INSERT" && verb[0] != "UPDATE" && verb[0] != "DELETE") {
+			t.Fatalf("invalid write statement in policy list: %q", statement)
+		}
+	}
+	readFirst, writeFirst := reads[0], writes[0]
+	reads[0], writes[0] = "SELECT 1", "DELETE FROM user"
+	currentReads, currentWrites := RecordStatements()
+	if currentReads[0] != readFirst || currentWrites[0] != writeFirst {
+		t.Fatal("caller mutation changed the stored statement allowlist")
+	}
+}
 
 func TestExerciseNameProtection(t *testing.T) {
 	p, err := NewExerciseNameProtector(bytes.Repeat([]byte{7}, 32), "test-key")
 	if err != nil {
 		t.Fatal(err)
+	}
+	store, err := NewRecordStore(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := store.applyBatchWithoutOrderTx(context.Background(), nil, 10, 20, 1, domain.Batch{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("nil capability was not rejected as invalid")
+	}
+	if _, _, err := store.applyBatchWithoutOrder(context.Background(), nil, 10, 20, 1, domain.Batch{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("legacy nil SQL transaction was not rejected as invalid")
+	}
+	if _, err := store.loadTx(context.Background(), nil, 10, 20, domain.InProgress); !errors.Is(err, ErrInvalid) {
+		t.Fatal("nil read capability was not rejected as invalid")
 	}
 	ciphertext, err := p.seal(10, 20, "entry-001", "自定义动作")
 	if err != nil || bytes.Contains(ciphertext, []byte("自定义动作")) {
@@ -82,6 +121,21 @@ func TestWorkoutRecordTransactions(t *testing.T) {
 	if err != nil || createTx.Commit() != nil {
 		t.Fatal("could not commit workout")
 	}
+	applyWithDBTX := func(owner, version uint64, batch domain.Batch) (uint64, bool, error) {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return 0, false, err
+		}
+		defer tx.Rollback()
+		v, changed, err := store.applyBatchWithoutOrderTx(ctx, dbtx.Wrap(tx), owner, session.ID, version, batch)
+		if err != nil {
+			return 0, false, err
+		}
+		if err := tx.Commit(); err != nil {
+			return 0, false, err
+		}
+		return v, changed, nil
+	}
 	apply := func(owner, version uint64, batch domain.Batch, commit bool) (uint64, bool, error) {
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
@@ -103,7 +157,7 @@ func TestWorkoutRecordTransactions(t *testing.T) {
 	second.RecordKey, second.Index, second.WeightKg = "record-002", 2, "45"
 	third := domain.Set{RecordKey: "record-003", ExerciseEntryKey: "entry-002", Exercise: domain.Exercise{Source: domain.Custom, Name: "静态支撑"},
 		Index: 1, Kind: domain.Duration, Seconds: 45, RPE: "7.5"}
-	v, changed, err := apply(user, 1, domain.Batch{Sets: []domain.Set{first, second, third}}, true)
+	v, changed, err := applyWithDBTX(user, 1, domain.Batch{Sets: []domain.Set{first, second, third}})
 	if err != nil || !changed || v != 2 {
 		t.Fatal("could not save actual sets")
 	}

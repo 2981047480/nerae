@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/workout/domain"
 )
 
@@ -24,6 +25,52 @@ var (
 type RecordStore struct {
 	protector *ExerciseNameProtector
 	now       func() time.Time
+}
+
+const (
+	workoutLockSubjectSQL    = `SELECT status FROM user WHERE id = ? FOR UPDATE`
+	workoutLockSessionSQL    = `SELECT source, status, version FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+	workoutLockKeyEpochSQL   = `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`
+	workoutInsertExerciseSQL = `INSERT INTO workout_exercise
+            (session_id, exercise_entry_key, source, name_snapshot_enc, key_id, created_at, updated_at)
+            VALUES (?, ?, 'custom', ?, ?, ?, ?)`
+	workoutInsertSetKeySQL = `INSERT INTO set_record_key
+                (session_id, record_key, exercise_entry_key, state, created_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?)`
+	workoutUpdateSetKeySQL = `UPDATE set_record_key SET state = ?, deleted_at = ? WHERE session_id = ? AND record_key = ?`
+	workoutDeleteSetSQL    = `DELETE FROM set_record WHERE session_id = ? AND record_key = ?`
+	workoutInsertSetSQL    = `INSERT INTO set_record
+                (session_id, record_key, set_index, kind, weight_kg, reps, seconds, rpe, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	workoutUpdateSetSQL = `UPDATE set_record SET set_index = ?, kind = ?, weight_kg = ?, reps = ?, seconds = ?, rpe = ?, updated_at = ?
+                WHERE session_id = ? AND record_key = ?`
+	workoutUpdateSessionSQL = `UPDATE workout_session SET status = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`
+	workoutLoadExercisesSQL = `SELECT exercise_entry_key, source, name_snapshot_enc, key_id FROM workout_exercise WHERE session_id = ?`
+	workoutLoadSetKeysSQL   = `SELECT record_key, exercise_entry_key, state FROM set_record_key WHERE session_id = ?`
+	workoutLoadSetsSQL      = `SELECT record_key, set_index, kind, weight_kg, reps, seconds, rpe FROM set_record WHERE session_id = ?`
+)
+
+var workoutRecordReadSQL = [...]string{
+	workoutLockSubjectSQL,
+	workoutLockSessionSQL,
+	workoutLockKeyEpochSQL,
+	workoutLoadExercisesSQL,
+	workoutLoadSetKeysSQL,
+	workoutLoadSetsSQL,
+}
+
+var workoutRecordWriteSQL = [...]string{
+	workoutInsertExerciseSQL,
+	workoutInsertSetKeySQL,
+	workoutUpdateSetKeySQL,
+	workoutDeleteSetSQL,
+	workoutInsertSetSQL,
+	workoutUpdateSetSQL,
+	workoutUpdateSessionSQL,
+}
+
+// RecordStatements returns copies of the fixed read and write SQL used by this repository.
+func RecordStatements() (reads, writes []string) {
+	return append([]string(nil), workoutRecordReadSQL[:]...), append([]string(nil), workoutRecordWriteSQL[:]...)
 }
 
 func NewRecordStore(protector *ExerciseNameProtector) (*RecordStore, error) {
@@ -39,6 +86,12 @@ func NewRecordStore(protector *ExerciseNameProtector) (*RecordStore, error) {
 // resource access, and roll back on any error. No HTTP idempotency or catalog
 // authorization is implemented here. All transactions lock user before workout.
 func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, subjectID, sessionID, expectedVersion uint64, batch domain.Batch) (uint64, bool, error) {
+	return s.applyBatchWithoutOrderTx(ctx, dbtx.Wrap(tx), subjectID, sessionID, expectedVersion, batch)
+}
+
+// applyBatchWithoutOrderTx performs the same fixed, parameterized mutations through a
+// transaction capability. It does not authorize the caller or own transaction lifecycle.
+func (s *RecordStore) applyBatchWithoutOrderTx(ctx context.Context, tx dbtx.Transaction, subjectID, sessionID, expectedVersion uint64, batch domain.Batch) (uint64, bool, error) {
 	if s == nil || s.protector == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 || expectedVersion == 0 {
 		return 0, false, ErrInvalid
 	}
@@ -48,12 +101,12 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 		return 0, false, ErrInvalid
 	}
 	var userStatus string
-	if err := tx.QueryRowContext(ctx, `SELECT status FROM user WHERE id = ? FOR UPDATE`, subjectID).Scan(&userStatus); err != nil || userStatus != "active" {
+	if err := tx.QueryRowContext(ctx, workoutLockSubjectSQL, subjectID).Scan(&userStatus); err != nil || userStatus != "active" {
 		return 0, false, ErrUnavailable
 	}
 	var version uint64
 	var source, status string
-	if err := tx.QueryRowContext(ctx, `SELECT source, status, version FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`, sessionID, subjectID).
+	if err := tx.QueryRowContext(ctx, workoutLockSessionSQL, sessionID, subjectID).
 		Scan(&source, &status, &version); err != nil || source != "free" || version == 0 {
 		return 0, false, ErrUnavailable
 	}
@@ -61,11 +114,11 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 		return 0, false, ErrVersionConflict
 	}
 	var epochID, epochTag []byte
-	if err := tx.QueryRowContext(ctx, `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`).Scan(&epochID, &epochTag); err != nil ||
+	if err := tx.QueryRowContext(ctx, workoutLockKeyEpochSQL).Scan(&epochID, &epochTag); err != nil ||
 		string(epochID) != s.protector.keyID || !hmac.Equal(epochTag, s.protector.tag[:]) {
 		return 0, false, ErrUnavailable
 	}
-	current, err := s.load(ctx, tx, subjectID, sessionID, domain.Status(status))
+	current, err := s.loadTx(ctx, tx, subjectID, sessionID, domain.Status(status))
 	if err != nil {
 		return 0, false, err
 	}
@@ -109,9 +162,7 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 		if err != nil {
 			return 0, false, ErrUnavailable
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO workout_exercise
-            (session_id, exercise_entry_key, source, name_snapshot_enc, key_id, created_at, updated_at)
-            VALUES (?, ?, 'custom', ?, ?, ?, ?)`, sessionID, []byte(key), ciphertext, s.protector.keyID, timestamp, timestamp); err != nil {
+		if _, err := tx.ExecContext(ctx, workoutInsertExerciseSQL, sessionID, []byte(key), ciphertext, s.protector.keyID, timestamp, timestamp); err != nil {
 			return 0, false, ErrUnavailable
 		}
 	}
@@ -126,11 +177,10 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 			state, deletedAt = "deleted", timestamp
 		}
 		if !exists {
-			_, err = tx.ExecContext(ctx, `INSERT INTO set_record_key
-                (session_id, record_key, exercise_entry_key, state, created_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?)`,
+			_, err = tx.ExecContext(ctx, workoutInsertSetKeySQL,
 				sessionID, []byte(key), []byte(value.ExerciseEntryKey), state, timestamp, deletedAt)
 		} else {
-			_, err = tx.ExecContext(ctx, `UPDATE set_record_key SET state = ?, deleted_at = ? WHERE session_id = ? AND record_key = ?`,
+			_, err = tx.ExecContext(ctx, workoutUpdateSetKeySQL,
 				state, deletedAt, sessionID, []byte(key))
 		}
 		if err != nil {
@@ -139,7 +189,7 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 	}
 	for key := range current.Sets {
 		if _, exists := next.Sets[key]; !exists {
-			if _, err := tx.ExecContext(ctx, `DELETE FROM set_record WHERE session_id = ? AND record_key = ?`, sessionID, []byte(key)); err != nil {
+			if _, err := tx.ExecContext(ctx, workoutDeleteSetSQL, sessionID, []byte(key)); err != nil {
 				return 0, false, ErrUnavailable
 			}
 		}
@@ -150,28 +200,32 @@ func (s *RecordStore) applyBatchWithoutOrder(ctx context.Context, tx *sql.Tx, su
 			continue
 		}
 		if !exists {
-			_, err = tx.ExecContext(ctx, `INSERT INTO set_record
-                (session_id, record_key, set_index, kind, weight_kg, reps, seconds, rpe, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sessionID, []byte(key), value.Index, value.Kind,
+			_, err = tx.ExecContext(ctx, workoutInsertSetSQL, sessionID, []byte(key), value.Index, value.Kind,
 				nullDecimal(value.WeightKg), nullInt(value.Reps), nullInt(value.Seconds), nullDecimal(value.RPE), timestamp, timestamp)
 		} else {
-			_, err = tx.ExecContext(ctx, `UPDATE set_record SET set_index = ?, kind = ?, weight_kg = ?, reps = ?, seconds = ?, rpe = ?, updated_at = ?
-                WHERE session_id = ? AND record_key = ?`, value.Index, value.Kind, nullDecimal(value.WeightKg), nullInt(value.Reps),
+			_, err = tx.ExecContext(ctx, workoutUpdateSetSQL, value.Index, value.Kind, nullDecimal(value.WeightKg), nullInt(value.Reps),
 				nullInt(value.Seconds), nullDecimal(value.RPE), timestamp, sessionID, []byte(key))
 		}
 		if err != nil {
 			return 0, false, ErrUnavailable
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE workout_session SET status = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`, next.Status, timestamp, sessionID, subjectID); err != nil {
+	if _, err := tx.ExecContext(ctx, workoutUpdateSessionSQL, next.Status, timestamp, sessionID, subjectID); err != nil {
 		return 0, false, ErrUnavailable
 	}
 	return version + 1, true, nil
 }
 
 func (s *RecordStore) load(ctx context.Context, tx *sql.Tx, subjectID, sessionID uint64, status domain.Status) (domain.Session, error) {
+	return s.loadTx(ctx, dbtx.Wrap(tx), subjectID, sessionID, status)
+}
+
+func (s *RecordStore) loadTx(ctx context.Context, tx dbtx.ReadTransaction, subjectID, sessionID uint64, status domain.Status) (domain.Session, error) {
 	cur := domain.Session{Status: status, Sets: map[string]domain.Set{}, Keys: map[string]domain.Key{}, Entries: map[string]domain.Exercise{}}
-	rows, err := tx.QueryContext(ctx, `SELECT exercise_entry_key, source, name_snapshot_enc, key_id FROM workout_exercise WHERE session_id = ?`, sessionID)
+	if s == nil || s.protector == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 {
+		return cur, ErrInvalid
+	}
+	rows, err := tx.QueryContext(ctx, workoutLoadExercisesSQL, sessionID)
 	if err != nil {
 		return cur, ErrUnavailable
 	}
@@ -191,7 +245,7 @@ func (s *RecordStore) load(ctx context.Context, tx *sql.Tx, subjectID, sessionID
 	if rows.Err() != nil || rows.Close() != nil {
 		return cur, ErrUnavailable
 	}
-	rows, err = tx.QueryContext(ctx, `SELECT record_key, exercise_entry_key, state FROM set_record_key WHERE session_id = ?`, sessionID)
+	rows, err = tx.QueryContext(ctx, workoutLoadSetKeysSQL, sessionID)
 	if err != nil {
 		return cur, ErrUnavailable
 	}
@@ -210,7 +264,7 @@ func (s *RecordStore) load(ctx context.Context, tx *sql.Tx, subjectID, sessionID
 	if rows.Err() != nil || rows.Close() != nil {
 		return cur, ErrUnavailable
 	}
-	rows, err = tx.QueryContext(ctx, `SELECT record_key, set_index, kind, weight_kg, reps, seconds, rpe FROM set_record WHERE session_id = ?`, sessionID)
+	rows, err = tx.QueryContext(ctx, workoutLoadSetsSQL, sessionID)
 	if err != nil {
 		return cur, ErrUnavailable
 	}
