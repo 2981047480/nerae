@@ -104,12 +104,8 @@ func TestWorkoutListIsolationAndPagination(t *testing.T) {
 	if _, err := service.ListFree(ctx, db, tokenA, filter); !errors.Is(err, ErrAgeRequired) {
 		t.Fatal("unverified age read a list")
 	}
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("first age declaration failed")
-	}
-	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
-		t.Fatal("second age declaration failed")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
+	declareAdultForTest(t, ctx, db, auth, tokenB)
 
 	zone := "UTC"
 	today := time.Now().UTC()
@@ -175,9 +171,7 @@ func TestWorkoutListIsolationAndPagination(t *testing.T) {
 	if _, err := service.ListFree(ctx, db, tokenA+"x", filter); !errors.Is(err, ErrAuthentication) {
 		t.Fatal("invalid session read list")
 	}
-	if err := auth.ClearAdultDeclaration(ctx, db, tokenA); err != nil {
-		t.Fatal("age declaration removal failed")
-	}
+	clearAdultForTest(t, ctx, db, auth, tokenA)
 	if _, err := service.ListFree(ctx, db, tokenAgain, filter); !errors.Is(err, ErrAgeRequired) {
 		t.Fatal("withdrawn age declaration read list")
 	}

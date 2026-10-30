@@ -221,12 +221,8 @@ func TestWorkoutHTTPRead(t *testing.T) {
 	if status, _, _ := get("/me/sessions", tokenA, ""); status != 403 {
 		t.Fatal("unverified age was accepted")
 	}
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("first age declaration failed")
-	}
-	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
-		t.Fatal("second age declaration failed")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
+	declareAdultForTest(t, ctx, db, auth, tokenB)
 
 	zone := "UTC"
 	date := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
@@ -327,9 +323,7 @@ func TestWorkoutHTTPRead(t *testing.T) {
 			t.Fatal("invalid input was accepted")
 		}
 	}
-	if err := auth.ClearAdultDeclaration(ctx, db, tokenA); err != nil {
-		t.Fatal("age withdrawal failed")
-	}
+	clearAdultForTest(t, ctx, db, auth, tokenA)
 	if status, _, _ := get("/me/sessions/"+fmt.Sprint(created.ID), tokenAgain, ""); status != 403 {
 		t.Fatal("withdrawn age declaration read data")
 	}

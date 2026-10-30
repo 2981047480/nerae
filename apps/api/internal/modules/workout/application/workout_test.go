@@ -181,12 +181,8 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	}
 	// These are explicit 18+ self-declarations through the authenticated auth
 	// API, not independent verification of either subject's actual age.
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("could not declare adult status for first test subject")
-	}
-	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
-		t.Fatal("could not declare adult status for second test subject")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
+	declareAdultForTest(t, ctx, db, auth, tokenB)
 	created, err := service.CreateFree(ctx, db, tokenA, input)
 	if err != nil || created.ID == 0 || created.Version != 1 {
 		t.Fatal("authenticated subject could not create workout")
@@ -280,9 +276,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 	if err != nil || orderedSnapshot.Version != 2 || orderedSnapshot.ClientEventID != orderedInput.ClientEventID || orderedSnapshot.ClientEventID == snapshot.ClientEventID || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
 		t.Fatal("another session did not recover ordered groups")
 	}
-	if err := auth.ClearAdultDeclaration(ctx, db, tokenA); err != nil {
-		t.Fatal("could not clear the authenticated subject's adult self-declaration")
-	}
+	clearAdultForTest(t, ctx, db, auth, tokenA)
 	if _, err := service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID); !errors.Is(err, ErrAgeRequired) {
 		t.Fatal("existing session read workout after adult self-declaration was cleared")
 	}
@@ -308,9 +302,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		Scan(&withheldOrderCount); err != nil || withheldOrderCount != 2 {
 		t.Fatalf("age-rejected access changed saved order: err=%v count=%d", err, withheldOrderCount)
 	}
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("could not explicitly re-declare adult status for the test subject")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
 	orderedSnapshot, err = service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
 	if err != nil || orderedSnapshot.Version != 2 || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
 		t.Fatal("existing session did not recover workout read after explicit re-declaration")

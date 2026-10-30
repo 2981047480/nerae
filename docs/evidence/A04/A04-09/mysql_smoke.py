@@ -74,6 +74,7 @@ def main() -> int:
                 "auth/0001_device_proof_replay.up.sql",
                 "auth/0002_email_challenge.up.sql",
                 "user/0001_user.up.sql",
+    "user/0002_age_declaration_version.up.sql",
                 "auth/0003_email_identity.up.sql",
                 "workout/0001_workout_session.up.sql",
                 "workout/0002_workout_sets.up.sql",

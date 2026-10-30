@@ -250,12 +250,8 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if got := request(http.MethodPost, "/me/sessions", createBody, tokenA, "create-key-0001"); got.status != http.StatusForbidden {
 		t.Fatalf("undeclared age returned %d, want 403", got.status)
 	}
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("adult declaration A failed")
-	}
-	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
-		t.Fatal("adult declaration B failed")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
+	declareAdultForTest(t, ctx, db, auth, tokenB)
 	if got := request(http.MethodPost, "/me/sessions", []byte(`{"source":"free"`), tokenA, "malformed-key-0001"); got.status != http.StatusUnprocessableEntity {
 		t.Fatalf("malformed JSON returned %d, want 422", got.status)
 	}

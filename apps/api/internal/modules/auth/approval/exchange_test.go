@@ -392,9 +392,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	}
 	// This is an explicit self-declaration through the authenticated session
 	// seam, not evidence of identity or actual age verification.
-	if err := auth.DeclareAdult(ctx, db, oldToken, true); err != nil {
-		t.Fatal("old device session could not record adult self-declaration")
-	}
+	declareAdultForTest(t, ctx, db, auth, oldToken)
 	zone := "UTC"
 	workoutInput := workoutrepo.FreeSessionInput{Date: time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02"), TimeZone: &zone, ClientEventID: "device-sync-event"}
 	workoutRef, err := workout.CreateFree(ctx, db, oldToken, workoutInput)
@@ -425,18 +423,14 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		snapshot.Sets[groupB.RecordKey].WeightKg != "30.00" {
 		t.Fatal("old device session could not read updated group and order")
 	}
-	if err := auth.ClearAdultDeclaration(ctx, db, oldToken); err != nil {
-		t.Fatal("subject could not withdraw adult self-declaration")
-	}
+	clearAdultForTest(t, ctx, db, auth, oldToken)
 	if _, err := workout.ReadOrderedFree(ctx, db, oldToken, workoutRef.ID); !errors.Is(err, application.ErrAgeRequired) {
 		t.Fatal("withdrawn declaration did not block original device read")
 	}
 	if _, err := workout.ReadOrderedFree(ctx, db, newToken.ForResponse(), workoutRef.ID); !errors.Is(err, application.ErrAgeRequired) {
 		t.Fatal("withdrawn declaration did not block approved device read")
 	}
-	if err := auth.DeclareAdult(ctx, db, oldToken, true); err != nil {
-		t.Fatal("subject could not explicitly restore adult self-declaration")
-	}
+	declareAdultForTest(t, ctx, db, auth, oldToken)
 	if snapshot, err = workout.ReadOrderedFree(ctx, db, newToken.ForResponse(), workoutRef.ID); err != nil ||
 		snapshot.Version != 3 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, updatedOrder) {
 		t.Fatal("explicit re-declaration did not restore approved device access")

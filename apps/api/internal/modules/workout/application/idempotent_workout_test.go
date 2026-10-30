@@ -173,12 +173,8 @@ func newWorkoutIdempotencyFixture(t *testing.T) *workoutIdempotencyFixture {
 	}
 	tokenA := login("a04-08-a@example.test")
 	tokenB := login("a04-08-b@example.test")
-	if err := auth.DeclareAdult(ctx, db, tokenA, true); err != nil {
-		t.Fatal("could not self-declare test actor A as adult")
-	}
-	if err := auth.DeclareAdult(ctx, db, tokenB, true); err != nil {
-		t.Fatal("could not self-declare test actor B as adult")
-	}
+	declareAdultForTest(t, ctx, db, auth, tokenA)
+	declareAdultForTest(t, ctx, db, auth, tokenB)
 	return &workoutIdempotencyFixture{db: db, ctx: ctx, auth: auth, executor: executor, service: service, tokenA: tokenA, tokenB: tokenB}
 }
 
@@ -522,9 +518,7 @@ func TestIdempotentWorkoutTransactions(t *testing.T) {
 		t.Fatalf("same-key concurrency executed mutation more than once: calls=%d initial=%d replay=%d", concurrentCalls.Load(), firstExecutions, replayed)
 	}
 
-	if err := f.auth.ClearAdultDeclaration(f.ctx, f.db, f.tokenA); err != nil {
-		t.Fatal("could not withdraw test actor's adult self-declaration")
-	}
+	clearAdultForTest(t, f.ctx, f.db, f.auth, f.tokenA)
 	if replay, err := f.executeCreate(f.tokenA, "create-key-0001", "a04-08-create-event", createMutation); !errors.Is(err, idempotency.ErrForbidden) || len(replay.Body) != 0 {
 		t.Fatalf("adult-declaration withdrawal did not block replay: err=%v", err)
 	}
