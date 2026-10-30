@@ -63,6 +63,7 @@ type TransactionResult struct {
 	sourceTx       *sql.Tx
 	issued         session.Issued
 	pending        approval.Pending
+	proof          *challenge.VerifiedEmail
 }
 
 func (TransactionResult) String() string               { return "EmailLoginTransactionResult{redacted}" }
@@ -207,10 +208,10 @@ func (s *EmailLogin) VerifyEmailInTransaction(ctx context.Context, tx *sql.Tx, i
 		if err != nil {
 			return TransactionResult{}, ErrUnavailable
 		}
-		return TransactionResult{kind: VerificationApprovalRequired, commitRequired: true, sourceTx: tx, pending: pending}, nil
+		return TransactionResult{kind: VerificationApprovalRequired, commitRequired: true, sourceTx: tx, pending: pending, proof: attempt.Proof}, nil
 	}
 	if err != nil {
 		return TransactionResult{}, ErrUnavailable
 	}
-	return TransactionResult{kind: VerificationAuthenticated, commitRequired: true, sourceTx: tx, issued: issued}, nil
+	return TransactionResult{kind: VerificationAuthenticated, commitRequired: true, sourceTx: tx, issued: issued, proof: attempt.Proof}, nil
 }
