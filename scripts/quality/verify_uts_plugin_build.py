@@ -15,26 +15,26 @@ ROOT = Path(__file__).resolve().parents[2]
 CLIENT = ROOT / "apps/client"
 PROBE = """<script setup lang="ts">
 import { ref } from 'vue'
-import { readExistingDevicePublicKey } from '@/uni_modules/nerae-device-key'
+import { createDeviceKeyAtReservedAlias, readExistingDevicePublicKey } from '@/uni_modules/nerae-device-key'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
-import { readAuthenticationState } from '@/uni_modules/nerae-secure-vault'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
+import { createAppSessionCoordinator } from '@/platform/app/nativeSession'
 
 const result = ref('')
 function probe() {
   result.value = readExistingDevicePublicKey('probe').errorCode +
-    generateSecureRandomRequestKey().errorCode + readAuthenticationState().errorCode +
-    String(createConfiguredAppHttpsPorts)
+    generateSecureRandomRequestKey().errorCode + String(createDeviceKeyAtReservedAlias) +
+    String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator)
 }
 </script>
 <template><view @tap="probe">{{ result }}</view></template>
 """
 
 PLUGINS = {
-    "nerae-device-key": ("neraeDeviceKey", "readExistingDevicePublicKeyByJs"),
-    "nerae-random": ("neraeRandom", "generateSecureRandomRequestKeyByJs"),
-    "nerae-secure-vault": ("neraeSecureVault", "readAuthenticationStateByJs"),
-    "nerae-https": ("neraeHttps", "requestByJs"),
+    "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs")),
+    "nerae-random": ("neraeRandom", ("generateSecureRandomRequestKeyByJs",)),
+    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs")),
+    "nerae-https": ("neraeHttps", ("requestByJs", "cancelByJs")),
 }
 
 
@@ -60,12 +60,12 @@ def main() -> None:
 
     app = work / "dist/build/app"
     service = (app / "app-service.js").read_text(encoding="utf-8")
-    for plugin, (package, function) in PLUGINS.items():
-        require(package in service and function in service,
+    for plugin, (package, functions) in PLUGINS.items():
+        require(package in service and all(function in service for function in functions),
                 f"App output is missing the native proxy for {plugin}")
         for platform, index in (("app-ios", "index.swift"), ("app-android", "index.kt")):
             path = app / "uni_modules" / plugin / "utssdk" / platform / "src" / index
-            require(path.is_file() and function in path.read_text(encoding="utf-8"),
+            require(path.is_file() and all(function in path.read_text(encoding="utf-8") for function in functions),
                     f"App output is missing the native wrapper for {plugin} on {platform}")
 
     # Weixin must fail closed for these App-only bridges, not ship App proxies.
