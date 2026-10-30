@@ -1,12 +1,87 @@
-import { HttpsCallbacks, HttpsErrorCode, HttpsFailure, HttpsRequest } from '../interface.uts'
+import { HttpsCallbacks, HttpsErrorCode, HttpsFailure, HttpsRequest, HttpsResponse } from '../interface.uts'
 
-function fail(requestId: string, code: HttpsErrorCode): HttpsFailure {
-  return { requestId, code }
+type NativeResult = {
+  ok: boolean
+  requestId: string
+  status: number
+  headersJson: string
+  body: string
+  code: string
 }
 
+function failure(requestId: string, code: HttpsErrorCode): HttpsFailure {
+  const encoded = JSON.stringify({ requestId, code })
+  if (encoded == null) return JSON.parseObject<HttpsFailure>('{"requestId":"","code":"invalid_response"}')!
+  const parsed = JSON.parseObject<HttpsFailure>(encoded ?? '')
+  if (parsed != null) return parsed!
+  return JSON.parseObject<HttpsFailure>('{"requestId":"","code":"invalid_response"}')!
+}
+
+function isErrorCode(value: string): boolean {
+  return value == 'invalid_configuration' || value == 'invalid_request' || value == 'network' ||
+    value == 'timeout' || value == 'cancelled' || value == 'response_too_large' ||
+    value == 'invalid_response' || value == 'unsupported_platform' || value == 'unavailable'
+}
+
+/** The native bridge posts one result to the Android main looper; transport work stays off-thread. */
 export function request(_request: HttpsRequest, callbacks: HttpsCallbacks): string {
-  callbacks.fail(fail('', 'unsupported_platform'))
-  return ''
+  let settled = false
+  let payload = ''
+  let timeoutMsText = ''
+  try {
+    if (!Number.isInteger(_request.timeoutMs) || _request.timeoutMs < 1000 || _request.timeoutMs > 120000) {
+      callbacks.fail(failure('', 'invalid_request'))
+      return ''
+    }
+    timeoutMsText = '' + _request.timeoutMs.toInt()
+    const encodedPayload = JSON.stringify({
+      baseUrl: _request.baseUrl,
+      path: _request.path,
+      method: _request.method,
+      headersJson: _request.headersJson,
+      body: _request.body,
+      timeoutMs: _request.timeoutMs
+    })
+    if (encodedPayload == null) {
+      callbacks.fail(failure('', 'invalid_request'))
+      return ''
+    }
+    payload = encodedPayload ?? ''
+  } catch (_error) {
+    callbacks.fail(failure('', 'invalid_request'))
+    return ''
+  }
+
+  return NeraeHttpsBridge.request(payload, timeoutMsText, (raw: string) => {
+    if (settled) return
+    settled = true
+    let result: NativeResult | null = null
+    try { result = JSON.parseObject<NativeResult>(raw) } catch (_error) { result = null }
+    if (result == null || result!.requestId.length == 0) {
+      callbacks.fail(failure('', 'invalid_response'))
+      return
+    }
+    const nativeResult = result!
+    if (!nativeResult.ok) {
+      callbacks.fail(failure(nativeResult.requestId,
+        isErrorCode(nativeResult.code) ? nativeResult.code as HttpsErrorCode : 'invalid_response'))
+      return
+    }
+    if (!Number.isInteger(nativeResult.status) || nativeResult.status < 100 || nativeResult.status > 599 ||
+        typeof nativeResult.headersJson != 'string' || typeof nativeResult.body != 'string') {
+      callbacks.fail(failure(nativeResult.requestId, 'invalid_response'))
+      return
+    }
+    const response: HttpsResponse = {
+      requestId: nativeResult.requestId,
+      status: nativeResult.status,
+      headersJson: nativeResult.headersJson,
+      body: nativeResult.body
+    }
+    callbacks.success(response)
+  })
 }
 
-export function cancel(_requestId: string): void {}
+export function cancel(requestId: string): void {
+  if (requestId.length > 0) NeraeHttpsBridge.cancel(requestId)
+}
