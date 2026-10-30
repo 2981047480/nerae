@@ -13,11 +13,12 @@ import (
 // not an authorization grant. Subsequent requests must authenticate again.
 // It deliberately omits the token and fields for which no source exists.
 type ResponseProfile struct {
-	SubjectID   string
-	Nickname    string
-	Roles       []string
-	AgeVerified bool
-	ExpiresAt   time.Time
+	SubjectID             string
+	Nickname              string
+	Roles                 []string
+	AgeVerified           bool
+	AgeDeclarationVersion uint64
+	ExpiresAt             time.Time
 }
 
 func (ResponseProfile) String() string               { return "ResponseProfile{redacted}" }
@@ -99,6 +100,10 @@ func (s *Store) ProfileForResponse(ctx context.Context, db *sql.DB, token string
 	if details.SubjectID != principal.subjectID {
 		return ResponseProfile{}, ErrSessionUnavailable
 	}
+	ageVersion, declared, err := readAgeDeclarationVersion(ctx, tx, details.SubjectID)
+	if err != nil || declared != details.AgeVerified {
+		return ResponseProfile{}, ErrSessionUnavailable
+	}
 	if err := tx.Commit(); err != nil {
 		return ResponseProfile{}, ErrSessionUnavailable
 	}
@@ -109,7 +114,7 @@ func (s *Store) ProfileForResponse(ctx context.Context, db *sql.DB, token string
 	if claims.SubjectID != strconv.FormatUint(details.SubjectID, 10) || claims.SessionID != details.SessionID || !claims.ExpiresAt.Equal(principal.expiresAt) {
 		return ResponseProfile{}, ErrSessionUnavailable
 	}
-	profile := ResponseProfile{SubjectID: claims.SubjectID, Roles: roles, AgeVerified: details.AgeVerified, ExpiresAt: claims.ExpiresAt}
+	profile := ResponseProfile{SubjectID: claims.SubjectID, Roles: roles, AgeVerified: declared, AgeDeclarationVersion: ageVersion, ExpiresAt: claims.ExpiresAt}
 	if nickname.Valid {
 		profile.Nickname = nickname.String
 	}

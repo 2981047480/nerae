@@ -81,24 +81,28 @@ func TestAuthenticatedResponseProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	view, err := store.ProfileForResponse(ctx, db, token)
-	if err != nil || view.SubjectID != claims.SubjectID || view.Nickname != "" || view.Roles == nil || len(view.Roles) != 0 || view.AgeVerified || !view.ExpiresAt.Equal(claims.ExpiresAt) {
+	if err != nil || view.SubjectID != claims.SubjectID || view.Nickname != "" || view.Roles == nil || len(view.Roles) != 0 || view.AgeVerified || view.AgeDeclarationVersion != 1 || !view.ExpiresAt.Equal(claims.ExpiresAt) {
 		t.Fatal("new account projection did not reflect stored values")
 	}
 	if _, err := json.Marshal(view); err == nil || strings.Contains(fmt.Sprintf("%+v", view), claims.SubjectID) {
 		t.Fatal("profile allowed accidental serialization or logging")
 	}
-	if _, err := db.ExecContext(ctx, `UPDATE user SET nickname = ?, age_verified_at = UTC_TIMESTAMP(6) WHERE id = ?`, "测试昵称", claims.SubjectID); err != nil {
+	if _, err := db.ExecContext(ctx, `UPDATE user SET nickname = ? WHERE id = ?`, "测试昵称", claims.SubjectID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO user_role (user_id, role, status, created_at, updated_at) VALUES
         (?, 'student', 'active', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)), (?, 'coach', 'disabled', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))`, claims.SubjectID, claims.SubjectID); err != nil {
 		t.Fatal(err)
 	}
+	declaredVersion, err := store.DeclareAdultAtVersion(ctx, db, token, view.AgeDeclarationVersion, true)
+	if err != nil || declaredVersion != 2 {
+		t.Fatal("versioned declaration did not advance from the projected state")
+	}
 	fixedNow := claims.IssuedAt.Add(10 * time.Second)
 	store.now = func() time.Time { return fixedNow }
 	codec.now = func() time.Time { return fixedNow }
 	view, err = store.ProfileForResponse(ctx, db, token)
-	if err != nil || view.Nickname != "测试昵称" || !view.AgeVerified || len(view.Roles) != 1 || view.Roles[0] != "student" {
+	if err != nil || view.Nickname != "测试昵称" || !view.AgeVerified || view.AgeDeclarationVersion != declaredVersion || len(view.Roles) != 1 || view.Roles[0] != "student" {
 		t.Fatal("profile did not reflect current nickname, declaration and active roles")
 	}
 	if remaining, err := view.RemainingSeconds(fixedNow); err != nil || remaining != 3590 {
@@ -114,8 +118,14 @@ func TestAuthenticatedResponseProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer locked.Rollback()
-	if _, err := locked.ExecContext(ctx, `UPDATE user SET nickname = ? WHERE id = ?`, "更新昵称", claims.SubjectID); err != nil {
+	lockedVersion := declaredVersion + 1
+	userUpdate, err := locked.ExecContext(ctx, `UPDATE user SET nickname = ?, age_verified_at = COALESCE(age_verified_at, UTC_TIMESTAMP(6)),
+        age_declaration_version = ? WHERE id = ? AND age_declaration_version = ?`, "更新昵称", lockedVersion, claims.SubjectID, declaredVersion)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if affected, err := userUpdate.RowsAffected(); err != nil || affected != 1 {
+		t.Fatal("could not stage a valid newer age state under the user row lock")
 	}
 	if _, err := locked.ExecContext(ctx, `UPDATE user_role SET status = CASE role WHEN 'coach' THEN 'active' ELSE 'disabled' END WHERE user_id = ?`, claims.SubjectID); err != nil {
 		t.Fatal(err)
@@ -131,7 +141,7 @@ func TestAuthenticatedResponseProfile(t *testing.T) {
 	}()
 	blocked := 0
 	for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline); {
-		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM performance_schema.data_lock_waits w
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID) FROM performance_schema.data_lock_waits w
             JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID
             WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = 'user'`).Scan(&blocked); err != nil {
 			t.Fatal(err)
@@ -142,13 +152,18 @@ func TestAuthenticatedResponseProfile(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	if blocked == 0 {
-		t.Fatal("profile lookup did not wait for the account lock")
+		select {
+		case completed := <-finished:
+			t.Fatalf("profile lookup completed before account lock was observed (error=%v, version=%d, age_verified=%t)", completed.err, completed.profile.AgeDeclarationVersion, completed.profile.AgeVerified)
+		default:
+			t.Fatal("profile lookup did not wait for the account lock")
+		}
 	}
 	if err := locked.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	waited := <-finished
-	if waited.err != nil || waited.profile.Nickname != "更新昵称" || len(waited.profile.Roles) != 1 || waited.profile.Roles[0] != "coach" {
+	if waited.err != nil || waited.profile.Nickname != "更新昵称" || len(waited.profile.Roles) != 1 || waited.profile.Roles[0] != "coach" || !waited.profile.AgeVerified || waited.profile.AgeDeclarationVersion != lockedVersion {
 		t.Fatal("profile lookup returned a stale snapshot after waiting")
 	}
 	if _, err := db.ExecContext(ctx, `UPDATE user SET status = 'disabled' WHERE id = ?`, claims.SubjectID); err != nil {
