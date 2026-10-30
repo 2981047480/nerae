@@ -6,7 +6,7 @@ import {
 } from './emailAuthApi.ts'
 
 // Synthetic values; entropy is supplied by the caller, not assessed by this adapter.
-const requestKey = 'R'.repeat(43)
+const requestKey = 'R'.repeat(42) + 'Q'
 const challengeId = 'c'.repeat(24)
 const approvalId = 'a'.repeat(24)
 const nonce = 'N'.repeat(43)
@@ -107,6 +107,7 @@ test('invalid configuration and malformed inputs never call transport', async ()
     { ...input, extra: 'sensitive' },
   ]) await assert.rejects(api.requestChallenge(invalid, requestKey), err('invalid_request'))
   await assert.rejects(api.requestChallenge(input, 'short'), err('invalid_request'))
+  await assert.rejects(api.requestChallenge(input, 'R'.repeat(43)), err('invalid_request'))
   await assert.rejects(api.login({ ...login, code: 'not-code' }, requestKey), err('invalid_request'))
   await assert.rejects(api.login({ ...login, deviceProof: 'unsigned' }, requestKey), err('invalid_request'))
   await assert.rejects(api.exchange({ ...exchange, approvalId: '../private' }, requestKey), err('invalid_request'))
@@ -135,9 +136,12 @@ test('failure statuses map to fixed errors without raw bodies or exceptions', as
     [409, 'conflict'], [410, 'expired'], [422, 'invalid_request'], [429, 'rate_limited'], [500, 'unavailable'],
     [503, 'unavailable'], [302, 'unavailable']])
   for (const [status, code] of expected) {
-    const api = fixedApi(response({ message: token }, status, {}))
+    const api = fixedApi(response({ message: token }, status))
     await assert.rejects(api.login(login, requestKey), error => err(code)(error) && error.status === status &&
       !String(error).includes(token) && !JSON.stringify(error).includes(token))
   }
   await assert.rejects(fixedApi({ status: 900, body: token, headers: {} }).login(login, requestKey), err('invalid_response'))
+  for (const headers of [{}, { 'Cache-Control': 'public' }, { 'cache-control': 'no-store', 'Cache-Control': 'public' }]) {
+    await assert.rejects(fixedApi(response({ message: token }, 401, headers)).login(login, requestKey), err('invalid_response'))
+  }
 })

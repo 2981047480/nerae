@@ -95,7 +95,9 @@ function keys(value: Record<string, unknown>, required: string[], optional: stri
 }
 function key(value: unknown): value is string {
   // This checks format, not entropy. The caller must use a platform CSPRNG.
-  return typeof value === 'string' && /^[A-Za-z0-9_-]{22,128}$/.test(value)
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{22,128}$/.test(value) || value.length % 4 === 1) return false
+  const last = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.indexOf(value[value.length - 1])
+  return value.length % 4 === 0 || (value.length % 4 === 2 ? last % 16 === 0 : last % 4 === 0)
 }
 function id(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{22,128}$/.test(value)
@@ -220,8 +222,9 @@ export class EmailAuthApi {
       if (!record(response) || !Number.isInteger(response.status) || response.status < 100 || response.status > 599) {
         throw new AuthApiError('invalid_response')
       }
+      if (!noStore(response.headers)) throw new AuthApiError('invalid_response')
       if (response.status < 200 || response.status >= 300) throw responseError(response.status)
-      if (response.status !== expectedStatus || !noStore(response.headers)) throw new AuthApiError('invalid_response')
+      if (response.status !== expectedStatus) throw new AuthApiError('invalid_response')
       return response.body
     } catch (error) {
       if (error instanceof AuthApiError) throw error
