@@ -119,10 +119,12 @@ class RecordingContractTests(ContractCase):
         valid = {'id': '101', 'date': '2026-10-20', 'timeZone': 'Asia/Shanghai',
                  'status': 'completed', 'source': 'free', 'version': 3,
                  'createdAt': '2026-10-23T10:00:00Z', 'updatedAt': '2026-10-23T10:03:00Z',
-                 'recordedAt': '2026-10-23T10:03:00Z',
+                 'recordedAt': '2026-10-23T10:03:00Z', 'clientEventId': 'event-test-001',
                  'sets': [dict(row, resolvedExerciseName='俯卧撑')], 'exerciseEntryKeys': ['exercise-test-001']}
         self.assertMissingRejected(response, valid, ('id', 'date', 'timeZone', 'status', 'source',
-                                                     'version', 'createdAt', 'updatedAt', 'recordedAt', 'sets', 'exerciseEntryKeys'))
+                                                     'version', 'createdAt', 'updatedAt', 'recordedAt', 'clientEventId', 'sets', 'exerciseEntryKeys'))
+        self.assertInvalid(response, dict(valid, clientEventId='short'))
+        self.assertInvalid(response, dict(valid, clientEventId='a' * 65))
         self.assertInvalid(response, dict(valid, recordedAt=None))
         self.assertInvalid(response, dict(valid, recordedAt='2026-10-20'))
         self.assertInvalid(response, dict(valid, sets=[]))

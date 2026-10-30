@@ -23,7 +23,7 @@ const detail: Detail = {
   id: '101', date: '2026-10-20', timeZone: 'Asia/Shanghai',
   status: 'completed', source: 'free', version: 1,
   createdAt: '2026-10-20T10:00:00Z', updatedAt: '2026-10-20T10:01:00Z',
-  recordedAt: '2026-10-20T10:01:00Z', exerciseEntryKeys: ['exercise-001'], sets: [read],
+  recordedAt: '2026-10-20T10:01:00Z', clientEventId: 'event-test-001', exerciseEntryKeys: ['exercise-001'], sets: [read],
 };
 const names: string[] = detail.sets.map((set) => set.resolvedExerciseName);
 const version: number = batch.expectedVersion;
@@ -37,6 +37,9 @@ const wrongVersion: Batch = { expectedVersion: '1', exerciseEntryKeys: ['exercis
 // @ts-expect-error All batches must carry the complete projected order.
 const missingOrder: Batch = { expectedVersion: 1, sets: [weight] };
 // @ts-expect-error Detail must contain the current actual sets.
-const missingSets: Detail = { id: '101', date: '2026-10-20', timeZone: 'Asia/Shanghai', status: 'completed', source: 'free', version: 1, createdAt: '2026-10-20T10:00:00Z', updatedAt: '2026-10-20T10:01:00Z', recordedAt: '2026-10-20T10:01:00Z', exerciseEntryKeys: ['exercise-001'] };
+const missingSets: Detail = { id: '101', date: '2026-10-20', timeZone: 'Asia/Shanghai', status: 'completed', source: 'free', version: 1, createdAt: '2026-10-20T10:00:00Z', updatedAt: '2026-10-20T10:01:00Z', recordedAt: '2026-10-20T10:01:00Z', clientEventId: 'event-test-001', exerciseEntryKeys: ['exercise-001'] };
 
-void [deletion, names, version, unchanged, cleared, missingEntry, wrongVersion, missingOrder, missingSets];
+// @ts-expect-error The original event identity is required to restore a detail.
+const missingClientEventId: Detail = { id: '101', date: '2026-10-20', timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 1, createdAt: '2026-10-20T10:00:00Z', updatedAt: '2026-10-20T10:00:00Z', recordedAt: null, exerciseEntryKeys: [], sets: [] };
+
+void [deletion, names, version, unchanged, cleared, missingEntry, wrongVersion, missingOrder, missingSets, missingClientEventId];

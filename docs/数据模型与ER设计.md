@@ -406,7 +406,7 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 | 实体 | 字段、类型与约束 |
 |---|---|
 | `conversation` | `id PK`；`context_type varchar(16)`（appointment/relation）；`appointment_id ID? REF appointment`、`relation_id ID? REF service_relation`，**恰有一项非空并匹配 type**；`student_id ID`、`coach_id ID` 必须等于上下文双方；`status varchar(16)`（open/read_only/closed）；`version int unsigned`；`UK(appointment_id)`、`UK(relation_id)`（各非空上下文一个线程）；通用时间列 |
-| `message` | `id PK`；`conversation_id ID REF conversation`；`sender_kind varchar(16)`（user/admin）、`sender_id ID`；`body_enc blob`、`key_id varchar(64)`（API text，非空且最多 2000 字符）；`attachment_refs json`（预留受控 file_asset ID 数组，本轮 MessageCreate 不接收附件，保存为空）；`required_scopes json`；`request_key varchar(64)`（取请求 Idempotency-Key，不要求额外 clientMessageId）；`request_hash char(64)`；`created_at datetime(3)`；`UK(conversation_id,sender_kind,sender_id,request_key)` |
+| `message` | `id PK`；`conversation_id ID REF conversation`；`sender_kind varchar(16)`（user/admin）、`sender_id ID`；`body_enc blob`、`key_id varchar(64)`（API text，非空且最多 2000 字符）；`attachment_refs json`（预留受控 file_asset ID 数组，本轮 MessageCreate 不接收附件，保存为空）；`required_scopes json`；`request_key varbinary(512)`（取经合同校验的 Idempotency-Key 的 UTF-8 原始字节，不要求额外 clientMessageId；长度按合同最多 128 个字符，二进制比较）；`request_hash char(64)`；`created_at datetime(3)`；`UK(conversation_id,sender_kind,sender_id,request_key)` |
 | `conversation_access_approval` | `id PK`；`conversation_id ID REF conversation`；`admin_id ID REF admin_account`；`approved_by_admin_id ID REF admin_account`（审批与受益主体分离）；`purpose varchar(256)`；`scopes json`；`status varchar(16)`（approved/revoked）；`valid_until datetime(3)`；`created_at/revoked_at datetime(3)?`，创建时间必填；客服访问逐次留审计 |
 
 消息不是 notification 的别名。创建/读取/发送均核对上下文和成员，不能仅凭任意 studentId 找到全部对话。v1.2 契约分别暴露 `/appointments/{id}/messages` 和 `/relations/{id}/messages`；后者为双向文字会话，不依赖咨询或计划。comments 保持教练关联点评语义；这些仍是接口设计，不是已实现服务。若创建关系会话，它必须是独立线程，不能自动复制咨询消息/授权；教练 A 无权访问教练 B 的咨询、关系或附件。
@@ -420,7 +420,7 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 | id | bigint unsigned | PK |
 | actor_kind / actor_id | varchar(16) / bigint unsigned | 经鉴权主体；不能由请求正文选择 |
 | route | varchar(256) | 规范化 HTTP method + 含具体资源 ID 的规范路径；业务 query 进入请求摘要，防止不同资源误复用结果 |
-| key | varchar(64) | Idempotency-Key，按字节区分大小写；**UK(actor_kind,actor_id,route,key)** |
+| key | varbinary(512) | 经合同校验的 Idempotency-Key 的 UTF-8 原始字节；合同允许 8–128 个字符，最多 512 字节，二进制区分大小写及尾部字节；**UK(actor_kind,actor_id,route,key)** |
 | request_hash / hash_version | char(64) / varchar(32) | 规范化路径参数、业务 query、完整请求体（含 expectedVersion）摘要；不含令牌、随机 requestId |
 | status | varchar(16) | processing / succeeded / failed |
 | owner_token / generation | varchar(64) / int unsigned | 并发执行所有者及 fencing 代数，防止过期执行者二次提交 |

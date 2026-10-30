@@ -10002,8 +10002,14 @@ components:
       allOf:
       - $ref: '#/components/schemas/WorkoutSession'
       - type: object
-        required: [sets, exerciseEntryKeys]
+        required: [clientEventId, sets, exerciseEntryKeys]
         properties:
+          clientEventId:
+            type: string
+            minLength: 8
+            maxLength: 64
+            readOnly: true
+            description: 创建记录时的稳定事件标识；仅授权主体可读取，用于跨设备恢复同一记录，不构成凭据。
           sets:
             type: array
             items:
