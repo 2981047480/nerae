@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+
+	"nerae/api/internal/dbtx"
 )
 
 func TestInternalResultsAreNotLoggedOrSerialized(t *testing.T) {
@@ -105,6 +107,35 @@ func privateDB(t *testing.T) *sql.DB {
 	return db
 }
 
+// sqlPolicyProbe mirrors the restricted capability exposed by the idempotency
+// executor, while running the real repository against an isolated database.
+type sqlPolicyProbe struct {
+	tx            dbtx.Transaction
+	reads, writes map[string]bool
+}
+
+type sqlPolicyDeniedRow struct{}
+
+func (sqlPolicyDeniedRow) Scan(...any) error { return ErrInvalid }
+func (p sqlPolicyProbe) QueryRowContext(ctx context.Context, query string, args ...any) dbtx.Row {
+	if !p.reads[query] {
+		return sqlPolicyDeniedRow{}
+	}
+	return p.tx.QueryRowContext(ctx, query, args...)
+}
+func (p sqlPolicyProbe) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	if !p.reads[query] {
+		return nil, ErrInvalid
+	}
+	return p.tx.QueryContext(ctx, query, args...)
+}
+func (p sqlPolicyProbe) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	if !p.writes[query] {
+		return nil, ErrInvalid
+	}
+	return p.tx.ExecContext(ctx, query, args...)
+}
+
 func TestFreeSessionTransactions(t *testing.T) {
 	db := privateDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -132,6 +163,37 @@ func TestFreeSessionTransactions(t *testing.T) {
 	}
 	date := time.Now().UTC().AddDate(0, 0, -2).Format("2006-01-02")
 	in := FreeSessionInput{date, timeZone("UTC"), "event-original"}
+	if _, err := store.CreateFreeTx(ctx, nil, 1, in); !errors.Is(err, ErrInvalid) {
+		t.Fatal("missing transaction did not fail closed")
+	}
+	probeTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("cannot start policy probe")
+	}
+	defer probeTx.Rollback()
+	probe := sqlPolicyProbe{tx: dbtx.Wrap(probeTx), reads: map[string]bool{}, writes: map[string]bool{}}
+	if _, err := store.CreateFreeTx(ctx, probe, 1, in); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("empty policy unexpectedly permitted creation")
+	}
+	reads, writes := FreeSessionStatements()
+	for _, statement := range reads {
+		probe.reads[statement] = true
+	}
+	for _, statement := range writes {
+		probe.writes[statement] = true
+	}
+	// Mutating a caller-owned catalog must not alter the next catalog.
+	reads[0], writes[0] = "not a query", "not a query"
+	reloadedReads, reloadedWrites := FreeSessionStatements()
+	if reloadedReads[0] == reads[0] || reloadedWrites[0] == writes[0] {
+		t.Fatal("statement catalog leaked mutable shared state")
+	}
+	if _, err := store.CreateFreeTx(ctx, probe, 1, in); err != nil {
+		t.Fatal("fixed SQL policy did not permit creation")
+	}
+	if err := probeTx.Rollback(); err != nil {
+		t.Fatal("cannot roll back policy probe")
+	}
 	first, err := create(1, in, true)
 	if err != nil || first.ID == 0 || first.Version != 1 {
 		t.Fatal("could not create a free workout")

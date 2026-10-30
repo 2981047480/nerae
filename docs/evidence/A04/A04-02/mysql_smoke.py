@@ -80,6 +80,7 @@ def main() -> int:
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_WORKOUT_TEST_DSN": f"root@unix({sock})/nerae_workout_test?parseTime=true&loc=UTC"}
             result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
+                                     "-run", "^(TestFreeSessionTransactions|TestValidateFreeInput|TestInternalResultsAreNotLoggedOrSerialized)$",
                                      "./internal/modules/workout/repository"], cwd=ROOT / "apps/api",
                                     env=test_env, timeout=180, check=False)
             if result.returncode:

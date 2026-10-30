@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"nerae/api/internal/dbtx"
 )
 
 var (
@@ -43,6 +45,24 @@ func (SessionRef) GoString() string             { return "SessionRef{redacted}" 
 func (SessionRef) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
 func (SessionRef) LogValue() slog.Value         { return slog.StringValue("SessionRef{redacted}") }
 
+// These parameterized statements are shared with the audited idempotency
+// policy. Callers receive new slices and cannot mutate this fixed list.
+const (
+	freeLockSubjectSQL = `SELECT status FROM user WHERE id = ? FOR UPDATE`
+	freeCreateSQL      = `INSERT INTO workout_session
+        (user_id, source, date, time_zone, status, version, client_event_id, creation_request_hash, created_at, updated_at)
+		VALUES (?, 'free', ?, ?, 'in_progress', 1, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE id = id`
+	freeReadEventSQL = `SELECT id, version, creation_request_hash FROM workout_session
+        WHERE user_id = ? AND client_event_id = ? FOR UPDATE`
+)
+
+// FreeSessionStatements returns the fixed SQL required by CreateFreeTx.
+// These statements provide no authorization by themselves.
+func FreeSessionStatements() (reads, writes []string) {
+	return []string{freeLockSubjectSQL, freeReadEventSQL}, []string{freeCreateSQL}
+}
+
 type SessionStore struct{ now func() time.Time }
 
 func NewSessionStore() *SessionStore { return &SessionStore{now: time.Now} }
@@ -52,6 +72,12 @@ func NewSessionStore() *SessionStore { return &SessionStore{now: time.Now} }
 // enforce age and resource access, and commit or roll back the same tx.
 // It does not implement HTTP response idempotency, sessions, or set storage.
 func (s *SessionStore) CreateFree(ctx context.Context, tx *sql.Tx, subjectID uint64, input FreeSessionInput) (SessionRef, error) {
+	return s.CreateFreeTx(ctx, dbtx.Wrap(tx), subjectID, input)
+}
+
+// CreateFreeTx uses the caller's transaction capability; the caller remains
+// responsible for authenticating and authorizing the subject and committing.
+func (s *SessionStore) CreateFreeTx(ctx context.Context, tx dbtx.Transaction, subjectID uint64, input FreeSessionInput) (SessionRef, error) {
 	if s == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 {
 		return SessionRef{}, ErrInvalid
 	}
@@ -64,7 +90,7 @@ func (s *SessionStore) CreateFree(ctx context.Context, tx *sql.Tx, subjectID uin
 	// Lock the subject first: simultaneous first inserts for the same event can
 	// otherwise deadlock on InnoDB gap locks after a competing insert rolls back.
 	// All callers touching both user and workout rows must keep this order.
-	if err := tx.QueryRowContext(ctx, `SELECT status FROM user WHERE id = ? FOR UPDATE`, subjectID).Scan(&status); err != nil || status != "active" {
+	if err := tx.QueryRowContext(ctx, freeLockSubjectSQL, subjectID).Scan(&status); err != nil || status != "active" {
 		return SessionRef{}, ErrUnavailable
 	}
 	request, err := json.Marshal(struct {
@@ -78,17 +104,13 @@ func (s *SessionStore) CreateFree(ctx context.Context, tx *sql.Tx, subjectID uin
 	}
 	digest := sha256.Sum256(request)
 	timestamp := now.UTC().Truncate(time.Microsecond).Format("2006-01-02 15:04:05.000000")
-	_, err = tx.ExecContext(ctx, `INSERT INTO workout_session
-        (user_id, source, date, time_zone, status, version, client_event_id, creation_request_hash, created_at, updated_at)
-		VALUES (?, 'free', ?, ?, 'in_progress', 1, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE id = id`, subjectID, input.Date, timeZone, []byte(input.ClientEventID), digest[:], timestamp, timestamp)
+	_, err = tx.ExecContext(ctx, freeCreateSQL, subjectID, input.Date, timeZone, []byte(input.ClientEventID), digest[:], timestamp, timestamp)
 	if err != nil {
 		return SessionRef{}, ErrUnavailable
 	}
 	var result SessionRef
 	var storedHash []byte
-	err = tx.QueryRowContext(ctx, `SELECT id, version, creation_request_hash FROM workout_session
-        WHERE user_id = ? AND client_event_id = ? FOR UPDATE`, subjectID, []byte(input.ClientEventID)).
+	err = tx.QueryRowContext(ctx, freeReadEventSQL, subjectID, []byte(input.ClientEventID)).
 		Scan(&result.ID, &result.Version, &storedHash)
 	if err != nil || result.ID == 0 || result.Version == 0 {
 		return SessionRef{}, ErrUnavailable
