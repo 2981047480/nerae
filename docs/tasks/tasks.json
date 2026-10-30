@@ -2324,7 +2324,8 @@
         "P02-02",
         "P02-03",
         "P02-04",
-        "P02-05"
+        "P02-05",
+        "P02-06"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -7450,7 +7451,7 @@
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
       "base_revision": "73fef01",
-      "write_allowlist": ["apps/client/src/uni_modules/nerae-device-key/", "docs/evidence/P02/P02-05/"],
+      "write_allowlist": ["apps/client/src/uni_modules/nerae-device-key/package.json", "apps/client/src/uni_modules/nerae-device-key/utssdk/interface.uts", "apps/client/src/uni_modules/nerae-device-key/utssdk/index.uts", "apps/client/src/uni_modules/nerae-device-key/utssdk/app-ios/", "docs/evidence/P02/P02-05/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "api/openapi.yaml", "infra/app/ios/device/DeviceKey.swift", "infra/app/ios/device/DeviceProof.swift", "infra/app/ios/device/verify-uts-probe.sh"],
       "deliverables": "将已实现的 iOS Secure Enclave 设备密钥与登录证明接入正式 uni-app 原生模块，提供创建、公钥读取和证明签名的窄接口。",
       "acceptance": [
@@ -7467,6 +7468,39 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
       "external_prerequisites": []
+    },
+    {
+      "id": "P02-06",
+      "title": "Android 硬件设备密钥与登录证明桥",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": ["P02-01"],
+      "acceptance_requires": ["P02-03", "P02-05", "A01-01"],
+      "parent": "P02",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "/root/contract_tests（Lead 复核）",
+      "actual_model": "运行时未报告",
+      "actual_reasoning": "运行时未报告",
+      "base_revision": "f7b8a04",
+      "write_allowlist": ["apps/client/src/uni_modules/nerae-device-key/utssdk/app-android/", "docs/evidence/P02/P02-06/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "api/openapi.yaml", "apps/client/src/uni_modules/nerae-device-key/utssdk/interface.uts", "infra/app/ios/device/DeviceProof.swift", "apps/api/internal/modules/auth/domain/device_proof.go"],
+      "deliverables": "为 Android 实现与现有 iOS 接口一致的硬件密钥创建、既有密钥公钥读取及 ES256 设备证明基础；缺少硬件或旧密钥时失败关闭。",
+      "acceptance": [
+        "仅显式创建新设备时生成不可导出的 P-256 Keystore 密钥；接受可信硬件 TEE 或 StrongBox，未知或软件实现失败关闭，不静默替换旧密钥",
+        "证明格式和严格 DER 到 JOSE 转换与服务端兼容；无真机时仅报告可执行的编译及合成互操作证据",
+        "未完成原生构建、真实 Android 硬件和登录接线时保持 active；服务端当前不验证密钥 attestation，不宣称强制验证硬件来源"
+      ],
+      "verification_commands": ["可用工具链上的 Android 源编译与证明格式正反例", "项目工具可用时的 App 资源构建"],
+      "risks": ["本机缺少完整 Android Java/构建工具和 Android 真机；Keystore 本地硬件标记不是服务端 attestation。"],
+      "effort_days": [1, 3],
+      "flow_ids": ["F01"],
+      "forbidden": ["不启动模拟器", "不产生或保存真实私钥到仓库", "不静默回退到软件密钥或替换失效设备密钥", "不修改共享 UTS 接口或依赖锁"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实命令；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": ["Android 真实硬件、可用 Android Java 与构建工具。"]
     }
   ],
   "deferred_packages": {
