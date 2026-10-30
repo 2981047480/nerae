@@ -1,6 +1,6 @@
 # P02-10 Android transport worktree evidence
 
-Status: **partial**. This isolated worktree now contains an Android HTTPS transport implementation and reproducible source/JVM probes. It is not integrated, linked into an application, packaged as an APK, or tested on Android runtime/device.
+Status: **partial**. The Android HTTPS transport was integrated in `bddbec2` and the local TLS, iOS TLS regression, and Android UTS conversion probes were rerun on that same version (exit 0). It is not linked into an application, packaged as an APK, or tested on Android runtime/device.
 
 ## Implementation boundary
 
@@ -22,7 +22,7 @@ Status: **partial**. This isolated worktree now contains an Android HTTPS transp
 
 ## Remaining limits and risks
 
-- The transport uses a hand-written HTTP/1.1 parser over `SSLSocket`. The strict framing checks have synthetic loopback coverage, but the parser needs independent security review and real Android interoperability testing before integration.
+- The transport uses a hand-written HTTP/1.1 parser over `SSLSocket`. The strict framing checks have synthetic loopback coverage, but the parser was reviewed by the Lead and needs real Android interoperability and additional platform security testing before release.
 - The JVM test uses JSSE's default socket implementation with a test-only trust store override. It confirms certificate-chain and hostname-verification behavior in that JVM process; it does not establish Android Conscrypt behavior, device system roots, Android lifecycle behavior, or actual UTS callback delivery on the main Looper.
 - HBuilderX generated the UTS Kotlin wrapper, but the generated wrapper was not fully linked against the Android app's DCloud runtime. No uni-app Android resource build, APK/AAB, installation, emulator, or device test was performed.
 - No authentication or workout caller is connected. Callers still must parse and validate the returned `headersJson` and response body against their own schema. No production endpoint was contacted.
