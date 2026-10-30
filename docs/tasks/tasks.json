@@ -40,6 +40,7 @@
         "F01-03",
         "F01-04",
         "F01-05",
+        "F01-06",
         "F01-I"
       ],
       "role": "tech-architect",
@@ -117,8 +118,8 @@
         "同时交付 iOS、Android 需验证具体编译、签名与目标平台工具链，不能只以 H5 代替"
       ],
       "effort_days": [
-        6,
-        11
+        6.5,
+        13
       ],
       "flow_ids": [
         "F01",
@@ -3263,8 +3264,7 @@
         "scripts/codegen/",
         "docs/evidence/F02/F02-01/",
         "apps/api/go.mod",
-        "apps/api/go.sum",
-        "pnpm-lock.yaml"
+        "apps/api/go.sum"
       ],
       "inputs": [
         "AGENTS.md",
@@ -3310,6 +3310,7 @@
       ],
       "forbidden": [
         "禁止越过写入目录；共享契约/路由/依赖变更提交 Lead 串行处理",
+        "pnpm 锁文件本轮交由 F01-06 单独持有；生成器若需变更锁须重新申请串行任务。",
         "不改已确认产品边界，不发送真实客户消息或部署生产",
         "不得把测试替身、示例界面或生成接口当作真实联调完成"
       ],
@@ -7956,6 +7957,39 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
       "external_prerequisites": []
+    },
+    {
+      "id": "F01-06",
+      "title": "客户端原生 URL 运行时兼容",
+      "batch": "foundation",
+      "status": "active",
+      "depends_on": ["F01-03"],
+      "acceptance_requires": [],
+      "parent": "F01",
+      "kind": "task",
+      "role": "security",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
+      "actual_reasoning": "未由运行时报告",
+      "base_revision": "1ad5efa",
+      "write_allowlist": ["apps/client/package.json", "apps/client/src/main.ts", "pnpm-lock.yaml", "docs/evidence/F01/F01-06/"],
+      "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "apps/client/src/main.ts", "apps/client/src/api/auth/emailAuthApi.ts", "apps/client/src/features/training/recordingApi.ts", "pnpm-lock.yaml"],
+      "deliverables": "在客户端入口显式加载已锁定的标准 URL 兼容实现，避免原生 JSCore 不提供 URL 时认证和记录适配器无法初始化。",
+      "acceptance": [
+        "直接依赖版本固定并与锁文件一致；在缺原生 URL 的 JavaScriptCore 上验证 HTTPS 地址、端口、查询、路径归一化与非法输入",
+        "真实入口 App/小程序资源编译、客户端类型与既有测试通过；目标真机、原生 UTS 链接和安装包需单独验证",
+        "不改变服务端地址策略、不禁用 TLS 验证、不添加浏览器演示或训练计时"
+      ],
+      "verification_commands": ["JavaScriptCore URL 兼容探针", "客户端类型检查与针对性测试", "App/小程序资源构建及锁文件校验"],
+      "risks": ["裸 macOS JSCore 不是 DCloud iPhone runtime；真实设备仍需复验。全局 polyfill 体积和兼容性需在各端验证。"],
+      "effort_days": [0.5, 2],
+      "flow_ids": ["F01", "F02"],
+      "forbidden": ["不连接真实账号或服务器", "不启动模拟器或推送网页"],
+      "evidence": [],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
+      "external_prerequisites": ["实际 iOS 和 Android App 运行环境验证。"]
     },
     {
       "id": "A01-20",
