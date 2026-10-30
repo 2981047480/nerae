@@ -1,30 +1,60 @@
 import { DeviceKeyPurpose, DeviceKeyResult } from '../interface.uts'
 
-const emptyPublicKey = {
-	kty: 'EC',
-	crv: 'P-256',
-	x: '',
-	y: ''
+const emptyPublicKey = { kty: 'EC', crv: 'P-256', x: '', y: '' }
+
+function failure(errorCode: string): DeviceKeyResult {
+	const parsed = JSON.parseObject<DeviceKeyResult>(
+		'{"ok":false,"errorCode":"' + errorCode + '","alias":"","publicKey":{"kty":"EC","crv":"P-256","x":"","y":""},"proof":""}'
+	)
+	if (parsed != null) return parsed!
+	return JSON.parseObject<DeviceKeyResult>(
+		'{"ok":false,"errorCode":"bridge_failure","alias":"","publicKey":{"kty":"EC","crv":"P-256","x":"","y":""},"proof":""}'
+	)!
 }
 
-function unsupported(): DeviceKeyResult {
-	return {
-		ok: false,
-		errorCode: 'unsupported_platform',
-		alias: '',
-		publicKey: emptyPublicKey,
-		proof: ''
+function isKnownErrorCode(errorCode: string): boolean {
+	return errorCode == 'invalid_alias' || errorCode == 'hardware_unavailable' ||
+		errorCode == 'missing_key' || errorCode == 'ambiguous_key' ||
+		errorCode == 'unexpected_key' || errorCode == 'operation_failed' ||
+		errorCode == 'invalid_proof_input' || errorCode == 'bridge_failure'
+}
+
+function decode(raw: string): DeviceKeyResult {
+	try {
+		const result = JSON.parseObject<DeviceKeyResult>(raw)
+		if (result == null) return failure('bridge_failure')
+		const value = result!
+		if (!value.ok) return isKnownErrorCode(value.errorCode) ? failure(value.errorCode) : failure('bridge_failure')
+		if (value.errorCode.length != 0) return failure('bridge_failure')
+		return value
+	} catch (_error) {
+		return failure('bridge_failure')
 	}
 }
 
+function validJwk(result: DeviceKeyResult): boolean {
+	return result.publicKey.kty == 'EC' && result.publicKey.crv == 'P-256' &&
+		result.publicKey.x.length == 43 && result.publicKey.y.length == 43
+}
+
 export function createNewDeviceKey(): DeviceKeyResult {
-	return unsupported()
+	const result = decode(NeraeAndroidDeviceKeyBridge.createNewDeviceKey())
+	if (!result.ok) return result
+	if (result.alias.length != 43 || !validJwk(result) || result.proof.length != 0) return failure('bridge_failure')
+	return result
 }
 
-export function readExistingDevicePublicKey(_alias: string): DeviceKeyResult {
-	return unsupported()
+export function readExistingDevicePublicKey(alias: string): DeviceKeyResult {
+	const result = decode(NeraeAndroidDeviceKeyBridge.readExistingDevicePublicKey(alias))
+	if (!result.ok) return result
+	if (result.alias != alias || !validJwk(result) || result.proof.length != 0) return failure('bridge_failure')
+	return result
 }
 
-export function signExistingDeviceProof(_alias: string, _purpose: DeviceKeyPurpose, _resourceId: string, _nonce: string): DeviceKeyResult {
-	return unsupported()
+export function signExistingDeviceProof(alias: string, purpose: DeviceKeyPurpose, resourceId: string, nonce: string): DeviceKeyResult {
+	const result = decode(NeraeAndroidDeviceKeyBridge.signExistingDeviceProof(alias, purpose, resourceId, nonce))
+	if (!result.ok) return result
+	if (result.alias != alias || result.proof.split('.').length != 3 || result.publicKey.x.length != 0 ||
+		result.publicKey.y.length != 0) return failure('bridge_failure')
+	return result
 }
