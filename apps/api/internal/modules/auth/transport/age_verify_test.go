@@ -199,3 +199,42 @@ func TestAgeVerifyHandlerMapsCASFailuresWithoutRetryOrLeak(t *testing.T) {
 		})
 	}
 }
+
+func TestAgeVerifyHandlerChecksSessionExpiryAfterEncoding(t *testing.T) {
+	const token = "abcdefghijklmnopqrstuvwxyz0123456789"
+	base := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		name      string
+		now       time.Time
+		expiresAt time.Time
+		want      int
+	}{
+		{"live session at post-encoding check", base, base.Add(time.Nanosecond), http.StatusOK},
+		{"expires at post-encoding boundary", base, base, http.StatusUnauthorized},
+		{"already expired at post-encoding check", base, base.Add(-time.Nanosecond), http.StatusUnauthorized},
+		{"zero clock fails closed", time.Time{}, base.Add(time.Hour), http.StatusServiceUnavailable},
+		{"missing expiry fails closed", base, time.Time{}, http.StatusServiceUnavailable},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			handler := newAgeVerifyTestHandler(t,
+				ageDeclarationWriterFunc(func(context.Context, *sql.DB, string, uint64, bool) (uint64, error) { return 2, nil }),
+				ageProfileFunc(func(context.Context, *sql.DB, string) (session.ResponseProfile, error) {
+					return session.ResponseProfile{SubjectID: "101", Roles: []string{}, AgeVerified: true,
+						AgeDeclarationVersion: 2, ExpiresAt: tc.expiresAt}, nil
+				}))
+			concrete, ok := handler.(*ageVerifyHandler)
+			if !ok {
+				t.Fatal("unexpected handler type")
+			}
+			clockCalls := 0
+			concrete.now = func() time.Time {
+				clockCalls++
+				return tc.now
+			}
+			w := ageRequest(handler, http.MethodPost, ageVerifyPath, `{"isAdult":true,"expectedVersion":1}`, "Bearer "+token)
+			if w.Code != tc.want || w.Header().Get("Cache-Control") != "no-store" || clockCalls != 1 || strings.Contains(w.Body.String(), token) {
+				t.Fatalf("post-encoding expiry check mismatch: status=%d clockCalls=%d", w.Code, clockCalls)
+			}
+		})
+	}
+}

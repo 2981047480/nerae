@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	api "nerae/api/internal/gen"
 	"nerae/api/internal/middleware"
@@ -27,6 +28,7 @@ type ageVerifyHandler struct {
 	declarations AgeDeclarationWriter
 	profiles     EmailSessionProfiler
 	validator    *middleware.SchemaValidator
+	now          func() time.Time
 }
 
 // NewAgeVerifyHandler builds an unmounted authenticated declaration handler.
@@ -36,7 +38,7 @@ func NewAgeVerifyHandler(db *sql.DB, declarations AgeDeclarationWriter, profiles
 	if db == nil || nilAuthDependency(declarations) || nilAuthDependency(profiles) || validator == nil {
 		return nil, middleware.ErrContract
 	}
-	return &ageVerifyHandler{database: db, declarations: declarations, profiles: profiles, validator: validator}, nil
+	return &ageVerifyHandler{database: db, declarations: declarations, profiles: profiles, validator: validator, now: time.Now}, nil
 }
 
 func (h *ageVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -116,6 +118,15 @@ func (h *ageVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoded, err := h.validator.EncodeResponse("User", user)
 	if err != nil || len(encoded) == 0 {
 		h.fail(w, id, middleware.Unavailable)
+		return
+	}
+	now := h.now().UTC()
+	if now.IsZero() || profile.ExpiresAt.IsZero() {
+		h.fail(w, id, middleware.Unavailable)
+		return
+	}
+	if !profile.ExpiresAt.After(now) {
+		h.fail(w, id, middleware.Unauthenticated)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
