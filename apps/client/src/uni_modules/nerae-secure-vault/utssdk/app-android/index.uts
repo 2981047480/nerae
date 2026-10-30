@@ -1,0 +1,41 @@
+import { SecureVaultResult } from '../interface.uts'
+
+function failure(errorCode: string): SecureVaultResult {
+	const parsed = JSON.parseObject<SecureVaultResult>(
+		'{"ok":false,"errorCode":"' + errorCode + '","found":false,"value":""}'
+	)
+	if (parsed != null) return parsed!
+	return JSON.parseObject<SecureVaultResult>(
+		'{"ok":false,"errorCode":"bridge_failure","found":false,"value":""}'
+	)!
+}
+
+function decode(raw: string, isRead: boolean): SecureVaultResult {
+	try {
+		const parsed = JSON.parseObject<SecureVaultResult>(raw)
+		if (parsed == null) return failure('bridge_failure')
+		const result = parsed!
+		if (!result.ok) {
+			if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable') return failure('bridge_failure')
+			return failure(result.errorCode)
+		}
+		if (result.errorCode.length != 0) return failure('bridge_failure')
+		if (!isRead && (result.found || result.value.length != 0)) return failure('bridge_failure')
+		if (isRead && (result.found == (result.value.length == 0))) return failure('bridge_failure')
+		return result
+	} catch (_error) {
+		return failure('bridge_failure')
+	}
+}
+
+export function readAuthenticationState(): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.readAuthenticationState(UTSAndroid.getAppContext()), true)
+}
+
+export function writeAuthenticationState(value: string): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.writeAuthenticationState(UTSAndroid.getAppContext(), value), false)
+}
+
+export function clearAuthenticationState(): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.clearAuthenticationState(UTSAndroid.getAppContext()), false)
+}
