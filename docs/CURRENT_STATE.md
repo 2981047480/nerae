@@ -1,4 +1,4 @@
-# 当前状态 · 2026-10-30
+# 当前状态 · 2026-10-31
 
 **阶段：第五轮本地 UI 样机与三端同步实施计划已形成；尚无可用业务服务或正式三端应用。**
 
@@ -9,7 +9,7 @@
 - 集成版本 `4023de6` 修复错误验证码时设备签名可重复使用：每次有效证明与尝试计数同事务消费，回滚后可重试；挑战和登录隔离 MySQL/race 回归通过。登录幂等回执、HTTP 和实际登录仍未完成。[证据](evidence/A01/A01-11/proof-attempt-integration.md)
 - 设备证明防重在集成版本 `2b59a12` 增加缺失 key epoch 时的历史保护：保留防重记录时拒绝自动重建；集成版隔离 MySQL 防重与邮箱登录事务复测通过。空表仍可首次自动初始化，受控启动和数据恢复待完成。[证据](evidence/A01/A01-02/epoch-history-guard.md)
 - 邮箱队列后台循环已集成至 `ad727bb`：在同版本私有 MySQL 与本机 TLS SMTP sink 验证成功、结果未知与重启不重复；生产 worker 入口尚未装配，也未连接 QQ。[证据](evidence/A01/A01-19/report.md)
-- 登录安全回执的分域 HMAC 和 AES-GCM 原语已集成；篡改、上下文替换及敏感日志负例通过，但尚无持久事务、设备证明复验、撤销检查或提交后释放，不能安全重放登录。[证据](evidence/A01/A01-20/report.md)
+- 登录安全回执的分域 HMAC、AES-GCM 原语和事务内密文仓储已集成；隔离 MySQL 测试覆盖同键并发、回滚、槽位换绑、密钥错误及篡改密文延迟认证。[原语](evidence/A01/A01-20/report.md) / [仓储](evidence/A01/A01-21/report.md) 设备防重标记可在事务内复查，[证据](evidence/A01/A01-02/replay-recheck.md)；登录协调器尚未接入它们，设备签名和当前授权复验、未知提交恢复及提交后凭据释放仍未完成，不能安全重放登录。
 - 客户端邮箱登录合同适配器已加入，认证成功与设备待批准严格分开，并禁止在普通结果序列化中暴露令牌；合成测试和类型检查通过。[A01-17](evidence/A01/A01-17/report.md) App 原生 HTTPS 适配接缝已实现并通过合成测试，但尚未接登录页面、持久会话、真实服务或原生应用。
 - 客户端入口显式加载锁定的 URL polyfill：真实认证/训练 API 构造器在无原生 URL 的 macOS JavaScriptCore 中通过，App 与小程序 JS 资源验证通过；真实 DCloud App 与手机仍待验证。[证据](evidence/F01/F01-06/report.md)
 - [P02-09](evidence/P02/P02-09/report.md) 加入 iOS/Android 系统安全随机数及微信适配器；在集成树复跑 iOS 未签名 framework、Android Kotlin 编译和小程序资源/合成测试通过，尚未在手机或微信真实运行。P02-10 已实现 iOS/Android 受控 HTTPS 原生桥；集成版本 `bddbec2` 复跑两端本机 TLS 协议测试及 Android UTS 转换通过，iOS 未签名 framework 先前编译通过。两端尚未接业务或真机，Android 尚无 APK/设备验证。

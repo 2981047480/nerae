@@ -91,6 +91,13 @@
       "module": "auth",
       "file": "0008_email_challenge_request.up.sql",
       "sha256": "de3f462bea251da845b37a9cf5ba60d4636b8b4870e74ace3ff9173d034ae8c4"
+    },
+    {
+      "order": 14,
+      "id": "auth/0009_email_login_receipt.up.sql",
+      "module": "auth",
+      "file": "0009_email_login_receipt.up.sql",
+      "sha256": "218b4e8fb03049de5907eee4c2c0d5aeaed5973d49884488b96f60bc86f1bc58"
     }
   ]
 }
