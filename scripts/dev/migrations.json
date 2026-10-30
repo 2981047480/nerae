@@ -84,6 +84,13 @@
       "module": "auth",
       "file": "0007_email_outbox.up.sql",
       "sha256": "4c0ac773cf29977aa46ab54647a82473a4aa234922b6eaee91342e5580a5a80b"
+    },
+    {
+      "order": 13,
+      "id": "auth/0008_email_challenge_request.up.sql",
+      "module": "auth",
+      "file": "0008_email_challenge_request.up.sql",
+      "sha256": "de3f462bea251da845b37a9cf5ba60d4636b8b4870e74ace3ff9173d034ae8c4"
     }
   ]
 }
