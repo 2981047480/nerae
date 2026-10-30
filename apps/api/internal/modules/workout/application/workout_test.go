@@ -195,11 +195,24 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		t.Fatal("authenticated subject could not save sets")
 	}
 	snapshot, err := service.ReadFree(ctx, db, tokenAgain, created.ID)
-	if err != nil || snapshot.Version != 2 || len(snapshot.Sets) != 2 || snapshot.Sets[first.RecordKey].WeightKg != "42.50" || snapshot.Sets[first.RecordKey].Exercise.Name != first.Exercise.Name {
+	if err != nil || snapshot.Version != 2 || snapshot.ClientEventID != input.ClientEventID || len(snapshot.Sets) != 2 || snapshot.Sets[first.RecordKey].WeightKg != "42.50" || snapshot.Sets[first.RecordKey].Exercise.Name != first.Exercise.Name {
 		t.Fatal("another session did not recover the same persisted workout")
+	}
+	sameSubjectSnapshot, err := service.ReadFree(ctx, db, tokenA, created.ID)
+	if err != nil || sameSubjectSnapshot.ClientEventID != snapshot.ClientEventID {
+		t.Fatal("two authenticated sessions for the same subject did not recover the persisted event ID")
 	}
 	if _, err := service.ReadFree(ctx, db, tokenB, created.ID); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject read a private workout")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE workout_session SET client_event_id = ? WHERE id = ?`, []byte{0xff, 'x', 'x', 'x', 'x', 'x', 'x', 'x'}, created.ID); err != nil {
+		t.Fatal("could not corrupt isolated event ID fixture")
+	}
+	if _, err := service.ReadFree(ctx, db, tokenA, created.ID); !errors.Is(err, repository.ErrUnavailable) {
+		t.Fatal("invalid stored event ID was accepted")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE workout_session SET client_event_id = ? WHERE id = ?`, []byte(input.ClientEventID), created.ID); err != nil {
+		t.Fatal("could not restore isolated event ID fixture")
 	}
 	if _, _, err := service.SaveSets(ctx, db, tokenB, created.ID, 2, domain.Batch{Sets: []domain.Set{first}}, []string{"entry-001"}); !errors.Is(err, repository.ErrUnavailable) {
 		t.Fatal("different subject modified a private workout")
@@ -233,7 +246,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 		t.Fatal("authenticated ordered save failed")
 	}
 	orderedSnapshot, err := service.ReadOrderedFree(ctx, db, tokenAgain, ordered.ID)
-	if err != nil || orderedSnapshot.Version != 2 || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
+	if err != nil || orderedSnapshot.Version != 2 || orderedSnapshot.ClientEventID != orderedInput.ClientEventID || orderedSnapshot.ClientEventID == snapshot.ClientEventID || !reflect.DeepEqual(orderedSnapshot.ExerciseEntryKeys, wanted) || len(orderedSnapshot.Sets) != 2 {
 		t.Fatal("another session did not recover ordered groups")
 	}
 	if err := auth.ClearAdultDeclaration(ctx, db, tokenA); err != nil {
@@ -369,7 +382,7 @@ func TestAuthenticatedWorkoutTransactions(t *testing.T) {
 			t.Fatal("could not parse test log")
 		}
 		output := fmt.Sprintf("%+v %#v %v", value, value, entry["value"])
-		if strings.Contains(output, first.Exercise.Name) || strings.Contains(output, "50.00") {
+		if strings.Contains(output, first.Exercise.Name) || strings.Contains(output, "50.00") || strings.Contains(output, input.ClientEventID) {
 			t.Fatal("workout content leaked into output")
 		}
 	}

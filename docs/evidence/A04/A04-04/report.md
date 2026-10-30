@@ -8,11 +8,25 @@
 
 被测文件 SHA-256：
 
-- `repository/read.go`：`2bb05fae4ead6d85fa5d98c1c0719f6d138f75553fb572225a706142181c1365`
+- `repository/read.go`：`f3f3bbfd6d1803a3c527222f957da35a07340b6f5d1b2e141f96e3899fc3ed12`
 - `application/workout.go`：`c02ff1df06bf2bed4d21a1c1e971f8316213af842287dfea70ab9dc7b9bac890`
-- `application/workout_test.go`：`00eae0da9f120f521f96ee3efe11ee65b8360287fe31ff0fdbb6218015cc7fc6`
+- `application/workout_test.go`：`6f5a1a448e250cb3f96e3b266b9133f37c7bdf9fc3b7bb879943e55ea43d86e0`
 - `mysql_smoke.py`：`595863f95aef1e20df9e478e011713ba1cc35c28d7dc2045e2b2764f77deaa6d`
 
 集成提交 `af7ded4` 的原始文件版本通过隔离 MySQL 接缝测试。随后将年龄拒绝后的记录计数限定到测试主体，集成提交 `b5ca21d` 上当前文件与训练完成测试在同一隔离数据库共同通过；任务图和 8 项迁移清单检查有效。该复测不表示 HTTP、双设备同步或最终接受已完成。
 
 真实年龄核验、发送邮箱验证码、设备批准与恢复、HTTP 和幂等响应、动作排序、客户端接线、双设备测试及 App 安装均未完成。
+
+## 本轮事件 ID 读回接缝
+
+`repository.ReadFree` 在既有 `validateFreeInput` 校验 `client_event_id` 后，将原始值放入内部 `Snapshot.ClientEventID`。快照现有 `String`、`GoString`、`MarshalJSON` 与 `LogValue` 脱敏仍覆盖该字段；没有增加 HTTP 响应、日志或路由接线。真实隔离应用服务测试证明：同一主体的两个不同已认证会话读回同一个已存事件 ID；另一个主体无法读取记录；满足列长度约束的非法 UTF-8 持久值被拒绝为 `repository.ErrUnavailable`；另一条同主体记录读回其自身、不同的事件 ID。测试在输出检查中也断言事件 ID 不会出现在格式化、JSON 或日志结果内。
+
+本轮验证命令与结果：
+
+- `GOTOOLCHAIN=local GOPROXY=off GOMODCACHE=/private/tmp/nerae-go-api-mod GOCACHE=/private/tmp/nerae-go-api-cache /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race ./internal/modules/workout/repository ./internal/modules/workout/application`：退出 0。
+- `python3 -B docs/evidence/A04/A04-04/mysql_smoke.py`：审批路径下退出 0。脚本在新建的私有 Unix socket MySQL 8.4.13 datadir 应用 8 项迁移并运行两个应用 race 测试；测试通过后关闭数据库并删除本次目录。
+- `git diff --check`：退出 0。
+
+验证过程中的限制也保留记录：普通沙箱内首次 MySQL 初始化以 SIGSEGV 失败，失败目录 `/private/tmp/nerae-workout-integration-mysql-kwu4j1h3` 按 harness 约定保留；审批运行第一次到达应用测试时，1 字节损坏夹具被数据库现有 8 字节最小长度约束拒绝，之后改为 8 字节非法 UTF-8 并在最终完整隔离运行中通过。另一次失败测试目录 `/private/tmp/nerae-workout-integration-mysql-j45bxhjc` 同样保留。未删除这些失败现场或此前临时目录。
+
+此接缝仅让后续内部授权 presenter 有经过校验的源 ID 可用；公开读响应、事件幂等回执、双设备恢复流程及最终接受仍未验证。

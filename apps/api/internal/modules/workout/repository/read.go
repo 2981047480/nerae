@@ -13,15 +13,16 @@ import (
 // Snapshot is an internal, sensitive result; presentation must be assembled
 // only after authorization and must not serialize or log this value directly.
 type Snapshot struct {
-	ID         uint64
-	Version    uint64
-	Date       string
-	TimeZone   string
-	Status     domain.Status
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	RecordedAt *time.Time
-	Sets       map[string]domain.Set
+	ID            uint64
+	Version       uint64
+	ClientEventID string
+	Date          string
+	TimeZone      string
+	Status        domain.Status
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	RecordedAt    *time.Time
+	Sets          map[string]domain.Set
 }
 
 func (Snapshot) String() string               { return "WorkoutSnapshot{redacted}" }
@@ -55,6 +56,7 @@ func (s *RecordStore) ReadFree(ctx context.Context, tx *sql.Tx, subjectID, sessi
 	if _, err := validateFreeInput(FreeSessionInput{Date: result.Date, TimeZone: &result.TimeZone, ClientEventID: string(eventID)}, s.now()); err != nil {
 		return Snapshot{}, ErrUnavailable
 	}
+	result.ClientEventID = string(eventID)
 	result.Status = domain.Status(status)
 	if result.Status != domain.InProgress && result.Status != domain.Completed && result.Status != domain.Skipped {
 		return Snapshot{}, ErrUnavailable
