@@ -12,8 +12,33 @@ import (
 	"testing"
 	"time"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/workout/domain"
 )
+
+func TestOrderStatementsReturnsDefensiveCopies(t *testing.T) {
+	reads, writes := OrderStatements()
+	if len(reads) != 4 || len(writes) != 3 {
+		t.Fatalf("statement list sizes = %d reads, %d writes", len(reads), len(writes))
+	}
+	for _, statement := range reads {
+		if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statement)), "SELECT ") {
+			t.Fatalf("invalid order read statement: %q", statement)
+		}
+	}
+	for _, statement := range writes {
+		verb := strings.Fields(strings.ToUpper(strings.TrimSpace(statement)))
+		if len(verb) == 0 || (verb[0] != "INSERT" && verb[0] != "UPDATE" && verb[0] != "DELETE") {
+			t.Fatalf("invalid order write statement: %q", statement)
+		}
+	}
+	readFirst, writeFirst := reads[0], writes[0]
+	reads[0], writes[0] = "SELECT 1", "DELETE FROM user"
+	currentReads, currentWrites := OrderStatements()
+	if currentReads[0] != readFirst || currentWrites[0] != writeFirst {
+		t.Fatal("caller mutation changed the order SQL statements")
+	}
+}
 
 func TestOrderedWorkoutTransactions(t *testing.T) {
 	db := privateDB(t)
@@ -51,6 +76,21 @@ func TestOrderedWorkoutTransactions(t *testing.T) {
 	if err != nil || create.Commit() != nil {
 		t.Fatal("create isolated workout")
 	}
+	applyTx := func(owner, version uint64, batch domain.Batch, order []string) (uint64, bool, error) {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return 0, false, err
+		}
+		defer tx.Rollback()
+		v, changed, err := store.ApplyOrderedBatchTx(ctx, dbtx.Wrap(tx), owner, ref.ID, version, batch, order)
+		if err != nil {
+			return 0, false, err
+		}
+		if err := tx.Commit(); err != nil {
+			return 0, false, err
+		}
+		return v, changed, nil
+	}
 	apply := func(owner, version uint64, batch domain.Batch, order []string) (uint64, bool, error) {
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
@@ -66,6 +106,18 @@ func TestOrderedWorkoutTransactions(t *testing.T) {
 		}
 		return v, changed, nil
 	}
+	readTx := func(owner uint64) (OrderedSnapshot, error) {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return OrderedSnapshot{}, err
+		}
+		defer tx.Rollback()
+		value, err := store.ReadOrderedFreeTx(ctx, dbtx.Wrap(tx), owner, ref.ID)
+		if err == nil {
+			err = tx.Commit()
+		}
+		return value, err
+	}
 	read := func(owner uint64) (OrderedSnapshot, error) {
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
@@ -78,9 +130,15 @@ func TestOrderedWorkoutTransactions(t *testing.T) {
 		}
 		return value, err
 	}
+	if _, err := store.ReadOrderedFreeTx(ctx, nil, user, ref.ID); !errors.Is(err, ErrInvalid) {
+		t.Fatal("nil ordered read capability was not rejected")
+	}
+	if _, _, err := store.ApplyOrderedBatchTx(ctx, nil, user, ref.ID, 1, domain.Batch{}, []string{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("nil ordered write capability was not rejected")
+	}
 	a := domain.Set{RecordKey: "record-001", ExerciseEntryKey: "entry-001", Exercise: domain.Exercise{Source: domain.Custom, Name: "自定义深蹲"}, Index: 1, Kind: domain.Weight, WeightKg: "42.5", Reps: 8}
 	b := domain.Set{RecordKey: "record-002", ExerciseEntryKey: "entry-002", Exercise: domain.Exercise{Source: domain.Custom, Name: "自定义卧推"}, Index: 1, Kind: domain.Weight, WeightKg: "25", Reps: 10}
-	empty, err := read(user)
+	empty, err := readTx(user)
 	if err != nil || empty.ExerciseEntryKeys == nil || len(empty.ExerciseEntryKeys) != 0 {
 		t.Fatal("new session must have an explicit empty order")
 	}
@@ -92,12 +150,18 @@ func TestOrderedWorkoutTransactions(t *testing.T) {
 	if strings.Contains(fmt.Sprintf("%+v %#v %s", empty, empty, log.String()), "entry-001") {
 		t.Fatal("ordered snapshot leaked")
 	}
-	if v, changed, err := apply(user, 1, domain.Batch{Sets: []domain.Set{a, b}}, []string{"entry-002", "entry-001"}); err != nil || !changed || v != 2 {
+	if v, changed, err := applyTx(user, 1, domain.Batch{Sets: []domain.Set{a, b}}, []string{"entry-002", "entry-001"}); err != nil || !changed || v != 2 {
 		t.Fatal("save initial order and groups")
 	}
-	got, err := read(user)
+	got, err := readTx(user)
 	if err != nil || !reflect.DeepEqual(got.ExerciseEntryKeys, []string{"entry-002", "entry-001"}) || len(got.Sets) != 2 {
 		t.Fatal("ordered read lost groups or order")
+	}
+	if _, _, err := applyTx(user, 1, domain.Batch{}, []string{"entry-002", "entry-001"}); !errors.Is(err, ErrVersionConflict) {
+		t.Fatal("transaction capability accepted a stale version")
+	}
+	if _, _, err := applyTx(user, 2, domain.Batch{}, []string{"entry-002"}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("transaction capability accepted an incomplete order")
 	}
 	if _, err := json.Marshal(got); err == nil {
 		t.Fatal("populated ordered snapshot was serializable")

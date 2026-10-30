@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"time"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/workout/domain"
 )
 
@@ -27,19 +28,46 @@ func (OrderedSnapshot) LogValue() slog.Value {
 	return slog.StringValue("OrderedWorkoutSnapshot{redacted}")
 }
 
+const (
+	orderLockSubjectSQL           = `SELECT status FROM user WHERE id = ? FOR UPDATE`
+	orderLockSessionSQL           = `SELECT source, status, version, recorded_at IS NOT NULL FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+	orderLockKeyEpochSQL          = `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`
+	workoutReadExerciseOrderSQL   = `SELECT exercise_entry_key, position FROM workout_exercise_order WHERE session_id = ? ORDER BY position`
+	workoutDeleteExerciseOrderSQL = `DELETE FROM workout_exercise_order WHERE session_id = ?`
+	workoutInsertExerciseOrderSQL = `INSERT INTO workout_exercise_order (session_id, exercise_entry_key, position) VALUES (?, ?, ?)`
+	workoutUpdateOrderSessionSQL  = `UPDATE workout_session SET version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`
+)
+
+// OrderStatements returns copies of SQL issued directly by this file. The
+// lists exclude SQL delegated to ReadFreeTx and record helpers; callers must
+// also merge FreeDetailStatements and RecordStatements for full coverage.
+func OrderStatements() (reads, writes []string) {
+	return []string{orderLockSubjectSQL, orderLockSessionSQL, orderLockKeyEpochSQL, workoutReadExerciseOrderSQL},
+		[]string{workoutDeleteExerciseOrderSQL, workoutInsertExerciseOrderSQL, workoutUpdateOrderSessionSQL}
+}
+
 // ReadOrderedFree checks ownership and returns only a self-consistent ordered
 // snapshot while holding the session lock. The caller must enforce identity,
 // age and resource authorization in this same transaction.
 func (s *RecordStore) ReadOrderedFree(ctx context.Context, tx *sql.Tx, subjectID, sessionID uint64) (OrderedSnapshot, error) {
-	snapshot, err := s.ReadFree(ctx, tx, subjectID, sessionID)
+	return s.ReadOrderedFreeTx(ctx, dbtx.Wrap(tx), subjectID, sessionID)
+}
+
+// ReadOrderedFreeTx reads an ordered snapshot inside the caller-owned transaction.
+// It performs no identity, age, or resource authorization and never commits.
+func (s *RecordStore) ReadOrderedFreeTx(ctx context.Context, tx dbtx.ReadTransaction, subjectID, sessionID uint64) (OrderedSnapshot, error) {
+	if s == nil || s.protector == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 {
+		return OrderedSnapshot{}, ErrInvalid
+	}
+	snapshot, err := s.ReadFreeTx(ctx, tx, subjectID, sessionID)
 	if err != nil {
 		return OrderedSnapshot{}, err
 	}
-	order, err := readExerciseOrder(ctx, tx, sessionID)
+	order, err := readExerciseOrderTx(ctx, tx, sessionID)
 	if err != nil {
 		return OrderedSnapshot{}, ErrUnavailable
 	}
-	current, err := s.load(ctx, tx, subjectID, sessionID, snapshot.Status)
+	current, err := s.loadTx(ctx, tx, subjectID, sessionID, snapshot.Status)
 	if err != nil {
 		return OrderedSnapshot{}, ErrUnavailable
 	}
@@ -55,17 +83,23 @@ func (s *RecordStore) ReadOrderedFree(ctx context.Context, tx *sql.Tx, subjectID
 // authorization, age-verification, or migration/recovery boundary.
 // The group-only helper is private so application callers cannot bypass order.
 func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subjectID, sessionID, expectedVersion uint64, batch domain.Batch, targetOrder []string) (uint64, bool, error) {
+	return s.ApplyOrderedBatchTx(ctx, dbtx.Wrap(tx), subjectID, sessionID, expectedVersion, batch, targetOrder)
+}
+
+// ApplyOrderedBatchTx uses the supplied capability and leaves transaction
+// lifecycle and authorization to the caller.
+func (s *RecordStore) ApplyOrderedBatchTx(ctx context.Context, tx dbtx.Transaction, subjectID, sessionID, expectedVersion uint64, batch domain.Batch, targetOrder []string) (uint64, bool, error) {
 	if s == nil || s.protector == nil || s.now == nil || ctx == nil || tx == nil || subjectID == 0 || sessionID == 0 || expectedVersion == 0 || targetOrder == nil {
 		return 0, false, ErrInvalid
 	}
 	var userStatus string
-	if err := tx.QueryRowContext(ctx, `SELECT status FROM user WHERE id = ? FOR UPDATE`, subjectID).Scan(&userStatus); err != nil || userStatus != "active" {
+	if err := tx.QueryRowContext(ctx, orderLockSubjectSQL, subjectID).Scan(&userStatus); err != nil || userStatus != "active" {
 		return 0, false, ErrUnavailable
 	}
 	var version uint64
 	var source, status string
 	var recorded bool
-	if err := tx.QueryRowContext(ctx, `SELECT source, status, version, recorded_at IS NOT NULL FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`, sessionID, subjectID).
+	if err := tx.QueryRowContext(ctx, orderLockSessionSQL, sessionID, subjectID).
 		Scan(&source, &status, &version, &recorded); err != nil || source != "free" || version == 0 || (status == string(domain.Completed) && !recorded) {
 		return 0, false, ErrUnavailable
 	}
@@ -73,15 +107,15 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 		return 0, false, ErrVersionConflict
 	}
 	var epochID, epochTag []byte
-	if err := tx.QueryRowContext(ctx, `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`).Scan(&epochID, &epochTag); err != nil ||
+	if err := tx.QueryRowContext(ctx, orderLockKeyEpochSQL).Scan(&epochID, &epochTag); err != nil ||
 		string(epochID) != s.protector.keyID || !hmac.Equal(epochTag, s.protector.tag[:]) {
 		return 0, false, ErrUnavailable
 	}
-	current, err := s.load(ctx, tx, subjectID, sessionID, domain.Status(status))
+	current, err := s.loadTx(ctx, tx, subjectID, sessionID, domain.Status(status))
 	if err != nil {
 		return 0, false, ErrUnavailable
 	}
-	oldOrder, err := readExerciseOrder(ctx, tx, sessionID)
+	oldOrder, err := readExerciseOrderTx(ctx, tx, sessionID)
 	if err != nil {
 		return 0, false, ErrUnavailable
 	}
@@ -97,7 +131,7 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 	orderChanged := !reflect.DeepEqual(oldOrder, projectedOrder)
 	resultVersion, groupsChanged := version, false
 	if len(batch.Sets) != 0 || len(batch.DeleteKeys) != 0 || len(batch.RestoreKeys) != 0 {
-		resultVersion, groupsChanged, err = s.applyBatchWithoutOrder(ctx, tx, subjectID, sessionID, expectedVersion, batch)
+		resultVersion, groupsChanged, err = s.applyBatchWithoutOrderTx(ctx, tx, subjectID, sessionID, expectedVersion, batch)
 		if err != nil {
 			return 0, false, err
 		}
@@ -108,12 +142,11 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 	if !groupsChanged && version == math.MaxUint64 {
 		return 0, false, ErrUnavailable
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM workout_exercise_order WHERE session_id = ?`, sessionID); err != nil {
+	if _, err := tx.ExecContext(ctx, workoutDeleteExerciseOrderSQL, sessionID); err != nil {
 		return 0, false, ErrUnavailable
 	}
 	for i, entryKey := range projectedOrder {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO workout_exercise_order (session_id, exercise_entry_key, position) VALUES (?, ?, ?)`,
-			sessionID, []byte(entryKey), i+1); err != nil {
+		if _, err := tx.ExecContext(ctx, workoutInsertExerciseOrderSQL, sessionID, []byte(entryKey), i+1); err != nil {
 			return 0, false, ErrUnavailable
 		}
 	}
@@ -123,7 +156,7 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 			return 0, false, ErrUnavailable
 		}
 		timestamp := now.UTC().Truncate(time.Microsecond).Format("2006-01-02 15:04:05.000000")
-		if _, err := tx.ExecContext(ctx, `UPDATE workout_session SET version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`, timestamp, sessionID, subjectID); err != nil {
+		if _, err := tx.ExecContext(ctx, workoutUpdateOrderSessionSQL, timestamp, sessionID, subjectID); err != nil {
 			return 0, false, ErrUnavailable
 		}
 		resultVersion++
@@ -132,7 +165,14 @@ func (s *RecordStore) ApplyOrderedBatch(ctx context.Context, tx *sql.Tx, subject
 }
 
 func readExerciseOrder(ctx context.Context, tx *sql.Tx, sessionID uint64) ([]string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT exercise_entry_key, position FROM workout_exercise_order WHERE session_id = ? ORDER BY position`, sessionID)
+	return readExerciseOrderTx(ctx, dbtx.Wrap(tx), sessionID)
+}
+
+func readExerciseOrderTx(ctx context.Context, tx dbtx.ReadTransaction, sessionID uint64) ([]string, error) {
+	if ctx == nil || tx == nil || sessionID == 0 {
+		return nil, ErrInvalid
+	}
+	rows, err := tx.QueryContext(ctx, workoutReadExerciseOrderSQL, sessionID)
 	if err != nil {
 		return nil, ErrUnavailable
 	}
