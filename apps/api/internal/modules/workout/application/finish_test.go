@@ -6,9 +6,12 @@ import (
 	"crypto/ecdsa"
 	"database/sql"
 	"errors"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"nerae/api/internal/dbtx"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -81,6 +84,25 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	token, claims := login("finish@example.test", key, public)
 	tokenAgain, claimsAgain := login("finish@example.test", key, public)
 	other, otherClaims := login("finish-other@example.test", otherKey, otherPublic)
+	subjectID, err := strconv.ParseUint(claims.SubjectID, 10, 64)
+	if err != nil || subjectID == 0 {
+		t.Fatal("invalid test subject id")
+	}
+	if _, err := records.CompleteFreeTx(ctx, nil, subjectID, 1, 1); !errors.Is(err, repository.ErrInvalid) {
+		t.Fatal("nil completion capability was not rejected")
+	}
+	if _, err := records.CompleteFree(ctx, nil, subjectID, 1, 1); !errors.Is(err, repository.ErrInvalid) {
+		t.Fatal("legacy nil completion transaction was not rejected")
+	}
+	statements := repository.CompletionStatements()
+	if len(statements) != 1 || !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(statements[0])), "UPDATE ") {
+		t.Fatal("completion write statement list is invalid")
+	}
+	completionSQL := statements[0]
+	statements[0] = "DELETE FROM workout_session"
+	if repository.CompletionStatements()[0] != completionSQL {
+		t.Fatal("completion SQL statement list was not copied")
+	}
 	if claims.SubjectID != claimsAgain.SubjectID || claims.SubjectID == otherClaims.SubjectID {
 		t.Fatal("invalid test ownership")
 	}
@@ -93,6 +115,15 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	ref, err := service.CreateFree(ctx, db, token, input)
 	if err != nil {
 		t.Fatal("could not create isolated workout")
+	}
+	completeViaCapability := func(credential string, sessionID, expectedVersion uint64) (uint64, error) {
+		var version uint64
+		err := service.inTransaction(ctx, db, credential, func(tx *sql.Tx, userID uint64) error {
+			var err error
+			version, err = records.CompleteFreeTx(ctx, dbtx.Wrap(tx), userID, sessionID, expectedVersion)
+			return err
+		})
+		return version, err
 	}
 	if _, err := service.CompleteFree(ctx, db, token, ref.ID, 1); !errors.Is(err, repository.ErrSetConflict) {
 		t.Fatal("empty workout was marked complete")
@@ -124,6 +155,34 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO workout_exercise_order (session_id, exercise_entry_key, position) VALUES (?, ?, 1)`, ref.ID, []byte(set.ExerciseEntryKey)); err != nil {
 		t.Fatal("could not repair isolated order fixture")
+	}
+	if _, err := completeViaCapability(token, ref.ID, 1); !errors.Is(err, repository.ErrVersionConflict) {
+		t.Fatal("transaction capability accepted a stale completion version")
+	}
+	stale, err := service.ReadFree(ctx, db, token, ref.ID)
+	if err != nil || stale.Version != 2 || stale.Status != domain.InProgress || stale.RecordedAt != nil {
+		t.Fatal("stale transaction capability changed the workout")
+	}
+	// Exercise successful completion through the capability entry on an
+	// independent synthetic record; the main record remains available for the
+	// rollback and same-version race assertions below.
+	capabilityInput := input
+	capabilityInput.ClientEventID = "event-finish-capability"
+	capabilityRef, err := service.CreateFree(ctx, db, token, capabilityInput)
+	if err != nil {
+		t.Fatal("could not create isolated capability workout")
+	}
+	capabilitySet := domain.Set{RecordKey: "record-finish-cap-001", ExerciseEntryKey: "entry-finish-cap-001", Exercise: domain.Exercise{Source: domain.Custom, Name: "能力测试动作"},
+		Index: 1, Kind: domain.Weight, WeightKg: "30", Reps: 6}
+	if v, changed, err := service.SaveSets(ctx, db, token, capabilityRef.ID, 1, domain.Batch{Sets: []domain.Set{capabilitySet}}, []string{capabilitySet.ExerciseEntryKey}); err != nil || !changed || v != 2 {
+		t.Fatal("could not prepare capability completion workout")
+	}
+	if v, err := completeViaCapability(token, capabilityRef.ID, 2); err != nil || v != 3 {
+		t.Fatal("DBTX completion did not commit successfully")
+	}
+	capabilityResult, err := service.ReadFree(ctx, db, token, capabilityRef.ID)
+	if err != nil || capabilityResult.Status != domain.Completed || capabilityResult.Version != 3 || capabilityResult.RecordedAt == nil || len(capabilityResult.Sets) != 1 {
+		t.Fatal("DBTX completion did not read back")
 	}
 	// Force authentication to change after the completion update but before the
 	// service's final check; the status, timestamp and version must all roll back.
