@@ -46,3 +46,5 @@ SHA-256 values recorded after verification:
 ## Lead integration recheck · 2026-10-31
 
 After the versioned adult-declaration migration and session profile change were integrated, the isolated harness was updated to include `user/0002_age_declaration_version.up.sql`. The same command ran again with private MySQL/Redis and loopback TLS SMTP: exit `0`, including the focused Go race test. The current harness SHA-256 is `e0d35a240da01121ed60bab157f9bb0580931b75270d1c9c0e7cd96ce32ff9d2`. This remains test-only assembly with synthetic identities, not deployed routes or real delivery.
+
+After the authenticated response began returning the declaration version, the same harness passed again and asserted version `1` in both login and `/me`; the updated integration test SHA-256 is `7d3e6d3f479f465a311062230b6dd704b6c157d3ef88c43dad57ddb3238d4a4b`.
