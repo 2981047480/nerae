@@ -1,0 +1,11 @@
+/** Sensitive values must never be logged, placed in URLs, or stored elsewhere. */
+export type SecureVaultResult = {
+  ok: boolean
+  errorCode: string
+  found: boolean
+  value: string
+}
+
+export type ReadAuthenticationState = () => SecureVaultResult
+export type WriteAuthenticationState = (value: string) => SecureVaultResult
+export type ClearAuthenticationState = () => SecureVaultResult

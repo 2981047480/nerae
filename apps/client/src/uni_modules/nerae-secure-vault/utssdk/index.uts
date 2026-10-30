@@ -1,0 +1,9 @@
+import { SecureVaultResult } from './interface.uts'
+
+function unsupported(): SecureVaultResult {
+  return { ok: false, errorCode: 'unsupported_platform', found: false, value: '' }
+}
+
+export function readAuthenticationState(): SecureVaultResult { return unsupported() }
+export function writeAuthenticationState(_value: string): SecureVaultResult { return unsupported() }
+export function clearAuthenticationState(): SecureVaultResult { return unsupported() }

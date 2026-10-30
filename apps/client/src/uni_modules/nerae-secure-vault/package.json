@@ -1,0 +1,9 @@
+{
+  "id": "nerae-secure-vault",
+  "displayName": "Nerae Secure Vault",
+  "version": "0.1.0",
+  "description": "Device-bound authentication state storage",
+  "uni_modules": {
+    "type": "uts"
+  }
+}
