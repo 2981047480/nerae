@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -67,6 +68,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not initialize challenges")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, emailProtector)
 	resolver, _ := identity.NewResolver(emailProtector)
 	codec, _ := session.NewTokenCodec(bytes.Repeat([]byte{5}, 32), session.TokenPolicy{MaxLifetime: time.Hour})
 	auth, _ := session.NewStore(resolver, codec)

@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"nerae/api/internal/modules/auth/approval"
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -112,6 +113,7 @@ func TestEmailLoginTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal("challenge initialization failed")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("resolver initialization failed")

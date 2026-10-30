@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/repository"
 )
@@ -154,41 +155,101 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		}
 	}
 
-	// Competing first initializers may conflict, but must fail closed and
-	// leave exactly one key epoch rather than accepting mixed configurations.
-	var epochStart sync.WaitGroup
-	epochStart.Add(1)
-	epochResults := make(chan error, 2)
-	for n, id := range []string{strings.Repeat("X", 32), strings.Repeat("Y", 32)} {
-		go func(n int, id string) {
-			epochStart.Wait()
-			tx, err := db.BeginTx(ctx, nil)
-			if err != nil {
-				epochResults <- err
-				return
-			}
-			defer tx.Rollback()
-			err = store.Issue(ctx, tx, IssueInput{Email: fmt.Sprintf("epoch%d@example.test", n), ChallengeID: id,
-				Nonce: nonce, Code: "012345", PublicKey: public})
-			if err == nil {
-				err = tx.Commit()
-			}
-			epochResults <- err
-		}(n, id)
+	// An empty database is not implicitly initialized by Issue or Attempt.
+	uninitializedID := strings.Repeat("U", 32)
+	uninitializedTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	epochStart.Done()
-	epochA, epochB := <-epochResults, <-epochResults
-	if (epochA != nil && !errors.Is(epochA, ErrChallengeStore)) || (epochB != nil && !errors.Is(epochB, ErrChallengeStore)) ||
-		(epochA != nil && epochB != nil) {
-		t.Fatalf("key epoch initialization failed closed unexpectedly: %v / %v", epochA, epochB)
+	if err := store.Issue(ctx, uninitializedTx, IssueInput{Email: email, ChallengeID: uninitializedID, Nonce: nonce,
+		Code: "012345", PublicKey: public}); !errors.Is(err, ErrChallengeStore) {
+		_ = uninitializedTx.Rollback()
+		t.Fatal("Issue accepted an uninitialized identity epoch")
 	}
+	_ = uninitializedTx.Rollback()
+	uninitializedAttemptTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Attempt(ctx, uninitializedAttemptTx, AttemptInput{ChallengeID: uninitializedID, Code: "012345"}); !errors.Is(err, ErrChallengeStore) {
+		_ = uninitializedAttemptTx.Rollback()
+		t.Fatal("Attempt accepted an uninitialized identity epoch")
+	}
+	_ = uninitializedAttemptTx.Rollback()
 	var epochs int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_identity_key_epoch`).Scan(&epochs); err != nil {
+		t.Fatal("could not inspect identity epoch before bootstrap")
+	}
+	if epochs != 0 {
+		t.Fatalf("uninitialized calls created an identity epoch: %d", epochs)
+	}
+	initializer, err := bootstrap.NewIdentityEpochInitializer(protector)
+	if err != nil {
+		t.Fatal("could not construct identity epoch initializer")
+	}
+	bootstrapTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := initializer.Initialize(ctx, bootstrapTx); err != nil {
+		_ = bootstrapTx.Rollback()
+		t.Fatalf("explicit empty-database identity epoch initialization failed: %v", err)
+	}
+	if err := bootstrapTx.Commit(); err != nil {
+		t.Fatal("identity epoch bootstrap commit failed")
+	}
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_identity_key_epoch`).Scan(&epochs); err != nil || epochs != 1 {
-		t.Fatal("expected exactly one email key epoch")
+		t.Fatal("explicit initialization did not create exactly one epoch")
 	}
 
 	first := strings.Repeat("A", 32)
 	issue(first)
+	// Losing the epoch after challenge data exists must reject authentication
+	// and must not let either Issue or the bootstrapper recreate it.
+	var epochTag []byte
+	if err := db.QueryRowContext(ctx, `SELECT key_tag FROM auth_email_identity_key_epoch WHERE slot=1`).Scan(&epochTag); err != nil {
+		t.Fatal("could not capture test epoch")
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_email_identity_key_epoch WHERE slot=1`); err != nil {
+		t.Fatal("could not simulate missing epoch after challenge data")
+	}
+	missingIssueTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	missingIssueID := strings.Repeat("V", 32)
+	if err := store.Issue(ctx, missingIssueTx, IssueInput{Email: email, ChallengeID: missingIssueID, Nonce: nonce,
+		Code: "012345", PublicKey: public}); !errors.Is(err, ErrChallengeStore) {
+		_ = missingIssueTx.Rollback()
+		t.Fatal("Issue rebuilt a missing epoch after challenge history existed")
+	}
+	_ = missingIssueTx.Rollback()
+	missingAttemptTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Attempt(ctx, missingAttemptTx, AttemptInput{ChallengeID: first, Code: "012345"}); !errors.Is(err, ErrChallengeStore) {
+		_ = missingAttemptTx.Rollback()
+		t.Fatal("Attempt accepted a missing identity epoch")
+	}
+	_ = missingAttemptTx.Rollback()
+	reinitTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := initializer.Initialize(ctx, reinitTx); !errors.Is(err, bootstrap.ErrIdentityEpoch) {
+		_ = reinitTx.Rollback()
+		t.Fatal("bootstrapper recreated an epoch after challenge history existed")
+	}
+	_ = reinitTx.Rollback()
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_identity_key_epoch`).Scan(&epochs); err != nil || epochs != 0 {
+		t.Fatal("failed authentication/bootstrap rebuilt the missing epoch")
+	}
+	// Restore the known test key directly only as fixture repair so the
+	// remaining challenge behavior tests can continue.
+	if _, err := db.ExecContext(ctx, `INSERT INTO auth_email_identity_key_epoch(slot,key_tag) VALUES (1,?)`, epochTag); err != nil {
+		t.Fatal("could not restore isolated test epoch")
+	}
 	validFirst := testProof(t, private, first, nonce, "wrong-attempt-jti", now)
 	badProof := testProof(t, private, first, strings.Repeat("B", 43), "bad-proof-jti", now)
 	result, err := attempt(first, "999999", badProof, now, true)

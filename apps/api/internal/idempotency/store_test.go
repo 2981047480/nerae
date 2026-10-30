@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -113,6 +114,7 @@ func newIdemFixture(t *testing.T) *idemFixture {
 	if err != nil {
 		t.Fatal("could not initialize test challenge store")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, f.db, protector)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("could not initialize test identity resolver")

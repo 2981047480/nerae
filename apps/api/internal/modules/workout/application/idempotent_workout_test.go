@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"nerae/api/internal/idempotency"
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -66,6 +67,7 @@ func newWorkoutIdempotencyFixture(t *testing.T) *workoutIdempotencyFixture {
 	if err != nil {
 		t.Fatal("could not initialize synthetic challenge store")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("could not initialize synthetic identity resolver")

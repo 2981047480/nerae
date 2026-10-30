@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"nerae/api/internal/dbtx"
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -33,6 +34,7 @@ func TestWorkoutCompletionTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not initialize challenge store")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, emailProtector)
 	resolver, _ := identity.NewResolver(emailProtector)
 	codec, _ := session.NewTokenCodec(bytes.Repeat([]byte{5}, 32), session.TokenPolicy{MaxLifetime: time.Hour})
 	auth, _ := session.NewStore(resolver, codec)

@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -105,6 +106,7 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not initialize challenge store")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
 	resolver, _ := identity.NewResolver(protector)
 	codec, _ := NewTokenCodec(bytes.Repeat([]byte{5}, 32), TokenPolicy{MaxLifetime: time.Hour})
 	store, _ := NewStore(resolver, codec)

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/repository"
@@ -105,6 +106,7 @@ func TestEmailIdentityAndTrustedDeviceTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
 	resolver, err := NewResolver(protector)
 	if err != nil {
 		t.Fatal(err)

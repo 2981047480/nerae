@@ -21,6 +21,7 @@ import (
 
 	"nerae/api/internal/idempotency"
 	"nerae/api/internal/middleware"
+	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -54,6 +55,7 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal("challenge store setup failed")
 	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("identity resolver setup failed")
