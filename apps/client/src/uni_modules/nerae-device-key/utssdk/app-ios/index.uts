@@ -11,6 +11,7 @@ function failure(errorCode: string): DeviceKeyResult {
 
 function isKnownErrorCode(errorCode: string): boolean {
 	return errorCode == 'invalid_alias' || errorCode == 'hardware_unavailable' ||
+		errorCode == 'alias_conflict' ||
 		errorCode == 'missing_key' || errorCode == 'ambiguous_key' ||
 		errorCode == 'unexpected_key' || errorCode == 'operation_failed' ||
 		errorCode == 'invalid_proof_input' || errorCode == 'bridge_failure'
@@ -40,6 +41,13 @@ export function createNewDeviceKey(): DeviceKeyResult {
 	const result = decodeBridgeResult(NeraeDeviceKeyBridge.createNewDeviceKey())
 	if (!result.ok) return result
 	if (result.alias.length != 43 || !hasValidPublicKey(result) || result.proof.length != 0) return failure('bridge_failure')
+	return result
+}
+
+export function createDeviceKeyAtReservedAlias(alias: string): DeviceKeyResult {
+	const result = decodeBridgeResult(NeraeDeviceKeyBridge.createDeviceKeyAtReservedAlias(alias))
+	if (!result.ok) return result
+	if (result.alias != alias || !hasValidPublicKey(result) || result.proof.length != 0) return failure('bridge_failure')
 	return result
 }
 

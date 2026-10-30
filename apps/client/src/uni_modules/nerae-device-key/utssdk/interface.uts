@@ -17,5 +17,11 @@ export type DeviceKeyResult = {
 }
 
 export type CreateNewDeviceKey = () => DeviceKeyResult
+/**
+ * Creates once under a caller-reserved canonical base64url alias (32 random bytes, 43 chars).
+ * Persist the alias before calling. On an uncertain result, read that exact alias; never retry
+ * creation under another alias. Once a challenge may have been sent, use readExisting only.
+ */
+export type CreateDeviceKeyAtReservedAlias = (alias: string) => DeviceKeyResult
 export type ReadExistingDevicePublicKey = (alias: string) => DeviceKeyResult
 export type SignExistingDeviceProof = (alias: string, purpose: DeviceKeyPurpose, resourceId: string, nonce: string) => DeviceKeyResult

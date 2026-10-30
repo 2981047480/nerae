@@ -21,6 +21,10 @@ export function createNewDeviceKey(): DeviceKeyResult {
 	return unsupported()
 }
 
+export function createDeviceKeyAtReservedAlias(_alias: string): DeviceKeyResult {
+	return unsupported()
+}
+
 export function readExistingDevicePublicKey(_alias: string): DeviceKeyResult {
 	return unsupported()
 }

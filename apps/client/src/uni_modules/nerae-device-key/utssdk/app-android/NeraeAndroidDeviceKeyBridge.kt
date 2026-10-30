@@ -56,6 +56,33 @@ object NeraeAndroidDeviceKeyBridge {
         }
     }
 
+    /** Creates exactly once under a caller-reserved alias; existing keys are never replaced. */
+    @JvmStatic
+    fun createDeviceKeyAtReservedAlias(alias: String): String = synchronized(lock) {
+        try {
+            if (!validAlias(alias)) return@synchronized failure("invalid_alias")
+            val tag = PREFIX + alias
+            val store = loadStore()
+            if (store.containsAlias(tag)) return@synchronized failure("alias_conflict")
+
+            val generator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, STORE)
+            val spec = KeyGenParameterSpec.Builder(tag, KeyProperties.PURPOSE_SIGN)
+                .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                .setDigests(KeyProperties.DIGEST_SHA256)
+                .build()
+            generator.initialize(spec)
+            generator.generateKeyPair()
+
+            val entry = privateEntry(loadStore(), tag)
+            requireHardware(entry.privateKey)
+            success(alias, publicJwk(entry.certificate.publicKey), "")
+        } catch (problem: DeviceKeyFailure) {
+            failure(problem.code)
+        } catch (_: Exception) {
+            failure("hardware_unavailable")
+        }
+    }
+
     @JvmStatic
     fun readExistingDevicePublicKey(alias: String): String = synchronized(lock) {
         try {
@@ -192,7 +219,12 @@ object NeraeAndroidDeviceKeyBridge {
         return r + s
     }
 
-    private fun validAlias(alias: String): Boolean = validOpaque(alias, 43, 43)
+    private fun validAlias(alias: String): Boolean {
+        if (!validOpaque(alias, 43, 43)) return false
+        // For 32 bytes, the final unpadded base64url character has only two
+        // data bits; canonical encodings therefore end in A, Q, g, or w.
+        return alias.last() == 'A' || alias.last() == 'Q' || alias.last() == 'g' || alias.last() == 'w'
+    }
 
     private fun validOpaque(value: String, min: Int, max: Int): Boolean {
         if (value.length !in min..max) return false

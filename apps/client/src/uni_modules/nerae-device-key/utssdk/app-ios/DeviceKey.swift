@@ -16,7 +16,7 @@ public struct NeraeNewDeviceKey {
 }
 
 public enum NeraeDeviceKeyError: Swift.Error {
-    case invalidAlias, unavailable, missing, ambiguous, unexpectedKey, operationFailed
+    case invalidAlias, aliasConflict, unavailable, missing, ambiguous, unexpectedKey, operationFailed
 }
 
 public enum NeraeDeviceKeyStore {
@@ -26,16 +26,25 @@ public enum NeraeDeviceKeyStore {
     // Call only for a deliberately new device identity. Do not call to repair
     // a missing existing key; new-device approval/recovery is required instead.
     public static func createNew() throws -> NeraeNewDeviceKey {
-        lock.lock()
-        defer { lock.unlock() }
         var random = [UInt8](repeating: 0, count: 32)
         let status = random.withUnsafeMutableBytes { buffer in
             SecRandomCopyBytes(kSecRandomDefault, buffer.count, buffer.baseAddress!)
         }
         guard status == errSecSuccess else { throw NeraeDeviceKeyError.unavailable }
-        let alias = base64URL(Data(random))
+        return try create(alias: base64URL(Data(random)), conflictError: .ambiguous)
+    }
+
+    // The caller must persist this alias before invoking this create-once API.
+    // On an uncertain result, recovery is readExisting only; do not call this again.
+    public static func createAtReservedAlias(alias: String) throws -> NeraeNewDeviceKey {
+        try create(alias: alias, conflictError: .aliasConflict)
+    }
+
+    private static func create(alias: String, conflictError: NeraeDeviceKeyError) throws -> NeraeNewDeviceKey {
+        lock.lock()
+        defer { lock.unlock() }
         let tag = try keyTag(alias)
-        guard try find(tag: tag) == nil else { throw NeraeDeviceKeyError.ambiguous }
+        guard try find(tag: tag) == nil else { throw conflictError }
         var accessError: Unmanaged<CFError>?
         guard let access = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
                                                           [.privateKeyUsage], &accessError) else {
@@ -87,8 +96,16 @@ public enum NeraeDeviceKeyStore {
     }
 
     private static func keyTag(_ alias: String) throws -> Data {
-        guard validOpaque(alias, minimum: 43, maximum: 43) else { throw NeraeDeviceKeyError.invalidAlias }
+        guard Self.isCanonicalReservedAlias(alias) else { throw NeraeDeviceKeyError.invalidAlias }
         return Data((tagPrefix + alias).utf8)
+    }
+
+    static func isCanonicalReservedAlias(_ alias: String) -> Bool {
+        guard validOpaque(alias, minimum: 43, maximum: 43) else { return false }
+        let base64 = alias.replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/") + "="
+        guard let decoded = Data(base64Encoded: base64), decoded.count == 32 else { return false }
+        return base64URL(decoded) == alias
     }
 
     private static func find(tag: Data) throws -> SecKey? {

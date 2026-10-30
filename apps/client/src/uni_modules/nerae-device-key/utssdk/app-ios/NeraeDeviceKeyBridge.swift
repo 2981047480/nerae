@@ -11,6 +11,15 @@ public final class NeraeDeviceKeyBridge: NSObject {
         }
     }
 
+    @objc public static func createDeviceKeyAtReservedAlias(_ alias: String) -> String {
+        do {
+            let created = try NeraeDeviceKeyStore.createAtReservedAlias(alias: alias)
+            return encode(ok: true, alias: created.alias, publicKey: created.publicKey)
+        } catch {
+            return encodeFailure(error)
+        }
+    }
+
     @objc public static func readExistingDevicePublicKey(_ alias: String) -> String {
         do {
             let publicKey = try NeraeDeviceKeyStore.publicKeyForExisting(alias: alias)
@@ -38,6 +47,7 @@ public final class NeraeDeviceKeyBridge: NSObject {
         if let keyError = error as? NeraeDeviceKeyError {
             switch keyError {
             case .invalidAlias: return encodeFailureCode("invalid_alias")
+            case .aliasConflict: return encodeFailureCode("alias_conflict")
             case .unavailable: return encodeFailureCode("hardware_unavailable")
             case .missing: return encodeFailureCode("missing_key")
             case .ambiguous: return encodeFailureCode("ambiguous_key")

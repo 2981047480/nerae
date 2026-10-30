@@ -6,9 +6,9 @@
 
 ## 实现范围
 
-- `apps/client/src/uni_modules/nerae-device-key/` 仅导出创建新设备密钥、读取既有别名公钥、对指定用途签名三项操作。
+- `apps/client/src/uni_modules/nerae-device-key/` 导出随机创建、按预留 alias 创建一次、读取既有别名公钥、对指定用途签名四项窄操作。
 - iOS 桥调用 `NeraeDeviceKeyStore`；Swift 错误转换成固定错误码，UTS 层拒绝未知错误码或格式异常。原生错误详情、私钥和底层异常不输出；登录证明只作为返回值交给调用方。
-- 读取和签名路径只查找既有别名；缺失、别名错误、重复键、密钥类型不符和 Secure Enclave 不可用均返回失败，不会创建替代密钥。只有显式 `createNewDeviceKey()` 可以创建。
+- 读取和签名路径只查找既有别名；缺失、别名错误、重复键、密钥类型不符和硬件不可用均返回失败，不会创建替代密钥。创建只能由显式 `createNewDeviceKey()` 或 `createDeviceKeyAtReservedAlias(alias)` 发起。
 - Android、H5 和小程序 fallback 返回 `unsupported_platform`，不使用软件密钥。账号别名映射、登录界面与服务端调用仍未接入。
 - 模块内 `DeviceKey.swift`、`DeviceProof.swift`、`SignatureEncoding.swift` 与 `infra/app/ios/device/` 对应文件逐字节一致；`verify.sh` 每次编译前执行 `cmp`，源文件变化会失败。
 
@@ -24,6 +24,21 @@
 - HBuilderX 5.33 的插件编译结果不能证明与项目依赖的 5.26 工具链兼容；5.26 App 原生资源构建因缺依赖未验证。
 - 编译只验证桥接代码能生成 iPhoneOS arm64 framework，没有调用任何创建/读取/签名操作。Secure Enclave 能力、Keychain 行为及错误分类还需真实 iPhone 验证。
 - 没有测试签名安装、正式包、登录 HTTP、账号别名隔离或别名持久化；本模块不提供这些能力。
+
+## 2026-10-31 已预留 alias 的 create-once 接口
+
+新增 `createDeviceKeyAtReservedAlias(alias)`，接受 caller 已生成并先行持久化的 43 字符 canonical 无填充 base64url 编码（32 字节）。iOS 和 Android 在各自进程锁内检查 exact tag/alias 并创建 P-256 硬件密钥；已占用时返回固定 `alias_conflict`，不覆盖、不删除。Android 继续执行原 TEE/StrongBox/安全硬件检查，不提供软件密钥回退；验证失败时新方法保留该 exact alias 的条目供只读核对，读取路径仍会拒绝非硬件密钥。iOS 桥 `DeviceKey.swift` 与 `infra/app/ios/device/DeviceKey.swift` 同步。
+
+调用约束：caller 必须在创建前持久化 alias；创建结果不确定时只允许 `readExistingDevicePublicKey(同一 alias)` 核对，不能换 alias 或重试到另一个 alias。挑战可能已发送后只能读取已有密钥，create-once 接口不提供恢复语义。接口不负责生成/保存 alias，也不执行客户端 vault 状态机。
+
+验证命令与结果：
+
+- `NERAE_JAVA_HOME=/private/tmp/nerae-hbuilder-download/HBuilderX.app/Contents/HBuilderX/plugins/amazon-corretto NERAE_KOTLINC=/private/tmp/nerae-kotlin-1.9.24/kotlinc/bin/kotlinc NERAE_ANDROID_JAR="$HOME/Library/Android/sdk/platforms/android-35/android.jar" NERAE_HBUILDERX_APP=/private/tmp/nerae-hbuilder-download/HBuilderX.app NERAE_NODE=/opt/homebrew/bin/node bash docs/evidence/P02/P02-05/verify-reserved-alias.sh`：退出码 0。Swift canonical alias 正反例通过；HBuilderX 5.33 Android UTS 转换产出 wrapper 和 native Kotlin 文件，生成 wrapper 包含新增操作；Kotlin 1.9.24 对正式 Android bridge 编译成功；canonical alias 正反例通过。仅出现既有 `isInsideSecureHardware` deprecated 警告。此验证没有运行 Keystore。
+- `NERAE_HBUILDERX_APP=/private/tmp/nerae-hbuilder-download/HBuilderX.app NERAE_NODE=/opt/homebrew/bin/node bash docs/evidence/P02/P02-05/verify.sh`：退出码 0。源码一致检查通过，HBuilderX 5.33 编译出 unsigned iPhoneOS arm64 framework；该结果不证明 Secure Enclave 可用或设备操作成功。
+- 最终 unsigned arm64 framework SHA-256：`352596e80d5d0420238e7aa1cb426659952d351cfdb5054eaefdb372094e3ffa`。
+- `NERAE_JAVA_HOME=/private/tmp/nerae-hbuilder-download/HBuilderX.app/Contents/HBuilderX/plugins/amazon-corretto NERAE_KOTLINC=/private/tmp/nerae-kotlin-1.9.24/kotlinc/bin/kotlinc NERAE_ANDROID_JAR="$HOME/Library/Android/sdk/platforms/android-35/android.jar" bash docs/evidence/P02/P02-06/verify-der.sh`：退出码 0。原 Android Kotlin/DER 回归通过；5 种损坏 DER 与篡改签名被拒绝。`bash -n docs/evidence/P02/P02-05/verify-reserved-alias.sh` 与 `git diff --check` 通过。
+
+设备不可用限制：未在 iPhone 或 Android 硬件上验证预留 alias 首次创建、同 alias 并发/重复冲突、Keychain/Keystore 中已存在密钥未被改写、或硬件级别拒绝行为。Swift/Kotlin alias 检查和 UTS 转换不能替代这些真机检查；本任务不构成账号映射持久化或登录恢复实现。
 
 ## Lead 复核
 
