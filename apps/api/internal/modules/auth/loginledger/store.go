@@ -169,6 +169,13 @@ func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 	return s.lock(ctx, tx, scope, binding, true)
 }
 
+// LockExisting checks a receipt without replacing or deleting an expired row.
+// A missing record yields a handle without ExistingRecord; an expired record
+// returns ErrExpired. Neither case grants authorization or releases credentials.
+func (s *Store) LockExisting(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, binding loginreceipt.Binding) (*Handle, error) {
+	return s.lock(ctx, tx, scope, binding, false)
+}
+
 func (s *Store) lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, binding loginreceipt.Binding, replaceExpired bool) (*Handle, error) {
 	if !s.valid() || ctx == nil || tx == nil || allZero(scope[:]) || !validChallengeID(binding.ChallengeID()) ||
 		binding.IdempotencyDigest() == ([sha256.Size]byte{}) || binding.RequestDigest() == ([sha256.Size]byte{}) {

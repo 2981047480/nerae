@@ -222,12 +222,29 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 		_ = expiryTx.Rollback()
 		t.Fatal("expired receipt remained available for recheck")
 	}
+	if _, err := store.LockExisting(ctx, expiryTx, scope, binding); !errors.Is(err, ErrExpired) {
+		_ = expiryTx.Rollback()
+		t.Fatal("existing-only lookup did not report the expired receipt")
+	}
 	var stillPresent int
 	if err := expiryTx.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], requestKey[:]).Scan(&stillPresent); err != nil || stillPresent != 1 {
 		_ = expiryTx.Rollback()
 		t.Fatal("expiry recheck deleted the existing receipt")
 	}
 	_ = expiryTx.Rollback()
+	missingBinding := makeBinding(t, crypto, challengeID, "Dg4ODg4ODg4ODg4ODg4ODg", "777777", bindingProof)
+	if err := withTx(ctx, db, func(tx *sql.Tx) error {
+		h, err := store.LockExisting(ctx, tx, scope, missingBinding)
+		if err != nil {
+			return err
+		}
+		if _, exists := h.ExistingRecord(); exists {
+			return ErrLedger
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("existing-only lookup did not distinguish a missing receipt: %v", err)
+	}
 
 	conflicting := makeBinding(t, crypto, challengeID, "AQEBAQEBAQEBAQEBAQEBAQ", "654321", "eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ4In0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, conflicting); return err }); !errors.Is(err, ErrConflict) {
@@ -543,7 +560,12 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 		t.Fatal("stale slot attempt removed the expired receipt")
 	}
 	idempotencyDigest := binding.IdempotencyDigest()
-	if _, err := db.Exec(`UPDATE auth_email_login_receipt SET response_enc=CONCAT(LEFT(response_enc,20),CHAR(255),SUBSTRING(response_enc,22)) WHERE email_scope=? AND request_key_hmac=?`, scope[:], idempotencyDigest[:]); err != nil {
+	var tampered []byte
+	if err := db.QueryRow(`SELECT response_enc FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], idempotencyDigest[:]).Scan(&tampered); err != nil || len(tampered) <= 20 {
+		t.Fatal("ciphertext tamper fixture could not be read")
+	}
+	tampered[20] ^= 1
+	if _, err := db.Exec(`UPDATE auth_email_login_receipt SET response_enc=? WHERE email_scope=? AND request_key_hmac=?`, tampered, scope[:], idempotencyDigest[:]); err != nil {
 		t.Fatal("ciphertext tamper failed")
 	}
 	if err := withTx(ctx, db, func(tx *sql.Tx) error {
