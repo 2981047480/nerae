@@ -15,7 +15,18 @@ export interface JournalStorage {
   compareAndSwap(key: string, expectedValue: string, nextValue: string | null): Promise<boolean>
 }
 
-export type SecureJournalStorageErrorCode = 'unavailable' | 'corrupt' | 'invalid_operation' | 'too_large'
+export interface JournalAuthCredential {
+  readonly subjectId: string
+  readonly generation: string
+}
+
+/** Deliberately mirrors RecordingAuth without exposing or reading its token. */
+export interface JournalAuth {
+  current(): JournalAuthCredential | null
+  isCurrent(subjectId: string, generation: string): boolean
+}
+
+export type SecureJournalStorageErrorCode = 'unavailable' | 'corrupt' | 'invalid_operation' | 'too_large' | 'session_changed'
 
 export class SecureJournalStorageError extends Error {
   readonly code: SecureJournalStorageErrorCode
@@ -192,38 +203,58 @@ function validateNativeResult(raw: unknown, mode: 'read' | 'cas'): { found: bool
 /** Protected single-slot implementation of the frozen JournalStorage port. */
 export class SecureOperationJournalStorage implements JournalStorage {
   readonly #native: NativeTrainingJournalPort
+  readonly #auth: JournalAuth
+  readonly #subjectId: string
+  readonly #generation: string
 
-  constructor(native: NativeTrainingJournalPort) {
+  constructor(native: NativeTrainingJournalPort, auth: JournalAuth) {
     if (!native || typeof native.readTrainingOperationJournal !== 'function' ||
-      typeof native.compareAndSetTrainingOperationJournal !== 'function') {
+      typeof native.compareAndSetTrainingOperationJournal !== 'function' || !auth ||
+      typeof auth.current !== 'function' || typeof auth.isCurrent !== 'function') {
       throw new SecureJournalStorageError('unavailable')
     }
+    let credential: JournalAuthCredential | null
+    try { credential = auth.current() } catch { credential = null }
+    if (!credential || !/^[1-9]\d{0,19}$/.test(credential.subjectId) ||
+      typeof credential.generation !== 'string' || credential.generation.length < 1 || credential.generation.length > 128 ||
+      /[\r\n\s]/.test(credential.generation)) throw new SecureJournalStorageError('session_changed')
     this.#native = native
+    this.#auth = auth
+    this.#subjectId = credential.subjectId
+    this.#generation = credential.generation
+    this.#assertCurrent()
   }
 
   async read(key: string): Promise<unknown> {
-    parseStorageKey(key)
+    this.#assertKeyOwner(key)
+    this.#assertCurrent()
     const registry = await this.#readRegistry()
+    this.#assertCurrent()
     return Object.prototype.hasOwnProperty.call(registry.entries, key) ? registry.entries[key] : null
   }
 
   async createIfAbsent(key: string, value: string): Promise<boolean> {
-    parseStorageKey(key)
+    this.#assertKeyOwner(key)
     validateOperation(key, value)
     return this.#mutate(key, undefined, value)
   }
 
   async compareAndSwap(key: string, expectedValue: string, nextValue: string | null): Promise<boolean> {
-    parseStorageKey(key)
+    this.#assertKeyOwner(key)
     validateOperation(key, expectedValue)
     if (nextValue !== null) validateOperation(key, nextValue)
     return this.#mutate(key, expectedValue, nextValue)
   }
 
   async #readNative(): Promise<{ found: boolean; value: string }> {
+    this.#assertCurrent()
     let raw: unknown
     try { raw = this.#native.readTrainingOperationJournal() }
-    catch { throw new SecureJournalStorageError('unavailable') }
+    catch {
+      this.#assertCurrent()
+      throw new SecureJournalStorageError('unavailable')
+    }
+    this.#assertCurrent()
     const result = validateNativeResult(raw, 'read')
     if (result === false) throw new SecureJournalStorageError('unavailable')
     if (!result.found) return result
@@ -240,8 +271,10 @@ export class SecureOperationJournalStorage implements JournalStorage {
   }
 
   async #mutate(key: string, expected: string | undefined, next: string | null): Promise<boolean> {
+    this.#assertKeyOwner(key)
     for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt++) {
       const current = await this.#readNative()
+      this.#assertCurrent()
       const registry = current.found ? decodeRegistry(current.value) : { schema: 1 as const, entries: {} }
       const hasKey = Object.prototype.hasOwnProperty.call(registry.entries, key)
       if (expected === undefined ? hasKey : !hasKey || registry.entries[key] !== expected) return false
@@ -251,17 +284,36 @@ export class SecureOperationJournalStorage implements JournalStorage {
       if (next === null) delete updated[key]
       else updated[key] = next
       const encoded = encodeRegistry(updated)
+      this.#assertCurrent()
       let rawResult: unknown
       try {
         rawResult = this.#native.compareAndSetTrainingOperationJournal(current.found, current.value, encoded)
       } catch {
         // The native call may have committed before throwing. Never infer success
         // or conflict from a transport/bridge exception.
+        this.#assertCurrent()
         throw new SecureJournalStorageError('unavailable')
       }
+      this.#assertCurrent()
       const outcome = validateNativeResult(rawResult, 'cas')
       if (outcome !== false) return true
     }
     throw new SecureJournalStorageError('unavailable')
+  }
+
+  #assertKeyOwner(key: unknown): void {
+    const owner = parseStorageKey(key)
+    if (owner.subjectId !== this.#subjectId) throw new SecureJournalStorageError('session_changed')
+  }
+
+  #assertCurrent(): void {
+    try {
+      const current = this.#auth.current()
+      if (!current || current.subjectId !== this.#subjectId || current.generation !== this.#generation ||
+        !this.#auth.isCurrent(this.#subjectId, this.#generation)) throw new SecureJournalStorageError('session_changed')
+    } catch (error) {
+      if (error instanceof SecureJournalStorageError) throw error
+      throw new SecureJournalStorageError('session_changed')
+    }
   }
 }
