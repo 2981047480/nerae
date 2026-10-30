@@ -12,6 +12,14 @@ class IdentityContractTests(ContractCase):
     # Shape only: deliberately not presented as a cryptographically valid signature.
     proof = 'A' * 20 + '.' + 'B' * 30 + '.' + 'C' * 86
 
+    def test_current_user_verification_requires_no_store(self):
+        responses = self.contract.operation('/me', 'get')['responses']
+        for status in ('200', '401'):
+            response = self.contract.deref(responses[status])
+            header = response['headers']['Cache-Control']
+            self.assertTrue(header['required'])
+            self.assertEqual(header['schema']['enum'], ['no-store'])
+
     def test_wechat_login_remains_its_own_operation_and_rejects_spoofed_identity(self):
         path = '/auth/wechat-login'
         self.assertEqual(self.contract.operation(path, 'post')['operationId'], 'postAuthWechatLogin')

@@ -339,7 +339,7 @@ export interface paths {
         put?: never;
         /**
          * 测试版邮箱验证码及设备持有证明登录
-         * @description 验证同一挑战的邮件码和设备公钥签名，原子校验用途、过期、次数和单次消费。新邮箱可创建主体并登记首个可信密钥；已有主体只有已登记且未撤销的设备通过验证才可获得完整会话，新设备仍需已有可信会话批准或本人此前启用的恢复码。不能凭邮箱码单独读取旧资料；同一高熵幂等键和完全相同的已验证请求仅在授权与凭据仍有效时安全重放，其他请求不得复用 jti。认证结果重放返回原会话令牌，expiresIn 按响应生成时的剩余有效秒数向下取整，user 为重新授权后读取的当前资料，因此响应正文不保证逐字节相同。新设备待批准结果重放返回原申请及其绝对到期时间。
+         * @description 验证同一挑战的邮件码和设备公钥签名，原子校验用途、过期、次数和单次消费。新邮箱可创建主体并登记首个可信密钥；已有主体只有已登记且未撤销的设备通过验证才可获得完整会话，新设备仍需已有可信会话批准或本人此前启用的恢复码。不能凭邮箱码单独读取旧资料；同一高熵幂等键和完全相同的已验证请求仅在授权与凭据仍有效时安全重放，其他请求不得复用 jti。认证结果重放返回原会话令牌，expiresIn 按响应生成时的剩余有效秒数向下取整，user 为重新授权后读取的当前资料，因此响应正文不保证逐字节相同。新设备待批准结果重放返回原申请及其绝对到期时间。所有请求包括重试均受限流；429 后客户端须保留相同幂等键和请求体，在限流窗口结束且证明与回执仍有效时重试。
          */
         post: operations["postAuthEmailLogin"];
         delete?: never;
@@ -775,7 +775,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 当前用户与角色 */
+        /**
+         * 当前用户与角色
+         * @description 从当前有效会话读取主体和资料；成功及失败响应均不得缓存。
+         */
         get: operations["getMe"];
         put?: never;
         post?: never;
@@ -5601,6 +5604,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
+                    "Cache-Control": "no-store";
                     [name: string]: unknown;
                 };
                 content: {
@@ -5608,7 +5612,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
-            401: components["responses"]["Unauthorized"];
+            401: components["responses"]["AuthError"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["Error"];
