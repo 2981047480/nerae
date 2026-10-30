@@ -21,7 +21,6 @@ import (
 var (
 	ErrLedger   = errors.New("email login receipt ledger unavailable")
 	ErrConflict = errors.New("email login receipt conflicts")
-	ErrExpired  = errors.New("email login receipt expired")
 	ErrExisting = errors.New("email login receipt already exists")
 )
 
@@ -144,7 +143,7 @@ func (s *Store) Initialize(ctx context.Context, tx *sql.Tx) error {
 // coordinator may authenticate/decrypt it only after signature and current
 // authorization have been independently revalidated in this transaction.
 // If the slot has since advanced, only an exact, still-live existing receipt
-// may be returned; a missing receipt cannot be created for that stale challenge.
+// may be returned; a missing or expired receipt cannot be created for that stale challenge.
 func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, binding loginreceipt.Binding) (*Handle, error) {
 	if !s.valid() || ctx == nil || tx == nil || allZero(scope[:]) || !validChallengeID(binding.ChallengeID()) ||
 		binding.IdempotencyDigest() == ([sha256.Size]byte{}) || binding.RequestDigest() == ([sha256.Size]byte{}) {
@@ -191,14 +190,16 @@ func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 	if err != nil {
 		return nil, ErrLedger
 	}
-	if len(storedRequest) != sha256.Size || !hmac.Equal(storedRequest, requestDigest[:]) ||
-		!hmac.Equal(storedChallenge, []byte(binding.ChallengeID())) {
-		return nil, ErrConflict
-	}
-	if string(storedKeyID) != s.keyID || len(reference) < 1 || len(reference) > 256 || !utf8.Valid(reference) || strings.IndexByte(string(reference), 0) >= 0 {
+	storedChallengeID := string(storedChallenge)
+	if len(storedRequest) != sha256.Size || allZero(storedRequest) || !validChallengeID(storedChallengeID) ||
+		string(storedKeyID) != s.keyID || len(reference) < 1 || len(reference) > 256 || !utf8.Valid(reference) || strings.IndexByte(string(reference), 0) >= 0 {
 		return nil, ErrLedger
 	}
 	kind := loginreceipt.ResultType(rawKind)
+	if (kind != loginreceipt.ResultAuthenticated && kind != loginreceipt.ResultApprovalRequired && kind != loginreceipt.ResultRejected) ||
+		kind == loginreceipt.ResultRejected && string(reference) != storedChallengeID {
+		return nil, ErrLedger
+	}
 	created, err := parseSQLTime(createdRaw)
 	if err != nil {
 		return nil, ErrLedger
@@ -207,16 +208,29 @@ func (s *Store) Lock(ctx context.Context, tx *sql.Tx, scope [sha256.Size]byte, b
 	if err != nil || !expires.After(created) || expires.Sub(created) > maxRetention {
 		return nil, ErrLedger
 	}
+	sealed, err := loginreceipt.ParseSealed(ciphertext)
+	if err != nil {
+		return nil, ErrLedger
+	}
 	now, err := databaseUTCNow(ctx, tx)
 	if err != nil {
 		return nil, ErrLedger
 	}
 	if !expires.After(now) {
-		return nil, ErrExpired
+		if !slotMatchesChallenge {
+			return nil, ErrConflict
+		}
+		result, err := tx.ExecContext(ctx, `DELETE FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], idempotencyDigest[:])
+		if err != nil {
+			return nil, ErrLedger
+		}
+		if affected, err := result.RowsAffected(); err != nil || affected != 1 {
+			return nil, ErrLedger
+		}
+		return handle, nil
 	}
-	sealed, err := loginreceipt.ParseSealed(ciphertext)
-	if err != nil {
-		return nil, ErrLedger
+	if !hmac.Equal(storedRequest, requestDigest[:]) || storedChallengeID != binding.ChallengeID() {
+		return nil, ErrConflict
 	}
 	if _, err := s.crypto.NewContext(scope[:], binding, kind, string(reference), expires); err != nil {
 		return nil, ErrLedger

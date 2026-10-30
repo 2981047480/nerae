@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import getpass
+import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -60,11 +62,35 @@ def main() -> int:
                 time.sleep(0.2)
             else:
                 raise RuntimeError("private MySQL did not become ready")
-            migrations = ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql",
-                          "user/0001_user.up.sql", "auth/0003_email_identity.up.sql",
-                          "auth/0009_email_login_receipt.up.sql")
+            manifest_path = ROOT / "scripts/dev/migrations.json"
+            manifest = json.loads(manifest_path.read_text())
+            if manifest.get("version") != 1 or not isinstance(manifest.get("migrations"), list):
+                raise RuntimeError("migration manifest has an unsupported format")
+            migrations: list[tuple[str, Path]] = []
+            for expected_order, item in enumerate(manifest["migrations"], start=1):
+                if not isinstance(item, dict) or item.get("order") != expected_order:
+                    raise RuntimeError("migration manifest order is invalid")
+                migration_id = item.get("id")
+                module, separator, filename = migration_id.partition("/") if isinstance(migration_id, str) else ("", "", "")
+                relative_path = Path(migration_id) if isinstance(migration_id, str) else Path()
+                if (not separator or relative_path.is_absolute() or len(relative_path.parts) != 2 or
+                        any(part in ("", ".", "..") for part in relative_path.parts) or
+                        item.get("module") != module or item.get("file") != filename):
+                    raise RuntimeError("migration manifest path is invalid")
+                migration_root = ROOT / "apps/api/migrations"
+                migration_path = migration_root / relative_path
+                if migration_root.resolve() not in migration_path.resolve().parents:
+                    raise RuntimeError("migration manifest path escapes the migration directory")
+                contents = migration_path.read_bytes()
+                if hashlib.sha256(contents).hexdigest() != item.get("sha256"):
+                    raise RuntimeError(f"registered migration checksum mismatch: {migration_id}")
+                migrations.append((migration_id, migration_path))
+            task_migration = "auth/0009_email_login_receipt.up.sql"
+            if task_migration not in {migration_id for migration_id, _ in migrations}:
+                migrations.append((task_migration, ROOT / "apps/api/migrations" / task_migration))
+            print("Applying migrations in order: " + ", ".join(migration_id for migration_id, _ in migrations))
             schema = "CREATE DATABASE nerae_email_login_ledger_test;\nUSE nerae_email_login_ledger_test;\n"
-            schema += "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in migrations)
+            schema += "\n".join(path.read_text() for _, path in migrations)
             applied = subprocess.run(client, input=schema, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                      env=env, timeout=30, check=False)
             if applied.returncode:

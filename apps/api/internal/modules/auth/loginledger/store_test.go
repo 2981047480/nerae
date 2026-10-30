@@ -357,7 +357,8 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 		t.Fatal("receipt scopes did not remain isolated")
 	}
 
-	// Expired entries are rejected and never silently reused or overwritten.
+	// An expired key is a new request. Deleting the prior row and writing its
+	// replacement remain part of the caller's transaction.
 	expiredBinding := makeBinding(t, crypto, challengeID, "BAQEBAQEBAQEBAQEBAQEBA", "444444", bindingProof)
 	expiredAt := time.Now().UTC().Add(500 * time.Millisecond).Truncate(time.Microsecond)
 	if err := withTx(ctx, db, func(tx *sql.Tx) error {
@@ -378,8 +379,62 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 		t.Fatalf("expired fixture insert failed: %v", err)
 	}
 	time.Sleep(time.Until(expiredAt) + 50*time.Millisecond)
-	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, expiredBinding); return err }); !errors.Is(err, ErrExpired) {
-		t.Fatal("expired receipt was not refused")
+	renewedBinding := makeBinding(t, crypto, challengeID, "BAQEBAQEBAQEBAQEBAQEBA", "888888", bindingProof)
+	renewedKey := renewedBinding.IdempotencyDigest()
+	rollbackExpiredTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("expired rollback transaction setup failed")
+	}
+	rolledHandle, err := store.Lock(ctx, rollbackExpiredTx, scope, renewedBinding)
+	if err != nil {
+		_ = rollbackExpiredTx.Rollback()
+		t.Fatalf("expired request was not admitted for retry: %v", err)
+	}
+	if _, exists := rolledHandle.ExistingRecord(); exists {
+		t.Fatal("expired receipt was returned instead of being treated as a new request")
+	}
+	if err := rollbackExpiredTx.Rollback(); err != nil {
+		t.Fatal("expired receipt rollback failed")
+	}
+	var restoredRows int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], renewedKey[:]).Scan(&restoredRows); err != nil || restoredRows != 1 {
+		t.Fatal("rollback did not restore the expired receipt row")
+	}
+	newExpiry := time.Now().UTC().Add(time.Hour).Truncate(time.Microsecond)
+	if err := withTx(ctx, db, func(tx *sql.Tx) error {
+		h, err := store.Lock(ctx, tx, scope, renewedBinding)
+		if err != nil {
+			return err
+		}
+		if _, exists := h.ExistingRecord(); exists {
+			return ErrLedger
+		}
+		aad, err := crypto.NewContext(scope[:], renewedBinding, loginreceipt.ResultAuthenticated, "renewed-expired-key", newExpiry)
+		if err != nil {
+			return err
+		}
+		sealed, err := crypto.Seal(aad, []byte("renewed-after-expiry"))
+		if err != nil {
+			return err
+		}
+		return store.Put(ctx, tx, h, loginreceipt.ResultAuthenticated, "renewed-expired-key", newExpiry, sealed)
+	}); err != nil {
+		t.Fatalf("expired key could not be written as a new request: %v", err)
+	}
+	if err := withTx(ctx, db, func(tx *sql.Tx) error {
+		h, err := store.Lock(ctx, tx, scope, renewedBinding)
+		if err != nil {
+			return err
+		}
+		if _, exists := h.ExistingRecord(); !exists {
+			return ErrLedger
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("renewed receipt was not persisted: %v", err)
+	}
+	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, expiredBinding); return err }); !errors.Is(err, ErrConflict) {
+		t.Fatal("unexpired renewed receipt did not conflict with a changed request")
 	}
 
 	// A later challenge may replace the email slot while a still-live receipt
@@ -410,6 +465,16 @@ func TestPrivateMySQLReceiptLedger(t *testing.T) {
 	oldChallengeNewKey := makeBinding(t, crypto, challengeID, "BgYGBgYGBgYGBgYGBgYGBg", "777777", bindingProof)
 	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, oldChallengeNewKey); return err }); !errors.Is(err, ErrConflict) {
 		t.Fatal("old challenge was allowed to reserve a new receipt after slot replacement")
+	}
+	if _, err := db.Exec(`UPDATE auth_email_login_receipt SET expires_at=DATE_ADD(created_at, INTERVAL 1 MICROSECOND) WHERE email_scope=? AND request_key_hmac=?`, scope[:], renewedKey[:]); err != nil {
+		t.Fatal("expired stale-slot fixture setup failed")
+	}
+	staleExpiredRequest := makeBinding(t, crypto, challengeID, "BAQEBAQEBAQEBAQEBAQEBA", "999999", bindingProof)
+	if err := withTx(ctx, db, func(tx *sql.Tx) error { _, err := store.Lock(ctx, tx, scope, staleExpiredRequest); return err }); !errors.Is(err, ErrConflict) {
+		t.Fatal("expired receipt for a replaced challenge was deleted or reused")
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE email_scope=? AND request_key_hmac=?`, scope[:], renewedKey[:]).Scan(&restoredRows); err != nil || restoredRows != 1 {
+		t.Fatal("stale slot attempt removed the expired receipt")
 	}
 	idempotencyDigest := binding.IdempotencyDigest()
 	if _, err := db.Exec(`UPDATE auth_email_login_receipt SET response_enc=CONCAT(LEFT(response_enc,20),CHAR(255),SUBSTRING(response_enc,22)) WHERE email_scope=? AND request_key_hmac=?`, scope[:], idempotencyDigest[:]); err != nil {
