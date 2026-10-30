@@ -1,0 +1,30 @@
+import { SecureRandomRequestKeyResult } from '../interface.uts'
+
+function failure(errorCode: string): SecureRandomRequestKeyResult {
+	const parsed = JSON.parseObject<SecureRandomRequestKeyResult>(
+		'{"ok":false,"errorCode":"' + errorCode + '","value":""}'
+	)
+	if (parsed != null) return parsed!
+	return JSON.parseObject<SecureRandomRequestKeyResult>(
+		'{"ok":false,"errorCode":"bridge_failure","value":""}'
+	)!
+}
+
+function decode(raw: string): SecureRandomRequestKeyResult {
+	if (typeof raw != 'string' || !/^[A-Za-z0-9_-]{43}$/.test(raw)) {
+		return failure('secure_random_unavailable')
+	}
+	const parsed = JSON.parseObject<SecureRandomRequestKeyResult>(
+		'{"ok":true,"errorCode":"","value":"' + raw + '"}'
+	)
+	if (parsed != null) return parsed!
+	return failure('bridge_failure')
+}
+
+export function generateSecureRandomRequestKey(): SecureRandomRequestKeyResult {
+	try {
+		return decode(NeraeAndroidSecureRandomBridge.generateRequestKey())
+	} catch (_error) {
+		return failure('secure_random_unavailable')
+	}
+}

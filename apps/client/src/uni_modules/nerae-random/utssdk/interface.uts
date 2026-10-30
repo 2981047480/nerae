@@ -1,0 +1,8 @@
+/** Request-key values are sensitive transient state and must never be logged. */
+export type SecureRandomRequestKeyResult = {
+	ok: boolean
+	errorCode: string
+	value: string
+}
+
+export type GenerateSecureRandomRequestKey = () => SecureRandomRequestKeyResult

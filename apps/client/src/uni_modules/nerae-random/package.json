@@ -1,0 +1,9 @@
+{
+  "id": "nerae-random",
+  "displayName": "Nerae Secure Random",
+  "version": "0.1.0",
+  "description": "Cryptographic request-key generation for native app platforms",
+  "uni_modules": {
+    "type": "uts"
+  }
+}

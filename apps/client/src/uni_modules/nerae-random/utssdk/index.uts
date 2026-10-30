@@ -1,0 +1,5 @@
+import { SecureRandomRequestKeyResult } from './interface.uts'
+
+export function generateSecureRandomRequestKey(): SecureRandomRequestKeyResult {
+	return { ok: false, errorCode: 'unsupported_platform', value: '' }
+}
