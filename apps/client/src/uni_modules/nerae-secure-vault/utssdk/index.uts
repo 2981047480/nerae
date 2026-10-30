@@ -10,3 +10,6 @@ export function clearAuthenticationState(): SecureVaultResult { return unsupport
 
 export function readDeviceIdentityRegistry(): SecureVaultResult { return unsupported() }
 export function compareAndSetDeviceIdentityRegistry(_expectedFound: boolean, _expectedValue: string, _value: string): SecureVaultResult { return unsupported() }
+
+export function readTrainingOperationJournal(): SecureVaultResult { return unsupported() }
+export function compareAndSetTrainingOperationJournal(_expectedFound: boolean, _expectedValue: string, _value: string): SecureVaultResult { return unsupported() }

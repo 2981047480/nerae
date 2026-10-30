@@ -25,6 +25,8 @@ enum NeraeVaultNamespaces {
         service: "com.nerae.authentication-state.v1", account: "authentication-state")
     static let deviceIdentityRegistry = NeraeVaultNamespace(
         service: "com.nerae.device-identity-registry.v1", account: "device-identity-registry")
+    static let trainingOperationJournal = NeraeVaultNamespace(
+        service: "com.nerae.training-operation-journal.v1", account: "training-operation-journal")
 }
 
 final class NeraeKeychainBackend: NeraeVaultBackend {
@@ -163,6 +165,9 @@ public final class NeraeSecureVaultBridge: NSObject {
     private static let deviceIdentityRegistry = NeraeCredentialVault(
         backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.deviceIdentityRegistry)
     )
+    private static let trainingOperationJournal = NeraeCredentialVault(
+        backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.trainingOperationJournal)
+    )
 
     @objc public static func readAuthenticationState() -> String {
         do {
@@ -205,6 +210,27 @@ public final class NeraeSecureVaultBridge: NSObject {
     ) -> String {
         do {
             try deviceIdentityRegistry.compareAndSet(
+                expectedFound: expectedFound, expectedValue: expectedValue, value: value)
+            return encode(ok: true)
+        } catch {
+            return encodeFailure(error)
+        }
+    }
+
+    @objc public static func readTrainingOperationJournal() -> String {
+        do {
+            let result = try trainingOperationJournal.read()
+            return encode(ok: true, found: result.found, value: result.value)
+        } catch {
+            return encodeFailure(error)
+        }
+    }
+
+    @objc public static func compareAndSetTrainingOperationJournal(
+        _ expectedFound: Bool, _ expectedValue: String, _ value: String
+    ) -> String {
+        do {
+            try trainingOperationJournal.compareAndSet(
                 expectedFound: expectedFound, expectedValue: expectedValue, value: value)
             return encode(ok: true)
         } catch {

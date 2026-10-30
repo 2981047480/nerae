@@ -40,6 +40,10 @@ internal enum class NeraeVaultSlot(val keyAlias: String, val fileName: String) {
     DEVICE_IDENTITY_REGISTRY(
         "com.nerae.secure-vault.device-identity-registry.aes-gcm.v1",
         "nerae-device-identity-registry.v1.enc"
+    ),
+    TRAINING_OPERATION_JOURNAL(
+        "com.nerae.secure-vault.training-operation-journal.aes-gcm.v1",
+        "nerae-training-operation-journal.v1.enc"
     )
 }
 private const val AES_TRANSFORMATION = "AES/GCM/NoPadding"
@@ -548,6 +552,25 @@ object NeraeAndroidSecureVaultBridge {
         encode(ok = true)
     }
 
+    @JvmStatic
+    fun readTrainingOperationJournal(context: Context?): String = withSlot(
+        context, NeraeVaultSlot.TRAINING_OPERATION_JOURNAL, trainingJournalProcessLock
+    ) { vault ->
+        val result = vault.read()
+        encode(ok = true, found = result.found, value = result.value)
+    }
+
+    @JvmStatic
+    fun compareAndSetTrainingOperationJournal(
+        context: Context?, expectedFound: Boolean, expectedValue: String?, value: String?
+    ): String = withSlot(
+        context, NeraeVaultSlot.TRAINING_OPERATION_JOURNAL, trainingJournalProcessLock
+    ) { vault ->
+        if (expectedValue == null || value == null) throw VaultFailure("invalid_state")
+        vault.compareAndSet(expectedFound, expectedValue, value)
+        encode(ok = true)
+    }
+
     private fun withVault(context: Context?, action: (NeraeCredentialVault) -> String): String =
         withSlot(context, NeraeVaultSlot.AUTHENTICATION_STATE, authenticationProcessLock, action)
 
@@ -574,6 +597,7 @@ object NeraeAndroidSecureVaultBridge {
 
     private val authenticationProcessLock = Any()
     private val registryProcessLock = Any()
+    private val trainingJournalProcessLock = Any()
 
     private fun failure(code: String): String = JSONObject()
         .put("ok", false).put("errorCode", code).put("found", false).put("value", "").toString()

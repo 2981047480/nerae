@@ -18,3 +18,8 @@ export type ReadDeviceIdentityRegistry = () => SecureVaultResult
  * exact expectedValue must still be stored. Conflicts return no registry data.
  */
 export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult
+
+/** One bounded JSON journal for pending training operations; maximum 64 KiB UTF-8. */
+export type ReadTrainingOperationJournal = () => SecureVaultResult
+/** Atomic only within one App process. No unconditional overwrite or clear API is exposed. */
+export type CompareAndSetTrainingOperationJournal = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult

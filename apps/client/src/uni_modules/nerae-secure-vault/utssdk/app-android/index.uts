@@ -47,3 +47,11 @@ export function readDeviceIdentityRegistry(): SecureVaultResult {
 export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
 	return decode(NeraeAndroidSecureVaultBridge.compareAndSetDeviceIdentityRegistry(UTSAndroid.getAppContext(), expectedFound, expectedValue, value), false)
 }
+
+export function readTrainingOperationJournal(): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.readTrainingOperationJournal(UTSAndroid.getAppContext()), true)
+}
+
+export function compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
+	return decode(NeraeAndroidSecureVaultBridge.compareAndSetTrainingOperationJournal(UTSAndroid.getAppContext(), expectedFound, expectedValue, value), false)
+}

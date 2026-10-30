@@ -44,3 +44,10 @@ export function readDeviceIdentityRegistry(): SecureVaultResult {
 export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
     return decode(NeraeSecureVaultBridge.compareAndSetDeviceIdentityRegistry(expectedFound, expectedValue, value), false)
 }
+
+export function readTrainingOperationJournal(): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.readTrainingOperationJournal(), true)
+}
+export function compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.compareAndSetTrainingOperationJournal(expectedFound, expectedValue, value), false)
+}
