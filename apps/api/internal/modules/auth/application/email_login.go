@@ -45,6 +45,71 @@ const (
 	ApprovalRequired OutcomeKind = "approval_required"
 )
 
+type VerificationKind string
+
+const (
+	VerificationRejected         VerificationKind = "rejected"
+	VerificationAuthenticated    VerificationKind = "authenticated"
+	VerificationApprovalRequired VerificationKind = "approval_required"
+)
+
+// TransactionResult is a non-serializable transaction-bound decision. A
+// rejected result may still require commit when the challenge attempt counter
+// changed. Successful results retain only the existing opaque session or
+// approval capability; credentials are available only through AfterCommit.
+type TransactionResult struct {
+	kind           VerificationKind
+	commitRequired bool
+	sourceTx       *sql.Tx
+	issued         session.Issued
+	pending        approval.Pending
+}
+
+func (TransactionResult) String() string               { return "EmailLoginTransactionResult{redacted}" }
+func (TransactionResult) GoString() string             { return "EmailLoginTransactionResult{redacted}" }
+func (TransactionResult) MarshalJSON() ([]byte, error) { return nil, ErrUnavailable }
+func (TransactionResult) LogValue() slog.Value {
+	return slog.StringValue("EmailLoginTransactionResult{redacted}")
+}
+func (r TransactionResult) Kind() VerificationKind { return r.kind }
+func (r TransactionResult) CommitRequired() bool   { return r.commitRequired }
+
+// AfterCommit finalizes a transaction result. Rejected results with changed
+// attempt state are returned only after the source transaction has ended.
+// sql.Tx does not expose whether it ended by commit or rollback, so callers
+// must invoke this method for such a result only after Commit returned nil.
+// Successful results delegate to opaque handles that re-authorize in a fresh
+// transaction before releasing credentials.
+func (r TransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (Outcome, error) {
+	switch r.kind {
+	case VerificationAuthenticated:
+		token, err := r.issued.AfterCommit(ctx, db)
+		if err != nil || token == "" {
+			return Outcome{}, ErrUnavailable
+		}
+		return Outcome{kind: Authenticated, token: token}, nil
+	case VerificationApprovalRequired:
+		data, err := r.pending.AfterCommit(ctx, db)
+		if err != nil {
+			return Outcome{}, ErrUnavailable
+		}
+		return Outcome{kind: ApprovalRequired, approval: data}, nil
+	case VerificationRejected:
+		if r.commitRequired {
+			if ctx == nil || r.sourceTx == nil {
+				return Outcome{}, ErrUnavailable
+			}
+			var live int
+			if err := r.sourceTx.QueryRowContext(ctx, `SELECT 1`).Scan(&live); !errors.Is(err, sql.ErrTxDone) {
+				return Outcome{}, ErrUnavailable
+			}
+		}
+		return Outcome{}, ErrRejected
+	default:
+		return Outcome{}, ErrUnavailable
+	}
+}
+
 // Outcome deliberately cannot be directly serialized or logged. Only a trusted
 // presenter may explicitly retrieve the one post-commit result matching Kind.
 type Outcome struct {
@@ -94,41 +159,58 @@ func (s *EmailLogin) VerifyEmail(ctx context.Context, db *sql.DB, input challeng
 	}
 	defer tx.Rollback()
 
-	attempt, err := s.challenges.Attempt(ctx, tx, input)
+	result, err := s.VerifyEmailInTransaction(ctx, tx, input)
 	if err != nil {
 		return Outcome{}, ErrUnavailable
 	}
-	if !attempt.Verified {
-		if attempt.Proof != nil {
-			return Outcome{}, ErrUnavailable
-		}
-		if attempt.Changed && tx.Commit() != nil {
+	if result.kind == VerificationRejected {
+		if result.CommitRequired() && tx.Commit() != nil {
 			return Outcome{}, ErrUnavailable
 		}
 		return Outcome{}, ErrRejected
 	}
-	if !attempt.Changed || attempt.Proof == nil {
+	if !result.CommitRequired() {
 		return Outcome{}, ErrUnavailable
 	}
+	if tx.Commit() != nil {
+		return Outcome{}, ErrUnavailable
+	}
+	return result.AfterCommit(ctx, db)
+}
 
+// VerifyEmailInTransaction coordinates a challenge within a caller-owned
+// transaction. It never commits or rolls back. The caller must commit a result
+// with CommitRequired()==true even when Kind()==VerificationRejected, so an
+// incorrect-code attempt is persisted. Any returned error is infrastructure or
+// consistency failure; the caller must roll back. A successful result releases
+// no credential until AfterCommit is called after the caller commits.
+func (s *EmailLogin) VerifyEmailInTransaction(ctx context.Context, tx *sql.Tx, input challenge.AttemptInput) (TransactionResult, error) {
+	if s == nil || s.challenges == nil || s.sessions == nil || s.approvals == nil || ctx == nil || tx == nil {
+		return TransactionResult{}, ErrUnavailable
+	}
+	attempt, err := s.challenges.Attempt(ctx, tx, input)
+	if err != nil {
+		return TransactionResult{}, ErrUnavailable
+	}
+	if !attempt.Verified {
+		if attempt.Proof != nil {
+			return TransactionResult{}, ErrUnavailable
+		}
+		return TransactionResult{kind: VerificationRejected, commitRequired: attempt.Changed, sourceTx: tx}, nil
+	}
+	if !attempt.Changed || attempt.Proof == nil {
+		return TransactionResult{}, ErrUnavailable
+	}
 	issued, err := s.sessions.IssueEmail(ctx, tx, attempt.Proof)
 	if errors.Is(err, session.ErrApprovalRequired) {
 		pending, err := s.approvals.BeginEmail(ctx, tx, attempt.Proof)
-		if err != nil || tx.Commit() != nil {
-			return Outcome{}, ErrUnavailable
-		}
-		data, err := pending.AfterCommit(ctx, db)
 		if err != nil {
-			return Outcome{}, ErrUnavailable
+			return TransactionResult{}, ErrUnavailable
 		}
-		return Outcome{kind: ApprovalRequired, approval: data}, nil
+		return TransactionResult{kind: VerificationApprovalRequired, commitRequired: true, sourceTx: tx, pending: pending}, nil
 	}
-	if err != nil || tx.Commit() != nil {
-		return Outcome{}, ErrUnavailable
+	if err != nil {
+		return TransactionResult{}, ErrUnavailable
 	}
-	token, err := issued.AfterCommit(ctx, db)
-	if err != nil || token == "" {
-		return Outcome{}, ErrUnavailable
-	}
-	return Outcome{kind: Authenticated, token: token}, nil
+	return TransactionResult{kind: VerificationAuthenticated, commitRequired: true, sourceTx: tx, issued: issued}, nil
 }

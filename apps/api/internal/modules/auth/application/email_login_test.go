@@ -311,3 +311,356 @@ func TestEmailLoginRejectsMissingDependencies(t *testing.T) {
 		t.Fatal("zero outcome exposed an approval")
 	}
 }
+
+func TestEmailLoginTransactionSeam(t *testing.T) {
+	db := emailFlowDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	hasher, err := domain.NewEmailCodeHasher(bytes.Repeat([]byte{0x61}, 32))
+	if err != nil {
+		t.Fatal("hasher initialization failed")
+	}
+	replay, err := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
+	if err != nil {
+		t.Fatal("replay initialization failed")
+	}
+	protector, err := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "email-test-key")
+	if err != nil {
+		t.Fatal("protector initialization failed")
+	}
+	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	if err != nil {
+		t.Fatal("challenge initialization failed")
+	}
+	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	resolver, err := identity.NewResolver(protector)
+	if err != nil {
+		t.Fatal("resolver initialization failed")
+	}
+	codec, err := session.NewTokenCodec(bytes.Repeat([]byte{0x65}, 32), session.TokenPolicy{MaxLifetime: time.Hour})
+	if err != nil {
+		t.Fatal("codec initialization failed")
+	}
+	sessions, err := session.NewStore(resolver, codec)
+	if err != nil {
+		t.Fatal("session store initialization failed")
+	}
+	approvals, err := approval.NewStore(resolver, bytes.Repeat([]byte{6}, 32), "approval-test-key", approval.Policy{Lifetime: 5 * time.Minute, ReauthWindow: time.Minute})
+	if err != nil {
+		t.Fatal("approval initialization failed")
+	}
+	initTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("approval epoch transaction failed")
+	}
+	if err := approvals.InitializeKey(ctx, initTx); err != nil {
+		_ = initTx.Rollback()
+		t.Fatal("approval epoch initialization failed")
+	}
+	if err := initTx.Commit(); err != nil {
+		t.Fatal("approval epoch commit failed")
+	}
+	login, err := NewEmailLogin(challenges, sessions, approvals)
+	if err != nil {
+		t.Fatal("login initialization failed")
+	}
+	issue := func(email string, key *ecdsa.PrivateKey, public domain.DevicePublicJWK) challenge.AttemptInput {
+		t.Helper()
+		id, err := domain.GenerateChallengeID()
+		if err != nil {
+			t.Fatal("challenge ID generation failed")
+		}
+		nonce, err := domain.GenerateChallengeNonce()
+		if err != nil {
+			t.Fatal("nonce generation failed")
+		}
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("challenge transaction failed")
+		}
+		if err := challenges.Issue(ctx, tx, challenge.IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: "012345", PublicKey: public}); err != nil {
+			_ = tx.Rollback()
+			t.Fatal("could not issue synthetic challenge")
+		}
+		if err := tx.Commit(); err != nil {
+			t.Fatal("challenge commit failed")
+		}
+		return challenge.AttemptInput{ChallengeID: id, Code: "012345", DeviceProof: flowProof(t, key, id, nonce)}
+	}
+
+	// A rejected wrong-code result explicitly tells the outer owner to commit.
+	wrongKey, wrongPublic := flowDevice(t)
+	wrong := issue("seam-wrong@example.test", wrongKey, wrongPublic)
+	wrong.Code = "999999"
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("outer wrong-code transaction failed")
+	}
+	rejected, err := login.VerifyEmailInTransaction(ctx, tx, wrong)
+	if err != nil || rejected.Kind() != VerificationRejected || !rejected.CommitRequired() {
+		_ = tx.Rollback()
+		t.Fatal("wrong-code result did not require outer commit")
+	}
+	if _, err := rejected.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("wrong-code rejection was returned while the source transaction was active")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("outer wrong-code commit failed")
+	}
+	if _, err := rejected.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) {
+		t.Fatal("wrong-code result did not remain a generic rejection")
+	}
+	var attempts int
+	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id = ?`, wrong.ChallengeID).Scan(&attempts); err != nil || attempts != 1 {
+		t.Fatal("outer commit did not persist exactly one wrong-code attempt")
+	}
+
+	rollbackKey, rollbackPublic := flowDevice(t)
+	rollbackInput := issue("seam-rollback@example.test", rollbackKey, rollbackPublic)
+	rollbackWrong := rollbackInput
+	rollbackWrong.Code = "999999"
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("outer rollback transaction failed")
+	}
+	rollbackResult, err := login.VerifyEmailInTransaction(ctx, tx, rollbackWrong)
+	if err != nil || !rollbackResult.CommitRequired() {
+		_ = tx.Rollback()
+		t.Fatal("wrong-code rollback setup failed")
+	}
+	if _, err := rollbackResult.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("rolled-back-attempt result escaped before transaction end")
+	}
+	if tx.Rollback() != nil {
+		t.Fatal("wrong-code outer rollback failed")
+	}
+	// sql.Tx reports only that it ended, not whether Commit or Rollback won.
+	// The caller must invoke AfterCommit only after Commit returned nil.
+	if _, err := rollbackResult.AfterCommit(ctx, db); !errors.Is(err, ErrRejected) {
+		t.Fatal("ended rolled-back attempt did not preserve generic rejection semantics")
+	}
+	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id = ?`, rollbackInput.ChallengeID).Scan(&attempts); err != nil || attempts != 0 {
+		t.Fatal("outer rollback did not roll back the wrong-code counter")
+	}
+
+	// A successful result is opaque while its transaction is live and after rollback.
+	rollbackSuccessKey, rollbackSuccessPublic := flowDevice(t)
+	rollbackSuccess := issue("seam-session-rollback@example.test", rollbackSuccessKey, rollbackSuccessPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("successful rollback transaction failed")
+	}
+	rolledBack, err := login.VerifyEmailInTransaction(ctx, tx, rollbackSuccess)
+	if err != nil || rolledBack.Kind() != VerificationAuthenticated || !rolledBack.CommitRequired() {
+		_ = tx.Rollback()
+		t.Fatalf("successful login result mismatch: kind=%q commitRequired=%t err=%v", rolledBack.Kind(), rolledBack.CommitRequired(), err)
+	}
+	for _, value := range []any{rolledBack} {
+		if _, err := json.Marshal(value); err == nil {
+			t.Fatal("transaction result was JSON serializable")
+		}
+		var log bytes.Buffer
+		slog.New(slog.NewJSONHandler(&log, nil)).Info("test", "value", value)
+		if strings.Contains(fmt.Sprintf("%v %+v %#v %s", value, value, value, log.String()), rollbackSuccess.DeviceProof) {
+			t.Fatal("device proof leaked through transaction result formatting")
+		}
+	}
+	if outcome, err := rolledBack.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("live transaction released a session credential")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal("successful outer rollback failed")
+	}
+	if outcome, err := rolledBack.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("rolled-back transaction released a session credential")
+	}
+	var sessionsForRollback int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id = ?`, rollbackSuccess.ChallengeID).Scan(&sessionsForRollback); err != nil || sessionsForRollback != 0 {
+		t.Fatal("rolled-back success left a session row")
+	}
+
+	// Committing releases only the matching type, through a fresh authorization check.
+	firstKey, firstPublic := flowDevice(t)
+	firstInput := issue("seam-pending@example.test", firstKey, firstPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("first-device transaction failed")
+	}
+	firstResult, err := login.VerifyEmailInTransaction(ctx, tx, firstInput)
+	if err != nil || firstResult.Kind() != VerificationAuthenticated {
+		_ = tx.Rollback()
+		t.Fatal("first device did not produce a session result")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("first-device commit failed")
+	}
+	firstOutcome, err := firstResult.AfterCommit(ctx, db)
+	firstToken, tokenOK := firstOutcome.SessionTokenForResponse()
+	if err != nil || !tokenOK || firstOutcome.Kind() != Authenticated {
+		t.Fatal("committed first device did not release its token")
+	}
+	if _, ok := firstOutcome.PendingApprovalForResponse(); ok {
+		t.Fatal("session result exposed an approval")
+	}
+
+	secondKey, secondPublic := flowDevice(t)
+	pendingInput := issue("seam-pending@example.test", secondKey, secondPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("pending rollback transaction failed")
+	}
+	rolledBackPending, err := login.VerifyEmailInTransaction(ctx, tx, pendingInput)
+	if err != nil || rolledBackPending.Kind() != VerificationApprovalRequired || !rolledBackPending.CommitRequired() {
+		_ = tx.Rollback()
+		t.Fatal("new device did not produce a pending approval result")
+	}
+	if outcome, err := rolledBackPending.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("uncommitted approval secret was released")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal("pending outer rollback failed")
+	}
+	if outcome, err := rolledBackPending.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("rolled-back approval secret was released")
+	}
+	var pendingCount int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_login_approval WHERE challenge_id = ?`, pendingInput.ChallengeID).Scan(&pendingCount); err != nil || pendingCount != 0 {
+		t.Fatal("rolled-back approval left a row")
+	}
+
+	// The rolled-back challenge and proof remain usable; committing now yields approval only.
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("pending commit transaction failed")
+	}
+	pendingResult, err := login.VerifyEmailInTransaction(ctx, tx, pendingInput)
+	if err != nil || pendingResult.Kind() != VerificationApprovalRequired {
+		_ = tx.Rollback()
+		t.Fatal("new-device retry did not produce approval")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("pending approval commit failed")
+	}
+	pendingOutcome, err := pendingResult.AfterCommit(ctx, db)
+	data, approvalOK := pendingOutcome.PendingApprovalForResponse()
+	if err != nil || !approvalOK || pendingOutcome.Kind() != ApprovalRequired || data.Secret == "" {
+		t.Fatal("committed approval did not release its matching result")
+	}
+	if token, ok := pendingOutcome.SessionTokenForResponse(); ok || token != "" {
+		t.Fatal("pending approval released a session token")
+	}
+	shortApprovals, err := approval.NewStore(resolver, bytes.Repeat([]byte{6}, 32), "approval-test-key", approval.Policy{Lifetime: time.Second, ReauthWindow: time.Minute})
+	if err != nil {
+		t.Fatal("short-lived approval store setup failed")
+	}
+	shortApprovalLogin, err := NewEmailLogin(challenges, sessions, shortApprovals)
+	if err != nil {
+		t.Fatal("short-lived approval login setup failed")
+	}
+	shortApprovalKey, shortApprovalPublic := flowDevice(t)
+	shortApprovalInput := issue("seam-pending@example.test", shortApprovalKey, shortApprovalPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("short-lived approval transaction failed")
+	}
+	shortApprovalResult, err := shortApprovalLogin.VerifyEmailInTransaction(ctx, tx, shortApprovalInput)
+	if err != nil || shortApprovalResult.Kind() != VerificationApprovalRequired {
+		_ = tx.Rollback()
+		t.Fatal("short-lived approval was not created")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("short-lived approval commit failed")
+	}
+	time.Sleep(1200 * time.Millisecond)
+	if outcome, err := shortApprovalResult.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("expired approval secret was released")
+	}
+
+	// Revocation between commit and release is caught by Issued.AfterCommit.
+	revokedKey, revokedPublic := flowDevice(t)
+	revokedInput := issue("seam-revoked@example.test", revokedKey, revokedPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("revocation test transaction failed")
+	}
+	revokedResult, err := login.VerifyEmailInTransaction(ctx, tx, revokedInput)
+	if err != nil || revokedResult.Kind() != VerificationAuthenticated || tx.Commit() != nil {
+		t.Fatal("revocation test login did not commit")
+	}
+	index, err := protector.Index("seam-revoked@example.test")
+	if err != nil {
+		t.Fatal("revocation test email index failed")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE login_identity SET state = 'revoked' WHERE kind = 'email' AND provider_scope = 'beta-email' AND subject_lookup_hmac = ?`, index[:]); err != nil {
+		t.Fatal("synthetic identity revocation failed")
+	}
+	if outcome, err := revokedResult.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("revoked identity released a session token")
+	}
+
+	// Short-lived signed tokens cannot be released after expiry, even if the
+	// source transaction committed successfully.
+	shortCodec, err := session.NewTokenCodec(bytes.Repeat([]byte{0x67}, 32), session.TokenPolicy{MaxLifetime: time.Second})
+	if err != nil {
+		t.Fatal("short-lived codec initialization failed")
+	}
+	shortSessions, err := session.NewStore(resolver, shortCodec)
+	if err != nil {
+		t.Fatal("short-lived session store initialization failed")
+	}
+	shortLogin, err := NewEmailLogin(challenges, shortSessions, approvals)
+	if err != nil {
+		t.Fatal("short-lived login initialization failed")
+	}
+	expiredKey, expiredPublic := flowDevice(t)
+	expiredInput := issue("seam-expired@example.test", expiredKey, expiredPublic)
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("expiry test transaction failed")
+	}
+	expiredResult, err := shortLogin.VerifyEmailInTransaction(ctx, tx, expiredInput)
+	if err != nil || expiredResult.Kind() != VerificationAuthenticated {
+		_ = tx.Rollback()
+		t.Fatal("expiry test login did not produce a session")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("expiry test commit failed")
+	}
+	time.Sleep(1200 * time.Millisecond)
+	if outcome, err := expiredResult.AfterCommit(ctx, db); !errors.Is(err, ErrUnavailable) || outcome.Kind() != "" {
+		t.Fatal("expired session token was released")
+	}
+
+	// An infrastructure error after challenge validation is returned to the
+	// transaction owner without committing the consumed challenge.
+	errorKey, errorPublic := flowDevice(t)
+	errorInput := issue("seam-pending@example.test", errorKey, errorPublic)
+	wrongApprovalStore, err := approval.NewStore(resolver, bytes.Repeat([]byte{0x68}, 32), "approval-test-key", approval.Policy{Lifetime: 5 * time.Minute, ReauthWindow: time.Minute})
+	if err != nil {
+		t.Fatal("wrong approval store setup failed")
+	}
+	errorLogin, err := NewEmailLogin(challenges, sessions, wrongApprovalStore)
+	if err != nil {
+		t.Fatal("error-path coordinator setup failed")
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("error-path transaction failed")
+	}
+	if _, err := errorLogin.VerifyEmailInTransaction(ctx, tx, errorInput); !errors.Is(err, ErrUnavailable) {
+		_ = tx.Rollback()
+		t.Fatal("approval epoch mismatch did not fail closed")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal("error-path rollback failed")
+	}
+	var errorConsumed bool
+	if err := db.QueryRowContext(ctx, `SELECT consumed_at IS NOT NULL FROM auth_email_login_challenge WHERE challenge_id = ?`, errorInput.ChallengeID).Scan(&errorConsumed); err != nil || errorConsumed {
+		t.Fatal("infrastructure error left the challenge consumed")
+	}
+
+	_ = firstToken
+}
