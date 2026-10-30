@@ -254,11 +254,25 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	badProof := testProof(t, private, first, strings.Repeat("B", 43), "bad-proof-jti", now)
 	result, err := attempt(first, "999999", badProof, now, true)
 	assertRejected(result, err, false)
-	result, err = attempt(first, "999999", validFirst, now, true)
+	// A rolled-back wrong-code attempt leaves neither count nor proof marker.
+	result, err = attempt(first, "999999", validFirst, now, false)
 	assertRejected(result, err, true)
 	result, err = attempt(first, "999999", validFirst, now, true)
 	assertRejected(result, err, true)
+	// The same proof cannot be consumed again, even with another code; it
+	// must not add attempts or authenticate. A fresh proof may try again.
+	result, err = attempt(first, "999999", validFirst, now, true)
+	assertRejected(result, err, false)
 	result, err = attempt(first, "012345", validFirst, now, true)
+	assertRejected(result, err, false)
+	var wrongAttempts int
+	if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, first).Scan(&wrongAttempts); err != nil || wrongAttempts != 1 {
+		t.Fatal("reused proof changed the wrong-code counter")
+	}
+	validSecond := testProof(t, private, first, nonce, "wrong-attempt-jti-2", now)
+	result, err = attempt(first, "999999", validSecond, now, true)
+	assertRejected(result, err, true)
+	result, err = attempt(first, "012345", testProof(t, private, first, nonce, "after-exhaustion", now), now, true)
 	assertRejected(result, err, false)
 	looser, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3, DeviceProof: policy.DeviceProof})
 	looser.now = store.now

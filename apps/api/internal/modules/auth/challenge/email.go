@@ -284,18 +284,21 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if err != nil {
 		return rejected, nil
 	}
+	// Every valid signed attempt consumes its JTI, including an incorrect
+	// code. A caller must commit or roll back the replay marker and the
+	// wrong-code counter together; the marker alone never authenticates.
+	if err := s.replay.Consume(ctx, tx, actualFingerprint, proof, now); err != nil {
+		if errors.Is(err, repository.ErrProofAlreadyUsed) {
+			return rejected, nil
+		}
+		return rejected, ErrChallengeStore
+	}
 	correct, err := s.hasher.Verify(input.ChallengeID, "email_login", input.Code, digest)
 	if err != nil || !correct {
 		if _, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET attempts = attempts + 1 WHERE challenge_id = ?`, input.ChallengeID); err != nil {
 			return rejected, ErrChallengeStore
 		}
 		return AttemptResult{Changed: true}, nil
-	}
-	if err := s.replay.Consume(ctx, tx, actualFingerprint, proof, now); err != nil {
-		if errors.Is(err, repository.ErrProofAlreadyUsed) {
-			return rejected, nil
-		}
-		return rejected, ErrChallengeStore
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE auth_email_login_challenge SET consumed_at = ? WHERE challenge_id = ? AND consumed_at IS NULL`, sqlUTC(now), input.ChallengeID)
 	if err != nil {
