@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"nerae/api/internal/modules/auth/approval"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/loginledger"
 	"nerae/api/internal/modules/auth/loginreceipt"
@@ -15,18 +16,19 @@ import (
 
 var (
 	ErrReceiptConflict = errors.New("email login receipt conflicts")
-	// Existing receipts are deliberately not opened until the replay path has
-	// independently rechecked proof, authorization, expiry and commit state.
+	// Rejection receipts remain unavailable until their replay path verifies
+	// proof, expiry, transaction commit and the rejection's request binding.
 	ErrReceiptReplayUnavailable = errors.New("email login receipt replay unavailable")
 )
 
-// ReceiptLogin coordinates an attempt and a trusted-device receipt in one
+// ReceiptLogin coordinates an attempt and its encrypted result receipt in one
 // caller-owned transaction. It is not an HTTP endpoint or rate limiter.
 type ReceiptLogin struct {
 	login     *EmailLogin
 	ledger    *loginledger.Store
 	crypto    *loginreceipt.Crypto
 	sessions  *session.ReceiptRecoverer
+	approvals *approval.ReceiptRecoverer
 	retention time.Duration
 	now       func() time.Time
 }
@@ -45,7 +47,11 @@ func NewReceiptLogin(login *EmailLogin, ledger *loginledger.Store, crypto *login
 	if err != nil {
 		return nil, ErrUnavailable
 	}
-	return &ReceiptLogin{login: login, ledger: ledger, crypto: crypto, sessions: recoverer, retention: retention, now: time.Now}, nil
+	approvalRecoverer, err := approval.NewReceiptRecoverer(login.approvals, ledger, login.challenges, crypto)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	return &ReceiptLogin{login: login, ledger: ledger, crypto: crypto, sessions: recoverer, approvals: approvalRecoverer, retention: retention, now: time.Now}, nil
 }
 
 // ReceiptTransactionResult reports whether the caller must commit. It never
@@ -55,6 +61,7 @@ type ReceiptTransactionResult struct {
 	kind           VerificationKind
 	commitRequired bool
 	session        *session.ReceiptCandidate
+	approval       *approval.ReceiptCandidate
 }
 
 func (ReceiptTransactionResult) String() string               { return "ReceiptLoginResult{redacted}" }
@@ -68,19 +75,40 @@ func (r ReceiptTransactionResult) CommitRequired() bool   { return r.commitRequi
 
 // AfterCommit returns a trusted-device token only after the session candidate
 // re-reads the committed receipt and revalidates proof and authorization in a
-// fresh transaction. Approval and rejection replay remain unavailable.
+// fresh transaction. A new-device approval result releases only its polling
+// capability, never a session. Rejection replay remains unavailable.
 func (r ReceiptTransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (Outcome, error) {
-	if r.kind != VerificationAuthenticated || !r.commitRequired || r.session == nil {
+	if !r.commitRequired {
 		return Outcome{}, ErrUnavailable
 	}
-	token, err := r.session.AfterCommit(ctx, db)
-	if errors.Is(err, session.ErrInvalidSession) {
-		return Outcome{}, ErrRejected
-	}
-	if err != nil || token == "" {
+	switch r.kind {
+	case VerificationAuthenticated:
+		if r.session == nil {
+			return Outcome{}, ErrUnavailable
+		}
+		token, err := r.session.AfterCommit(ctx, db)
+		if errors.Is(err, session.ErrInvalidSession) {
+			return Outcome{}, ErrRejected
+		}
+		if err != nil || token == "" {
+			return Outcome{}, ErrUnavailable
+		}
+		return Outcome{kind: Authenticated, token: token}, nil
+	case VerificationApprovalRequired:
+		if r.approval == nil {
+			return Outcome{}, ErrUnavailable
+		}
+		data, err := r.approval.AfterCommit(ctx, db)
+		if errors.Is(err, approval.ErrInvalidReceipt) {
+			return Outcome{}, ErrRejected
+		}
+		if err != nil || data.ID == "" || data.Secret == "" {
+			return Outcome{}, ErrUnavailable
+		}
+		return Outcome{kind: ApprovalRequired, approval: data}, nil
+	default:
 		return Outcome{}, ErrUnavailable
 	}
-	return Outcome{kind: Authenticated, token: token}, nil
 }
 
 // VerifyInTransaction derives both the binding and device attempt from the
@@ -88,9 +116,10 @@ func (r ReceiptTransactionResult) AfterCommit(ctx context.Context, db *sql.DB) (
 // changed attempt, session/approval, and encrypted receipt together. A caller
 // must commit or roll back all of them; this method neither commits nor returns
 // a credential. Existing session receipts can be recovered after commit;
-// approval and rejection receipts still fail closed.
+// approval receipts recover only the polling capability; rejection receipts
+// still fail closed.
 func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key string, input challenge.AttemptInput) (ReceiptTransactionResult, error) {
-	if s == nil || s.login == nil || s.ledger == nil || s.crypto == nil || s.sessions == nil || s.now == nil || ctx == nil || tx == nil ||
+	if s == nil || s.login == nil || s.ledger == nil || s.crypto == nil || s.sessions == nil || s.approvals == nil || s.now == nil || ctx == nil || tx == nil ||
 		s.retention < time.Second || s.retention > 24*time.Hour || s.retention%time.Microsecond != 0 {
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
@@ -114,7 +143,7 @@ func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key 
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
 	if record, exists := handle.ExistingRecord(); exists {
-		if record.ResultType() != loginreceipt.ResultAuthenticated {
+		if record.ResultType() != loginreceipt.ResultAuthenticated && record.ResultType() != loginreceipt.ResultApprovalRequired {
 			return ReceiptTransactionResult{}, ErrReceiptReplayUnavailable
 		}
 		proof, err := s.login.challenges.VerifyReceiptProof(ctx, tx, scope, input.ChallengeID, input.DeviceProof)
@@ -124,14 +153,7 @@ func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key 
 		if err != nil {
 			return ReceiptTransactionResult{}, ErrUnavailable
 		}
-		candidate, err := s.sessions.Recover(ctx, tx, handle, proof, request)
-		if errors.Is(err, session.ErrInvalidSession) {
-			return ReceiptTransactionResult{}, ErrRejected
-		}
-		if err != nil {
-			return ReceiptTransactionResult{}, ErrUnavailable
-		}
-		return ReceiptTransactionResult{kind: VerificationAuthenticated, commitRequired: true, session: &candidate}, nil
+		return s.recoverResult(ctx, tx, handle, proof, request, record.ResultType())
 	}
 	result, err := s.login.VerifyEmailInTransaction(ctx, tx, input)
 	if err != nil {
@@ -217,12 +239,33 @@ func (s *ReceiptLogin) VerifyInTransaction(ctx context.Context, tx *sql.Tx, key 
 	if finished := s.now().UTC(); finished.IsZero() || !expires.After(finished) {
 		return ReceiptTransactionResult{}, ErrUnavailable
 	}
-	if result.Kind() == VerificationAuthenticated {
-		candidate, err := s.sessions.Recover(ctx, tx, checkedHandle, checkedProof, request)
+	if result.Kind() == VerificationAuthenticated || result.Kind() == VerificationApprovalRequired {
+		return s.recoverResult(ctx, tx, checkedHandle, checkedProof, request, kind)
+	}
+	return ReceiptTransactionResult{kind: result.Kind(), commitRequired: true}, nil
+}
+
+func (s *ReceiptLogin) recoverResult(ctx context.Context, tx *sql.Tx, handle *loginledger.Handle, proof *challenge.ReceiptProof, request loginreceipt.Request, kind loginreceipt.ResultType) (ReceiptTransactionResult, error) {
+	switch kind {
+	case loginreceipt.ResultAuthenticated:
+		candidate, err := s.sessions.Recover(ctx, tx, handle, proof, request)
+		if errors.Is(err, session.ErrInvalidSession) {
+			return ReceiptTransactionResult{}, ErrRejected
+		}
 		if err != nil {
 			return ReceiptTransactionResult{}, ErrUnavailable
 		}
-		return ReceiptTransactionResult{kind: result.Kind(), commitRequired: true, session: &candidate}, nil
+		return ReceiptTransactionResult{kind: VerificationAuthenticated, commitRequired: true, session: &candidate}, nil
+	case loginreceipt.ResultApprovalRequired:
+		candidate, err := s.approvals.Recover(ctx, tx, handle, proof, request)
+		if errors.Is(err, approval.ErrInvalidReceipt) {
+			return ReceiptTransactionResult{}, ErrRejected
+		}
+		if err != nil {
+			return ReceiptTransactionResult{}, ErrUnavailable
+		}
+		return ReceiptTransactionResult{kind: VerificationApprovalRequired, commitRequired: true, approval: &candidate}, nil
+	default:
+		return ReceiptTransactionResult{}, ErrUnavailable
 	}
-	return ReceiptTransactionResult{kind: result.Kind(), commitRequired: true}, nil
 }

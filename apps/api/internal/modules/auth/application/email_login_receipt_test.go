@@ -189,9 +189,75 @@ func TestReceiptLoginAtomicity(t *testing.T) {
 		count(`SELECT COUNT(*) FROM auth_email_login_receipt WHERE challenge_id=? AND result_kind='approval_required'`, newID) != 1 {
 		t.Fatal("new device did not atomically create a protected approval")
 	}
-	if _, err := perform(newKeyID, newInput, true); !errors.Is(err, ErrReceiptReplayUnavailable) ||
+	approvalOutcome, err := result.AfterCommit(ctx, db)
+	approvalData, ok := approvalOutcome.PendingApprovalForResponse()
+	if err != nil || !ok || approvalData.ID == "" || approvalData.Secret == "" {
+		t.Fatal("committed new-device result did not release a polling capability")
+	}
+	if _, ok := approvalOutcome.SessionTokenForResponse(); ok {
+		t.Fatal("new device received a session before approval")
+	}
+	approvalReplay, err := perform(newKeyID, newInput, true)
+	if err != nil || approvalReplay.Kind() != VerificationApprovalRequired ||
 		count(`SELECT COUNT(*) FROM auth_login_approval WHERE challenge_id=?`, newID) != 1 {
-		t.Fatal("repeated new-device request created another approval")
+		t.Fatal("repeated new-device request did not recover exactly one approval")
+	}
+	approvalReplayOutcome, err := approvalReplay.AfterCommit(ctx, db)
+	replayedApproval, ok := approvalReplayOutcome.PendingApprovalForResponse()
+	if err != nil || !ok || replayedApproval.ID != approvalData.ID || replayedApproval.Secret != approvalData.Secret ||
+		replayedApproval.Nonce != approvalData.Nonce || replayedApproval.ComparisonCode != approvalData.ComparisonCode || !replayedApproval.ExpiresAt.Equal(approvalData.ExpiresAt) {
+		t.Fatal("new-device replay did not preserve the original approval result")
+	}
+	type approvalReplayResult struct {
+		result ReceiptTransactionResult
+		err    error
+	}
+	approvalResults := make(chan approvalReplayResult, 2)
+	var approvalWorkers sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		approvalWorkers.Add(1)
+		go func() {
+			defer approvalWorkers.Done()
+			value, err := perform(newKeyID, newInput, true)
+			approvalResults <- approvalReplayResult{value, err}
+		}()
+	}
+	approvalWorkers.Wait()
+	close(approvalResults)
+	for item := range approvalResults {
+		if item.err != nil || item.result.Kind() != VerificationApprovalRequired {
+			t.Fatal("concurrent approval replay did not return the pending result")
+		}
+		outcome, err := item.result.AfterCommit(ctx, db)
+		value, ok := outcome.PendingApprovalForResponse()
+		if err != nil || !ok || value.ID != approvalData.ID || value.Secret != approvalData.Secret {
+			t.Fatal("concurrent approval replay changed the approval capability")
+		}
+	}
+	if count(`SELECT COUNT(*) FROM auth_login_approval WHERE challenge_id=?`, newID) != 1 ||
+		count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, newID) != 0 {
+		t.Fatal("approval retries created another approval or a session")
+	}
+	decisionTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	principal, err := sessions.Authenticate(ctx, decisionTx, firstToken)
+	if err != nil || approvals.Decide(ctx, decisionTx, principal, approvalData.ID, approval.Approve, approvalData.ComparisonCode, true) != nil {
+		_ = decisionTx.Rollback()
+		t.Fatal("trusted device could not approve the pending request")
+	}
+	if err := decisionTx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	approvedReplay, err := perform(newKeyID, newInput, true)
+	if err != nil {
+		t.Fatal("approved request could not recover its polling result")
+	}
+	approvedOutcome, err := approvedReplay.AfterCommit(ctx, db)
+	approvedData, ok := approvedOutcome.PendingApprovalForResponse()
+	if err != nil || !ok || approvedData.Secret != approvalData.Secret || count(`SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=?`, newID) != 0 {
+		t.Fatal("approved replay issued a session or changed its polling result")
 	}
 	// A newer challenge replaces the email slot but does not invalidate an
 	// already committed, still-authorized original session receipt.
