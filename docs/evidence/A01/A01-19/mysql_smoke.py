@@ -68,7 +68,8 @@ def main() -> int:
                                "user/0001_user.up.sql", "auth/0003_email_identity.up.sql",
                                "auth/0007_email_outbox.up.sql")
             migrations = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in migration_names)
-            databases = ("nerae_email_worker_test", "nerae_email_outbox_test", "nerae_email_smtp_test")
+            databases = ("nerae_email_worker_test", "nerae_email_outbox_test", "nerae_email_smtp_test",
+                         "nerae_email_worker_startup_test")
             schema_sql = "\n".join(f"CREATE DATABASE {name};\nUSE {name};\n{migrations}" for name in databases)
             apply = subprocess.run(mysql, input=schema_sql,
                                    text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -81,10 +82,11 @@ def main() -> int:
                         "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
                         "NERAE_EMAIL_OUTBOX_WORKER_TEST_DSN": f"root@unix({sock})/nerae_email_worker_test?parseTime=true&loc=UTC",
                         "NERAE_EMAIL_OUTBOX_TEST_DSN": f"root@unix({sock})/nerae_email_outbox_test?parseTime=true&loc=UTC",
-                        "NERAE_EMAIL_OUTBOX_SMTP_TEST_DSN": f"root@unix({sock})/nerae_email_smtp_test?parseTime=true&loc=UTC"}
+                        "NERAE_EMAIL_OUTBOX_SMTP_TEST_DSN": f"root@unix({sock})/nerae_email_smtp_test?parseTime=true&loc=UTC",
+                        "NERAE_WORKER_STARTUP_TEST_DSN": f"root@unix({sock})/nerae_email_worker_startup_test?parseTime=true&loc=UTC"}
             result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
                                      "./internal/modules/auth/mailworker", "./internal/modules/auth/issuance",
-                                     "./internal/modules/auth/mail"], cwd=ROOT / "apps/api", env=test_env,
+                                     "./internal/modules/auth/mail", "./cmd/worker"], cwd=ROOT / "apps/api", env=test_env,
                                     timeout=240, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     text=True, check=False)
             print(result.stdout, end="")
