@@ -159,7 +159,7 @@ internal object HttpsTransport {
         if (transferEncoding != null && transferEncoding != "chunked") throw HttpsFailure("invalid_response")
         if (contentEncoding != null && contentEncoding != "identity") throw HttpsFailure("invalid_response")
 
-        val body = readBody(socket, input, status, contentLength, transferEncoding, deadlineNanos)
+        val body = readBody(socket, input, status, headers.containsKey("content-length"), contentLength, transferEncoding, deadlineNanos)
         val text = decodeUtf8(body)
         val publicHeaders = headers.filterKeys { it in responseHeaderAllowlist }
         return HttpsWire.success(status, StrictJson.encodeStringObject(publicHeaders), text)
@@ -177,12 +177,13 @@ internal object HttpsTransport {
         socket: SSLSocket,
         input: BufferedInputStream,
         status: Int,
+        hasContentLength: Boolean,
         contentLength: Long?,
         transferEncoding: String?,
         deadlineNanos: Long
     ): ByteArray {
         if (status == 204) {
-            if ((contentLength != null && contentLength != 0L) || transferEncoding != null) {
+            if (hasContentLength || transferEncoding != null) {
                 throw HttpsFailure("invalid_response")
             }
             return ByteArray(0)

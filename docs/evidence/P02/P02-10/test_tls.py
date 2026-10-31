@@ -62,10 +62,22 @@ assert revoke['ok'] and revoke['status'] == 204 and revoke['body'] == ''
 assert json.loads(revoke['headersJson'])['cache-control'] == 'no-store'
 assert run('revokeBody')['code'] == 'invalid_request'
 assert run('revokeBodyLength')['code'] == 'invalid_response'
+assert run('revokeContentLengthZero')['code'] == 'invalid_response'
+assert run('revokeTransferEncoding')['code'] == 'invalid_response'
 unframed_204 = run('revokeBodyUnframed')
 print('iOS URLSession unframed 204 probe:', {key: unframed_204[key] for key in ('ok', 'status', 'code')})
 assert run('revokeMissingNoStore')['ok'] and run('revokeMissingNoStore')['status'] == 204
-assert run('revokeUnauthorized')['status'] == 401
+valid_unauthorized = run('revokeUnauthorized')
+valid_request_id = '0123456789abcdef0123456789abcdef'
+assert valid_unauthorized['status'] == 401
+assert json.loads(valid_unauthorized['body']) == {
+    'code': 'UNAUTHENTICATED', 'message': '请先登录', 'requestId': valid_request_id
+}
+assert json.loads(valid_unauthorized['headersJson'])['x-request-id'] == valid_request_id
+malformed_unauthorized = run('revokeUnauthorizedMalformed')
+assert malformed_unauthorized['status'] == 401
+assert json.loads(malformed_unauthorized['body'])['requestId'] == valid_request_id
+assert json.loads(malformed_unauthorized['headersJson'])['x-request-id'] == 'f' * 32
 assert run('revokeNon204')['status'] == 200
 before_cancel = len(open(hits, encoding='utf-8').read().splitlines())
 assert run('revokeCancel', timeout=5000)['code'] == 'cancelled'

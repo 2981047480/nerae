@@ -65,13 +65,25 @@ test('current-session revoke uses same-origin bearer DELETE with no body and acc
 })
 
 test('revoke distinguishes explicit rejection from uncertain or malformed responses', async () => {
+  const requestId = '0123456789abcdef0123456789abcdef'
+  const validUnauthorized = ok('auth-error', 401,
+    JSON.stringify({ code: 'UNAUTHENTICATED', message: '请先登录', requestId }),
+    JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8', 'x-request-id': requestId }))
   for (const [response, outcome] of [
     [ok('bad-body', 204, '{"unexpected":true}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
     [ok('empty-body', 204, '', '{}'), { state: 'unknown' }],
     [ok('wrong-success', 200, '{"ok":true}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
     [ok('server-error', 503, '{"code":"UNAVAILABLE"}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
-    [ok('auth-error', 401, '{"code":"UNAUTHENTICATED"}', '{"cache-control":"no-store"}'),
+    [validUnauthorized,
       { state: 'rejected', reason: 'unauthorized' }],
+    [ok('unauth-empty', 401, '{}', JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
+    [ok('unauth-wrong-code', 401, JSON.stringify({ code: 'FORBIDDEN', message: 'x', requestId }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
+    [ok('unauth-bad-request-id', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId: 'bad' }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
+    [ok('unauth-mismatch', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': 'ffffffffffffffffffffffffffffffff' })), { state: 'unknown' }],
+    [ok('unauth-missing-header', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json' })), { state: 'unknown' }],
+    [ok('unauth-extra', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId, private: 'x' }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
+    [ok('unauth-bad-details', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId, details: [] }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
+    [ok('unauth-content-type', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'text/plain', 'x-request-id': requestId })), { state: 'unknown' }],
   ]) {
     const ports = make((request, callbacks) => { callbacks.success(response); return response.requestId })
     assert.deepEqual(await ports.revokeCurrentSession('synthetic.revoke.token'), outcome)

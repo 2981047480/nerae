@@ -433,7 +433,21 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
     if (result.status === 204) {
       return result.emptyBody ? { state: 'revoked' } : { state: 'unknown' }
     }
-    if (result.status === 401) return { state: 'rejected', reason: 'unauthorized' }
+    if (result.status === 401) {
+      const error = result.body
+      const requestId = result.headers['x-request-id']
+      const contentType = result.headers['content-type']
+      const fields = Object.keys(error)
+      const validError = error.code === 'UNAUTHENTICATED' &&
+        typeof error.message === 'string' && error.message.length > 0 && error.message.length <= 2048 &&
+        typeof error.requestId === 'string' && /^[a-f0-9]{32}$/.test(error.requestId) &&
+        (fields.length === 3 || (fields.length === 4 && Object.prototype.hasOwnProperty.call(error, 'details'))) &&
+        fields.every(key => ['code', 'message', 'requestId', 'details'].includes(key)) &&
+        (!Object.prototype.hasOwnProperty.call(error, 'details') || object(error.details)) &&
+        typeof requestId === 'string' && requestId === error.requestId &&
+        typeof contentType === 'string' && /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentType.trim())
+      return validError ? { state: 'rejected', reason: 'unauthorized' } : { state: 'unknown' }
+    }
     if (result.status === 403) return { state: 'rejected', reason: 'forbidden' }
     if (result.status === 404) return { state: 'rejected', reason: 'not_found' }
     if (result.status === 409) return { state: 'rejected', reason: 'conflict' }

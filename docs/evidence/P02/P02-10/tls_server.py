@@ -81,7 +81,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                                   'authorizationPresent': self.headers.get('Authorization') == 'Bearer synthetic-probe',
                                   'contentLength': self.headers.get('Content-Length', '')}) + '\n')
         if self.path == '/logout-empty':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-content-length-zero':
             self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-transfer-encoding':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n')
             self.wfile.flush(); self.close_connection = True
         elif self.path == '/logout-body-length':
             self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad')
@@ -90,15 +96,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nbad')
             self.wfile.flush(); self.close_connection = True
         elif self.path == '/logout-no-store':
-            self.wfile.write(b'HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n')
             self.wfile.flush(); self.close_connection = True
         elif self.path == '/logout-unauthorized':
-            self.send_body(401, '{"code":"UNAUTHENTICATED"}', {'Content-Type': 'application/json', 'Cache-Control': 'no-store'})
+            self.send_body(401, '{"code":"UNAUTHENTICATED","message":"请先登录","requestId":"0123456789abcdef0123456789abcdef"}', {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Request-ID': '0123456789abcdef0123456789abcdef'})
+        elif self.path == '/logout-unauthorized-malformed':
+            self.send_body(401, '{"code":"UNAUTHENTICATED","message":"请先登录","requestId":"0123456789abcdef0123456789abcdef"}', {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Request-ID': 'ffffffffffffffffffffffffffffffff'})
         elif self.path == '/logout-200':
             self.send_body(200, '{"unexpected":true}', {'Content-Type': 'application/json', 'Cache-Control': 'no-store'})
         elif self.path == '/logout-slow':
             time.sleep(1.5)
-            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n')
             try: self.wfile.flush()
             except (BrokenPipeError, ConnectionResetError): pass
             self.close_connection = True

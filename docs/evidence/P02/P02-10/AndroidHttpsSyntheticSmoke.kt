@@ -105,7 +105,9 @@ fun main(args: Array<String>) {
         check(empty204Headers["cache-control"] == JsonScalar.Text("no-store"))
         val revokeHit = readHits(hitsFile).drop(beforeRevoke).single()
         check(revokeHit.method == "DELETE" && revokeHit.authorizationPresent && revokeHit.contentLength.isEmpty())
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-content-length-zero", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
         checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-length", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-transfer-encoding", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
         val unframed204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-unframed", method = "DELETE", headersJson = revokeHeaders))
         check(unframed204.ok && unframed204.status == 204 && unframed204.body.isEmpty())
         val keepAliveStarted = System.nanoTime()
@@ -118,7 +120,11 @@ fun main(args: Array<String>) {
         val rejected204Headers = call(registry, request("https://127.0.0.1:$goodPort", "/logout-no-store", method = "DELETE", headersJson = revokeHeaders))
         check(rejected204Headers.ok && rejected204Headers.status == 204 && rejected204Headers.headersJson == "{}")
         val explicit401 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-unauthorized", method = "DELETE", headersJson = revokeHeaders))
-        check(explicit401.ok && explicit401.status == 401 && explicit401.body.contains("UNAUTHENTICATED"))
+        check(explicit401.ok && explicit401.status == 401 && explicit401.body.contains("UNAUTHENTICATED") &&
+            explicit401.headersJson.contains("0123456789abcdef0123456789abcdef"))
+        val malformed401 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-unauthorized-malformed", method = "DELETE", headersJson = revokeHeaders))
+        check(malformed401.ok && malformed401.status == 401 && malformed401.body.contains("0123456789abcdef0123456789abcdef") &&
+            malformed401.headersJson.contains("ffffffffffffffffffffffffffffffff"))
         val non204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-200", method = "DELETE", headersJson = revokeHeaders))
         check(non204.ok && non204.status == 200)
         val lateLogout = call(registry, request("https://127.0.0.1:$goodPort", "/logout-slow", method = "DELETE", headersJson = revokeHeaders,

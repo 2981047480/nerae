@@ -183,20 +183,30 @@ class Handler(BaseHTTPRequestHandler):
         elif route == "/post-size":
             self.send_bytes(200, str(len(body)).encode("ascii"), {"Content-Type": "text/plain"})
         elif route == "/logout-empty":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n")
+        elif route == "/logout-content-length-zero":
             self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+        elif route == "/logout-transfer-encoding":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n")
         elif route == "/logout-body-length":
             self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad")
         elif route == "/logout-body-unframed":
             self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nbad")
         elif route == "/logout-keepalive":
-            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\n\r\n")
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\n\r\n")
             self.close_connection = False
             time.sleep(1.5)
             self.close_connection = True
         elif route == "/logout-no-store":
-            self.raw(b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            self.raw(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n")
         elif route == "/logout-unauthorized":
-            self.send_bytes(401, b'{"code":"UNAUTHENTICATED"}', {"Content-Type": "application/json", "Cache-Control": "no-store"}, close=True)
+            request_id = "0123456789abcdef0123456789abcdef"
+            self.send_bytes(401, (f'{{"code":"UNAUTHENTICATED","message":"请先登录","requestId":"{request_id}"}}').encode(),
+                            {"Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Request-ID": request_id}, close=True)
+        elif route == "/logout-unauthorized-malformed":
+            request_id = "0123456789abcdef0123456789abcdef"
+            self.send_bytes(401, (f'{{"code":"UNAUTHENTICATED","message":"请先登录","requestId":"{request_id}"}}').encode(),
+                            {"Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Request-ID": "f" * 32}, close=True)
         elif route == "/logout-200":
             self.send_bytes(200, b'{"unexpected":true}', {"Content-Type": "application/json", "Cache-Control": "no-store"}, close=True)
         elif route == "/logout-slow":

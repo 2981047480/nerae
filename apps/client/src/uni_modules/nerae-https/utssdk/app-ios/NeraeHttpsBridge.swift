@@ -362,17 +362,11 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
     }
 
     private static func hasValidEmpty204Framing(_ response: HTTPURLResponse) -> Bool {
-        for (rawName, rawValue) in response.allHeaderFields {
+        for rawName in response.allHeaderFields.keys {
             guard let name = rawName as? String else { return false }
             let lower = name.lowercased()
             if lower == "transfer-encoding" { return false }
-            if lower == "content-length" {
-                let text: String
-                if let value = rawValue as? String { text = value }
-                else if let value = rawValue as? NSNumber { text = value.stringValue }
-                else { return false }
-                if text.trimmingCharacters(in: .whitespaces) != "0" { return false }
-            }
+            if lower == "content-length" { return false }
         }
         return response.expectedContentLength <= 0
     }
