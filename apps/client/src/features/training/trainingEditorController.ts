@@ -18,7 +18,7 @@ export interface SecureRecordingIdProvider {
   nextId(): string
 }
 
-export type EditorFailure = 'invalid_input' | 'session_changed' | 'id_unavailable' | 'storage_error' | 'pending' | 'superseded'
+export type EditorFailure = 'invalid_input' | 'session_changed' | 'id_unavailable' | 'storage_error' | 'pending' | 'superseded' | 'closed'
 export type EditorResult =
   | { ok: true; changed: boolean; localStatus: LocalDraftStatus }
   | { ok: false; reason: EditorFailure; changed?: boolean; message?: string; localStatus: LocalDraftStatus }
@@ -41,14 +41,106 @@ export interface InitialDraftStorage extends DraftStorage {
 
 export type CreateTrainingEditorResult =
   | { ok: true; controller: TrainingEditorController }
-  | { ok: false; reason: 'invalid_input' | 'id_unavailable' | 'already_exists' | 'storage_unavailable' | 'session_changed' }
+  | { ok: false; reason: 'invalid_input' | 'id_unavailable' | 'already_exists' | 'already_open' | 'storage_unavailable' | 'session_changed' }
   | { ok: false; reason: 'outcome_unknown'; eventId: string }
 export type AttachTrainingEditorResult =
   | { ok: true; controller: TrainingEditorController }
-  | { ok: false; reason: 'storage_unavailable' | 'session_changed' }
+  | { ok: false; reason: 'storage_unavailable' | 'session_changed' | 'already_open' | 'invalid_input' }
 
 class EditorIDError extends Error {}
 class EditorValidationError extends Error {}
+
+class EditorOwnership {
+  readonly key: string
+  readonly subjectId: string
+  readonly generation: string
+  private readonly auth: AuthLease
+  private active = true
+  private closing = false
+  private inFlight = 0
+  private closePromise?: Promise<void>
+  private resolveClose?: () => void
+
+  constructor(
+    key: string,
+    subjectId: string,
+    generation: string,
+    auth: AuthLease,
+  ) {
+    this.key = key
+    this.subjectId = subjectId
+    this.generation = generation
+    this.auth = auth
+  }
+
+  isCurrent(): boolean {
+    try { return this.auth.isCurrent(this.subjectId, this.generation) }
+    catch { return false }
+  }
+
+  assertActive(): void {
+    if (!this.active || this.closing || editorOwners.get(this.key) !== this || !this.isCurrent()) {
+      throw new Error('编辑器已关闭或登录会话已变化')
+    }
+  }
+
+  begin(): (() => void) | null {
+    if (!this.active || this.closing || editorOwners.get(this.key) !== this || !this.isCurrent()) return null
+    this.inFlight++
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      this.inFlight--
+      if (this.closing && this.inFlight === 0) this.finishClose()
+    }
+  }
+
+  close(): Promise<void> {
+    if (this.closePromise) return this.closePromise
+    this.closing = true
+    this.closePromise = new Promise(resolve => {
+      this.resolveClose = resolve
+      if (this.inFlight === 0) this.finishClose()
+    })
+    return this.closePromise
+  }
+
+  isClosing(): boolean { return this.closing }
+
+  private finishClose(): void {
+    if (!this.active || this.inFlight !== 0) return
+    this.active = false
+    if (editorOwners.get(this.key) === this) editorOwners.delete(this.key)
+    this.resolveClose?.()
+    this.resolveClose = undefined
+  }
+}
+
+// This registry arbitrates editor ownership only in the current JS runtime.
+const editorOwners = new Map<string, EditorOwnership>()
+
+async function acquireEditorOwnership(key: string, subjectId: string, generation: string, auth: AuthLease): Promise<EditorOwnership | null> {
+  for (;;) {
+    const existing = editorOwners.get(key)
+    if (!existing) {
+      const owner = new EditorOwnership(key, subjectId, generation, auth)
+      editorOwners.set(key, owner)
+      return owner
+    }
+    if (existing.isClosing()) {
+      await existing.close()
+      continue
+    }
+    if (existing.isCurrent()) return null
+    await existing.close()
+  }
+}
+
+function draftStorageKey(subjectId: string, clientEventId: string): string {
+  if (!/^[1-9]\d{0,19}$/.test(subjectId) || !validKey(clientEventId)) throw new Error('invalid input')
+  return `nerae.workout.draft.v1.${subjectId}.${clientEventId}`
+}
 
 function validKey(value: unknown): value is string {
   return typeof value === 'string' && Array.from(value).length >= 8 && Array.from(value).length <= 64 && !!value.trim()
@@ -69,15 +161,18 @@ export class TrainingEditorController {
   private readonly local: DraftController
   private readonly ids: SecureRecordingIdProvider
   private readonly now: () => Date
+  private readonly ownership: EditorOwnership
 
   private constructor(
     local: DraftController,
     ids: SecureRecordingIdProvider,
     now: () => Date,
+    ownership: EditorOwnership,
   ) {
     this.local = local
     this.ids = ids
     this.now = now
+    this.ownership = ownership
   }
 
   /** Begin a user-requested local draft and persist the initial empty snapshot. */
@@ -88,35 +183,72 @@ export class TrainingEditorController {
       if (!generation || !options.auth.isCurrent(options.subjectId, generation)) return { ok: false, reason: 'session_changed' }
     } catch { return { ok: false, reason: 'session_changed' } }
     let eventId: string
+    let ownership: EditorOwnership | null = null
+    let release: (() => void) | null = null
+    let handedOff = false
+    let outcome: CreateTrainingEditorResult | undefined
     try {
       try { eventId = options.ids.nextId() } catch { throw new EditorIDError() }
       if (!validKey(eventId)) throw new EditorIDError()
       const today = todayInTimezone(options.timeZone, options.now())
       const draft = createRecordingDraft(eventId, options.date, options.timeZone, today)
       const local = new DraftController(options.subjectId, draft, options.storage, options.now, options.auth)
-      if (typeof options.storage.createIfAbsent !== 'function') return { ok: false, reason: 'storage_unavailable' }
-      // The initial snapshot is inserted by one atomic operation. Never fall
-      // back to DraftController.persist(), which is an unconditional write.
-      const envelope = JSON.stringify({ schema: 1, subjectId: options.subjectId, draft })
-      local.draft // Recheck the captured authenticated lease immediately before the CAS-like create.
-      let result: unknown
-      try { result = await options.storage.createIfAbsent(local.key, envelope) }
-      catch {
-        return this.isCurrent(options, generation)
-          ? { ok: false, reason: 'outcome_unknown', eventId }
-          : { ok: false, reason: 'session_changed' }
+      if (typeof options.storage.createIfAbsent !== 'function') {
+        outcome = { ok: false, reason: 'storage_unavailable' }
+      } else {
+        ownership = await acquireEditorOwnership(local.key, options.subjectId, generation, options.auth)
+        if (!ownership) {
+          outcome = { ok: false, reason: 'already_open' }
+        } else {
+          release = ownership.begin()
+          if (!release) {
+            outcome = ownership.isCurrent()
+              ? { ok: false, reason: 'already_open' }
+              : { ok: false, reason: 'session_changed' }
+          } else {
+            // The initial snapshot is inserted by one atomic operation. Never fall
+            // back to DraftController.persist(), which is an unconditional write.
+            const envelope = JSON.stringify({ schema: 1, subjectId: options.subjectId, draft })
+            local.draft // Recheck the captured authenticated lease immediately before the create.
+            let result: unknown
+            let unknown = false
+            try { result = await options.storage.createIfAbsent(local.key, envelope) }
+            catch { unknown = true }
+
+            if (!this.isCurrent(options, generation) || !ownership.isCurrent()) {
+              outcome = { ok: false, reason: 'session_changed' }
+            } else if (unknown || (result !== 'created' && result !== 'exists')) {
+              outcome = { ok: false, reason: 'outcome_unknown', eventId }
+            } else if (result === 'exists') {
+              outcome = { ok: false, reason: 'already_exists' }
+            } else {
+              // The port's definite `created` result is the persistence acknowledgement.
+              local.status = 'saved_locally'
+              const controller = new TrainingEditorController(local, options.ids, options.now, ownership)
+              handedOff = true
+              outcome = { ok: true, controller }
+            }
+          }
+        }
       }
-      try { local.draft } catch { return { ok: false, reason: 'session_changed' } }
-      if (result === 'exists') return { ok: false, reason: 'already_exists' }
-      if (result !== 'created') return { ok: false, reason: 'outcome_unknown', eventId }
-      // The port's definite `created` result is the persistence acknowledgement;
-      // do not reread by key, which could observe a stale or ambiguous snapshot.
-      local.status = 'saved_locally'
-      return { ok: true, controller: new TrainingEditorController(local, options.ids, options.now) }
     } catch (error) {
-      if (error instanceof EditorIDError) return { ok: false, reason: 'id_unavailable' }
-      return this.isCurrent(options, generation) ? { ok: false, reason: 'invalid_input' } : { ok: false, reason: 'session_changed' }
+      outcome = error instanceof EditorIDError
+        ? { ok: false, reason: 'id_unavailable' }
+        : this.isCurrent(options, generation)
+          ? { ok: false, reason: 'invalid_input' }
+          : { ok: false, reason: 'session_changed' }
+    } finally {
+      release?.()
+      if (ownership && !handedOff) await ownership.close()
     }
+    if (!outcome) return { ok: false, reason: 'storage_unavailable' }
+    // The final lease check runs after ownership cleanup's await. In particular,
+    // never disclose an uncertain event ID to a session that replaced its owner.
+    if (!this.isCurrent(options, generation)) {
+      if (ownership && handedOff) void ownership.close()
+      return { ok: false, reason: 'session_changed' }
+    }
+    return outcome
   }
 
   /** Load and validate the existing envelope under the current auth lease. */
@@ -133,17 +265,54 @@ export class TrainingEditorController {
       generation = auth.generation
       if (!generation || !auth.isCurrent(subjectId, generation)) return { ok: false, reason: 'session_changed' }
     } catch { return { ok: false, reason: 'session_changed' } }
+    let ownership: EditorOwnership | null = null
+    let release: (() => void) | null = null
+    let handedOff = false
+    let outcome: AttachTrainingEditorResult | undefined
     try {
-      const local = await DraftController.load(subjectId, clientEventId, storage, now, auth)
-      if (!auth.isCurrent(subjectId, generation)) return { ok: false, reason: 'session_changed' }
-      try { void local.draft } catch { return { ok: false, reason: 'session_changed' } }
-      return { ok: true, controller: new TrainingEditorController(local, ids, now) }
+      const key = draftStorageKey(subjectId, clientEventId)
+      ownership = await acquireEditorOwnership(key, subjectId, generation, auth)
+      if (!ownership) {
+        outcome = { ok: false, reason: 'already_open' }
+      } else {
+        release = ownership.begin()
+        if (!release) {
+          outcome = ownership.isCurrent()
+            ? { ok: false, reason: 'already_open' }
+            : { ok: false, reason: 'session_changed' }
+        } else {
+          const local = await DraftController.load(subjectId, clientEventId, storage, now, auth)
+          if (!auth.isCurrent(subjectId, generation) || !ownership.isCurrent()) {
+            outcome = { ok: false, reason: 'session_changed' }
+          } else {
+            try { void local.draft }
+            catch { outcome = { ok: false, reason: 'session_changed' } }
+            if (!outcome) {
+              const controller = new TrainingEditorController(local, ids, now, ownership)
+              handedOff = true
+              outcome = { ok: true, controller }
+            }
+          }
+        }
+      }
     } catch {
-      try {
-        if (!auth.isCurrent(subjectId, generation)) return { ok: false, reason: 'session_changed' }
-      } catch { return { ok: false, reason: 'session_changed' } }
-      return { ok: false, reason: 'storage_unavailable' }
+      let current = false
+      try { current = auth.isCurrent(subjectId, generation) } catch { /* fail closed */ }
+      outcome = !current
+        ? { ok: false, reason: 'session_changed' }
+        : ownership ? { ok: false, reason: 'storage_unavailable' } : { ok: false, reason: 'invalid_input' }
+    } finally {
+      release?.()
+      if (ownership && !handedOff) await ownership.close()
     }
+    if (!outcome) return { ok: false, reason: 'storage_unavailable' }
+    let current = false
+    try { current = auth.isCurrent(subjectId, generation) } catch { /* fail closed */ }
+    if (!current) {
+      if (ownership && handedOff) void ownership.close()
+      return { ok: false, reason: 'session_changed' }
+    }
+    return outcome
   }
 
   private static isCurrent(options: NewTrainingEditorOptions, generation: string): boolean {
@@ -152,66 +321,100 @@ export class TrainingEditorController {
     } catch { return false }
   }
 
-  get draft() { return this.local.draft }
+  get draft() {
+    this.ownership.assertActive()
+    return this.local.draft
+  }
   get localStatus(): LocalDraftStatus { return this.local.status }
 
+  /**
+   * Close blocks new edits and releases ownership after in-flight operations settle.
+   * It does not retry or confirm persistence; callers must inspect operation results
+   * and localStatus before leaving. Failed snapshots may only remain in this process.
+   */
+  close(): Promise<void> { return this.ownership.close() }
+
   async setMode(mode: RecordingMode): Promise<EditorResult> {
-    return this.mutate(draft => switchMode(draft, mode))
+    return this.withOwnership(() => this.mutate(draft => switchMode(draft, mode)))
   }
 
   async setDate(date: string): Promise<EditorResult> {
-    try {
-      const current = this.local.draft
-      if (!validDate(date) || date > todayInTimezone(current.timeZone, this.now())) return this.invalid()
-      return await this.mutate(draft => draft.date === date ? draft : { ...draft, date })
-    } catch (error) { return this.failure(error) }
+    return this.withOwnership(async () => {
+      try {
+        const current = this.local.draft
+        if (!validDate(date) || date > todayInTimezone(current.timeZone, this.now())) return this.invalid()
+        return await this.mutate(draft => draft.date === date ? draft : { ...draft, date })
+      } catch (error) { return this.failure(error) }
+    })
   }
 
   async addCustomExercise(name: string, kind: SetKind): Promise<EditorResult> {
-    try {
-      const draft = this.local.draft
-      const entryKey = this.newUniqueKey(draft.exercises.map(item => item.exerciseEntryKey))
-      const recordKeys = draft.exercises.flatMap(item => item.sets.map(set => set.recordKey))
-      const firstRecordKey = this.newUniqueKey(recordKeys)
-      return await this.mutate(current => addExercise(current, entryKey, { source: 'custom', exerciseName: name }, kind, firstRecordKey))
-    } catch (error) { return this.failure(error) }
+    return this.withOwnership(async () => {
+      try {
+        const draft = this.local.draft
+        const entryKey = this.newUniqueKey(draft.exercises.map(item => item.exerciseEntryKey))
+        const recordKeys = draft.exercises.flatMap(item => item.sets.map(set => set.recordKey))
+        const firstRecordKey = this.newUniqueKey(recordKeys)
+        return await this.mutate(current => addExercise(current, entryKey, { source: 'custom', exerciseName: name }, kind, firstRecordKey))
+      } catch (error) { return this.failure(error) }
+    })
   }
 
   async addGroup(exerciseEntryKey: string): Promise<EditorResult> {
-    try {
-      const draft = this.local.draft
-      const key = this.newUniqueKey(draft.exercises.flatMap(item => item.sets.map(set => set.recordKey)))
-      return await this.mutate(current => addSet(current, exerciseEntryKey, key))
-    } catch (error) { return this.failure(error) }
+    return this.withOwnership(async () => {
+      try {
+        const draft = this.local.draft
+        const key = this.newUniqueKey(draft.exercises.flatMap(item => item.sets.map(set => set.recordKey)))
+        return await this.mutate(current => addSet(current, exerciseEntryKey, key))
+      } catch (error) { return this.failure(error) }
+    })
   }
 
   async editGroup(exerciseEntryKey: string, recordKey: string, field: InputField, value: string): Promise<EditorResult> {
-    try {
-      this.findGroup(this.local.draft, exerciseEntryKey, recordKey)
-      return await this.mutate(draft => updateSet(draft, exerciseEntryKey, recordKey, field, value))
-    } catch (error) { return this.failure(error) }
+    return this.withOwnership(async () => {
+      try {
+        this.findGroup(this.local.draft, exerciseEntryKey, recordKey)
+        return await this.mutate(draft => updateSet(draft, exerciseEntryKey, recordKey, field, value))
+      } catch (error) { return this.failure(error) }
+    })
   }
 
   async removeGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
-    try {
-      const draft = this.local.draft
-      const exercise = draft.exercises.find(item => item.exerciseEntryKey === exerciseEntryKey)
-      if (!exercise) return this.invalid()
-      const set = exercise.sets.find(item => item.recordKey === recordKey)
-      if (!set) return this.success(false)
-      if (set.persisted) return this.invalid()
-      return await this.mutate(current => removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
-    } catch (error) { return this.failure(error) }
+    return this.withOwnership(async () => {
+      try {
+        const draft = this.local.draft
+        const exercise = draft.exercises.find(item => item.exerciseEntryKey === exerciseEntryKey)
+        if (!exercise) return this.invalid()
+        const set = exercise.sets.find(item => item.recordKey === recordKey)
+        if (!set) return this.success(false)
+        if (set.persisted) return this.invalid()
+        return await this.mutate(current => removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
+      } catch (error) { return this.failure(error) }
+    })
   }
 
   async confirmGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
-    return this.mutate(draft => {
-      if (draft.mode !== 'per_set') throw new Error('invalid input')
-      this.findGroup(draft, exerciseEntryKey, recordKey)
-      const result = confirmSet(draft, exerciseEntryKey, recordKey)
-      if (!result.ok) throw new EditorValidationError(result.message)
-      return result.draft
-    })
+    return this.withOwnership(() => this.mutate(draft => {
+        if (draft.mode !== 'per_set') throw new Error('invalid input')
+        this.findGroup(draft, exerciseEntryKey, recordKey)
+        const result = confirmSet(draft, exerciseEntryKey, recordKey)
+        if (!result.ok) throw new EditorValidationError(result.message)
+        return result.draft
+      })
+    )
+  }
+
+  private async withOwnership(operation: () => Promise<EditorResult>): Promise<EditorResult> {
+    const release = this.ownership.begin()
+    if (!release) {
+      return {
+        ok: false,
+        reason: this.ownership.isCurrent() ? 'closed' : 'session_changed',
+        localStatus: this.local.status,
+      }
+    }
+    try { return await operation() }
+    finally { release() }
   }
 
   private async mutate(transform: (draft: RecordingDraft) => RecordingDraft): Promise<EditorResult> {

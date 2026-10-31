@@ -5,6 +5,7 @@ import { DraftController } from './draftStorage.ts'
 import { TrainingEditorController } from './trainingEditorController.ts'
 
 const now = () => new Date('2026-10-29T03:00:00Z')
+let freshSequence = 0
 
 function storage({ fail = false } = {}) {
   const data = new Map()
@@ -52,9 +53,12 @@ function createOptions(store, lease, idProvider) {
 }
 
 async function fresh({ store = storage(), lease = authState(), idProvider = ids() } = {}) {
+  const eventId = `fresh-${++freshSequence}-${idProvider.nextId()}`
+  let first = true
+  const scopedIds = { nextId() { if (first) { first = false; return eventId }; return idProvider.nextId() } }
   const created = await TrainingEditorController.create({
     subjectId: '101', date: '2026-10-28', timeZone: 'Asia/Shanghai',
-    storage: store, now, auth: lease.auth, ids: idProvider,
+    storage: store, now, auth: lease.auth, ids: scopedIds,
   })
   assert.equal(created.ok, true, created.ok ? '' : created.reason)
   return { controller: created.controller, store, lease }
@@ -170,7 +174,7 @@ test('persisted groups can be corrected and reconfirmed while deletion stays blo
 
 test('storage failure keeps edited input and reports only local storage status', async () => {
   const store = storage()
-  const { controller } = await fresh({ store, idProvider: ids(['event-0001', 'entry-0001', 'record-001']) })
+  const { controller, lease } = await fresh({ store, idProvider: ids(['event-0001', 'entry-0001', 'record-001']) })
   store.setFail(true)
   const added = await controller.addCustomExercise('深蹲', 'weight')
   assert.equal(added.ok, false)
@@ -181,13 +185,20 @@ test('storage failure keeps edited input and reports only local storage status',
   assert.equal(controller.draft.exercises[0].sets[0].reps, '8')
   assert.equal(controller.localStatus, 'storage_error')
   assert.equal(JSON.stringify(added).includes('sensitive adapter error'), false)
+  const eventId = controller.draft.clientEventId
+  await controller.close()
+  store.setFail(false)
+  const attached = await TrainingEditorController.attach('101', eventId, store, now, lease.auth, ids())
+  assert.equal(attached.ok, true)
+  assert.equal(attached.controller.draft.exercises[0].sets[0].reps, '8')
+  await attached.controller.close()
 })
 
 test('session switch blocks reads and edits without exposing the prior draft', async () => {
   const lease = authState()
   const { controller } = await fresh({ lease })
   lease.switchTo('202', 'login-2')
-  assert.throws(() => controller.draft, /账号已变化/)
+  assert.throws(() => controller.draft, /登录会话已变化/)
   const result = await controller.setMode('per_set')
   assert.equal(result.ok, false)
   assert.equal(result.reason, 'session_changed')
@@ -243,8 +254,8 @@ test('concurrent same-ID creates have one atomic winner and never overwrite it',
   const second = TrainingEditorController.create(createOptions(store, lease, ids(['event-race01'])))
   const results = await Promise.all([first, second])
   assert.equal(results.filter(result => result.ok).length, 1)
-  assert.equal(results.filter(result => !result.ok && result.reason === 'already_exists').length, 1)
-  assert.equal(store.writes, 2)
+  assert.equal(results.filter(result => !result.ok && result.reason === 'already_open').length, 1)
+  assert.equal(store.writes, 1)
   const saved = JSON.parse(store.data.get('nerae.workout.draft.v1.101.event-race01'))
   assert.equal(saved.draft.clientEventId, 'event-race01')
 })
@@ -267,6 +278,23 @@ test('commit-then-throw is unknown, returns no controller, and preserves the pos
   assert.equal(retry.ok, true)
   assert.equal(retry.controller.draft.clientEventId, first.eventId)
   assert.equal(store.data.get('nerae.workout.draft.v1.101.event-unknown1'), possible)
+})
+
+test('unknown create outcome hides its event ID if the lease changes during ownership cleanup', async () => {
+  const store = storage()
+  const state = { generation: 'login-1', checks: 0 }
+  const lease = { auth: {
+    get generation() { return state.generation },
+    isCurrent(subjectId, generation) {
+      state.checks++
+      if (state.checks === 5) queueMicrotask(() => { state.generation = 'login-2' })
+      return subjectId === '101' && generation === state.generation
+    },
+  } }
+  store.createIfAbsent = async () => { throw new Error('unknown commit result') }
+  const result = await TrainingEditorController.create(createOptions(store, lease, ids(['event-hideid1'])))
+  assert.deepEqual(result, { ok: false, reason: 'session_changed' })
+  assert.equal('eventId' in result, false)
 })
 
 test('session change during atomic creation fails closed and preserves a committed candidate', async () => {
@@ -297,10 +325,19 @@ test('plain read/write storage without atomic createIfAbsent cannot start a new 
 test('attach rejects unavailable or malformed stored envelopes without returning raw errors', async () => {
   const lease = authState()
   const store = storage()
-  store.read = async () => { throw new Error('private storage detail') }
+  const draft = createRecordingDraft('event-missing1', '2026-10-28', 'Asia/Shanghai', '2026-10-29')
+  store.data.set('nerae.workout.draft.v1.101.event-missing1', JSON.stringify({ schema: 1, subjectId: '101', draft }))
+  let failOnce = true
+  store.read = async key => {
+    if (failOnce) { failOnce = false; throw new Error('private storage detail') }
+    return store.data.get(key)
+  }
   const result = await TrainingEditorController.attach('101', 'event-missing1', store, now, lease.auth, ids())
   assert.deepEqual(result, { ok: false, reason: 'storage_unavailable' })
   assert.equal(JSON.stringify(result).includes('private storage detail'), false)
+  const recovered = await TrainingEditorController.attach('101', 'event-missing1', store, now, lease.auth, ids())
+  assert.equal(recovered.ok, true)
+  await recovered.controller.close()
   const noRecord = await TrainingEditorController.attach('101', 'event-missing2', storage(), now, lease.auth, ids())
   assert.deepEqual(noRecord, { ok: false, reason: 'storage_unavailable' })
 })
@@ -328,18 +365,122 @@ test('atomic create adapter must return the exact success marker before a contro
   assert.equal(store.data.size, 0)
 })
 
-test('known limitation: independently attached controllers overwrite rather than merge snapshots', async () => {
+test('editor ownership rejects a second attach while the existing controller is open', async () => {
   const store = storage()
   const lease = authState()
   const created = await TrainingEditorController.create(createOptions(store, lease, ids(['event-shared1'])))
   assert.equal(created.ok, true)
-  const first = created.controller
   const attached = await TrainingEditorController.attach('101', 'event-shared1', store, now, lease.auth, ids())
+  assert.deepEqual(attached, { ok: false, reason: 'already_open' })
+  await created.controller.close()
+  const afterClose = await TrainingEditorController.attach('101', 'event-shared1', store, now, lease.auth, ids())
+  assert.equal(afterClose.ok, true)
+  await afterClose.controller.close()
+})
+
+test('create holds ownership against a concurrent attach until its atomic insert resolves', async () => {
+  const store = storage()
+  const lease = authState()
+  const original = store.createIfAbsent.bind(store)
+  let started
+  const startedPromise = new Promise(resolve => { started = resolve })
+  let commit
+  store.createIfAbsent = (key, value) => new Promise(resolve => {
+    started()
+    commit = async () => resolve(await original(key, value))
+  })
+  const creating = TrainingEditorController.create(createOptions(store, lease, ids(['event-raceattach1'])))
+  await startedPromise
+  const concurrentAttach = await TrainingEditorController.attach('101', 'event-raceattach1', store, now, lease.auth, ids())
+  assert.deepEqual(concurrentAttach, { ok: false, reason: 'already_open' })
+  await commit()
+  const created = await creating
+  assert.equal(created.ok, true)
+  await created.controller.close()
+})
+
+test('failed exists result releases ownership so a later attach can recover the old draft', async () => {
+  const store = storage()
+  const lease = authState()
+  const draft = createRecordingDraft('event-lockfail1', '2026-10-28', 'Asia/Shanghai', '2026-10-29')
+  const key = 'nerae.workout.draft.v1.101.event-lockfail1'
+  const original = JSON.stringify({ schema: 1, subjectId: '101', draft })
+  store.data.set(key, original)
+  const failed = await TrainingEditorController.create(createOptions(store, lease, ids(['event-lockfail1'])))
+  assert.deepEqual(failed, { ok: false, reason: 'already_exists' })
+  assert.equal(store.data.get(key), original)
+  const attached = await TrainingEditorController.attach('101', 'event-lockfail1', store, now, lease.auth, ids())
   assert.equal(attached.ok, true)
-  const second = attached.controller
-  assert.equal((await first.addCustomExercise('深蹲', 'weight')).ok, true)
-  assert.equal((await second.addCustomExercise('硬拉', 'weight')).ok, true)
-  const persisted = JSON.parse(store.data.get('nerae.workout.draft.v1.101.event-shared1'))
+  await attached.controller.close()
+})
+
+test('close waits for in-flight writes, blocks new operations, and is idempotent', async () => {
+  const { controller, store, lease } = await fresh()
+  const eventId = controller.draft.clientEventId
+  let startWrite
+  const writeStarted = new Promise(resolve => { startWrite = resolve })
+  let finishWrite
+  store.write = (key, value) => new Promise(resolve => {
+    startWrite()
+    finishWrite = () => { store.data.set(key, value); resolve() }
+  })
+  const editing = controller.setMode('per_set')
+  await writeStarted
+  let closeResolved = false
+  const closeOne = controller.close().then(() => { closeResolved = true })
+  const closeTwo = controller.close()
+  assert.equal((await controller.setMode('after_workout')).reason, 'closed')
+  assert.equal(closeResolved, false)
+  finishWrite()
+  assert.equal((await editing).ok, true)
+  await Promise.all([closeOne, closeTwo])
+  assert.equal(closeResolved, true)
+  assert.equal((await controller.setMode('after_workout')).reason, 'closed')
+  assert.throws(() => controller.draft, /编辑器已关闭/)
+  const attached = await TrainingEditorController.attach('101', eventId, store, now, lease.auth, ids())
+  assert.equal(attached.ok, true)
+  await attached.controller.close()
+})
+
+test('new login takes stale ownership only after the previous generation write settles', async () => {
+  const lease = authState()
+  const { controller, store } = await fresh({ lease, idProvider: ids(['event-generation1']) })
+  const eventId = controller.draft.clientEventId
+  let startWrite
+  const writeStarted = new Promise(resolve => { startWrite = resolve })
+  let finishWrite
+  store.write = (key, value) => new Promise(resolve => {
+    startWrite()
+    finishWrite = () => { store.data.set(key, value); resolve() }
+  })
+  const oldEdit = controller.setMode('per_set')
+  await writeStarted
+  lease.switchTo('202', 'login-2')
+  lease.switchTo('101', 'login-3')
+  let recovered = false
+  const attaching = TrainingEditorController.attach('101', eventId, store, now, lease.auth, ids())
+    .then(result => { recovered = true; return result })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(recovered, false)
+  finishWrite()
+  assert.equal((await oldEdit).reason, 'session_changed')
+  const attached = await attaching
+  assert.equal(attached.ok, true)
+  assert.equal(attached.controller.draft.mode, 'per_set')
+  await attached.controller.close()
+})
+
+test('public low-level DraftController remains a documented ownership bypass', async () => {
+  const store = storage()
+  const lease = authState()
+  const created = await TrainingEditorController.create(createOptions(store, lease, ids(['event-bypass1'])))
+  assert.equal(created.ok, true)
+  const rawDraft = addExercise(createRecordingDraft('event-bypass1', '2026-10-28', 'Asia/Shanghai', '2026-10-29'),
+    'entry-bypass1', { source: 'custom', exerciseName: '硬拉' }, 'weight', 'record-bypass1')
+  const bypass = new DraftController('101', rawDraft, store, now, lease.auth)
+  assert.equal(await bypass.persist(), true)
+  const persisted = JSON.parse(store.data.get('nerae.workout.draft.v1.101.event-bypass1'))
   assert.deepEqual(persisted.draft.exercises.map(exercise => exercise.identity.exerciseName), ['硬拉'])
-  assert.deepEqual(first.draft.exercises.map(exercise => exercise.identity.exerciseName), ['深蹲'])
+  assert.equal(created.controller.draft.exercises.length, 0)
+  await created.controller.close()
 })
