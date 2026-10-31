@@ -30,6 +30,10 @@ The adapter now rejects parsed JSON strings and object keys containing lone UTF-
 
 The adapter mirrors statically checkable write rules from `api/openapi.yaml` and `RecordingApi`: required/forbidden metrics by set kind, completed actual groups, weight and RPE decimal-place bounds after canonical JSON parsing, unique updated record keys, unique set indexes within an updated entry, touched entries present in the supplied order, disjoint delete/update keys, restores represented by set payloads, and the 200 combined sets-plus-deletes batch limit. It cannot determine whether a restore key is actually deleted in this session, whether a record key was used historically, or whether unchanged server groups make the full target order valid. Those require the authenticated server snapshot/domain checks; this journal adapter does not make them replay-safe.
 
+## Decimal precision guard follow-up (8e93cd0-based fix)
+
+The precision check now counts fractional digits from `JSON.stringify(number)`, including any exponent adjustment, instead of applying a floating-point epsilon. This is consistent with the adapter's existing requirement that the request body exactly match its canonical `JSON.stringify` form. Regression coverage accepts `42.5`, `12.55`, and `7.5`, rejects `42.50000000005` and `7.500000000005`, rejects a noncanonical `42.5e0` body spelling, and rejects canonical exponent-form numbers that fall outside the allowed weight range. This remains a client-side shape guard; the server's exact decimal validation remains authoritative.
+
 Verification in the isolated worktree:
 
 ```sh

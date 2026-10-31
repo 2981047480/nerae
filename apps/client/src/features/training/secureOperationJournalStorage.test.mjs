@@ -177,6 +177,7 @@ test('enforces kind-specific required and forbidden metrics, decimal precision, 
   const base = { recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1, completed: true }
   const valid = [
     { ...base, kind: 'weight', weightKg: 42.5, reps: 8, rpe: 7.5 },
+    { ...base, kind: 'weight', weightKg: 12.55, reps: 8, rpe: 7.5 },
     { ...base, kind: 'perSide', weightKg: 20, reps: 8 },
     { ...base, kind: 'bodyweight', reps: 12 },
     { ...base, kind: 'bodyweightPerSide', reps: 12 },
@@ -192,6 +193,8 @@ test('enforces kind-specific required and forbidden metrics, decimal precision, 
   const invalid = [
     { ...base, kind: 'weight', reps: 8 },
     { ...base, kind: 'weight', weightKg: 42.501, reps: 8 },
+    { ...base, kind: 'weight', weightKg: 42.50000000005, reps: 8 },
+    { ...base, kind: 'weight', weightKg: 12.55, reps: 8, rpe: 7.500000000005 },
     { ...base, kind: 'weight', weightKg: 42.5, reps: 8, seconds: 30 },
     { ...base, kind: 'bodyweight', reps: 8, weightKg: 0 },
     { ...base, kind: 'breath', seconds: 30 },
@@ -206,6 +209,23 @@ test('enforces kind-specific required and forbidden metrics, decimal precision, 
     const backend = native()
     await assert.rejects(makeStore(backend).createIfAbsent(registryKey('101', event), operation('101', event, 1, '/me/sessions/55/sets', body)),
       error => error.code === 'invalid_operation')
+    assert.equal(backend.calls, 0)
+  }
+})
+
+test('rejects noncanonical exponent spellings and canonical exponential numbers outside bounds', async () => {
+  const base = { recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', kind: 'weight', setIndex: 1, reps: 8, completed: true }
+  const rawExponentBody = '{"expectedVersion":1,"exerciseEntryKeys":["entry-0001"],"sets":[{"recordKey":"record-001","exerciseEntryKey":"entry-0001","exerciseName":"深蹲","kind":"weight","setIndex":1,"weightKg":42.5e0,"reps":8,"completed":true}]}'
+  const rawBackend = native()
+  await assert.rejects(makeStore(rawBackend).createIfAbsent(registryKey('101', 'event-0001'),
+    operation('101', 'event-0001', 1, '/me/sessions/55/sets', rawExponentBody)), error => error.code === 'invalid_operation')
+  assert.equal(rawBackend.calls, 0)
+
+  for (const weightKg of [1e-7, 1e21]) {
+    const body = JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{ ...base, weightKg }] })
+    const backend = native()
+    await assert.rejects(makeStore(backend).createIfAbsent(registryKey('101', 'event-0002'),
+      operation('101', 'event-0002', 1, '/me/sessions/55/sets', body)), error => error.code === 'invalid_operation')
     assert.equal(backend.calls, 0)
   }
 })

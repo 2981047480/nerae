@@ -180,8 +180,19 @@ function validPositiveInteger(value: unknown): value is number {
 }
 
 function validDecimalPlaces(value: number, places: number): boolean {
-  const scaled = value * 10 ** places
-  return Math.abs(scaled - Math.round(scaled)) < 1e-8
+  if (!Number.isFinite(value) || !Number.isSafeInteger(places) || places < 0) return false
+  // Operation bodies must already be canonical JSON (checked above), so the
+  // ECMAScript JSON number serialization is the exact decimal representation
+  // whose precision we need to bound. Do not use a floating-point epsilon:
+  // that can admit values with extra decimal places near an allowed value.
+  const decimal = JSON.stringify(value)
+  if (typeof decimal !== 'string') return false
+  const match = /^-?(?:\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(decimal)
+  if (!match) return false
+  const fractionalDigits = match[1]?.length ?? 0
+  const exponent = match[2] === undefined ? 0 : Number(match[2])
+  if (!Number.isSafeInteger(exponent)) return false
+  return fractionalDigits - exponent <= places
 }
 
 function validNumericId(value: unknown): value is string {
