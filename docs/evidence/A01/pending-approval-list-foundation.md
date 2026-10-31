@@ -22,6 +22,8 @@ Command: `PYTHONDONTWRITEBYTECODE=1 python3 -B docs/evidence/A01/A01-09/mysql_sm
 
 A compile-only check also passed: `GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOMODCACHE=/private/tmp/nerae-go-api-mod GOCACHE=/private/tmp/nerae-go-api-cache go test ./internal/modules/auth/approval -run '^$' -count=1`.
 
+Lead integration recheck on `69417e1`: the same `PYTHONDONTWRITEBYTECODE=1 python3 -B docs/evidence/A01/A01-09/mysql_smoke.py` command exited 0 in the authorized local environment. The isolated socket-only MySQL harness ran all three approval integration tests under `go test -race`, including the list assertions, and removed only its own successful temporary database directory. This remains an internal primitive, not a real provider or HTTP test.
+
 ## Limitations
 
 - No HTTP route, client, cross-identity decision path, or full confirmation product flow is implemented.

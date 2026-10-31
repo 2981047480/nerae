@@ -4,6 +4,7 @@
 
 - App 端已组合原生 HTTPS、设备身份与签名、邮箱登录、会话和版本化成年声明；合成端口测试与 5.26 原生源码生成通过，账号切换/退出时清理登录临时状态。正式入口页面、线上路由、真实邮件、设备批准和真机仍未接通。[证据](evidence/A01/app-auth-runtime.md)
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
+- 同主体待批准设备列表的内部数据库组件已合入，并在集成树私有 MySQL/race 复测通过；尚未挂 HTTP，跨身份批准和可恢复兑换也未完成，不能据此宣称双设备登录可用。[证据](evidence/A01/pending-approval-list-foundation.md)
 - 隔离服务已在同一测试 HTTP 装配中串起邮箱发信、登录、成年声明和训练创建/组写入/读取/完成；同键重放、无权账号读写及撤销后的拒绝通过。两种页面模式和真实双设备未在此测试，生产进程仍未挂载业务路由。[证据](evidence/A01/A01-24/report.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽，支持单进程内 CAS；合成 Swift/Kotlin 检查与 App UTS 源码生成通过。它尚无完整队列、账号生命周期、进程重启后的重放或跨设备同步。[证据](evidence/P02/P02-13/report.md)
 - App 原生和 uni-app 训练请求端口现可保留白名单响应头，供未来核验幂等有效期与请求标识；尚未据此结算待发操作。[证据](evidence/U02/U02-01/recording-response-headers.md) 可信代理来源 IP 解析器已局部测试但未连接服务；上线仍须限制后端监听并实测代理覆盖专用头。[证据](evidence/A01/trusted-source-ip-resolver.md)
