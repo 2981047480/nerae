@@ -39,6 +39,8 @@ type idemActor struct {
 	sessionID string
 }
 
+var nextIdemEmail atomic.Uint64
+
 const testInsertEffectSQL = `INSERT INTO idempotency_test_effect (event_id,actor_id,method,route,payload) VALUES (?,?,?,?,?)`
 const testLockResourceSQL = `SELECT owner_id, revoked FROM idempotency_test_resource WHERE resource_id = ? FOR UPDATE`
 
@@ -50,7 +52,6 @@ type idemFixture struct {
 	sessions   *session.Store
 	challenges *challenge.Store
 	codec      *session.TokenCodec
-	nextEmail  atomic.Uint64
 }
 
 func openIdempotencyDB(t *testing.T) *sql.DB {
@@ -212,7 +213,7 @@ func (f *idemFixture) actor(t *testing.T) idemActor {
 	if err != nil {
 		t.Fatal("could not generate challenge nonce")
 	}
-	email := fmt.Sprintf("idempotency-%d@example.test", f.nextEmail.Add(1))
+	email := fmt.Sprintf("idempotency-%d@example.test", nextIdemEmail.Add(1))
 	issueTx, err := f.db.BeginTx(f.ctx, nil)
 	if err != nil {
 		t.Fatal("could not begin challenge issuance")
@@ -240,7 +241,7 @@ func (f *idemFixture) actor(t *testing.T) idemActor {
 	issued, err := f.sessions.IssueEmail(f.ctx, loginTx, attempt.Proof)
 	if err != nil {
 		_ = loginTx.Rollback()
-		t.Fatal("could not issue synthetic authenticated session")
+		t.Fatalf("could not issue synthetic authenticated session: %v", err)
 	}
 	if err := loginTx.Commit(); err != nil {
 		t.Fatal("could not commit synthetic session")
@@ -326,6 +327,9 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 	other := f.actor(t)
 
 	t.Run("purge deletes only expired terminal rows within batch limit", func(t *testing.T) {
+		if _, err := f.db.ExecContext(f.ctx, `DELETE FROM transport_idempotency_record`); err != nil {
+			t.Fatal("could not isolate purge records in the private test database")
+		}
 		defer func() { f.store.now = time.Now }()
 		purgeActor := f.actor(t)
 		baseTime := time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -379,6 +383,9 @@ func TestAuthenticatedIdempotencyTransactions(t *testing.T) {
 	})
 
 	t.Run("purge waits for expired-key refresh and preserves renewed result", func(t *testing.T) {
+		if _, err := f.db.ExecContext(f.ctx, `DELETE FROM transport_idempotency_record`); err != nil {
+			t.Fatal("could not isolate purge records in the private test database")
+		}
 		defer func() { f.store.now = time.Now }()
 		purgeActor := f.actor(t)
 		req := idemRequest("POST", "/synthetic/purge/refresh-during-delete", "PurgeRefreshKey-01", []byte(`{"refresh":true}`))

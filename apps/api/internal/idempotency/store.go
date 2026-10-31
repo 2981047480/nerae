@@ -468,7 +468,7 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 		if state == "processing" {
 			return Result{}, ErrInProgress
 		}
-		if !savedStatus.Valid || statusState(int(savedStatus.Int64)) == "" || statusState(int(savedStatus.Int64)) != state || string(keyID) != s.keyID || !validRef(string(ref)) {
+		if !validCompletedMetadata(state, savedStatus, keyID, ref, s.keyID) {
 			return Result{}, ErrUnavailable
 		}
 		live, err := principal.ForTransaction(ctx, tx)
@@ -479,14 +479,10 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 		if err := authorize(ctx, readView, currentActor, string(ref), int(savedStatus.Int64)); err != nil {
 			return Result{}, authorizeError(err)
 		}
-		body, err := s.open(encrypted, associated(before.SubjectID, request, digest, int(savedStatus.Int64), string(ref), savedExpiry))
+		result, err = s.decodeCompleted(before.SubjectID, request, digest, state, savedStatus, encrypted, keyID, ref, savedExpiry)
 		if err != nil {
-			return Result{}, ErrUnavailable
+			return Result{}, err
 		}
-		if s.validateResult != nil && s.validateResult(int(savedStatus.Int64), string(ref), append([]byte(nil), body...)) != nil {
-			return Result{}, ErrUnavailable
-		}
-		result = Result{Status: int(savedStatus.Int64), Body: body, ResultRef: string(ref), ExpiresAt: savedExpiry, Replayed: true}
 	}
 	after, err := principal.ForTransaction(ctx, tx)
 	if err != nil || after.SubjectID != before.SubjectID || after.AgeVerified != currentActor.ageVerified {
