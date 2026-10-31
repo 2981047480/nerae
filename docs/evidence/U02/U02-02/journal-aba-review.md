@@ -35,3 +35,20 @@ value-only CAS. The current single-slot revision interface does not expose that
 history, so this task must stop before wiring versioned snapshots into
 `beginSend`; the existing dispatch can be replayed only after that native seam
 is separately designed. No journal success receipt is settled or deleted.
+
+## Server-side limits on an exact retry
+
+Static review found additional business guards: free-session creation is unique
+per subject and client event, while effective set updates and completion advance
+the expected session version. These guards can prevent duplicate business
+effects when the exact original event/body/version is submitted again; changing
+an event or record key, or constructing a new finish request at a newer version,
+is a new mutation and is not covered by that conclusion. A repeated completion
+at a newer version can update its confirmation time.
+
+Transport receipts can expire and their key can later be reused for execution;
+the replay-only endpoint returns unavailable for a missing/expired receipt. A
+fresh private MySQL test of original write → expired receipt → exact write
+retry, including unchanged rows, version and completion time, remains needed.
+This static review is not evidence that device recovery or cross-device sync
+works, and does not remove the client-side stale-permit blocker above.
