@@ -38,7 +38,7 @@ export type AppNativeHttpsPorts = {
 
 const maxBodyBytes = 4 * 1024 * 1024
 const maxHeadersBytes = 20 * 1024
-const responseHeaderNames = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at'])
+const responseHeaderNames = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at', 'idempotency-replayed'])
 const requestHeaderNames = new Set(['accept', 'authorization', 'cache-control', 'content-type', 'idempotency-key', 'x-request-id'])
 const failureCodes = new Set<HttpsErrorCode>([
   'unsupported_platform', 'invalid_configuration', 'invalid_request', 'network', 'timeout',
@@ -196,6 +196,7 @@ function responseHeaders(raw: unknown): Readonly<Record<string, string>> {
       !wellFormed(headerValue) || utf8ByteLength(headerValue) > 8192 || /[\u0000-\u001f\u007f]/.test(headerValue)) {
       throw new TransportFailure('invalid_response')
     }
+    if (lower === 'idempotency-replayed' && headerValue !== 'true') throw new TransportFailure('invalid_response')
     names.add(lower)
     Object.defineProperty(result, name, { value: headerValue, enumerable: true, configurable: true, writable: true })
   }

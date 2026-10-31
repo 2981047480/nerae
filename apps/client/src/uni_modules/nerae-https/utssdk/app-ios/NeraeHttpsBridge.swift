@@ -10,7 +10,7 @@ public final class NeraeHttpsBridge: NSObject {
     private static let maxBodyBytes = 4 * 1024 * 1024
     private static let maxConcurrentRequests = 8
     fileprivate static let responseHeaderNames: Set<String> = [
-        "content-type", "cache-control", "x-request-id", "idempotency-key-expires-at"
+        "content-type", "cache-control", "x-request-id", "idempotency-key-expires-at", "idempotency-replayed"
     ]
     #if NERAE_HTTPS_TESTING
     private static var testAnchor: Data?
@@ -329,8 +329,12 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
             finish(error: "invalid_response")
             return
         }
+        guard let safeHeaders = Self.safeHeaders(http) else {
+            finish(error: "invalid_response")
+            return
+        }
         finish(response: HttpsWire.success(id: id, status: http.statusCode,
-                                           headers: Self.safeHeaders(http), body: bodyText))
+                                           headers: safeHeaders, body: bodyText))
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
@@ -347,16 +351,20 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
     }
     #endif
 
-    private static func safeHeaders(_ response: HTTPURLResponse) -> [String: String] {
+    private static func safeHeaders(_ response: HTTPURLResponse) -> [String: String]? {
         var result: [String: String] = [:]
         var size = 0
         for (rawName, rawValue) in response.allHeaderFields {
-            guard let name = rawName as? String, let value = rawValue as? String,
-                  NeraeHttpsBridge.responseHeaderNames.contains(name.lowercased()),
-                  !value.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else { continue }
+            guard let name = rawName as? String else { continue }
+            let lowerName = name.lowercased()
+            guard NeraeHttpsBridge.responseHeaderNames.contains(lowerName) else { continue }
+            guard let value = rawValue as? String,
+                  !value.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else { return nil }
+            guard result[lowerName] == nil else { return nil }
+            if lowerName == "idempotency-replayed" && value != "true" { return nil }
             size += name.utf8.count + value.utf8.count
-            guard size <= 8 * 1024 else { return [:] }
-            result[name.lowercased()] = value
+            guard size <= 8 * 1024 else { return nil }
+            result[lowerName] = value
         }
         return result
     }

@@ -46,6 +46,12 @@ fun main(args: Array<String>) {
         check(success.headersJson.contains("content-type"))
         assertWireShape(success)
 
+        val replayMarker = call(registry, request("https://127.0.0.1:$goodPort", "/replay-marker"))
+        check(replayMarker.ok && replayMarker.status == 503)
+        check(StrictJson.parseFlatObject(replayMarker.headersJson, 2048, null)["idempotency-replayed"] == JsonScalar.Text("true"))
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/replay-marker-malformed")), "invalid_response")
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/replay-marker-duplicate")), "invalid_response")
+
         check(call(registry, request("https://127.0.0.1:$goodPort", "/success", timeoutMs = 1_000,
             timeoutLexeme = "1000.0")).ok)
         check(call(registry, request("https://127.0.0.1:$goodPort", "/success", timeoutMs = 120_000,

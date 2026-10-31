@@ -47,6 +47,9 @@ if anchorPath != "-", let anchor = try? Data(contentsOf: URL(fileURLWithPath: an
 let path: String
 switch mode {
 case "success", "invalidHeader", "requestTooLarge", "requestAtLimit": path = mode == "requestTooLarge" || mode == "requestAtLimit" ? "/post-size" : "/success?probe=ok"
+case "replayMarker": path = "/replay-marker"
+case "malformedReplayMarker": path = "/replay-marker-malformed"
+case "duplicateReplayMarker": path = "/replay-marker-duplicate"
 case "revoke": path = "/logout-empty"
 case "revokeContentLengthZero": path = "/logout-content-length-zero"
 case "revokeTransferEncoding": path = "/logout-transfer-encoding"

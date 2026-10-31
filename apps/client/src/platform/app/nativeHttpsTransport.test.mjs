@@ -47,6 +47,41 @@ test('recording request preserves raw body, caller idempotency key and method', 
   assert.equal(Object.isFrozen(response.headers), true)
 })
 
+test('recording transport preserves only an exact replay marker without treating it as success', async () => {
+  const ports = make((request, callbacks) => {
+    callbacks.success(ok('replay-503', 503,
+      '{"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","requestId":"0123456789abcdef0123456789abcdef"}',
+      '{"content-type":"application/json","idempotency-replayed":"true"}'))
+    return 'replay-503'
+  })
+  const response = await ports.recordingRequest({
+    url: 'https://api.example.test/v1/me/sessions/101/sets', method: 'POST',
+    header: { Authorization: 'Bearer test-token', 'Idempotency-Key': 'caller-key-abcdef12' },
+    data: '{"expectedVersion":4,"sets":[]}',
+  })
+  assert.equal(response.statusCode, 503)
+  assert.equal(response.headers['idempotency-replayed'], 'true')
+})
+
+test('recording transport fails closed on malformed or duplicate replay markers', async () => {
+  for (const headersJson of [
+    '{"idempotency-replayed":"TRUE"}',
+    '{"idempotency-replayed":"false"}',
+    '{"idempotency-replayed":" true"}',
+    '{"idempotency-replayed":"true "}',
+    '{"idempotency-replayed":"true","idempotency-replayed":"true"}',
+    '{"idempotency-replayed":"true","Idempotency-Replayed":"true"}',
+  ]) {
+    const ports = make((request, callbacks) => {
+      callbacks.success(ok('bad-replay-marker', 200, '{"ok":true}', headersJson))
+      return 'bad-replay-marker'
+    })
+    await assert.rejects(ports.recordingRequest({
+      url: 'https://api.example.test/v1/me/sessions', method: 'POST', header: {}, data: '{}',
+    }), error => error instanceof RecordingApiError && error.code === 'invalid_response')
+  }
+})
+
 test('current-session revoke uses same-origin bearer DELETE with no body and accepts only no-store empty 204', async () => {
   let sent
   const ports = make((request, callbacks) => {

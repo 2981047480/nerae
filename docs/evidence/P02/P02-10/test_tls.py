@@ -25,6 +25,11 @@ assert ok['ok'] and ok['status'] == 200 and json.loads(ok['body']) == {'ok': Tru
 required_wire_fields = {'ok', 'requestId', 'status', 'headersJson', 'body', 'code'}
 assert set(ok) == required_wire_fields and ok['code'] == ''
 assert isinstance(json.loads(ok['headersJson']), dict)
+replay_marker = run('replayMarker')
+assert replay_marker['ok'] and replay_marker['status'] == 503
+assert json.loads(replay_marker['headersJson'])['idempotency-replayed'] == 'true'
+assert run('malformedReplayMarker')['code'] == 'invalid_response'
+assert run('duplicateReplayMarker')['code'] == 'invalid_response'
 wire_failure = run('invalidHeader')
 assert not wire_failure['ok'] and set(wire_failure) == required_wire_fields
 assert wire_failure['status'] == 0 and wire_failure['headersJson'] == '{}' and wire_failure['body'] == ''

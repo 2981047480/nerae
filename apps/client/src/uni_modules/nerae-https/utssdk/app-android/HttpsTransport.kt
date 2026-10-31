@@ -51,7 +51,7 @@ internal object HttpsTransport {
     private const val READ_BUFFER_BYTES = 8 * 1024
 
     private val responseHeaderAllowlist = setOf(
-        "content-type", "cache-control", "x-request-id", "idempotency-key-expires-at"
+        "content-type", "cache-control", "x-request-id", "idempotency-key-expires-at", "idempotency-replayed"
     )
 
     fun execute(
@@ -147,6 +147,7 @@ internal object HttpsTransport {
             val lower = name.lowercase(Locale.ROOT)
             val value = line.substring(colon + 1).trim(' ')
             if (!value.all { it.code in 0x20..0x7e }) throw HttpsFailure("invalid_response")
+            if (lower == "idempotency-replayed" && value != "true") throw HttpsFailure("invalid_response")
             if (lower != "set-cookie" && !seenNames.add(lower)) throw HttpsFailure("invalid_response")
             if (lower == "set-cookie") continue
             headers[lower] = value

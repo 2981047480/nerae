@@ -127,6 +127,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if route == "/success":
             self.send_bytes(200, b'{"ok":true}', {"Content-Type": "application/json", "X-Request-ID": "synthetic"})
+        elif route == "/replay-marker":
+            self.send_bytes(503, '{"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","requestId":"0123456789abcdef0123456789abcdef"}'.encode("utf-8"),
+                            {"Content-Type": "application/json", "Idempotency-Replayed": "true"})
+        elif route == "/replay-marker-malformed":
+            self.send_bytes(200, b'{"ok":true}', {"Idempotency-Replayed": "TRUE"})
+        elif route == "/replay-marker-duplicate":
+            self.raw(b"HTTP/1.1 200 OK\r\nIdempotency-Replayed: true\r\nIdempotency-Replayed: true\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
         elif route == "/inspect":
             body = json.dumps({
                 "acceptEncoding": self.headers.get("Accept-Encoding", ""),

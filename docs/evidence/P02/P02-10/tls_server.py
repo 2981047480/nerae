@@ -36,6 +36,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             out.write(self.path + '\n')
         if self.path.startswith('/success'):
             self.send_body(200, '{"ok":true}', {'Content-Type': 'application/json', 'Cache-Control': 'no-store'})
+        elif self.path == '/replay-marker':
+            self.send_body(503, '{"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","requestId":"0123456789abcdef0123456789abcdef"}',
+                           {'Content-Type': 'application/json', 'Idempotency-Replayed': 'true'})
+        elif self.path == '/replay-marker-malformed':
+            self.send_body(200, '{"ok":true}', {'Idempotency-Replayed': 'TRUE'})
+        elif self.path == '/replay-marker-duplicate':
+            self.close_connection = True
+            self.wfile.write(b'HTTP/1.1 200 OK\r\nIdempotency-Replayed: true\r\nIdempotency-Replayed: true\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok')
+            self.wfile.flush()
         elif self.path == '/inspect':
             body = json.dumps({'cacheControl': self.headers.get('Cache-Control'),
                                'authorizationPresent': self.headers.get('Authorization') == 'Bearer synthetic-probe',
