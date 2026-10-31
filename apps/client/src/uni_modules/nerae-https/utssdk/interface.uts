@@ -8,7 +8,7 @@ export type HttpsRequest = {
   method: HttpsMethod
   /** JSON object text containing request headers. The native bridge validates names and values. */
   headersJson: string
-  /** UTF-8 request body; GET must not carry a body. */
+  /** UTF-8 request body; GET and DELETE must not carry a body. */
   body: string
   timeoutMs: number
 }

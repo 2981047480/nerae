@@ -8,9 +8,9 @@
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
 - 同主体待批准设备列表的内部数据库组件及未挂载的 HTTP handler 已合入，集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用；生产路由、跨身份批准和可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
 - 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
-- 当前会话撤销事务和未挂载的 DELETE handler 已合入，候选树私有数据库、本地 TLS 和 race 覆盖撤销及旧登录回执；集成树 handler 单测通过。独立复核发现会话恰在两次过期检查之间到期时可能返回 503 而非 401，正在修复；生产路由和客户端撤销接线尚未完成。[证据](evidence/A01/A01-25/report.md)
-- 隔离服务已在同一测试 HTTP 装配中串起邮箱发信、登录、成年声明和训练创建/组写入/读取/完成；同键重放、无权账号读写及撤销后的拒绝通过。两种页面模式和真实双设备未在此测试，生产进程仍未挂载业务路由。[证据](evidence/A01/A01-24/report.md)
-- 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；合成 CAS、精度边界、类型与 App/小程序源码探针通过。它尚无完整队列、进程重启后的重放或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [适配器](evidence/P02/P02-13/journal-request-shape-guard.md)
+- 当前会话撤销事务、未挂载的 DELETE handler 和 iOS/Android 原生传输接缝已合入。过期分类与不确定响应处理已修复；集成树类型检查、23 项传输测试和两端本机 TLS 回归通过。生产路由、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
+- 邮箱、成年声明和训练处理器已通过内部业务装配与私有 MySQL/Redis 联测，另有独立发信 worker 经本地 TLS 接收器验证；同键重放、无权账号拒绝、启动 epoch 回滚与锁顺序检查通过。API 尚未挂生产进程，验证码校验密钥版本校验、两种页面模式与真实双设备仍未完成。[API 装配](evidence/A01/api-business-assembly.md) · [worker](evidence/A01/worker-startup/report.md)
+- 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；与待发日志的合成组合测试覆盖不确定 CAS、重启和切号，集成树训练测试 148/148、类型及 App/小程序源码探针通过。它尚无成功回执结算、完整队列或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [组合](evidence/U02/U02-01/secure-operation-journal-interop.md)
 - 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时要求核对；集成树 123 项训练相关测试及私有 MySQL/TLS 客户端联测通过。尚无持久重放与响应结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/recording-idempotency-expiry-receipt.md) 可信代理来源 IP 解析器已局部测试但未连接服务；上线仍须限制后端监听并实测代理覆盖专用头。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明内部事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。合同、未挂载的登录和 `/me` handler 及客户端会话接缝已传递声明版本，A01-23/24 在隔离服务中复测通过；声明写入 HTTP 和 App 页面仍未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
@@ -25,7 +25,7 @@
 - 登录挑战在等待数据库锁和写入证明防重标记之后重新检查时效；可控时钟与私有 MySQL 回归通过，未模拟实际锁等待或跨实例时钟偏差。[证据](evidence/A01/A01-04/lock-wait-expiry.md)
 - 集成版本 `4023de6` 修复错误验证码时设备签名可重复使用：每次有效证明与尝试计数同事务消费，回滚后可重试；挑战和登录隔离 MySQL/race 回归通过。[证据](evidence/A01/A01-11/proof-attempt-integration.md) 登录回执的后续进度见下，HTTP 和实际登录尚未完成。
 - 设备证明防重在集成版本 `2b59a12` 增加缺失 key epoch 时的历史保护：保留防重记录时拒绝自动重建；集成版隔离 MySQL 防重与邮箱登录事务复测通过。空表仍可首次自动初始化，受控启动和数据恢复待完成。[证据](evidence/A01/A01-02/epoch-history-guard.md)
-- 邮箱队列后台循环已集成至 `ad727bb`：在同版本私有 MySQL 与本机 TLS SMTP sink 验证成功、结果未知与重启不重复；生产 worker 入口尚未装配，也未连接 QQ。[证据](evidence/A01/A01-19/report.md)
+- 邮箱队列后台循环在 `ad727bb` 验证了成功、结果未知与重启不重复；后续 worker 入口装配进度见上，QQ 仍未连接。[证据](evidence/A01/A01-19/report.md)
 - 登录首次请求已在同一事务组合验证码尝试、会话或新设备待批准申请与加密回执；相同请求的会话令牌、待批准申请和通用错误结果也已接入提交后授权复验与安全重放。集成提交 `f294817` 的五组隔离 MySQL/race 回归通过，覆盖同键并发、撤权、锁等待、密文篡改、失败回滚与验证码重发。[集成证据](evidence/A01/A01-11/receipt-replay-integration-2026-10-31.md) 此能力仍是内部事务：完整 HTTP 响应及限流、设备批准兑换幂等、真实 SMTP、生产部署和手机端均未接通，不能视为真实登录。
 - 客户端邮箱登录合同适配器已加入，认证成功与设备待批准严格分开，并禁止在普通结果序列化中暴露令牌；合成测试和类型检查通过。[A01-17](evidence/A01/A01-17/report.md) App 原生 HTTPS 适配接缝已实现并通过合成测试，但尚未接登录页面、持久会话、真实服务或原生应用。
 - 客户端入口显式加载锁定的 URL polyfill：真实认证/训练 API 构造器在无原生 URL 的 macOS JavaScriptCore 中通过，App 与小程序 JS 资源验证通过；真实 DCloud App 与手机仍待验证。[证据](evidence/F01/F01-06/report.md)

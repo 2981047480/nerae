@@ -24,6 +24,7 @@ import { createAppDeviceIdentityCoordinator, signAppEmailLoginChallenge } from '
 import { createAppEmailLoginFlow } from '@/platform/app/nativeEmailLogin'
 import { createAppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { createNativeTrainingJournalStorage } from '@/platform/app/nativeTrainingJournalStorage'
+import { TrainingOperationJournal } from '@/features/training/operationJournal'
 import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
@@ -31,7 +32,9 @@ const authRuntime = shallowRef<AppAuthRuntime | null>(null)
 function probe() {
   result.value = generateSecureRandomRequestKey().errorCode + String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator) +
     String(createAppDeviceIdentityCoordinator) + String(signAppEmailLoginChallenge) + String(createAppEmailLoginFlow) + String(createAppAuthRuntime) +
-    String(createNativeTrainingJournalStorage) + String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
+    String(createNativeTrainingJournalStorage) + String(TrainingOperationJournal) +
+    String(createConfiguredAppHttpsPorts('https://example.invalid').revokeCurrentSession) +
+    String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
 }
 </script>
 <template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" /></template>
@@ -69,6 +72,8 @@ def main() -> None:
     service = (app / "app-service.js").read_text(encoding="utf-8")
     require("AuthEntry" in service and "请查看此邮箱" in service,
             "App output is missing the referenced authentication entry")
+    require("revokeCurrentSession" in service and "TrainingOperationJournal" in service,
+            "App output is missing a referenced revocation or training journal entry")
     for plugin, (package, functions) in PLUGINS.items():
         require(package in service and all(function in service for function in functions),
                 f"App output is missing the native proxy for {plugin}")
