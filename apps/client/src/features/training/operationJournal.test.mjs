@@ -58,6 +58,7 @@ function matchingSnapshot(auth, overrides = {}, eventId = 'event-0001') {
   }
   const api = new RecordingApi('https://api.example.org', apiAuth, async () => ({
     statusCode: 201,
+    headers: { 'Idempotency-Key-Expires-At': '2030-11-01T00:00:00Z' },
     data: {
       id: '42', clientEventId: eventId, date: '2026-10-30', timeZone: 'Asia/Shanghai',
       status: 'in_progress', source: 'free', version: 1,

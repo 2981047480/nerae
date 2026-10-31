@@ -13,6 +13,17 @@
 - `apps/client/node_modules/.bin/vue-tsc --noEmit -p apps/client/tsconfig.json`：退出码 0。临时 clone 未安装依赖；通过两个临时 symlink 使用已有 `nerae-client-recording` checkout 的 node_modules，命令后已移除这两个 symlink；未改锁文件或安装依赖。
 - `git diff --check`：通过。
 
+## 合成 RecordingApi 回执夹具修复
+
+后续定位了上方全量训练测试的唯一失败：`operationJournal.test.mjs` 的 `matchingSnapshot()` 构造 `RecordingApi` 的成功 `POST /me/sessions` 响应时遗漏必需的 `Idempotency-Key-Expires-At`。这与当前 `recordingApi.ts` 的写响应契约不符；不是生产实现应放宽的行为。只在该合成成功响应中补上合法 UTC expiry，没有改断言或生产代码。
+
+修复后验证：
+
+- `node --import ./docs/evidence/P02/P02-11/node-ts-loader.mjs --test --test-name-pattern='raw responses and issued snapshots cannot settle without request-bound replay evidence' apps/client/src/features/training/operationJournal.test.mjs`：1/1 通过。
+- `node --import ./docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/*.test.mjs`：146/146 通过。
+- `apps/client/node_modules/.bin/vue-tsc --noEmit -p apps/client/tsconfig.json`：退出码 0；使用上一节记录的临时依赖 symlink 方法，运行后移除 symlink。
+- `git diff --check`：通过。
+
 ## 限制
 
 失败或结果未知的 native CAS 永远按未知处理；若 in-flight 标记可能已提交，当前 journal 不自动重发，也没有服务端绑定回执来安全结算/清除记录。测试仅用同步合成 CAS 回调，未测原生异步桥、设备重启、多个 App 进程或实际 secure vault。训练草稿和 journal 的原子合并、HTTP 发送接线、服务端幂等回执及恢复仍未实现。
