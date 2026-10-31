@@ -141,7 +141,13 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		t.Fatal("challenge limiter setup failed")
 	}
 	requestKeys := requestKeyConfig()
-	issuer, err := issuance.NewChallengeRequestIssuer(challenges, outbox, identities, challengeLimiter, requestKeys)
+	// The HTTP producer has no SMTP sender; the separate worker outbox above
+	// consumes the same database queue using the same key material.
+	producer, err := issuance.NewEnqueueOutbox(deriver, "a01-24-code-v1", hasher, identities)
+	if err != nil {
+		t.Fatal("enqueue-only outbox setup failed")
+	}
+	issuer, err := issuance.NewChallengeRequestIssuer(challenges, producer, identities, challengeLimiter, requestKeys)
 	if err != nil {
 		t.Fatal("challenge issuer setup failed")
 	}

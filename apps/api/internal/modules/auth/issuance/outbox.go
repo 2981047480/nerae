@@ -51,6 +51,20 @@ func NewOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHashe
 		sender: sender, lease: lease, now: time.Now}, nil
 }
 
+// NewEnqueueOutbox creates the producer side of the queue without granting it
+// a mail sender. It may initialize/lock the epoch and enqueue challenges, but
+// cannot claim, prepare, recover or send deliveries. Only a worker configured
+// with NewOutbox may perform those operations.
+func NewEnqueueOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHasher, identities *domain.EmailIdentityProtector) (*Outbox, error) {
+	if deriver == nil || hasher == nil || identities == nil || !validOutboxKeyID(codeKeyID) {
+		return nil, ErrOutbox
+	}
+	if _, err := deriver.KeyEpochTag(); err != nil {
+		return nil, ErrOutbox
+	}
+	return &Outbox{deriver: deriver, codeKeyID: codeKeyID, hasher: hasher, identities: identities, now: time.Now}, nil
+}
+
 func (Outbox) String() string               { return "EmailOutbox{redacted}" }
 func (Outbox) GoString() string             { return "EmailOutbox{redacted}" }
 func (Outbox) MarshalJSON() ([]byte, error) { return nil, ErrOutbox }
@@ -202,7 +216,7 @@ func (s *Outbox) Enqueue(ctx context.Context, tx *sql.Tx, epoch *EpochLock, chal
 // ClaimNext commits a short claim transaction. Expired claimed leases may be
 // reclaimed because no SMTP call begins before the row is changed to sending.
 func (s *Outbox) ClaimNext(ctx context.Context, db *sql.DB) (*Claim, error) {
-	if s == nil || db == nil || ctx == nil || s.now == nil {
+	if s == nil || s.sender == nil || db == nil || ctx == nil || s.now == nil {
 		return nil, ErrOutbox
 	}
 	tx, err := db.BeginTx(ctx, nil)
@@ -248,7 +262,7 @@ func (s *Outbox) ClaimNext(ctx context.Context, db *sql.DB) (*Claim, error) {
 // Prepare locks epoch→slot→challenge→outbox, validates all server-side state,
 // persists sending, and commits before any external SMTP call.
 func (s *Outbox) Prepare(ctx context.Context, db *sql.DB, claim Claim) (*Delivery, error) {
-	if s == nil || db == nil || ctx == nil || !validChallengeID(claim.challengeID) || claim.token == [32]byte{} || s.now == nil {
+	if s == nil || s.sender == nil || db == nil || ctx == nil || !validChallengeID(claim.challengeID) || claim.token == [32]byte{} || s.now == nil {
 		return nil, ErrOutbox
 	}
 	tx, err := db.BeginTx(ctx, nil)
@@ -351,7 +365,7 @@ func (s *Outbox) SendOne(ctx context.Context, db *sql.DB) (DeliveryState, error)
 // context deadline prevent a paused worker from starting after recovery has
 // expired the claim; SMTP acceptance itself cannot be made atomic with MySQL.
 func (s *Outbox) sendPrepared(ctx context.Context, db *sql.DB, delivery *Delivery) (DeliveryState, error) {
-	if s == nil || db == nil || ctx == nil || delivery == nil || delivery.leaseUntil.IsZero() || s.now == nil {
+	if s == nil || s.sender == nil || db == nil || ctx == nil || delivery == nil || delivery.leaseUntil.IsZero() || s.now == nil {
 		return "", ErrOutbox
 	}
 	if !s.utcNow().Before(delivery.leaseUntil) {
@@ -377,7 +391,7 @@ func (s *Outbox) sendPrepared(ctx context.Context, db *sql.DB, delivery *Deliver
 // RecoverExpiredSending converts in-flight leases to unknown. It never makes
 // them eligible for another SMTP attempt.
 func (s *Outbox) RecoverExpiredSending(ctx context.Context, db *sql.DB, limit int) (int64, error) {
-	if s == nil || db == nil || ctx == nil || limit < 1 || limit > 500 || s.now == nil {
+	if s == nil || s.sender == nil || db == nil || ctx == nil || limit < 1 || limit > 500 || s.now == nil {
 		return 0, ErrOutbox
 	}
 	tx, err := db.BeginTx(ctx, nil)

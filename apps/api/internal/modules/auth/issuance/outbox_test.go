@@ -45,6 +45,59 @@ type recordingSender struct {
 	code      string
 }
 
+func TestEnqueueOutboxCannotOperateAsWorker(t *testing.T) {
+	identities, err := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{1}, 32), bytes.Repeat([]byte{2}, 32), "enqueue-test")
+	if err != nil {
+		t.Fatal("identity protector setup failed")
+	}
+	hasher, err := domain.NewEmailCodeHasher(bytes.Repeat([]byte{3}, 32))
+	if err != nil {
+		t.Fatal("code hasher setup failed")
+	}
+	deriver, err := NewDeriver(bytes.Repeat([]byte{4}, 32))
+	if err != nil {
+		t.Fatal("code deriver setup failed")
+	}
+	producer, err := NewEnqueueOutbox(deriver, "enqueue-v1", hasher, identities)
+	if err != nil {
+		t.Fatal("enqueue-only outbox setup failed")
+	}
+	for _, construct := range []func() (*Outbox, error){
+		func() (*Outbox, error) { return NewEnqueueOutbox(nil, "enqueue-v1", hasher, identities) },
+		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "", hasher, identities) },
+		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "enqueue-v1", nil, identities) },
+		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "enqueue-v1", hasher, nil) },
+	} {
+		if _, err := construct(); !errors.Is(err, ErrOutbox) {
+			t.Fatal("invalid producer configuration was accepted")
+		}
+	}
+	// The uninitialized DB would panic if a worker operation reached it. A
+	// producer must reject before starting any transaction or mutating a row.
+	db := &sql.DB{}
+	ctx := context.Background()
+	id, err := domain.GenerateChallengeID()
+	if err != nil {
+		t.Fatal("challenge identifier generation failed")
+	}
+	claim := Claim{challengeID: id, token: [32]byte{1}}
+	if _, err := producer.ClaimNext(ctx, db); !errors.Is(err, ErrOutbox) {
+		t.Fatal("producer attempted to claim a delivery")
+	}
+	if _, err := producer.Prepare(ctx, db, claim); !errors.Is(err, ErrOutbox) {
+		t.Fatal("producer attempted to prepare a delivery")
+	}
+	if _, err := producer.SendOne(ctx, db); !errors.Is(err, ErrOutbox) {
+		t.Fatal("producer attempted to send a delivery")
+	}
+	if _, err := producer.sendPrepared(ctx, db, &Delivery{claim: claim, leaseUntil: time.Now().Add(time.Minute)}); !errors.Is(err, ErrOutbox) {
+		t.Fatal("producer attempted to send a prepared delivery")
+	}
+	if _, err := producer.RecoverExpiredSending(ctx, db, 1); !errors.Is(err, ErrOutbox) {
+		t.Fatal("producer attempted delivery recovery")
+	}
+}
+
 func (s *recordingSender) SendVerificationCode(_ context.Context, recipient, code string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
