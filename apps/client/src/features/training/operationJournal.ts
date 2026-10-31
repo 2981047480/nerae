@@ -141,19 +141,92 @@ function utf8Length(value: string): number {
   return size
 }
 
-const forbiddenBodyKeys = new Set(['authorization', 'accesstoken', 'refreshtoken', 'token', 'password', 'secret', 'proof'])
+const FREE_SESSION_KEYS = ['source', 'date', 'timeZone', 'clientEventId'] as const
+const PLANNED_SESSION_KEYS = ['source', 'date', 'timeZone', 'planId', 'planVersion', 'planDayId', 'clientEventId', 'occurrenceId'] as const
+const SET_BATCH_KEYS = ['expectedVersion', 'exerciseEntryKeys', 'sets', 'deleteRecordKeys', 'restoreRecordKeys'] as const
+const SET_WRITE_KEYS = ['recordKey', 'exerciseEntryKey', 'setIndex', 'kind', 'exerciseId', 'exerciseName', 'weightKg', 'reps', 'seconds', 'rpe', 'completed'] as const
+const FINISH_KEYS = ['expectedVersion', 'durationMin', 'date', 'rpe', 'note'] as const
 
-function inspectBody(value: unknown, depth = 0): void {
+function inspectBoundedBody(value: unknown, depth = 0): void {
   if (depth > 32) throw new OperationJournalError('invalid_operation')
   if (Array.isArray(value)) {
     if (value.length > 5000) throw new OperationJournalError('invalid_operation')
-    for (const item of value) inspectBody(item, depth + 1)
+    for (const item of value) inspectBoundedBody(item, depth + 1)
   } else if (value !== null && typeof value === 'object') {
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      if (forbiddenBodyKeys.has(key.toLowerCase())) throw new OperationJournalError('invalid_operation')
-      inspectBody(child, depth + 1)
-    }
+    for (const child of Object.values(value as Record<string, unknown>)) inspectBoundedBody(child, depth + 1)
   }
+}
+
+function hasOnlyAllowedKeys(value: unknown, allowed: readonly string[], required: readonly string[]): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  const keys = Object.keys(record)
+  return keys.every(key => allowed.includes(key)) && required.every(key => Object.prototype.hasOwnProperty.call(record, key))
+}
+
+function optionalValue(record: Record<string, unknown>, key: string, valid: (value: unknown) => boolean): boolean {
+  return !Object.prototype.hasOwnProperty.call(record, key) || valid(record[key])
+}
+
+function stringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string')
+}
+
+function validSetWrite(value: unknown): boolean {
+  if (!hasOnlyAllowedKeys(value, SET_WRITE_KEYS, ['recordKey', 'exerciseEntryKey', 'setIndex', 'kind'])) return false
+  const hasExerciseId = Object.prototype.hasOwnProperty.call(value, 'exerciseId')
+  const hasExerciseName = Object.prototype.hasOwnProperty.call(value, 'exerciseName')
+  return typeof value.recordKey === 'string' && typeof value.exerciseEntryKey === 'string' &&
+    Number.isSafeInteger(value.setIndex) && Number(value.setIndex) >= 1 && typeof value.kind === 'string' &&
+    hasExerciseId !== hasExerciseName &&
+    optionalValue(value, 'exerciseId', item => typeof item === 'string') &&
+    optionalValue(value, 'exerciseName', item => typeof item === 'string') &&
+    optionalValue(value, 'weightKg', item => typeof item === 'number' && Number.isFinite(item)) &&
+    optionalValue(value, 'reps', item => Number.isSafeInteger(item)) &&
+    optionalValue(value, 'seconds', item => Number.isSafeInteger(item)) &&
+    optionalValue(value, 'rpe', item => item === null || typeof item === 'number' && Number.isFinite(item)) &&
+    optionalValue(value, 'completed', item => item === true)
+}
+
+function validateRequestBody(path: string, value: unknown, eventId: string): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new OperationJournalError('invalid_operation')
+  const body = value as Record<string, unknown>
+  if (path === '/me/sessions') {
+    if (body.source === 'free') {
+      if (!hasOnlyAllowedKeys(body, FREE_SESSION_KEYS, ['source', 'date', 'clientEventId']) ||
+        typeof body.date !== 'string' || typeof body.clientEventId !== 'string' || body.clientEventId !== eventId ||
+        !optionalValue(body, 'timeZone', item => typeof item === 'string')) throw new OperationJournalError('invalid_operation')
+      return
+    }
+    if (body.source === 'plan' && hasOnlyAllowedKeys(body, PLANNED_SESSION_KEYS,
+      ['source', 'date', 'planId', 'planVersion', 'planDayId', 'clientEventId']) &&
+      typeof body.date === 'string' && typeof body.planId === 'string' &&
+      Number.isSafeInteger(body.planVersion) && Number(body.planVersion) >= 1 && typeof body.planDayId === 'string' &&
+      typeof body.clientEventId === 'string' && body.clientEventId === eventId &&
+      optionalValue(body, 'timeZone', item => typeof item === 'string') &&
+      optionalValue(body, 'occurrenceId', item => typeof item === 'string')) return
+    throw new OperationJournalError('invalid_operation')
+  }
+
+  if (path.endsWith('/sets')) {
+    if (!hasOnlyAllowedKeys(body, SET_BATCH_KEYS, ['expectedVersion', 'exerciseEntryKeys']) ||
+      !Number.isSafeInteger(body.expectedVersion) || Number(body.expectedVersion) < 1 || !stringArray(body.exerciseEntryKeys) ||
+      !optionalValue(body, 'sets', item => Array.isArray(item) && item.every(validSetWrite)) ||
+      !optionalValue(body, 'deleteRecordKeys', stringArray) ||
+      !optionalValue(body, 'restoreRecordKeys', stringArray)) throw new OperationJournalError('invalid_operation')
+    return
+  }
+
+  if (path.endsWith('/finish')) {
+    if (!hasOnlyAllowedKeys(body, FINISH_KEYS, ['expectedVersion']) ||
+      !Number.isSafeInteger(body.expectedVersion) || Number(body.expectedVersion) < 1 ||
+      !optionalValue(body, 'durationMin', item => item === null || Number.isSafeInteger(item)) ||
+      !optionalValue(body, 'date', item => typeof item === 'string') ||
+      !optionalValue(body, 'rpe', item => item === null || typeof item === 'number' && Number.isFinite(item)) ||
+      !optionalValue(body, 'note', item => item === null || typeof item === 'string')) throw new OperationJournalError('invalid_operation')
+    return
+  }
+  throw new OperationJournalError('invalid_operation')
 }
 
 function normalizeRequest(value: unknown, eventId: string): JournalRequest {
@@ -174,10 +247,8 @@ function normalizeRequest(value: unknown, eventId: string): JournalRequest {
     if (error instanceof OperationJournalError) throw error
     throw new OperationJournalError('invalid_operation')
   }
-  inspectBody(parsed)
-  if (candidate.path === '/me/sessions' && (parsed as Record<string, unknown>).clientEventId !== eventId) {
-    throw new OperationJournalError('invalid_operation')
-  }
+  inspectBoundedBody(parsed)
+  validateRequestBody(candidate.path, parsed, eventId)
   return Object.freeze({ method: 'POST', path: candidate.path, body: candidate.body, idempotencyKey: candidate.idempotencyKey })
 }
 

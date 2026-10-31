@@ -40,3 +40,17 @@ apps/client/node_modules/.bin/vue-tsc --noEmit -p apps/client/tsconfig.json
 结果：journal 定向测试 16/16、训练 feature 测试 110/110、`vue-tsc` 退出码 0。类型检查仅在临时 clone 中通过指向现有 `nerae-client-recording` 离线依赖目录的临时 symlink 执行；未安装依赖或改锁文件。`git diff --check` 通过。当前基线不含 `SecureOperationJournalStorage`，因此本轮测试使用合成 CAS 存储端口；没有声称真实原生适配器、vault、网络或服务端已验证。
 
 限制：不确定请求现阶段无法自动重发或清除；用户须保留草稿并等待后续请求绑定证据接缝。跨进程崩溃后同样失败关闭。没有页面、生产路由、平台存储或 HTTP/DB 接线。
+
+## Request-field allowlist follow-up
+
+`normalizeRequest` now validates the JSON body against a conservative path-specific field allowlist before writing to any injected `JournalStorage`: free/planned session create, set batch with nested set-entry allowlist, and finish. Unknown top-level or nested fields are rejected, including `deviceProof`, `approvalSecret`, `accessToken`, and the read-only `resolvedExerciseName`; the guard is not relying on a credential-key substring denylist. Legal current fields for all three routes are covered by direct `TrainingOperationJournal.stage()` tests over a generic in-memory `JournalStorage`.
+
+Verification after this follow-up:
+
+```sh
+node --import /Users/zephyr/.codex/worktrees/nerae-device-proof/nerae/docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/operationJournal.test.mjs
+node --import /Users/zephyr/.codex/worktrees/nerae-device-proof/nerae/docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/*.test.mjs
+apps/client/node_modules/.bin/vue-tsc --noEmit -p apps/client/tsconfig.json
+```
+
+Results: journal tests 17/17 and training feature tests 111/111 passed; `vue-tsc` exit 0 using the same temporary symlink to existing offline dependencies described above; no dependency installation or lockfile edit. `git diff --check` passed. The field allowlist mirrors wire object shapes but does not replace full OpenAPI or server/domain validation. This base does not include the later secure native storage adapter; tests verify the journal's generic port boundary only.

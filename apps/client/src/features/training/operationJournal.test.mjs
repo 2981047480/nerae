@@ -117,7 +117,10 @@ test('same event and exact request is idempotent; any changed key, body or route
   for (const changed of [
     createRequest({ idempotencyKey: 'create-key-0002' }),
     createRequest({ body: JSON.stringify({ ...JSON.parse(body), date: '2026-10-29' }) }),
-    createRequest({ path: '/me/sessions/42/sets' }),
+    createRequest({ path: '/me/sessions/42/sets', body: JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1,
+      kind: 'weight', weightKg: 42.5, reps: 8, completed: true,
+    }] }) }),
   ]) await assert.rejects(journal.stage('event-0001', changed), isJournalError('conflict'))
   assert.equal(storage.values.size, 1)
 })
@@ -152,6 +155,60 @@ test('request validation rejects duplicate JSON keys, credential fields, malform
     createRequest({ body: JSON.stringify({ source: 'free', date: '2026-10-30', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001', note: '😀'.repeat(140_000) }) }),
   ]) await assert.rejects(journal.stage('event-0001', request), isJournalError('invalid_operation'))
   assert.equal((await journal.readPending('event-0001')), null)
+})
+
+test('journal entry accepts only path-specific contract fields and rejects credential variants at every nesting level', async () => {
+  const valid = [
+    {
+      eventId: 'event-0002', path: '/me/sessions', idempotencyKey: 'plan-key-0001',
+      body: JSON.stringify({ source: 'plan', date: '2026-10-30', planId: '12', planVersion: 2,
+        planDayId: '3', clientEventId: 'event-0002', timeZone: 'Asia/Shanghai', occurrenceId: '9' }),
+    },
+    {
+      eventId: 'event-0003', path: '/me/sessions/42/sets', idempotencyKey: 'sets-key-0001',
+      body: JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+        recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1,
+        kind: 'weight', weightKg: 42.5, reps: 8, rpe: 7.5, completed: true,
+      }] }),
+    },
+    {
+      eventId: 'event-0004', path: '/me/sessions/42/finish', idempotencyKey: 'finish-key-001',
+      body: JSON.stringify({ expectedVersion: 2, durationMin: null, date: '2026-10-30', rpe: 7.5, note: null }),
+    },
+  ]
+  const validStorage = new MemoryJournalStorage()
+  const validJournal = makeJournal(validStorage, makeAuth())
+  for (const item of valid) {
+    await validJournal.stage(item.eventId, { method: 'POST', path: item.path, body: item.body, idempotencyKey: item.idempotencyKey })
+  }
+  assert.equal(validStorage.writes, valid.length)
+
+  const invalid = [
+    { eventId: 'event-0010', path: '/me/sessions', body: { source: 'free', date: '2026-10-30', clientEventId: 'event-0010', deviceProof: 'opaque' } },
+    { eventId: 'event-0011', path: '/me/sessions', body: { source: 'plan', date: '2026-10-30', planId: '12', planVersion: 2, planDayId: '3', clientEventId: 'event-0011', approvalSecret: 'opaque' } },
+    { eventId: 'event-0012', path: '/me/sessions/42/sets', body: { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], deviceProof: 'opaque' } },
+    { eventId: 'event-0013', path: '/me/sessions/42/sets', body: { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1,
+      kind: 'weight', weightKg: 42.5, reps: 8, approvalSecret: 'opaque',
+    }] } },
+    { eventId: 'event-0014', path: '/me/sessions/42/sets', body: { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1,
+      kind: 'weight', weightKg: 42.5, reps: 8, deviceProof: 'opaque',
+    }] } },
+    { eventId: 'event-0015', path: '/me/sessions/42/sets', body: { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [{
+      recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1,
+      kind: 'weight', weightKg: 42.5, reps: 8, resolvedExerciseName: '冻结名称',
+    }] } },
+    { eventId: 'event-0016', path: '/me/sessions/42/finish', body: { expectedVersion: 2, note: '已完成', accessToken: 'opaque' } },
+  ]
+  const invalidStorage = new MemoryJournalStorage()
+  const invalidJournal = makeJournal(invalidStorage, makeAuth())
+  for (const [index, item] of invalid.entries()) {
+    const request = { method: 'POST', path: item.path, body: JSON.stringify(item.body), idempotencyKey: `deny-key-${index.toString().padStart(4, '0')}` }
+    await assert.rejects(invalidJournal.stage(item.eventId, request), isJournalError('invalid_operation'))
+  }
+  assert.equal(invalidStorage.writes, 0)
+  assert.equal(invalidStorage.values.size, 0)
 })
 
 test('network ambiguity preserves the same bytes and key; it never treats raw 2xx as an acknowledgement', async () => {
