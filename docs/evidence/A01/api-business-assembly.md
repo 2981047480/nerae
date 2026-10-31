@@ -1,0 +1,14 @@
+# API business handler assembly
+
+The candidate adds `buildBusinessHandler`, an internal assembly for the real email-challenge, email-login, current-user, current-session revoke, age-declaration, pending-approval-list and free-workout read/write handlers. It accepts explicit distinct nonzero keys, policies and private trusted-proxy prefixes; creates an enqueue-only outbox without SMTP credentials; pings Redis; and initializes the identity, derivation, challenge-receipt, login-receipt, approval, idempotency and exercise-name epochs in one transaction before returning a handler. It does not open a listener or attach itself to the production process.
+
+Initialization uses ledger before approval, and idempotency before workout crypto, matching the relevant online transaction order. Independent review found no further concrete P0–P2 after the ordering changes. Existing identity epoch locking also prevents the originally suspected receipt/approval inversion on the reviewed login path.
+
+Validation on the isolated candidate based on `ecb722c`:
+
+- `go test -race ./cmd/api -count=1` exited 0 with project Go 1.27.3 and existing offline caches; database-dependent test skipped without its fixture.
+- `NERAE_RUN_API_ASSEMBLY_TEST=1 PYTHONDONTWRITEBYTECODE=1 python3 -B docs/evidence/A01/A01-24/mysql_redis_smtp_http_smoke.py` exited 0 with authorized local socket-only MySQL and Redis and a local TLS SMTP sink. The existing separate producer→worker→SMTP→login→age→workout race test passed. The new test used a distinct fresh schema and the actual assembled handler to verify challenge enqueue/replay, synthetic derived-code login, age declaration, workout create/replay/set/read, anonymous denial, trusted-proxy rejection, same-key restart, mismatched derivation key and invalid proxy rejection.
+- The new private DB test also induced a final workout-key mismatch and verified all earlier epoch changes rolled back. For locking, it held the idempotency epoch as a live write would, observed startup holding approval, verified workout crypto was still available to that write, then released the lock and confirmed startup completed. This is a targeted database lock simulation, not concurrent HTTP traffic across multiple production processes.
+- A direct `python3 -m py_compile` syntax check was blocked because macOS Python attempted to write its cache outside the sandbox. Parsing the script with `ast.parse` without writing bytecode succeeded; the script itself then ran successfully in the harness above.
+
+No production secret-file loading, listener/TLS configuration, or production route mounting is implemented here. The email code hasher key has no persisted epoch and therefore matching API/worker configuration is not yet established. Approval decision/exchange and crash-safe training sync remain incomplete. The synthesized code and device key are test inputs; this is not real QQ delivery, a running public service, or mobile-device verification.

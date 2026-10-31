@@ -98,6 +98,26 @@ def run() -> int:
             marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP"
             if marker not in test.stdout:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
+            if os.environ.get("NERAE_RUN_API_ASSEMBLY_TEST") == "1":
+                # A separate empty schema prevents the earlier fixture's
+                # synthetic key epochs and test data from contaminating this
+                # actual business-handler assembly check.
+                apply = subprocess.run(mysql, input="CREATE DATABASE nerae_api_assembly_test;\nUSE nerae_api_assembly_test;\n" + migration_sql,
+                                       text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=45, check=False)
+                if apply.returncode:
+                    raise RuntimeError(f"private assembly migrations failed ({apply.returncode})")
+                assembly_env = {**test_env,
+                                "NERAE_API_ASSEMBLY_TEST_DSN": f"root@unix({mysql_socket})/nerae_api_assembly_test?parseTime=true&loc=UTC",
+                                "NERAE_API_ASSEMBLY_REDIS_SOCKET": str(redis_socket)}
+                assembly = subprocess.run([str(GO), "test", "-mod=readonly", "-race", "-count=1", "-v",
+                                           "-run", "^TestBusinessAssemblyPrivateServices$", "./cmd/api"],
+                                          cwd=ROOT / "apps/api", env=assembly_env, timeout=420,
+                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
+                print(assembly.stdout, end="")
+                if assembly.returncode:
+                    raise RuntimeError(f"business handler assembly test failed ({assembly.returncode})")
+                if "PASS: assembled handler challenge -> synthetic derived code login -> age -> workout create/set/read" not in assembly.stdout:
+                    raise RuntimeError("business assembly test did not emit its PASS marker; it may have been skipped")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, timeout=10, check=False)
             redis_child.wait(timeout=15)
