@@ -47,3 +47,20 @@ Follow-up verification:
 - `git diff --check`: passed.
 
 No App page imports this component, and no visual or device-runtime acceptance was performed in this follow-up.
+
+## Scoped cancellation and retry follow-up
+
+This follow-up depends on the shared cancellation API from `f9d075e0a4d178a1897cf8c106f0e118bd5769a2`, which is intentionally not duplicated in this UI commit.
+
+The controller now carries the opaque per-attempt handle through request/retry and uses the coordinator's scoped `cancelAttempt` barrier. It emits the parent-handled `cancel` event only after that barrier returns a safe terminal result. An unavailable cleanup stays visible with a same-handle retry; disposal preserves only the opaque handle in an in-process `WeakMap` until cleanup resolves, so a remounted component can resume that barrier. Old controller disposal and async `finally` paths never call an unscoped login reset, which could otherwise clear another controller's active attempt.
+
+Expired challenge/login outcomes now cancel and retire the stale attempt before allowing a fresh challenge. A rejected code keeps the still-active challenge available for corrected input. UI text avoids internal request identifiers; challenge acceptance is described as “请查看此邮箱”, since HTTP 202 does not prove delivery. Retry wording is bounded to continuing the current challenge and avoiding duplicate mail; login retry explicitly does not request another email.
+
+Verification from this follow-up, in `apps/client`:
+
+- `node --import ../../docs/evidence/P02/P02-11/node-ts-loader.mjs --test src/features/auth/authEntryController.test.mjs src/features/auth/emailLoginFlow.test.mjs src/features/auth/sessionCoordinator.test.mjs src/features/auth/ageAttestationApi.test.mjs src/api/auth/emailAuthApi.test.mjs`: **79/79 passed**. Coverage includes a remount during pending vault cleanup, old controller disposal while a newer flow is active, expired challenge/login requiring scoped retirement, corrected code after rejection, late HTTP response, cancellation during vault install, and cancellation cleanup retry.
+- `vue-tsc --noEmit -p apps/client/tsconfig.json`, invoked through the existing offline dependency tree: passed.
+- uni-app 5.26 (Vue 3): `uni build -p app` and `uni build -p mp-weixin`: both reported `DONE Build complete` (exit 0). These are resource builds only.
+- `git diff --check`: passed.
+
+The test/typecheck/build commands used temporary links to the pre-existing integration dependency tree; those links were removed after execution, and no package manifest or lockfile changed. Cancellation is an in-process guarantee only: process termination while secure-vault cleanup itself remains unavailable cannot be recovered by this component. The App has no wired parent page or free-browsing route in this task; no live email, native vault, device, page rendering, or production route was tested. New-device approval remains display-only and does not create a session.

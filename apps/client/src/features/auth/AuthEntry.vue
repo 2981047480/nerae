@@ -9,8 +9,13 @@ const emit = defineEmits<{ authenticated: [session: PublicSession]; cancel: [] }
 const controller = new AuthEntryController(props.runtime, session => emit('authenticated', session))
 const state = shallowRef<AuthEntryState>(controller.state)
 controller.subscribe(next => { state.value = next })
+let cancelEmitted = false
 
-function cancel(): void {
+async function cancel(): Promise<void> {
+  if (cancelEmitted) return
+  const result = await controller.cancel()
+  if (!result.leave || result.outcome === 'unavailable') return
+  cancelEmitted = true
   controller.dispose()
   emit('cancel')
 }
@@ -32,7 +37,7 @@ onBeforeUnmount(() => controller.dispose())
     <view class="auth-entry__brand"><text class="auth-entry__mark">N</text><text>NERAE</text></view>
     <text class="auth-entry__eyebrow">安全恢复</text>
     <text class="auth-entry__title">记录由你掌握</text>
-    <text class="auth-entry__intro">登录后可以安全保存和恢复训练记录。浏览免费内容无需登录。</text>
+    <text class="auth-entry__intro">登录后可以安全保存和恢复训练记录。</text>
 
     <view v-if="state.status === 'restoring'" class="auth-entry__notice" aria-live="polite">
       <text>{{ state.message }}</text>
@@ -47,21 +52,21 @@ onBeforeUnmount(() => controller.dispose())
       <text v-if="state.message" class="auth-entry__message" aria-live="polite">{{ state.message }}</text>
       <button class="auth-entry__primary" :disabled="state.status === 'sending_code' || !state.email"
         @click="controller.requestCode()">
-        {{ state.status === 'sending_code' ? '正在发送…' : state.status === 'retry_challenge' ? '重试同一请求' : '获取验证码' }}
+        {{ state.status === 'sending_code' ? '正在发送…' : state.status === 'retry_challenge' ? '重试发送验证码' : '获取验证码' }}
       </button>
     </view>
 
     <view v-else-if="state.status === 'waiting_code' || state.status === 'submitting_code' || state.status === 'retry_login'"
       class="auth-entry__form">
-      <text class="auth-entry__label">验证码已发送至</text>
+      <text class="auth-entry__label">请查看此邮箱</text>
       <text class="auth-entry__email">{{ state.email }}</text>
-      <text v-if="state.status === 'retry_login'" class="auth-entry__message">保留原验证码与请求编号，重试不会改动本次请求。</text>
+      <text v-if="state.status === 'retry_login'" class="auth-entry__message">登录结果尚未确认。重新验证会继续处理当前验证码，不会再次发送邮件。</text>
       <input v-else class="auth-entry__input auth-entry__code" type="number" inputmode="numeric" autocomplete="one-time-code"
         placeholder="请输入邮箱验证码" :value="state.code" :disabled="state.status === 'submitting_code'"
         @input="controller.setCode(inputValue($event))" />
       <text v-if="state.message" class="auth-entry__message" aria-live="polite">{{ state.message }}</text>
       <button v-if="state.status === 'retry_login'" class="auth-entry__primary"
-        @click="controller.submitCode()">重试同一登录请求</button>
+        @click="controller.submitCode()">重新验证</button>
       <button v-else class="auth-entry__primary" :disabled="state.status === 'submitting_code' || state.code.length < 6"
         @click="controller.submitCode()">
         {{ state.status === 'submitting_code' ? '正在验证…' : '登录并继续' }}
@@ -92,13 +97,22 @@ onBeforeUnmount(() => controller.dispose())
       <text>可以继续回到刚才的任务。</text>
     </view>
 
+    <view v-else-if="state.status === 'cancel_failed' || state.status === 'cancelling'" class="auth-entry__notice" aria-live="polite">
+      <text class="auth-entry__notice-title">{{ state.status === 'cancelling' ? '正在安全取消' : '尚未确认安全取消' }}</text>
+      <text>{{ state.message }}</text>
+      <button v-if="state.status === 'cancel_failed' && state.cancelPurpose === 'restart'"
+        class="auth-entry__primary" @click="controller.resetLogin()">重试安全清理并重新登录</button>
+      <button v-else-if="state.status === 'cancel_failed'" class="auth-entry__primary" @click="cancel">重试安全取消</button>
+    </view>
+
     <view v-else class="auth-entry__notice" aria-live="polite">
       <text class="auth-entry__notice-title">{{ state.status === 'session_changed' ? '登录状态已变化' : '暂时无法继续' }}</text>
       <text>{{ state.message }}</text>
       <button v-if="state.status === 'unavailable'" class="auth-entry__primary" @click="controller.retryRestore()">重新检查</button>
       <button v-else class="auth-entry__secondary" @click="controller.resetLogin()">重新开始登录</button>
     </view>
-    <button v-if="state.status !== 'authenticated'" class="auth-entry__browse" @click="cancel">先继续浏览</button>
+    <button v-if="!['authenticated', 'cancel_failed', 'cancelling'].includes(state.status)"
+      class="auth-entry__browse" @click="cancel">返回</button>
   </view>
 </template>
 
