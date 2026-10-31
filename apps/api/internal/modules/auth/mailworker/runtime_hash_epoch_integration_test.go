@@ -173,9 +173,15 @@ func TestRuntimeHashEpochTamperAndLossFailClosed(t *testing.T) {
 			t.Fatal("attempt transaction failed")
 		}
 		result, attemptErr := challenges.Attempt(ctx, attemptTx, challenge.AttemptInput{ChallengeID: challengeID, Code: code, DeviceProof: proof})
-		_ = attemptTx.Rollback()
 		if !errors.Is(attemptErr, challenge.ErrChallengeStore) || result.Changed || result.Verified {
+			_ = attemptTx.Rollback()
 			t.Fatalf("attempt did not fail closed for %s epoch: changed=%v verified=%v", mode, result.Changed, result.Verified)
+		}
+		// Commit the transaction after the expected failure. This makes the
+		// following assertions prove the failed operation did not stage writes
+		// that would only be hidden by a caller rollback.
+		if err := attemptTx.Commit(); err != nil {
+			t.Fatalf("read-only failed %s attempt transaction could not commit", mode)
 		}
 		var attempts int
 		if err := db.QueryRowContext(ctx, `SELECT attempts FROM auth_email_login_challenge WHERE challenge_id=?`, []byte(challengeID)).Scan(&attempts); err != nil || attempts != beforeAttempts {
@@ -304,6 +310,11 @@ func issueRuntimeOnly(t *testing.T, ctx context.Context, db *sql.DB, challenges 
 	}
 	defer tx.Rollback()
 	err = challenges.Issue(ctx, tx, challenge.IssueInput{Email: email, ChallengeID: id, Nonce: nonce, Code: code, PublicKey: public})
+	// The test deliberately commits the expected epoch error so the caller's
+	// rollback cannot conceal writes staged by Issue.
+	if commitErr := tx.Commit(); commitErr != nil {
+		return id, commitErr
+	}
 	return id, err
 }
 
