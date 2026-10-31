@@ -105,6 +105,13 @@
       "module": "user",
       "file": "0002_age_declaration_version.up.sql",
       "sha256": "6a6bd56a3e8a420d702762e4232c0f8c9b818282e3efba01d600f42cc37df43b"
+    },
+    {
+      "order": 16,
+      "id": "auth/0010_email_code_hash_key_epoch.up.sql",
+      "module": "auth",
+      "file": "0010_email_code_hash_key_epoch.up.sql",
+      "sha256": "6e3e10036bb9a284ef792a5d8a9542899e5d49b1ee003fce3dca04f9d80dc4a6"
     }
   ]
 }
