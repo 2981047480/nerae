@@ -16,6 +16,7 @@
 - 草稿控制器提供仅本进程有效的持久化证明；账号变化、后续写入及并发覆盖会使旧证明失效。它不保证跨进程持久性或与待发日志原子提交。旧日志比较只检查可替换的值，存在 ABA，不能据此清除待发请求。[草稿证明](evidence/U02/U02-02/draft-persistence-proof.md) · [ABA 复审](evidence/U02/U02-02/journal-aba-review.md)
 - iOS 和 Android 训练待发日志已实现原生维护的槽版本和保留旧数据的迁移，共享客户端可捕获版本并执行比较交换；同一集成代码上的 Swift/Kotlin 合成测试、训练客户端测试、类型检查和 5.26 App/小程序源码探针通过。该能力不处理回执结算或跨设备同步；进程外写入、整机回滚及真机 Keychain/Keystore 不在已验证范围内。[iOS](evidence/P02/P02-13/ios-versioned-journal.md) · [Android](evidence/P02/P02-14/report.md) · [客户端](evidence/U02/U02-02/versioned-journal-adapter.md)
 - 集成树独立复现显示，旧接口将已发送记录内容写回 `ready` 后，即使槽版本递增，新快照仍可能签发第二次发送许可；复现脚本按预期退出 1。单调槽版本不足以证明每个操作从未发送，可靠发送接线仍受阻，需要不可由旧接口回退的逐操作发送标记或等效原子机制。[复现](evidence/U02/U02-02/journal-aba-review.md)
+- 新设备审批决策事务与训练写入回执过期回归均有隔离候选，但尚未合入：前者为 `/private/tmp/nerae-approval-decision` 的 `db25c77`，后者为 `/private/tmp/nerae-journalled-request-port` 的 `a6ad77c` 和 `aa23a50`。缺私有 MySQL/race 复测；审批候选还存在合同允许 4–8 位而当前签发/存储固定 6 位的差异，不能称作跨设备审批已完成。
 - 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时保留原请求并可只读查询回执；尚无客户端回执的持久结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/replay-pending-client.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
