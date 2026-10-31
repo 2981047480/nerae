@@ -14,7 +14,9 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 CLIENT = ROOT / "apps/client"
 PROBE = """<script setup lang="ts">
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
+import AuthEntry from '@/features/auth/AuthEntry.vue'
+import type { AppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
 import { createAppSessionCoordinator } from '@/platform/app/nativeSession'
@@ -24,13 +26,14 @@ import { createAppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
+const authRuntime = shallowRef<AppAuthRuntime | null>(null)
 function probe() {
   result.value = generateSecureRandomRequestKey().errorCode + String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator) +
     String(createAppDeviceIdentityCoordinator) + String(signAppEmailLoginChallenge) + String(createAppEmailLoginFlow) + String(createAppAuthRuntime) +
     String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
 }
 </script>
-<template><view @tap="probe">{{ result }}</view></template>
+<template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" /></template>
 """
 
 PLUGINS = {
@@ -63,6 +66,8 @@ def main() -> None:
 
     app = work / "dist/build/app"
     service = (app / "app-service.js").read_text(encoding="utf-8")
+    require("AuthEntry" in service and "请查看此邮箱" in service,
+            "App output is missing the referenced authentication entry")
     for plugin, (package, functions) in PLUGINS.items():
         require(package in service and all(function in service for function in functions),
                 f"App output is missing the native proxy for {plugin}")
@@ -73,6 +78,9 @@ def main() -> None:
 
     # Weixin must fail closed for these App-only bridges, not ship App proxies.
     weixin = work / "dist/build/mp-weixin/uni_modules"
+    weixin_entry = work / "dist/build/mp-weixin/features/auth/AuthEntry.js"
+    require(weixin_entry.is_file() and "AuthEntry" in weixin_entry.read_text(encoding="utf-8"),
+            "Weixin output is missing the referenced authentication entry")
     for plugin in PLUGINS:
         fallback = weixin / plugin / "utssdk/index.js"
         require(fallback.is_file() and "unsupported_platform" in fallback.read_text(encoding="utf-8"),

@@ -64,3 +64,7 @@ Verification from this follow-up, in `apps/client`:
 - `git diff --check`: passed.
 
 The test/typecheck/build commands used temporary links to the pre-existing integration dependency tree; those links were removed after execution, and no package manifest or lockfile changed. Cancellation is an in-process guarantee only: process termination while secure-vault cleanup itself remains unavailable cannot be recovered by this component. The App has no wired parent page or free-browsing route in this task; no live email, native vault, device, page rendering, or production route was tested. New-device approval remains display-only and does not create a session.
+
+## Lead integration recheck
+
+The component and scoped cancellation were integrated at `ed0bdd6`. The same five-file Node command above passed **79/79** on the integration tree; `pnpm --filter @nerae/client run typecheck` exited 0. `PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/quality/verify_uts_plugin_build.py` exited 0 after the disposable probe was extended to import and render `AuthEntry`: the locked uni-app 5.26 compiler emitted the component and native bridge source for App, and the component plus unsupported-platform bridge fallbacks for WeChat. Probe files were retained at `/var/folders/6k/klwbxv35003_wd7b9kwtnt6c0000gn/T/nerae-uts-build-sf52nii9`. This verifies source compilation and component linkage inside the probe only, not an installed app, real page routing, visual acceptance, provider delivery, or device execution.
