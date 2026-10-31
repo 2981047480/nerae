@@ -23,3 +23,18 @@ Result: 16/16 passed. Coverage includes valid free/planned create, nested custom
 ## Limits
 
 This is a local storage field-shape guard only. Server authorization and the OpenAPI/runtime validator remain authoritative. The existing `TrainingOperationJournal` may map storage errors to its generic unavailable result; preserving finer error categories remains an integration concern.
+
+## Follow-up guard coverage (18daa9d-based worktree)
+
+The adapter now rejects parsed JSON strings and object keys containing lone UTF-16 surrogates, including `\\ud800`-style escapes in the operation envelope or the separately parsed request body. Its UTF-8 size counter also rejects a terminal high surrogate instead of counting it as four bytes. The 65,536-byte registry acceptance case now contains multibyte `é` characters and still lands on exactly 65,536 UTF-8 bytes; the next-byte write remains rejected.
+
+The adapter mirrors statically checkable write rules from `api/openapi.yaml` and `RecordingApi`: required/forbidden metrics by set kind, completed actual groups, weight and RPE decimal-place bounds after canonical JSON parsing, unique updated record keys, unique set indexes within an updated entry, touched entries present in the supplied order, disjoint delete/update keys, restores represented by set payloads, and the 200 combined sets-plus-deletes batch limit. It cannot determine whether a restore key is actually deleted in this session, whether a record key was used historically, or whether unchanged server groups make the full target order valid. Those require the authenticated server snapshot/domain checks; this journal adapter does not make them replay-safe.
+
+Verification in the isolated worktree:
+
+```sh
+node --test apps/client/src/features/training/secureOperationJournalStorage.test.mjs
+git diff --check
+```
+
+Result: 19/19 Node tests passed; `git diff --check` passed. `pnpm --dir apps/client run typecheck` could not complete: dependencies were absent and pnpm began an install, but package registry requests returned `EPERM`; the command was interrupted before installation completed. Typecheck therefore remains unverified. No native vault, device, HTTP replay, account recovery, or server-snapshot behavior was tested.

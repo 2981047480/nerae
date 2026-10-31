@@ -58,7 +58,7 @@ function utf8Length(value: string): number {
     else if (code <= 0x7ff) bytes += 2
     else if (code >= 0xd800 && code <= 0xdbff) {
       const low = value.charCodeAt(i + 1)
-      if (low < 0xdc00 || low > 0xdfff) throw new SecureJournalStorageError('invalid_operation')
+      if (!(low >= 0xdc00 && low <= 0xdfff)) throw new SecureJournalStorageError('invalid_operation')
       bytes += 4
       i++
     } else if (code >= 0xdc00 && code <= 0xdfff) throw new SecureJournalStorageError('invalid_operation')
@@ -66,6 +66,31 @@ function utf8Length(value: string): number {
     if (bytes > MAX_BYTES) throw new SecureJournalStorageError('too_large')
   }
   return bytes
+}
+
+function assertWellFormedJsonStrings(value: unknown): void {
+  const pending: unknown[] = [value]
+  while (pending.length > 0) {
+    const current = pending.pop()
+    if (typeof current === 'string') {
+      // JSON.parse accepts escaped lone UTF-16 surrogates. They are not valid
+      // Unicode scalar strings and can be lossy across native/JSON boundaries.
+      for (let i = 0; i < current.length; i++) {
+        const code = current.charCodeAt(i)
+        if (code >= 0xd800 && code <= 0xdbff) {
+          const low = current.charCodeAt(i + 1)
+          if (!(low >= 0xdc00 && low <= 0xdfff)) throw new SecureJournalStorageError('invalid_operation')
+          i++
+        } else if (code >= 0xdc00 && code <= 0xdfff) {
+          throw new SecureJournalStorageError('invalid_operation')
+        }
+      }
+    } else if (Array.isArray(current)) {
+      for (const item of current) pending.push(item)
+    } else if (current && typeof current === 'object') {
+      for (const [key, item] of Object.entries(current)) pending.push(key, item)
+    }
+  }
 }
 
 function parseStorageKey(key: unknown): { subjectId: string; eventId: string } {
@@ -88,6 +113,7 @@ function validateOperation(key: string, value: unknown): asserts value is string
   utf8Length(value)
   let parsed: unknown
   try { parsed = JSON.parse(value) } catch { throw new SecureJournalStorageError('invalid_operation') }
+  assertWellFormedJsonStrings(parsed)
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || JSON.stringify(parsed) !== value) {
     throw new SecureJournalStorageError('invalid_operation')
   }
@@ -121,6 +147,7 @@ function validateOperation(key: string, value: unknown): asserts value is string
   utf8Length(req.body)
   let body: unknown
   try { body = JSON.parse(req.body) } catch { throw new SecureJournalStorageError('invalid_operation') }
+  assertWellFormedJsonStrings(body)
   if (!body || typeof body !== 'object' || Array.isArray(body) || JSON.stringify(body) !== req.body) {
     throw new SecureJournalStorageError('invalid_operation')
   }
@@ -144,8 +171,17 @@ function validString(value: unknown, min: number, max: number): value is string 
   return typeof value === 'string' && Array.from(value).length >= min && Array.from(value).length <= max
 }
 
+function validKeyString(value: unknown): value is string {
+  return validString(value, 8, 64) && !/[\r\n]/.test(value) && Boolean(value.trim())
+}
+
 function validPositiveInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && Number(value) >= 1
+}
+
+function validDecimalPlaces(value: number, places: number): boolean {
+  const scaled = value * 10 ** places
+  return Math.abs(scaled - Math.round(scaled)) < 1e-8
 }
 
 function validNumericId(value: unknown): value is string {
@@ -154,7 +190,7 @@ function validNumericId(value: unknown): value is string {
 
 function validUniqueKeyArray(value: unknown, minItems: number, maxItems: number): value is string[] {
   return Array.isArray(value) && value.length >= minItems && value.length <= maxItems &&
-    value.every(item => validString(item, 8, 64)) && new Set(value).size === value.length
+    value.every(validKeyString) && new Set(value).size === value.length
 }
 
 /** Field-shape guard only; OpenAPI/server validation remains authoritative. */
@@ -190,6 +226,31 @@ function validateRequestBody(path: string, body: Record<string, unknown>, eventI
     if (body.restoreRecordKeys !== undefined && (!body.sets || !validUniqueKeyArray(body.restoreRecordKeys, 1, 200))) {
       throw new SecureJournalStorageError('invalid_operation')
     }
+    const sets = (body.sets || []) as Record<string, unknown>[]
+    const deletes = (body.deleteRecordKeys || []) as string[]
+    const restores = (body.restoreRecordKeys || []) as string[]
+    if (sets.length + deletes.length > 200) throw new SecureJournalStorageError('invalid_operation')
+    const recordKeys = new Set<string>()
+    const indexes = new Map<string, Set<number>>()
+    const identities = new Map<string, string>()
+    for (const set of sets) {
+      const recordKey = set.recordKey as string
+      const entryKey = set.exerciseEntryKey as string
+      const setIndex = set.setIndex as number
+      if (recordKeys.has(recordKey)) throw new SecureJournalStorageError('invalid_operation')
+      recordKeys.add(recordKey)
+      const identity = set.exerciseId === undefined ? `name:${set.exerciseName}` : `id:${set.exerciseId}`
+      const existingIdentity = identities.get(entryKey)
+      if (existingIdentity !== undefined && existingIdentity !== identity) throw new SecureJournalStorageError('invalid_operation')
+      identities.set(entryKey, identity)
+      const entryIndexes = indexes.get(entryKey) || new Set<number>()
+      if (entryIndexes.has(setIndex)) throw new SecureJournalStorageError('invalid_operation')
+      entryIndexes.add(setIndex)
+      indexes.set(entryKey, entryIndexes)
+    }
+    if (sets.some(set => !((body.exerciseEntryKeys as string[]).includes(set.exerciseEntryKey as string))) ||
+      deletes.some(key => recordKeys.has(key)) || restores.some(key => !recordKeys.has(key)) ||
+      deletes.some(key => restores.includes(key))) throw new SecureJournalStorageError('invalid_operation')
     return
   }
 
@@ -197,7 +258,7 @@ function validateRequestBody(path: string, body: Record<string, unknown>, eventI
     if (!objectWithAllowedKeys(body, FINISH_KEYS, ['expectedVersion']) || !validPositiveInteger(body.expectedVersion) ||
       body.date !== undefined && typeof body.date !== 'string' ||
       body.durationMin !== undefined && body.durationMin !== null && (!Number.isSafeInteger(body.durationMin) || Number(body.durationMin) < 0) ||
-      body.rpe !== undefined && body.rpe !== null && (typeof body.rpe !== 'number' || !Number.isFinite(body.rpe) || body.rpe < 1 || body.rpe > 10) ||
+      body.rpe !== undefined && body.rpe !== null && (typeof body.rpe !== 'number' || !Number.isFinite(body.rpe) || body.rpe < 1 || body.rpe > 10 || !validDecimalPlaces(body.rpe, 1)) ||
       body.note !== undefined && body.note !== null && !validString(body.note, 0, 2000)) {
       throw new SecureJournalStorageError('invalid_operation')
     }
@@ -208,7 +269,7 @@ function validateRequestBody(path: string, body: Record<string, unknown>, eventI
 
 function validateSetWrite(value: unknown): boolean {
   if (!objectWithAllowedKeys(value, SET_WRITE_KEYS, ['recordKey', 'exerciseEntryKey', 'setIndex', 'kind']) ||
-    !validString(value.recordKey, 8, 64) || !validString(value.exerciseEntryKey, 8, 64) || !validPositiveInteger(value.setIndex) ||
+    !validKeyString(value.recordKey) || !validKeyString(value.exerciseEntryKey) || !validPositiveInteger(value.setIndex) ||
     !['weight', 'perSide', 'bodyweight', 'bodyweightPerSide', 'duration', 'durationPerSide', 'breath'].includes(String(value.kind))) return false
   const hasExerciseId = value.exerciseId !== undefined
   const hasExerciseName = value.exerciseName !== undefined
@@ -219,8 +280,20 @@ function validateSetWrite(value: unknown): boolean {
     value.reps !== undefined && (!Number.isSafeInteger(value.reps) || Number(value.reps) < 1 || Number(value.reps) > 100) ||
     value.seconds !== undefined && (!Number.isSafeInteger(value.seconds) || Number(value.seconds) < 5 || Number(value.seconds) > 600) ||
     value.rpe !== undefined && value.rpe !== null && (typeof value.rpe !== 'number' || !Number.isFinite(value.rpe) || value.rpe < 1 || value.rpe > 10) ||
-    value.completed !== undefined && value.completed !== true) return false
-  return true
+    value.completed !== true) return false
+  const kind = value.kind
+  if (value.rpe !== undefined && value.rpe !== null && !validDecimalPlaces(value.rpe as number, 1)) return false
+  if (kind === 'weight' || kind === 'perSide') {
+    return typeof value.weightKg === 'number' && Number.isFinite(value.weightKg) && value.weightKg > 0 && value.weightKg <= 300 &&
+      Number.isSafeInteger(value.reps) && Number(value.reps) >= 1 && Number(value.reps) <= 100 && value.seconds === undefined &&
+      validDecimalPlaces(value.weightKg, 2)
+  }
+  if (kind === 'duration' || kind === 'durationPerSide') {
+    return value.weightKg === undefined && value.reps === undefined && Number.isSafeInteger(value.seconds) &&
+      Number(value.seconds) >= 5 && Number(value.seconds) <= 600
+  }
+  return value.weightKg === undefined && value.seconds === undefined && Number.isSafeInteger(value.reps) &&
+    Number(value.reps) >= 1 && Number(value.reps) <= 100
 }
 
 function encodeRegistry(entries: Record<string, string>): string {
@@ -239,6 +312,7 @@ function decodeRegistry(value: string): Registry {
   utf8Length(value)
   let parsed: unknown
   try { parsed = JSON.parse(value) } catch { throw new SecureJournalStorageError('corrupt') }
+  try { assertWellFormedJsonStrings(parsed) } catch { throw new SecureJournalStorageError('corrupt') }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || JSON.stringify(parsed) !== value) {
     throw new SecureJournalStorageError('corrupt')
   }

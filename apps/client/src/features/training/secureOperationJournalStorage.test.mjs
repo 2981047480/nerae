@@ -154,6 +154,95 @@ test('rejects unknown fields independently for create, set batch, nested set, an
   }
 })
 
+test('rejects escaped lone surrogates after parsing at operation and request-body depth', async () => {
+  const key = registryKey()
+  const malformedOperations = [
+    operation('101', 'event-0001', 1, '/me/sessions', freeCreateBody('event-0001')).replace('session-1', '\ud800'),
+    operation('101', 'event-0001', 1, '/me/sessions', freeCreateBody('event-0001')).replace('session-1', '\udc00'),
+    operation('101', 'event-0001', 1, '/me/sessions/55/finish', '{"expectedVersion":1,"note":"\\ud800"}'),
+  ]
+  for (const [index, value] of malformedOperations.entries()) {
+    const backend = native()
+    await assert.rejects(makeStore(backend).createIfAbsent(key, value), error => error.code === 'invalid_operation', `escaped surrogate case ${index}`)
+    assert.equal(backend.calls, 0)
+  }
+  const corruptRegistry = JSON.stringify({ schema: 1, entries: { [key]: malformedOperations[0] } })
+  const backend = native(corruptRegistry)
+  await assert.rejects(makeStore(backend).read(key), error => error.code === 'corrupt')
+  assert.equal(backend.value, corruptRegistry)
+  assert.equal(backend.calls, 0)
+})
+
+test('enforces kind-specific required and forbidden metrics, decimal precision, and completed groups', async () => {
+  const base = { recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerciseName: '深蹲', setIndex: 1, completed: true }
+  const valid = [
+    { ...base, kind: 'weight', weightKg: 42.5, reps: 8, rpe: 7.5 },
+    { ...base, kind: 'perSide', weightKg: 20, reps: 8 },
+    { ...base, kind: 'bodyweight', reps: 12 },
+    { ...base, kind: 'bodyweightPerSide', reps: 12 },
+    { ...base, kind: 'breath', reps: 10 },
+    { ...base, kind: 'duration', seconds: 30 },
+    { ...base, kind: 'durationPerSide', seconds: 30 },
+  ]
+  for (const [index, set] of valid.entries()) {
+    const event = `event-${String(index).padStart(4, '0')}`
+    const body = JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [set] })
+    assert.equal(await makeStore(native()).createIfAbsent(registryKey('101', event), operation('101', event, 1, '/me/sessions/55/sets', body)), true)
+  }
+  const invalid = [
+    { ...base, kind: 'weight', reps: 8 },
+    { ...base, kind: 'weight', weightKg: 42.501, reps: 8 },
+    { ...base, kind: 'weight', weightKg: 42.5, reps: 8, seconds: 30 },
+    { ...base, kind: 'bodyweight', reps: 8, weightKg: 0 },
+    { ...base, kind: 'breath', seconds: 30 },
+    { ...base, kind: 'duration', reps: 8, seconds: 30 },
+    { ...base, kind: 'durationPerSide', seconds: 30, weightKg: 1 },
+    { ...base, kind: 'bodyweightPerSide', reps: 8, completed: false },
+    { ...base, kind: 'bodyweight', reps: 8, rpe: 7.55 },
+  ]
+  for (const [index, set] of invalid.entries()) {
+    const event = `event-${String(index + 10).padStart(4, '0')}`
+    const body = JSON.stringify({ expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [set] })
+    const backend = native()
+    await assert.rejects(makeStore(backend).createIfAbsent(registryKey('101', event), operation('101', event, 1, '/me/sessions/55/sets', body)),
+      error => error.code === 'invalid_operation')
+    assert.equal(backend.calls, 0)
+  }
+})
+
+test('rejects statically detectable batch key, order-membership, index, and batch-size conflicts', async () => {
+  const baseSet = (recordKey, exerciseEntryKey = 'entry-0001', setIndex = 1) => ({
+    recordKey, exerciseEntryKey, exerciseName: '深蹲', kind: 'weight', setIndex, weightKg: 42.5, reps: 8, completed: true,
+  })
+  const cases = [
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001'), baseSet('record-001', 'entry-0001', 2)] },
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001'), baseSet('record-002')] },
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001'), baseSet('record-002', 'entry-0001', 1)] },
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001'), { ...baseSet('record-002', 'entry-0001', 2), exerciseId: '77', exerciseName: undefined }] },
+    { exerciseEntryKeys: ['entry-0002'], sets: [baseSet('record-001')] },
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001')], deleteRecordKeys: ['record-001'] },
+    { exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001')], restoreRecordKeys: ['record-002'] },
+    { exerciseEntryKeys: ['entry-0001'], sets: Array.from({ length: 101 }, (_, i) => baseSet(`record-${String(i).padStart(3, '0')}`, 'entry-0001', i + 1)),
+      deleteRecordKeys: Array.from({ length: 100 }, (_, i) => `deleted-${String(i).padStart(3, '0')}`) },
+  ]
+  for (const [index, batch] of cases.entries()) {
+    const event = `event-${String(index).padStart(4, '0')}`
+    const backend = native()
+    const body = JSON.stringify({ expectedVersion: 1, ...batch })
+    await assert.rejects(makeStore(backend).createIfAbsent(registryKey('101', event), operation('101', event, 1, '/me/sessions/55/sets', body)),
+      error => error.code === 'invalid_operation')
+    assert.equal(backend.calls, 0)
+  }
+  const validRestore = { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], sets: [baseSet('record-001')], restoreRecordKeys: ['record-001'] }
+  assert.equal(await makeStore(native()).createIfAbsent(registryKey('101', 'event-0100'),
+    operation('101', 'event-0100', 1, '/me/sessions/55/sets', JSON.stringify(validRestore))), true)
+  const atLimit = { expectedVersion: 1, exerciseEntryKeys: ['entry-0001'],
+    sets: Array.from({ length: 100 }, (_, i) => baseSet(`record-${String(i).padStart(3, '0')}`, 'entry-0001', i + 1)),
+    deleteRecordKeys: Array.from({ length: 100 }, (_, i) => `deleted-${String(i).padStart(3, '0')}`) }
+  assert.equal(await makeStore(native()).createIfAbsent(registryKey('101', 'event-0101'),
+    operation('101', 'event-0101', 1, '/me/sessions/55/sets', JSON.stringify(atLimit))), true)
+})
+
 test('keeps old valid same-subject journal rows readable after reauthentication', async () => {
   const key = registryKey('101', 'event-0001')
   const value = operation('101', 'event-0001', 1, '/me/sessions', freeCreateBody('event-0001'))
@@ -274,7 +363,7 @@ test('accepts a registry of exactly 65,536 UTF-8 bytes and rejects the next byte
   const lastEvent = 'event-0029'
   const lastKey = registryKey('101', lastEvent)
   entries[lastKey] = operation('101', lastEvent, 1, '/me/sessions/55/finish',
-    JSON.stringify({ expectedVersion: 1, note: 'x'.repeat(1462) }))
+    JSON.stringify({ expectedVersion: 1, note: `${'x'.repeat(1362)}${'é'.repeat(50)}` }))
   const registryBytes = value => Buffer.byteLength(value, 'utf8')
   const exactRegistry = JSON.stringify({ schema: 1, entries })
   assert.equal(registryBytes(exactRegistry), 65_536)
