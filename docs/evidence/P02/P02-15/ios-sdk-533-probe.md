@@ -28,6 +28,43 @@ was exported once with the same HBuilderX command. The log at
 missing `compile-typescript` plugin and repeated the export; the attempt was
 stopped after 65 seconds. Removing the full dependency-directory link alone
 did not resolve the problem. This result does not establish a root cause.
+HBuilderX's installed-plugin panel separately displayed `typescript编译` 1.0.6
+as installed, without an enable control in that panel. That visible status
+does not establish the plugin host successfully activated it.
+HBuilderX was then restarted with its project windows restored; the DCloud
+account session returned after startup. A fresh isolated export at
+`/private/tmp/nerae-hx-533-restart-j5ihlk1w/src` again reported the same plugin
+error, and was stopped after 60 seconds. Restarting alone did not resolve it;
+no resource export success or App build is claimed.
+
+## Direct local 5.33 compiler probe
+
+A new route invoked the bundled 5.33 uni-app CLI directly, setting the local
+HBuilderX plugin root explicitly instead of asking the running plugin host to
+activate `compile-typescript`. An isolated copy of the current client source
+and the compile-only import fixture was prepared at
+`/private/tmp/nerae-533-direct-cli-4buf0omd`. Its `node_modules` points at the
+bundled HBuilderX 5.33 compiler packages; no project dependency lock was changed.
+
+```sh
+env -u HX_PLUGIN_PATHS \
+  HX_APP_ROOT=/private/tmp/nerae-hbuilder-download/HBuilderX.app/Contents/HBuilderX \
+  /private/tmp/nerae-hbuilder-download/HBuilderX.app/Contents/HBuilderX/plugins/node/node \
+  /private/tmp/nerae-hbuilder-download/HBuilderX.app/Contents/HBuilderX/plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js \
+  build -p app
+```
+
+Run from the isolated fixture, this printed `Compiler version: 5.33` and exited
+0. Inspection found the referenced AuthEntry and all four native JS proxies,
+their iOS and Android UTS wrappers (including versioned journal methods), and
+byte-identical copies of the current native source. Each generated iOS plugin
+source set was independently linked against the extracted 5.33 DCloud runtime
+with `swiftc -emit-library -target arm64-apple-ios15.0`; all four exited 0 and
+produced arm64 Mach-O dynamic libraries. Warnings remain in generated/vendor
+code. This is a local resource-generation and isolated-plugin linkage probe:
+the fixture entry is not Nerae's actual page, and it is not an App link, signed
+package, installed device run, or evidence of functional cross-device sync.
+The GUI plugin-host activation failure remains unresolved.
 
 ## iPhoneOS Swift source type-check
 
