@@ -8,7 +8,7 @@
 - 同主体待批准设备列表的内部数据库组件及未挂载的 HTTP handler 已合入，集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用；生产路由、跨身份批准和可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
 - 隔离服务已在同一测试 HTTP 装配中串起邮箱发信、登录、成年声明和训练创建/组写入/读取/完成；同键重放、无权账号读写及撤销后的拒绝通过。两种页面模式和真实双设备未在此测试，生产进程仍未挂载业务路由。[证据](evidence/A01/A01-24/report.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；合成 CAS、精度边界、类型与 App/小程序源码探针通过。它尚无完整队列、进程重启后的重放或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [适配器](evidence/P02/P02-13/journal-request-shape-guard.md)
-- App 原生和 uni-app 训练请求端口现可保留白名单响应头，供未来核验幂等有效期与请求标识；尚未据此结算待发操作。[证据](evidence/U02/U02-01/recording-response-headers.md) 可信代理来源 IP 解析器已局部测试但未连接服务；上线仍须限制后端监听并实测代理覆盖专用头。[证据](evidence/A01/trusted-source-ip-resolver.md)
+- 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时要求核对；集成树 123 项训练相关测试及私有 MySQL/TLS 客户端联测通过。尚无持久重放与响应结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/recording-idempotency-expiry-receipt.md) 可信代理来源 IP 解析器已局部测试但未连接服务；上线仍须限制后端监听并实测代理覆盖专用头。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明内部事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。合同、未挂载的登录和 `/me` handler 及客户端会话接缝已传递声明版本，A01-23/24 在隔离服务中复测通过；声明写入 HTTP 和 App 页面仍未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
 - 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。iOS 的 UTS/Swift 参数标签错误修复后，HBuilderX 5.33 已编出未签名 iPhoneOS framework。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机及上层账号映射仍待完成。
