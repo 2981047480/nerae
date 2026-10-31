@@ -37,8 +37,12 @@ The precision check now counts fractional digits from `JSON.stringify(number)`, 
 Verification in the isolated worktree:
 
 ```sh
-node --test apps/client/src/features/training/secureOperationJournalStorage.test.mjs
+node --import /Users/zephyr/.codex/worktrees/nerae-device-proof/nerae/docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/secureOperationJournalStorage.test.mjs
 git diff --check
 ```
 
-Result: 19/19 Node tests passed; `git diff --check` passed. `pnpm --dir apps/client run typecheck` could not complete: dependencies were absent and pnpm began an install, but package registry requests returned `EPERM`; the command was interrupted before installation completed. Typecheck therefore remains unverified. No native vault, device, HTTP replay, account recovery, or server-snapshot behavior was tested.
+Result after the precision fix: 20/20 Node tests passed; `git diff --check` passed. In the earlier guard worktree, `pnpm --dir apps/client run typecheck` could not complete: dependencies were absent and pnpm began an install, but package registry requests returned `EPERM`; the command was interrupted before installation completed. See the integration recheck below for typechecking. No native vault, device, HTTP replay, account recovery, or server-snapshot behavior was tested.
+
+## 集成复测
+
+集成代码 `ccdd3c8` 的 `secureOperationJournalStorage.test.mjs`：20/20 通过，客户端类型检查退出 0。锁定版 uni-app 5.26 的 App/小程序源码探针引用 `createNativeTrainingJournalStorage` 后编译通过，探针保留于 `/var/folders/6k/klwbxv35003_wd7b9kwtnt6c0000gn/T/nerae-uts-build-28wtc7tw`。该适配器检查受信客户端的主体与会话代际，并不是原生 vault 对任意 JS 调用的账号访问控制；它仍不发送或结算训练操作，亦未经过设备验证。

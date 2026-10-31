@@ -23,6 +23,7 @@ import { createAppSessionCoordinator } from '@/platform/app/nativeSession'
 import { createAppDeviceIdentityCoordinator, signAppEmailLoginChallenge } from '@/platform/app/nativeDeviceIdentity'
 import { createAppEmailLoginFlow } from '@/platform/app/nativeEmailLogin'
 import { createAppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
+import { createNativeTrainingJournalStorage } from '@/platform/app/nativeTrainingJournalStorage'
 import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
@@ -30,7 +31,7 @@ const authRuntime = shallowRef<AppAuthRuntime | null>(null)
 function probe() {
   result.value = generateSecureRandomRequestKey().errorCode + String(createConfiguredAppHttpsPorts) + String(createAppSessionCoordinator) +
     String(createAppDeviceIdentityCoordinator) + String(signAppEmailLoginChallenge) + String(createAppEmailLoginFlow) + String(createAppAuthRuntime) +
-    String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
+    String(createNativeTrainingJournalStorage) + String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
 }
 </script>
 <template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" /></template>
