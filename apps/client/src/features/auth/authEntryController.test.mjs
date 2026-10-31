@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { AuthApiError } from '../../api/auth/emailAuthApi.ts'
+import { EmailLoginFlow } from './emailLoginFlow.ts'
 import { AuthEntryController } from './authEntryController.ts'
 
 const adultSession = (subjectId = '41', generation = 'session-1') => Object.freeze({
@@ -30,6 +33,14 @@ function harness({ restore = { status: 'signed_out', reason: 'missing' }, challe
     snapshot: () => current,
     isCurrent: (subject, generation) => current?.subjectId === subject && current?.generation === generation,
     captureInstallGuard() { return Object.freeze({ revision, id: ++guardId }) },
+    isInstallGuardCurrent(guard) { return guard?.revision === revision },
+    async installAuthenticatedIfCurrent(result, guard) {
+      if (guard?.revision !== revision) return { status: 'superseded' }
+      const session = Object.freeze({ status: 'authenticated', subjectId: result.user.id,
+        generation: `flow-session-${++guardId}`, user: result.user })
+      current = session
+      return { status: 'authenticated', session }
+    },
     subscribeInstallGuardInvalidation(guard, callback) {
       if (guard.revision !== revision) throw new Error('stale guard')
       const list = watches.get(guard) ?? new Set()
@@ -75,7 +86,7 @@ function harness({ restore = { status: 'signed_out', reason: 'missing' }, challe
   const runtime = { session, login: api, ageDeclaration: ageApi }
   const emitted = []
   const controller = new AuthEntryController(runtime, session => emitted.push(session))
-  return { controller, runtime, session, calls, emitted }
+  return { controller, runtime, session, calls, emitted, watchCount: () => watches.size }
 }
 
 test('restores and emits only the actual currently verified adult session', async () => {
@@ -148,9 +159,96 @@ test('new-device approval remains pending and never emits an authenticated sessi
   h.controller.setCode('654321')
   await h.controller.submitCode()
   assert.equal(h.controller.state.status, 'approval_required')
+  assert.equal(h.controller.state.comparisonCode, '4821')
   assert.match(h.controller.state.message, /已登录设备/)
   assert.match(h.controller.state.message, /不会创建登录会话/)
   assert.equal(h.emitted.length, 0)
+})
+
+test('actual EmailLoginFlow keeps rate-limited challenge and login retries on their original request', async () => {
+  const h = harness()
+  const challengeRequests = []
+  const loginRequests = []
+  let challengeCount = 0
+  let loginCount = 0
+  const api = {
+    async requestChallenge(input, key) {
+      challengeRequests.push({ input, key })
+      if (++challengeCount === 1) throw new AuthApiError('rate_limited', 429)
+      return { challengeId: 'challenge-73', expiresAt: '2026-10-31T12:00:00Z' }
+    },
+    async login(input, key) {
+      loginRequests.push({ input, key })
+      if (++loginCount === 1) throw new AuthApiError('rate_limited', 429)
+      return { status: 'authenticated', expiresIn: 300,
+        user: { id: '73', nickname: '学员', roles: ['student'], ageVerified: true, ageDeclarationVersion: 1 } }
+    },
+  }
+  const identity = { publicKeyForProtocol: { kty: 'EC', crv: 'P-256', x: 'x'.repeat(43), y: 'y'.repeat(43) } }
+  h.runtime.login = new EmailLoginFlow(api, {
+    async initializeFirstForEmail() { return { status: 'ready', identity } },
+  }, h.session, () => 'A'.repeat(43), () => ({ forSubmission: () => `${'A'.repeat(12)}.${'B'.repeat(12)}.${'C'.repeat(12)}` }))
+
+  await h.controller.start()
+  h.controller.setEmail('person@example.test')
+  await h.controller.requestCode()
+  assert.equal(h.controller.state.status, 'retry_challenge')
+  assert.match(h.controller.state.message, /同一验证码请求/)
+  h.controller.setEmail('changed@example.test')
+  assert.equal(h.controller.state.email, 'person@example.test')
+  await h.controller.requestCode()
+  assert.equal(h.controller.state.status, 'waiting_code')
+  assert.deepEqual(challengeRequests[1], challengeRequests[0], 'retry must preserve exact challenge body and key')
+
+  h.controller.setCode('123456')
+  await h.controller.submitCode()
+  assert.equal(h.controller.state.status, 'retry_login')
+  assert.match(h.controller.state.message, /同一登录请求/)
+  h.controller.setCode('654321')
+  assert.equal(h.controller.state.code, '', 'a rate-limited login cannot be changed to a new OTP')
+  await h.controller.submitCode()
+  assert.equal(h.controller.state.status, 'authenticated')
+  assert.deepEqual(loginRequests[1], loginRequests[0], 'retry must preserve exact login body, OTP, proof, and key')
+  assert.equal(h.emitted.length, 1)
+})
+
+test('dispose drops controller inputs and watcher and suppresses late completion without resetting an in-flight request', async () => {
+  let finishChallenge
+  const pending = new Promise(resolve => { finishChallenge = resolve })
+  const h = harness({ challenge: () => pending })
+  await h.controller.start()
+  h.controller.setEmail('person@example.test')
+  let notifications = 0
+  h.controller.subscribe(() => { notifications++ })
+  const request = h.controller.requestCode()
+  assert.equal(h.watchCount(), 1)
+  const beforeDispose = notifications
+  h.controller.dispose()
+  assert.equal(h.watchCount(), 0)
+  assert.equal(h.controller.state.email, '')
+  assert.equal(h.controller.state.code, '')
+  assert.equal(h.calls.reset, 0, 'do not destroy the flow while its exact request is unresolved')
+  h.controller.setEmail('other@example.test')
+  h.controller.setCode('999999')
+  assert.equal(h.controller.state.email, '')
+  assert.equal(h.controller.state.code, '')
+  finishChallenge({ status: 'waiting_code', expiresAt: '2026-10-31T12:00:00Z' })
+  await request
+  assert.equal(notifications, beforeDispose, 'disposed UI listeners receive no late results')
+  assert.equal(h.controller.state.email, '')
+  assert.equal(h.controller.state.status, 'email')
+  await h.controller.start()
+  assert.equal(h.calls.restore, 1, 'disposed controllers cannot restart')
+})
+
+test('uni-app surface provides a parent-handled browse cancel and shows the server comparison code', () => {
+  const source = readFileSync(new URL('./AuthEntry.vue', import.meta.url), 'utf8')
+  const controllerSource = readFileSync(new URL('./authEntryController.ts', import.meta.url), 'utf8')
+  assert.match(source, /cancel:\s*\[\]/)
+  assert.match(source, /@click="cancel"/)
+  assert.match(source, /{{\s*state\.comparisonCode\s*}}/)
+  assert.match(controllerSource, /当前暂不支持在这里完成批准/)
+  assert.match(source, /onBeforeUnmount\(\(\) => controller\.dispose\(\)\)/)
 })
 
 test('session invalidation clears email and code and cannot publish a late stale result', async () => {

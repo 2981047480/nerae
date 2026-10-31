@@ -32,3 +32,18 @@ The compiler commands use an existing dependency tree via a temporary ignored `a
 - The component is not imported by a production page or shared route, per scope. Therefore the resource builds do not establish that this component is rendered or linked into a shipping page. `vue-tsc` includes the component source, but no App/WeChat runtime screen was visually inspected.
 - Tests use synthetic ports. They do not establish actual email delivery, live service behavior, device approval, native vault behavior, or true App/mini-program runtime behavior.
 - The entry flow is ready for a parent page to mount with a configured runtime. The parent remains responsible for preserving the user's previous destination and handling the emitted public session.
+
+## Follow-up review fixes
+
+- Challenge `rate_limited` now keeps the controller in `retry_challenge`; login `rate_limited` stays in `retry_login`. Both controls retry through `EmailLoginFlow`'s existing retry port. A test drives the actual `EmailLoginFlow` with synthetic ports and verifies the second challenge/login call has exactly the same request body and idempotency key. The OTP cannot be edited during a login retry.
+- `AuthEntryController.dispose()` removes the session watcher and listeners, clears controller-owned email/code state and its parent callback, and suppresses late UI notifications. If a request is unresolved, it does not reset `EmailLoginFlow`, so that flow retains the exact retry state. This is in-memory only; the flow has no request-abort API, so an already in-flight successful login may still install through its own session coordinator even though the disposed component will not emit it.
+- The component now emits `cancel` for the parent to handle, displays the server-provided approval comparison code, and continues to state that device approval is not implemented here.
+
+Follow-up verification:
+
+- Focused controller test: 9/9 passed.
+- Auth and auth API test set: 70/70 passed with `node --import ../../docs/evidence/P02/P02-11/node-ts-loader.mjs --test src/features/auth/*.test.mjs src/api/auth/*.test.mjs`.
+- Vue/TypeScript check: passed by invoking the existing integration dependency tree's `vue-tsc` JS entry with `--noEmit -p apps/client/tsconfig.json`. Two temporary symlinks to that dependency tree were removed after the check. A `pnpm run typecheck` attempt did not reach typechecking because its workspace wrapper attempted install and aborted on `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`.
+- `git diff --check`: passed.
+
+No App page imports this component, and no visual or device-runtime acceptance was performed in this follow-up.

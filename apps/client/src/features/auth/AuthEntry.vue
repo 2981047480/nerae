@@ -5,10 +5,15 @@ import type { PublicSession } from './sessionCoordinator'
 import { AuthEntryController, type AuthEntryState } from './authEntryController'
 
 const props = defineProps<{ runtime: AppAuthRuntime }>()
-const emit = defineEmits<{ authenticated: [session: PublicSession] }>()
+const emit = defineEmits<{ authenticated: [session: PublicSession]; cancel: [] }>()
 const controller = new AuthEntryController(props.runtime, session => emit('authenticated', session))
 const state = shallowRef<AuthEntryState>(controller.state)
-const unsubscribe = controller.subscribe(next => { state.value = next })
+controller.subscribe(next => { state.value = next })
+
+function cancel(): void {
+  controller.dispose()
+  emit('cancel')
+}
 
 function inputValue(event: unknown): string {
   if (event === null || typeof event !== 'object' || !('detail' in event)) return ''
@@ -19,7 +24,7 @@ function inputValue(event: unknown): string {
 }
 
 onMounted(() => { void controller.start() })
-onBeforeUnmount(unsubscribe)
+onBeforeUnmount(() => controller.dispose())
 </script>
 
 <template>
@@ -66,6 +71,8 @@ onBeforeUnmount(unsubscribe)
 
     <view v-else-if="state.status === 'approval_required'" class="auth-entry__notice">
       <text class="auth-entry__notice-title">需要已登录设备确认</text>
+      <text class="auth-entry__comparison-label">请在已登录设备核对</text>
+      <text class="auth-entry__comparison-code">{{ state.comparisonCode }}</text>
       <text>{{ state.message }}</text>
       <button class="auth-entry__secondary" @click="controller.resetLogin()">返回登录</button>
     </view>
@@ -91,6 +98,7 @@ onBeforeUnmount(unsubscribe)
       <button v-if="state.status === 'unavailable'" class="auth-entry__primary" @click="controller.retryRestore()">重新检查</button>
       <button v-else class="auth-entry__secondary" @click="controller.resetLogin()">重新开始登录</button>
     </view>
+    <button v-if="state.status !== 'authenticated'" class="auth-entry__browse" @click="cancel">先继续浏览</button>
   </view>
 </template>
 
@@ -109,10 +117,13 @@ onBeforeUnmount(unsubscribe)
 .auth-entry__message { color: #68716b; font-size: 23rpx; line-height: 1.5; }
 .auth-entry__notice { padding: 24rpx; border-radius: 20rpx; background: #f2f5f1; color: #58645c; font-size: 25rpx; line-height: 1.55; }
 .auth-entry__notice-title { color: #252c29; font-size: 29rpx; font-weight: 700; }
+.auth-entry__comparison-label { color: #58645c; font-size: 23rpx; }
+.auth-entry__comparison-code { color: #252c29; font-size: 44rpx; font-weight: 700; letter-spacing: 8rpx; }
 .auth-entry__success { background: #eef5ef; }
 .auth-entry__primary, .auth-entry__secondary { margin: 0; width: 100%; height: 92rpx; line-height: 92rpx; border-radius: 18rpx; font-size: 27rpx; font-weight: 650; }
 .auth-entry__primary { border: 0; background: #ff9a75; color: #252c29; }
 .auth-entry__primary[disabled] { opacity: .55; }
 .auth-entry__secondary { border: 1rpx solid #cfd7d0; background: #fff; color: #35443b; }
+.auth-entry__browse { margin: 2rpx 0 0; width: 100%; height: 72rpx; line-height: 72rpx; color: #58645c; font-size: 23rpx; background: transparent; }
 button::after { border: 0; }
 </style>

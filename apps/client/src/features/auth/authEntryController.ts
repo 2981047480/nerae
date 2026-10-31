@@ -36,10 +36,13 @@ function publicSession(runtime: Runtime, expectedSubject?: string): PublicSessio
 export class AuthEntryController {
   readonly #runtime: Runtime
   readonly #listeners = new Set<Listener>()
-  readonly #onAuthenticated: (session: PublicSession) => void
+  #onAuthenticated: ((session: PublicSession) => void) | null
   #state = initialState()
   #started = false
   #busy = false
+  #disposed = false
+  #pendingEmail = ''
+  #pendingCode = ''
   #unwatch: (() => void) | null = null
 
   constructor(runtime: Runtime, onAuthenticated: (session: PublicSession) => void = () => undefined) {
@@ -59,6 +62,7 @@ export class AuthEntryController {
   get state(): AuthEntryState { return this.#state }
 
   subscribe(listener: Listener): () => void {
+    if (this.#disposed) return () => undefined
     if (typeof listener !== 'function') throw new Error('authentication entry unavailable')
     this.#listeners.add(listener)
     listener(this.#state)
@@ -66,7 +70,7 @@ export class AuthEntryController {
   }
 
   async start(): Promise<void> {
-    if (this.#started || this.#busy) return
+    if (this.#disposed || this.#started || this.#busy) return
     this.#started = true
     this.#busy = true
     this.#set(initialState('restoring', '正在安全检查已保存的登录状态'))
@@ -93,36 +97,40 @@ export class AuthEntryController {
   }
 
   setEmail(email: string): void {
-    if (this.#busy || !['email', 'waiting_code'].includes(this.#state.status)) return
+    if (this.#disposed || this.#busy || !['email', 'waiting_code'].includes(this.#state.status)) return
     this.#set({ ...this.#state, email, message: '' })
   }
 
   setCode(code: string): void {
-    if (this.#busy || this.#state.status !== 'waiting_code') return
+    if (this.#disposed || this.#busy || this.#state.status !== 'waiting_code') return
     this.#set({ ...this.#state, code: code.replace(/[^0-9]/g, '').slice(0, 10), message: '' })
   }
 
   async retryRestore(): Promise<void> {
-    if (this.#busy) return
+    if (this.#disposed || this.#busy) return
     this.#started = false
     await this.start()
   }
 
   async requestCode(): Promise<void> {
-    if (this.#busy || !['email', 'retry_challenge'].includes(this.#state.status)) return
+    if (this.#disposed || this.#busy || !['email', 'retry_challenge'].includes(this.#state.status)) return
     const retrying = this.#state.status === 'retry_challenge'
-    const email = this.#state.email
+    this.#pendingEmail = this.#state.email
     this.#busy = true
     this.#watchSession()
     this.#set({ ...this.#state, status: 'sending_code', message: '正在安全请求验证码' })
     try {
       const result = retrying
         ? await this.#runtime.login.retryChallenge()
-        : await this.#runtime.login.requestCode(email)
+        : await this.#runtime.login.requestCode(this.#pendingEmail)
+      if (this.#disposed) return
+      const email = this.#pendingEmail
       if (result.status === 'waiting_code') {
         this.#set({ status: 'waiting_code', email, code: '', message: '如果邮件未到，请检查垃圾邮件；重试会复用原请求。', expiresAt: result.expiresAt })
       } else if (result.status === 'retry_challenge') {
         this.#set({ status: 'retry_challenge', email, code: '', message: '请求结果暂不明确。可重试同一请求，不会另发一封。' })
+      } else if (result.status === 'rate_limited') {
+        this.#set({ status: 'retry_challenge', email, code: '', message: '请求过于频繁，请稍后重试同一验证码请求；邮箱和请求内容保持不变。' })
       } else if (result.status === 'approval_required') {
         this.#approvalRequired(result.comparisonCode)
       } else if (result.status === 'session_changed') {
@@ -135,26 +143,28 @@ export class AuthEntryController {
         this.#set({ status: 'email', email, code: '', message: this.#messageFor(result.status) })
       }
     } catch {
-      this.#set({ status: 'retry_challenge', email, code: '', message: '请求结果暂不明确。可重试同一请求。' })
-    } finally { this.#busy = false }
+      if (!this.#disposed) this.#set({ status: 'retry_challenge', email: this.#pendingEmail, code: '', message: '请求结果暂不明确。可重试同一请求。' })
+    } finally { this.#pendingEmail = ''; this.#pendingCode = ''; this.#busy = false }
   }
 
   async retryChallenge(): Promise<void> {
-    if (this.#state.status !== 'retry_challenge') return
+    if (this.#disposed || this.#state.status !== 'retry_challenge') return
     await this.requestCode()
   }
 
   async submitCode(): Promise<void> {
-    if (this.#busy || !['waiting_code', 'retry_login'].includes(this.#state.status)) return
+    if (this.#disposed || this.#busy || !['waiting_code', 'retry_login'].includes(this.#state.status)) return
     const retrying = this.#state.status === 'retry_login'
-    const email = this.#state.email
-    const code = this.#state.code
+    this.#pendingEmail = this.#state.email
+    this.#pendingCode = retrying ? '' : this.#state.code
     this.#busy = true
     this.#set({ ...this.#state, status: 'submitting_code', message: '正在验证验证码' })
     try {
       const result = retrying
         ? await this.#runtime.login.retryLogin()
-        : await this.#runtime.login.submitCode(code)
+        : await this.#runtime.login.submitCode(this.#pendingCode)
+      if (this.#disposed) return
+      const email = this.#pendingEmail
       if (result.status === 'authenticated') {
         const current = publicSession(this.#runtime, result.session.subjectId)
         if (!current || current.generation !== result.session.generation) {
@@ -167,6 +177,8 @@ export class AuthEntryController {
         this.#approvalRequired(result.comparisonCode)
       } else if (result.status === 'retry_login') {
         this.#set({ status: 'retry_login', email, code: '', message: '登录结果暂不明确。重试会复用原请求；请勿重新发送验证码。' })
+      } else if (result.status === 'rate_limited') {
+        this.#set({ status: 'retry_login', email, code: '', message: '登录请求过于频繁，请稍后重试同一登录请求；不会重新发送验证码。' })
       } else if (result.status === 'restart_required') {
         try { this.#runtime.login.reset() } catch { /* Keep state neutral. */ }
         this.#stopWatching()
@@ -176,12 +188,12 @@ export class AuthEntryController {
           code: '', message: this.#messageFor(result.status), expiresAt: this.#state.expiresAt })
       }
     } catch {
-      this.#set({ status: 'retry_login', email, code: '', message: '登录结果暂不明确。重试会复用原请求；请勿重新发送验证码。' })
-    } finally { this.#busy = false }
+      if (!this.#disposed) this.#set({ status: 'retry_login', email: this.#pendingEmail, code: '', message: '登录结果暂不明确。重试会复用原请求；请勿重新发送验证码。' })
+    } finally { this.#pendingEmail = ''; this.#pendingCode = ''; this.#busy = false }
   }
 
   async confirmAdult(): Promise<void> {
-    if (this.#busy || this.#state.status !== 'confirm_age' || !this.#state.session) return
+    if (this.#disposed || this.#busy || this.#state.status !== 'confirm_age' || !this.#state.session) return
     const expected = this.#state.session
     this.#busy = true
     this.#set({ ...this.#state, status: 'confirming_age', message: '正在提交你的明确确认' })
@@ -214,7 +226,7 @@ export class AuthEntryController {
   }
 
   resetLogin(): void {
-    if (this.#busy) return
+    if (this.#disposed || this.#busy) return
     try { this.#runtime.login.reset() } catch { /* Keep the UI neutral. */ }
     this.#stopWatching()
     this.#set(initialState('email', '可以重新开始登录。'))
@@ -236,11 +248,14 @@ export class AuthEntryController {
   }
 
   #watchSession(): void {
-    if (this.#unwatch) return
+    if (this.#disposed || this.#unwatch) return
     const guard = this.#runtime.session.captureInstallGuard()
     if (!guard) return
     try {
       this.#unwatch = this.#runtime.session.subscribeInstallGuardInvalidation(guard, () => {
+        if (this.#disposed) return
+        this.#pendingEmail = ''
+        this.#pendingCode = ''
         this.#unwatch = null
         const current = this.#state
         if (this.#busy) this.#set({ ...current, email: '', code: '', message: '登录状态已变化，请重新验证。' })
@@ -257,12 +272,32 @@ export class AuthEntryController {
 
   #sessionChanged(): void {
     this.#stopWatching()
+    this.#pendingEmail = ''
+    this.#pendingCode = ''
     this.#set(initialState('session_changed', '登录状态已变化，请重新验证。'))
   }
 
+  /** Release UI/session subscriptions on unmount. A busy flow keeps its exact retry internally. */
+  dispose(): void {
+    if (this.#disposed) return
+    this.#disposed = true
+    this.#stopWatching()
+    this.#pendingEmail = ''
+    this.#pendingCode = ''
+    this.#onAuthenticated = null
+    if (!this.#busy) {
+      try { this.#runtime.login.reset() } catch { /* Best-effort removal of transient credentials. */ }
+    }
+    this.#listeners.clear()
+    this.#state = initialState('email')
+  }
+
   #emit(session: PublicSession): void {
+    if (this.#disposed) return
     if (!this.#runtime.session.isCurrent(session.subjectId, session.generation) || session.user.ageVerified !== true) return
-    try { this.#onAuthenticated(session) } catch { /* Parent listeners cannot alter authentication state. */ }
+    const listener = this.#onAuthenticated
+    if (!listener) return
+    try { listener(session) } catch { /* Parent listeners cannot alter authentication state. */ }
   }
 
   #messageFor(status: string): string {
@@ -280,6 +315,7 @@ export class AuthEntryController {
   }
 
   #set(state: AuthEntryState): void {
+    if (this.#disposed) return
     this.#state = Object.freeze({ ...state })
     for (const listener of [...this.#listeners]) { try { listener(this.#state) } catch { /* Isolate UI observers. */ } }
   }
