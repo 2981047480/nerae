@@ -30,7 +30,8 @@ test('auth transport uses explicit configured HTTPS base and returns parsed nati
 
 test('recording request preserves raw body, caller idempotency key and method', async () => {
   let sent
-  const ports = make((request, callbacks) => { sent = request; callbacks.success(ok('req-2', 201, '{"accepted":true}')); return 'req-2' })
+  const ports = make((request, callbacks) => { sent = request; callbacks.success(ok('req-2', 201, '{"accepted":true}',
+    '{"content-type":"application/json","cache-control":"no-store","idempotency-key-expires-at":"2026-11-01T00:00:00Z","x-request-id":"abc"}')); return 'req-2' })
   const body = '{"expectedVersion":4, "sets": [ {"rpe":7.5} ]}'
   const response = await ports.recordingRequest({
     url: 'https://api.example.test/v1/me/sessions/101/sets', method: 'POST',
@@ -39,7 +40,11 @@ test('recording request preserves raw body, caller idempotency key and method', 
   assert.equal(sent.body, body)
   assert.equal(JSON.parse(sent.headersJson)['Idempotency-Key'], 'caller-key-abcdef12')
   assert.equal(sent.method, 'POST')
-  assert.deepEqual(response, { statusCode: 201, data: { accepted: true } })
+  assert.deepEqual(response, { statusCode: 201, data: { accepted: true }, headers: {
+    'content-type': 'application/json', 'cache-control': 'no-store',
+    'idempotency-key-expires-at': '2026-11-01T00:00:00Z', 'x-request-id': 'abc',
+  } })
+  assert.equal(Object.isFrozen(response.headers), true)
 })
 
 test('recording GET supports exact base path and query and carries no body', async () => {

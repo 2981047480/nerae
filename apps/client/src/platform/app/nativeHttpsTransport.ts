@@ -381,7 +381,7 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
   const recordingRequest: RequestPort = async (request: HttpRequest): Promise<HttpResponse> => {
     if (!request || (request.method !== 'GET' && request.method !== 'POST')) throw new RecordingApiError('invalid_request')
     const result = await run(request.method, request.url, request.header, request.data, 'recording')
-    return { statusCode: result.status, data: result.body }
+    return { statusCode: result.status, data: result.body, headers: result.headers }
   }
   const readCurrentUser = async (accessToken: string): Promise<AuthenticatedMeWireResponse> => {
     if (typeof accessToken !== 'string' || accessToken.length < 1 || accessToken.length > 8192 ||

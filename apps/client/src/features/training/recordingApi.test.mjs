@@ -359,6 +359,29 @@ test('the uni-app adapter forwards request completion and rejects a transport fa
   } finally { globalThis.uni = previous }
 })
 
+test('the uni-app recording adapter preserves only unambiguous allowed response headers', async () => {
+  const previous = globalThis.uni
+  try {
+    const request = createUniRequestPort()
+    globalThis.uni = { request(options) { options.success({ statusCode: 201, data: { ok: true }, header: {
+      'Cache-Control': 'no-store', 'Idempotency-Key-Expires-At': '2026-11-01T00:00:00Z',
+      'X-Request-Id': 'abc', 'Set-Cookie': 'not-for-the-app',
+    } }) } }
+    const response = await request({ url: 'https://example.org', method: 'POST', header: {} })
+    assert.deepEqual(response.headers, { 'cache-control': 'no-store',
+      'idempotency-key-expires-at': '2026-11-01T00:00:00Z', 'x-request-id': 'abc' })
+    assert.equal(Object.isFrozen(response.headers), true)
+    for (const header of [
+      { 'X-Request-ID': 'abc', 'x-request-id': 'def' },
+      { 'Cache-Control': ['no-store'] },
+      { 'Idempotency-Key-Expires-At': 'bad\r\nvalue' },
+    ]) {
+      globalThis.uni = { request(options) { options.success({ statusCode: 200, data: {}, header }) } }
+      await assert.rejects(request({ url: 'https://example.org', method: 'GET', header: {} }), /invalid response headers/)
+    }
+  } finally { globalThis.uni = previous }
+})
+
 
 test('ordered details accept gaps but reject missing, duplicate, mismatched or unsorted snapshots', async () => {
   const secondEntry = { ...set, recordKey: 'record-003', exerciseEntryKey: 'entry-0002', exerciseName: '划船', resolvedExerciseName: '划船' }

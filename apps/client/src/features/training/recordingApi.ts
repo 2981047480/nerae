@@ -82,6 +82,8 @@ export interface HttpRequest {
 export interface HttpResponse {
   statusCode: number
   data: unknown
+  /** Allowlisted response headers, when exposed by the platform transport. */
+  headers?: Readonly<Record<string, string>>
 }
 
 export type RequestPort = (request: HttpRequest) => Promise<HttpResponse>
@@ -711,11 +713,32 @@ export class RecordingApi {
 }
 
 /** Adapter to the actual uni-app network API on each target platform. */
+const permittedRecordingResponseHeaders = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at'])
+
+function selectRecordingResponseHeaders(raw: unknown): Readonly<Record<string, string>> | undefined {
+  if (raw === undefined || raw === null) return undefined
+  if (!object(raw)) throw new Error('invalid response headers')
+  const selected: Record<string, string> = {}
+  for (const [name, value] of Object.entries(raw)) {
+    const lower = name.toLowerCase()
+    if (!permittedRecordingResponseHeaders.has(lower)) continue
+    if (Object.prototype.hasOwnProperty.call(selected, lower) || typeof value !== 'string' ||
+      value.length > 8192 || /[\u0000-\u001f\u007f]/.test(value)) throw new Error('invalid response headers')
+    selected[lower] = value
+  }
+  return Object.freeze(selected)
+}
+
 export function createUniRequestPort(): RequestPort {
   return request => new Promise((resolve, reject) => {
     uni.request({
       ...request,
-      success: result => resolve({ statusCode: result.statusCode, data: result.data }),
+      success: result => {
+        try {
+          const headers = selectRecordingResponseHeaders(result.header)
+          resolve({ statusCode: result.statusCode, data: result.data, ...(headers === undefined ? {} : { headers }) })
+        } catch { reject(new Error('invalid response headers')) }
+      },
       fail: () => reject(new Error('network unavailable')),
     })
   })
