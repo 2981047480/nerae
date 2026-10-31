@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"time"
 
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/mail"
 )
@@ -33,13 +34,14 @@ type Outbox struct {
 	deriver    *Deriver
 	codeKeyID  string
 	hasher     *domain.EmailCodeHasher
+	hashEpoch  *codeepoch.Store
 	identities *domain.EmailIdentityProtector
 	sender     CodeSender
 	lease      time.Duration
 	now        func() time.Time
 }
 
-func NewOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHasher, identities *domain.EmailIdentityProtector, sender CodeSender, lease time.Duration) (*Outbox, error) {
+func NewOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHasher, hashKeyID string, identities *domain.EmailIdentityProtector, sender CodeSender, lease time.Duration) (*Outbox, error) {
 	if deriver == nil || hasher == nil || identities == nil || sender == nil || !validOutboxKeyID(codeKeyID) ||
 		lease < time.Second || lease > 10*time.Minute || lease%time.Microsecond != 0 {
 		return nil, ErrOutbox
@@ -47,22 +49,30 @@ func NewOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHashe
 	if _, err := deriver.KeyEpochTag(); err != nil {
 		return nil, ErrOutbox
 	}
+	hashEpoch, err := codeepoch.New(hasher, hashKeyID)
+	if err != nil {
+		return nil, ErrOutbox
+	}
 	return &Outbox{deriver: deriver, codeKeyID: codeKeyID, hasher: hasher, identities: identities,
-		sender: sender, lease: lease, now: time.Now}, nil
+		hashEpoch: hashEpoch, sender: sender, lease: lease, now: time.Now}, nil
 }
 
 // NewEnqueueOutbox creates the producer side of the queue without granting it
 // a mail sender. It may initialize/lock the epoch and enqueue challenges, but
 // cannot claim, prepare, recover or send deliveries. Only a worker configured
 // with NewOutbox may perform those operations.
-func NewEnqueueOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHasher, identities *domain.EmailIdentityProtector) (*Outbox, error) {
+func NewEnqueueOutbox(deriver *Deriver, codeKeyID string, hasher *domain.EmailCodeHasher, hashKeyID string, identities *domain.EmailIdentityProtector) (*Outbox, error) {
 	if deriver == nil || hasher == nil || identities == nil || !validOutboxKeyID(codeKeyID) {
 		return nil, ErrOutbox
 	}
 	if _, err := deriver.KeyEpochTag(); err != nil {
 		return nil, ErrOutbox
 	}
-	return &Outbox{deriver: deriver, codeKeyID: codeKeyID, hasher: hasher, identities: identities, now: time.Now}, nil
+	hashEpoch, err := codeepoch.New(hasher, hashKeyID)
+	if err != nil {
+		return nil, ErrOutbox
+	}
+	return &Outbox{deriver: deriver, codeKeyID: codeKeyID, hasher: hasher, hashEpoch: hashEpoch, identities: identities, now: time.Now}, nil
 }
 
 func (Outbox) String() string               { return "EmailOutbox{redacted}" }
@@ -487,6 +497,9 @@ func (s *Outbox) lockEpochs(ctx context.Context, tx *sql.Tx) error {
 	}
 	var codeID, storedCode []byte
 	if err := tx.QueryRowContext(ctx, `SELECT key_id,key_tag FROM auth_email_code_key_epoch WHERE slot=1 FOR SHARE`).Scan(&codeID, &storedCode); err != nil || string(codeID) != s.codeKeyID || subtle.ConstantTimeCompare(storedCode, codeTag[:]) != 1 {
+		return ErrOutbox
+	}
+	if s.hashEpoch == nil || s.hashEpoch.Lock(ctx, tx) != nil {
 		return ErrOutbox
 	}
 	return nil

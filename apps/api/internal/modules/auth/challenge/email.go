@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/repository"
 )
@@ -20,6 +21,7 @@ var (
 
 type Store struct {
 	hasher     *domain.EmailCodeHasher
+	hashEpoch  *codeepoch.Store
 	replay     *repository.ProofReplayStore
 	identities *domain.EmailIdentityProtector
 	policy     Policy
@@ -34,13 +36,17 @@ type Policy struct {
 	DeviceProof  domain.ProofPolicy
 }
 
-func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector, policy Policy) (*Store, error) {
+func NewStore(hasher *domain.EmailCodeHasher, replay *repository.ProofReplayStore, identities *domain.EmailIdentityProtector, hashKeyID string, policy Policy) (*Store, error) {
 	if hasher == nil || replay == nil || identities == nil || policy.ChallengeTTL < time.Second ||
 		policy.ChallengeTTL > 30*time.Minute || policy.ChallengeTTL%time.Microsecond != 0 ||
 		policy.MaxAttempts < 1 || policy.MaxAttempts > 10 || !domain.ValidProofPolicy(policy.DeviceProof) {
 		return nil, ErrChallengeStore
 	}
-	return &Store{hasher: hasher, replay: replay, identities: identities, policy: policy, now: time.Now}, nil
+	hashEpoch, err := codeepoch.New(hasher, hashKeyID)
+	if err != nil {
+		return nil, ErrChallengeStore
+	}
+	return &Store{hasher: hasher, hashEpoch: hashEpoch, replay: replay, identities: identities, policy: policy, now: time.Now}, nil
 }
 
 // IssueInput contains a validated email and server-generated material.
@@ -87,7 +93,7 @@ func (s *Store) Issue(ctx context.Context, tx *sql.Tx, input IssueInput) error {
 		return ErrChallengeStore
 	}
 	keyID, _, err := s.identities.KeyEpoch()
-	if err != nil || s.checkEmailEpoch(ctx, tx) != nil {
+	if err != nil || s.checkChallengeEpochs(ctx, tx) != nil {
 		return ErrChallengeStore
 	}
 	// Every issuance and attempt locks the slot before locking an existing
@@ -199,7 +205,7 @@ func (v *VerifiedEmail) ForTransaction(ctx context.Context, tx *sql.Tx) (Verifie
 // receipt store must check the challenge and scope again under its row locks.
 func (s *Store) ReceiptScope(ctx context.Context, tx *sql.Tx, challengeID string) ([32]byte, bool, error) {
 	var scope [32]byte
-	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkChallengeEpochs(ctx, tx) != nil {
 		return scope, false, ErrChallengeStore
 	}
 	var stored []byte
@@ -252,7 +258,7 @@ func (m RateLimitMetadata) ApplyLoginDimensionLimit(ctx context.Context, limiter
 // challenge. This metadata is only for limiting, not proof or authorization.
 func (s *Store) RateLimitDetails(ctx context.Context, tx *sql.Tx, challengeID string) (RateLimitMetadata, bool, error) {
 	var metadata RateLimitMetadata
-	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+	if s == nil || s.identities == nil || ctx == nil || tx == nil || !opaque(challengeID, 22, 128) || s.checkChallengeEpochs(ctx, tx) != nil {
 		return metadata, false, ErrChallengeStore
 	}
 	var storedIndex, storedFingerprint, ciphertext, storedKeyID []byte
@@ -361,7 +367,7 @@ func (p *ReceiptProof) ForRequest(ctx context.Context, tx *sql.Tx, challengeID, 
 func (s *Store) verifyReceiptProof(ctx context.Context, tx *sql.Tx, scope [32]byte, challengeID, compact string) (ReceiptProofDetails, error) {
 	var details ReceiptProofDetails
 	if s == nil || s.replay == nil || s.identities == nil || s.now == nil || ctx == nil || tx == nil ||
-		scope == ([32]byte{}) || !opaque(challengeID, 22, 128) || s.checkEmailEpoch(ctx, tx) != nil {
+		scope == ([32]byte{}) || !opaque(challengeID, 22, 128) || s.checkChallengeEpochs(ctx, tx) != nil {
 		return details, ErrChallengeStore
 	}
 	// Preserve the shared identity epoch -> slot -> challenge -> replay order.
@@ -454,7 +460,7 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 	if now.IsZero() {
 		return rejected, ErrChallengeStore
 	}
-	if err := s.checkEmailEpoch(ctx, tx); err != nil {
+	if err := s.checkChallengeEpochs(ctx, tx); err != nil {
 		return rejected, ErrChallengeStore
 	}
 	var emailIndex []byte
@@ -577,6 +583,15 @@ func (s *Store) Attempt(ctx context.Context, tx *sql.Tx, input AttemptInput) (At
 		keyID: currentKeyID, fingerprint: actualFingerprint, publicKey: key, expiresAt: expires,
 		proof: input.DeviceProof, expectation: expectation, policy: proofPolicy, now: s.now}
 	return AttemptResult{Verified: true, Changed: true, Proof: verified}, nil
+}
+
+// Acquire the identity and verifier epochs before the receipt/slot/challenge
+// locks used by login, including post-commit receipt revalidation.
+func (s *Store) checkChallengeEpochs(ctx context.Context, tx *sql.Tx) error {
+	if s == nil || s.hashEpoch == nil || s.checkEmailEpoch(ctx, tx) != nil || s.hashEpoch.Lock(ctx, tx) != nil {
+		return ErrChallengeStore
+	}
+	return nil
 }
 
 func (s *Store) checkEmailEpoch(ctx context.Context, tx *sql.Tx) error {

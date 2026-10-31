@@ -40,7 +40,7 @@ func businessFixture() (businessKeys, businessPolicy) {
 		loginIdempotency: key(11), loginRequest: key(12), loginCipher: key(13),
 		rateEmail: key(14), rateDevice: key(15), rateIP: key(16), rateGlobal: key(17),
 		workoutName: key(18), workoutHash: key(19), workoutCipher: key(20),
-		identityID: "assembly-identity-v1", codeID: "assembly-code-v1", approvalID: "assembly-approval-v1",
+		identityID: "assembly-identity-v1", codeID: "assembly-code-v1", codeHashID: "assembly-code-hash-v1", approvalID: "assembly-approval-v1",
 		challengeID: "assembly-challenge-v1", loginID: "assembly-login-v1", workoutNameID: "assembly-name-v1", workoutID: "assembly-workout-v1",
 	}
 	dim := ratelimit.DimensionPolicy{Limit: 1000, Window: time.Hour}
@@ -125,6 +125,7 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	for _, query := range []string{
 		`SELECT COUNT(*) FROM auth_email_identity_key_epoch`,
 		`SELECT COUNT(*) FROM auth_email_code_key_epoch`,
+		`SELECT COUNT(*) FROM auth_email_code_hash_key_epoch`,
 		`SELECT COUNT(*) FROM auth_email_challenge_request_key_epoch`,
 		`SELECT COUNT(*) FROM auth_email_login_receipt_key_epoch`,
 		`SELECT COUNT(*) FROM auth_approval_key_epoch WHERE key_id IS NOT NULL`,

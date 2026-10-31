@@ -16,6 +16,7 @@ import (
 	"nerae/api/internal/modules/auth/approval"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
 	"nerae/api/internal/modules/auth/issuance"
@@ -36,13 +37,13 @@ var errBusinessStartup = errors.New("business startup unavailable")
 // businessKeys are supplied by protected server configuration. Values are
 // never accepted from HTTP requests, included in logs, or given defaults.
 type businessKeys struct {
-	identityIndex, identityCipher, codeHash, codeDerive                            []byte
-	proofReplay, sessionToken, approval                                            []byte
-	challengeIdempotency, challengeRequest, challengeCipher                        []byte
-	loginIdempotency, loginRequest, loginCipher                                    []byte
-	rateEmail, rateDevice, rateIP, rateGlobal                                      []byte
-	workoutName, workoutHash, workoutCipher                                        []byte
-	identityID, codeID, approvalID, challengeID, loginID, workoutNameID, workoutID string
+	identityIndex, identityCipher, codeHash, codeDerive                                        []byte
+	proofReplay, sessionToken, approval                                                        []byte
+	challengeIdempotency, challengeRequest, challengeCipher                                    []byte
+	loginIdempotency, loginRequest, loginCipher                                                []byte
+	rateEmail, rateDevice, rateIP, rateGlobal                                                  []byte
+	workoutName, workoutHash, workoutCipher                                                    []byte
+	identityID, codeID, codeHashID, approvalID, challengeID, loginID, workoutNameID, workoutID string
 }
 
 func (businessKeys) String() string               { return "BusinessKeys{redacted}" }
@@ -104,7 +105,11 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	if err != nil {
 		return nil, errBusinessStartup
 	}
-	challenges, err := challenge.NewStore(hasher, proofReplay, identities, policy.challenge)
+	hashEpoch, err := codeepoch.New(hasher, keys.codeHashID)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	challenges, err := challenge.NewStore(hasher, proofReplay, identities, keys.codeHashID, policy.challenge)
 	if err != nil {
 		return nil, errBusinessStartup
 	}
@@ -112,7 +117,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	if err != nil {
 		return nil, errBusinessStartup
 	}
-	producer, err := issuance.NewEnqueueOutbox(deriver, keys.codeID, hasher, identities)
+	producer, err := issuance.NewEnqueueOutbox(deriver, keys.codeID, hasher, keys.codeHashID, identities)
 	if err != nil {
 		return nil, errBusinessStartup
 	}
@@ -228,7 +233,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	}
 	defer tx.Rollback()
 	for _, initialize := range []func(context.Context, *sql.Tx) error{
-		identityEpoch.Initialize, ensureEmptyCodeEpochHistory, producer.InitializeCodeKey,
+		identityEpoch.Initialize, ensureEmptyCodeEpochHistory, producer.InitializeCodeKey, hashEpoch.Initialize,
 		issuer.InitializeKey, ledger.Initialize, approvals.InitializeKey,
 		executor.InitializeKey, nameProtector.InitializeExerciseKey,
 	} {

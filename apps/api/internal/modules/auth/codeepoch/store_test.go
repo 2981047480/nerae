@@ -1,4 +1,4 @@
-package codeepoch
+package codeepoch_test
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/issuance"
 )
@@ -35,14 +36,14 @@ func TestNewValidatesConfigurationAndRedacts(t *testing.T) {
 		t.Fatal("test hasher setup failed")
 	}
 	for _, keyID := range []string{"", "has space", "has/slash", strings.Repeat("x", 65), "密钥"} {
-		if _, err := New(hasher, keyID); !errors.Is(err, ErrEpoch) {
+		if _, err := codeepoch.New(hasher, keyID); !errors.Is(err, codeepoch.ErrEpoch) {
 			t.Fatalf("invalid key ID accepted: %q", keyID)
 		}
 	}
-	if _, err := New(nil, "hash-v1"); !errors.Is(err, ErrEpoch) {
+	if _, err := codeepoch.New(nil, "hash-v1"); !errors.Is(err, codeepoch.ErrEpoch) {
 		t.Fatal("nil hasher accepted")
 	}
-	store, err := New(hasher, "hash-v1")
+	store, err := codeepoch.New(hasher, "hash-v1")
 	if err != nil {
 		t.Fatal("valid config rejected")
 	}
@@ -89,7 +90,7 @@ func TestMySQLEpochStore(t *testing.T) {
 	t.Run("empty initialize and same-key restart", func(t *testing.T) {
 		resetSchema(t, ctx, db, deriver)
 		tx := beginWithPrereqLocks(t, ctx, db, deriver)
-		if err := storeA.Lock(ctx, tx); !errors.Is(err, ErrEpoch) {
+		if err := storeA.Lock(ctx, tx); !errors.Is(err, codeepoch.ErrEpoch) {
 			t.Fatal("Lock initialized or accepted missing epoch")
 		}
 		if err := storeA.Initialize(ctx, tx); err != nil {
@@ -124,16 +125,16 @@ func TestMySQLEpochStore(t *testing.T) {
 		if err := tx.Commit(); err != nil {
 			t.Fatal("initialization commit failed")
 		}
-		for name, candidate := range map[string]*Store{
+		for name, candidate := range map[string]*codeepoch.Store{
 			"key":    mustStore(t, keyB, "hash-v1"),
 			"key ID": mustStore(t, keyA, "hash-v2"),
 		} {
 			t.Run(name, func(t *testing.T) {
 				candidateTx := beginWithPrereqLocks(t, ctx, db, deriver)
-				if err := candidate.Lock(ctx, candidateTx); !errors.Is(err, ErrEpoch) {
+				if err := candidate.Lock(ctx, candidateTx); !errors.Is(err, codeepoch.ErrEpoch) {
 					t.Fatal("mismatch passed Lock")
 				}
-				if err := candidate.Initialize(ctx, candidateTx); !errors.Is(err, ErrEpoch) {
+				if err := candidate.Initialize(ctx, candidateTx); !errors.Is(err, codeepoch.ErrEpoch) {
 					t.Fatal("mismatch passed Initialize")
 				}
 				_ = candidateTx.Rollback()
@@ -171,7 +172,7 @@ func TestMySQLEpochStore(t *testing.T) {
 				resetSchema(t, ctx, db, deriver)
 				insertHistory(t, ctx, db, history)
 				tx := beginWithPrereqLocks(t, ctx, db, deriver)
-				if err := storeA.Initialize(ctx, tx); !errors.Is(err, ErrEpoch) {
+				if err := storeA.Initialize(ctx, tx); !errors.Is(err, codeepoch.ErrEpoch) {
 					t.Fatalf("history %s allowed missing epoch initialization", history)
 				}
 				_ = tx.Rollback()
@@ -184,7 +185,7 @@ func TestMySQLEpochStore(t *testing.T) {
 
 	t.Run("concurrent different keys never both initialize", func(t *testing.T) {
 		resetSchema(t, ctx, db, deriver)
-		stores := []*Store{storeA, mustStore(t, keyB, "hash-v2")}
+		stores := []*codeepoch.Store{storeA, mustStore(t, keyB, "hash-v2")}
 		txs := make([]*sql.Tx, len(stores))
 		for i := range stores {
 			txs[i] = beginWithPrereqLocks(t, ctx, db, deriver)
@@ -195,7 +196,7 @@ func TestMySQLEpochStore(t *testing.T) {
 		var wg sync.WaitGroup
 		for i, store := range stores {
 			wg.Add(1)
-			go func(i int, store *Store) {
+			go func(i int, store *codeepoch.Store) {
 				defer wg.Done()
 				<-start
 				if err := store.Initialize(ctx, txs[i]); err != nil {
@@ -296,7 +297,7 @@ func TestMySQLEpochStore(t *testing.T) {
 			t.Fatal("replacement remained blocked after lock release")
 		}
 		check := beginWithPrereqLocks(t, ctx, db, deriver)
-		if err := storeA.Lock(ctx, check); !errors.Is(err, ErrEpoch) {
+		if err := storeA.Lock(ctx, check); !errors.Is(err, codeepoch.ErrEpoch) {
 			_ = check.Rollback()
 			t.Fatal("old hasher configuration accepted replaced epoch")
 		}
@@ -308,23 +309,23 @@ func TestMySQLEpochStore(t *testing.T) {
 		tx := beginWithPrereqLocks(t, ctx, db, deriver)
 		cancelled, stop := context.WithCancel(ctx)
 		stop()
-		if err := storeA.Initialize(cancelled, tx); !errors.Is(err, ErrEpoch) {
+		if err := storeA.Initialize(cancelled, tx); !errors.Is(err, codeepoch.ErrEpoch) {
 			t.Fatal("cancelled initialization did not fail closed")
 		}
-		if err := storeA.Lock(cancelled, tx); !errors.Is(err, ErrEpoch) {
+		if err := storeA.Lock(cancelled, tx); !errors.Is(err, codeepoch.ErrEpoch) {
 			t.Fatal("cancelled lock did not fail closed")
 		}
 		_ = tx.Rollback()
 	})
 }
 
-func mustStore(t *testing.T, key []byte, keyID string) *Store {
+func mustStore(t *testing.T, key []byte, keyID string) *codeepoch.Store {
 	t.Helper()
 	hasher, err := domain.NewEmailCodeHasher(key)
 	if err != nil {
 		t.Fatal("test hasher setup failed")
 	}
-	store, err := New(hasher, keyID)
+	store, err := codeepoch.New(hasher, keyID)
 	if err != nil {
 		t.Fatal("test epoch store setup failed")
 	}
