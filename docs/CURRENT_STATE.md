@@ -6,6 +6,7 @@
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
 - 同主体待批准设备列表的内部数据库组件及未挂载的 HTTP handler 已合入，集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用；生产路由、跨身份批准和可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
+- 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
 - 当前会话撤销事务和未挂载的 DELETE handler 已合入，候选树私有数据库、本地 TLS 和 race 覆盖撤销及旧登录回执；集成树 handler 单测通过。独立复核发现会话恰在两次过期检查之间到期时可能返回 503 而非 401，正在修复；生产路由和客户端撤销接线尚未完成。[证据](evidence/A01/A01-25/report.md)
 - 隔离服务已在同一测试 HTTP 装配中串起邮箱发信、登录、成年声明和训练创建/组写入/读取/完成；同键重放、无权账号读写及撤销后的拒绝通过。两种页面模式和真实双设备未在此测试，生产进程仍未挂载业务路由。[证据](evidence/A01/A01-24/report.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；合成 CAS、精度边界、类型与 App/小程序源码探针通过。它尚无完整队列、进程重启后的重放或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [适配器](evidence/P02/P02-13/journal-request-shape-guard.md)

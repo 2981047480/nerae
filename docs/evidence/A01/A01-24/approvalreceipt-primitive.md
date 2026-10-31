@@ -39,3 +39,6 @@ Both package test commands passed on 2026-10-31. Tests cover HMAC-derived scopes
 - Before calling `Open`, the future coordinator must independently revalidate the original signed proof and its consumed JTI marker. The coordinator must commit its owning transaction before releasing returned plaintext; this primitive cannot enforce that sequencing.
 - No behavior is defined here for dynamic polling outcomes, commit acknowledgment loss, source-session revocation after successful exchange, or recovery after the original proof expires.
 - The current `Exchanger.Exchange` and schema do not consume this package; this evidence does not establish idempotent exchange behavior or runtime integration.
+## Integrated recheck
+
+On integration commit `ac28b4b`, `go test -race -count=1 ./internal/modules/auth/approvalreceipt` exited 0 using the existing offline Go toolchain and module cache. Independent review found no reproducible P0–P2 in the primitive. The injected verifier still has to be the real transaction-bound token/session verifier, the signed device proof and consumed JTI must be rechecked separately, and the transaction must commit before any token is released. No database migration, exchange coordinator, HTTP route, or real device was tested here.
