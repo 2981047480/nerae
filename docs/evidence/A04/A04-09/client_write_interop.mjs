@@ -26,7 +26,13 @@ const { restoreConfirmedSession } = await import(pathToFileURL(path.join(feature
 hooks.deregister()
 const request = async options => {
   const response = await fetch(options.url, { method: options.method, headers: options.header, body: options.data })
-  return { statusCode: response.status, data: await response.json() }
+  const data = await response.json()
+  const expiry = response.headers.get('Idempotency-Key-Expires-At')
+  return { statusCode: response.status, data,
+    ...(expiry === null ? {} : { headers: { 'idempotency-key-expires-at': expiry } }) }
+}
+const assertWriteExpiry = result => {
+  assert.match(result.idempotencyKeyExpiresAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/)
 }
 const make = (subjectId, accessToken, generation) => {
   const lease = { subjectId, generation }
@@ -39,25 +45,32 @@ const again = make(process.env.NERAE_INTEROP_SUBJECT_A, process.env.NERAE_INTERO
 const other = make(process.env.NERAE_INTEROP_SUBJECT_B, process.env.NERAE_INTEROP_TOKEN_B, 'local-test-b')
 const createInput = { date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC', clientEventId: 'client-write-event-001' }
 const initial = await first.api.createFreeSession(createInput, 'client-create-key-001')
+assertWriteExpiry(initial)
 assert.equal(initial.detail.version, 1)
 assert.equal(initial.detail.sets.length, 0)
 const initialReplay = await first.api.createFreeSession(createInput, 'client-create-key-001')
+assert.equal(initialReplay.idempotencyKeyExpiresAt, initial.idempotencyKeyExpiresAt)
 assert.deepEqual(initialReplay.detail, initial.detail)
 const firstSet = { exerciseName: '合成测试卧推', exerciseEntryKey: 'client-entry-001', recordKey: 'client-set-001',
   setIndex: 1, kind: 'weight', weightKg: 42.5, reps: 8, completed: true }
 const firstSaved = await first.api.saveSets(initial.detail.id, 1, [firstSet], ['client-entry-001'], 'client-set-key-001', initial)
+assertWriteExpiry(firstSaved)
 assert.equal(firstSaved.detail.version, 2)
 assert.equal(firstSaved.detail.sets.length, 1)
 const savedReplay = await first.api.saveSets(initial.detail.id, 1, [firstSet], ['client-entry-001'], 'client-set-key-001', initial)
+assert.equal(savedReplay.idempotencyKeyExpiresAt, firstSaved.idempotencyKeyExpiresAt)
 assert.deepEqual(savedReplay.detail, firstSaved.detail)
 const secondSet = { ...firstSet, recordKey: 'client-set-002', setIndex: 2, weightKg: 45, reps: 6 }
 const secondSaved = await first.api.saveSets(initial.detail.id, 2, [secondSet], ['client-entry-001'], 'client-set-key-002', firstSaved)
+assertWriteExpiry(secondSaved)
 assert.equal(secondSaved.detail.version, 3)
 assert.equal(secondSaved.detail.sets.length, 2)
 const finished = await first.api.finishSession(initial.detail.id, { expectedVersion: 3 }, 'client-finish-key-001', secondSaved)
+assertWriteExpiry(finished)
 assert.equal(finished.detail.status, 'completed')
 assert.equal(finished.detail.version, 4)
 const readBack = await again.api.readSession(initial.detail.id)
+assert.equal(Object.hasOwn(readBack, 'idempotencyKeyExpiresAt'), false)
 const restored = restoreConfirmedSession(readBack, again.auth, process.env.NERAE_INTEROP_DATE)
 assert.equal(restored.ok, true)
 assert.equal(restored.draft.clientEventId, createInput.clientEventId)
@@ -68,6 +81,7 @@ await assert.rejects(other.api.readSession(initial.detail.id), error => error.co
 // The other mode sends a complete batch after the workout, using the same
 // persistence API and without inventing start, end or duration values.
 const after = await first.api.createFreeSession({ ...createInput, clientEventId: 'after-workout-event-001' }, 'after-create-key-001')
+assertWriteExpiry(after)
 const afterSets = [
   { ...firstSet, exerciseEntryKey: 'after-entry-001', recordKey: 'after-set-001', exerciseName: '合成测试推举' },
   { exerciseName: '合成测试深蹲', exerciseEntryKey: 'after-entry-002', recordKey: 'after-set-002',
@@ -75,11 +89,14 @@ const afterSets = [
 ]
 const afterSaved = await first.api.saveSets(after.detail.id, 1, afterSets,
   ['after-entry-002', 'after-entry-001'], 'after-batch-key-001', after)
+assertWriteExpiry(afterSaved)
 assert.equal(afterSaved.detail.version, 2)
 assert.deepEqual(afterSaved.detail.exerciseEntryKeys, ['after-entry-002', 'after-entry-001'])
 const afterFinished = await first.api.finishSession(after.detail.id, { expectedVersion: 2 }, 'after-finish-key-001', afterSaved)
+assertWriteExpiry(afterFinished)
 assert.equal(afterFinished.detail.status, 'completed')
 const afterRead = await again.api.readSession(after.detail.id)
+assert.equal(Object.hasOwn(afterRead, 'idempotencyKeyExpiresAt'), false)
 const afterRestored = restoreConfirmedSession(afterRead, again.auth, process.env.NERAE_INTEROP_DATE)
 assert.equal(afterRestored.ok, true)
 assert.deepEqual(afterRestored.draft.exercises.map(item => item.exerciseEntryKey), ['after-entry-002', 'after-entry-001'])

@@ -81,6 +81,61 @@ test('version conflict and network errors are explicit and do not trigger a blin
   await assert.rejects(offline.readSession('42'), error => apiError('network')(error) && !error.message.includes('token'))
 })
 
+test('uncertain create, set and finish responses require reconciliation and never retry', async () => {
+  const operations = ['create', 'sets', 'finish']
+  const uncertain = ['lost response', '5xx', 'unexpected 2xx', 'invalid status', 'malformed body', 'mismatched response']
+  for (const operation of operations) {
+    for (const failure of uncertain) {
+      let posts = 0
+      const baseline = operation === 'finish'
+        ? detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] })
+        : detail()
+      const request = async input => {
+        if (input.method === 'GET') return { statusCode: 200, data: baseline }
+        posts++
+        if (failure === 'lost response') throw new RecordingApiError('network')
+        if (failure === '5xx') return { statusCode: 503, data: { message: 'private upstream detail' } }
+        if (failure === 'unexpected 2xx') return { statusCode: operation === 'create' ? 200 : operation === 'sets' ? 202 : 201, data: detail() }
+        if (failure === 'invalid status') return { statusCode: '200', data: detail() }
+        if (failure === 'malformed body') return { statusCode: operation === 'create' ? 201 : 200, data: null }
+        if (operation === 'create') return { statusCode: 201, data: detail({ clientEventId: 'different-event' }) }
+        if (operation === 'sets') return { statusCode: 200, data: detail({ version: 3, sets: [set], exerciseEntryKeys: ['entry-0001'] }) }
+        return { statusCode: 200, data: baseline }
+      }
+      const api = makeApi('https://api.example.org', auth, request)
+      let pending
+      if (operation === 'create') {
+        pending = api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001')
+      } else {
+        const issued = await api.readSession('42')
+        pending = operation === 'sets'
+          ? api.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'sets-0001', issued)
+          : api.finishSession('42', { expectedVersion: 3 }, 'finish-0001', issued)
+      }
+      await assert.rejects(pending, error => apiError('reconcile_required')(error) &&
+        !error.message.includes('private upstream detail'))
+      assert.equal(posts, 1, `${operation}/${failure} must not retry`)
+    }
+  }
+})
+
+test('known 4xx write responses keep their contract-specific classification', async () => {
+  const cases = [[400, 'invalid_request'], [401, 'unauthenticated'], [403, 'forbidden'], [404, 'not_found'],
+    [409, 'conflict'], [412, 'version_conflict'], [422, 'invalid_request'], [429, 'rate_limited']]
+  for (const [status, code] of cases) {
+    let posts = 0
+    const api = makeApi('https://api.example.org', auth, async request => {
+      if (request.method === 'GET') return { statusCode: 200, data: detail() }
+      posts++
+      return { statusCode: status, data: { message: 'must not escape' } }
+    })
+    const baseline = await api.readSession('42')
+    await assert.rejects(api.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'sets-0001', baseline),
+      error => apiError(code)(error) && error.status === status && !error.message.includes('must not escape'))
+    assert.equal(posts, 1)
+  }
+})
+
 test('finish preserves explicit nulls but omits unrelated fields and verifies its full result', async () => {
   let captured
   const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'], durationMin: 30 })
@@ -103,6 +158,32 @@ test('invalid or duplicate sets are rejected before network access', async () =>
   const write = { ...set, completed: true }
   assert.throws(() => api.saveSets('42', 3, [{ ...write, reps: 0 }], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
   assert.throws(() => api.saveSets('42', 3, [write, write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_request'))
+  assert.equal(calls, 1)
+})
+
+test('decimal checks follow the transmitted JSON number without epsilon rounding', async () => {
+  let post
+  const validSet = { ...set, weightKg: 12.55, rpe: 7.5, completed: true }
+  const echoed = { ...validSet, resolvedExerciseName: '深蹲' }
+  const api = makeApi('https://api.example.org', auth, async request => {
+    if (request.method === 'GET') return { statusCode: 200, data: detail() }
+    post = JSON.parse(request.data)
+    return { statusCode: 200, data: detail({ version: 4, sets: [echoed], exerciseEntryKeys: ['entry-0001'] }) }
+  })
+  const baseline = await api.readSession('42')
+  const saved = await api.saveSets('42', 3, [validSet], ['entry-0001'], 'update-0001', baseline)
+  assert.equal(saved.detail.sets[0].weightKg, 12.55)
+  assert.equal(saved.detail.sets[0].rpe, 7.5)
+  assert.equal(post.sets[0].weightKg, 12.55)
+  assert.equal(post.sets[0].rpe, 7.5)
+
+  let calls = 0
+  const invalid = makeApi('https://api.example.org', auth, async () => { calls++; return { statusCode: 200, data: detail() } })
+  const invalidBaseline = await invalid.readSession('42')
+  assert.throws(() => invalid.saveSets('42', 3, [{ ...validSet, weightKg: 42.50000000005 }],
+    ['entry-0001'], 'update-0002', invalidBaseline), apiError('invalid_request'))
+  assert.throws(() => invalid.saveSets('42', 3, [{ ...validSet, rpe: 7.50000000005 }],
+    ['entry-0001'], 'update-0003', invalidBaseline), apiError('invalid_request'))
   assert.equal(calls, 1)
 })
 
@@ -559,11 +640,11 @@ test('a 200 response that does not acknowledge the requested order or group is n
   for (const data of wrong) {
     const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : data }))
     const baseline = await api.readSession('42')
-    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('reconcile_required'))
   }
   const undeleted = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: initial }))
   const baseline = await undeleted.readSession('42')
-  await assert.rejects(undeleted.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: [], deleteRecordKeys: ['record-001'] }, 'delete-0001', baseline), apiError('invalid_response'))
+  await assert.rejects(undeleted.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: [], deleteRecordKeys: ['record-001'] }, 'delete-0001', baseline), apiError('reconcile_required'))
 })
 
 test('in-flight batch acknowledgement uses the original immutable request values', async () => {
@@ -611,7 +692,7 @@ test('a write response must preserve every unrelated saved group from its baseli
   for (const response of wrong) {
     const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : response }))
     const baseline = await api.readSession('42')
-    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+    await assert.rejects(api.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('reconcile_required'))
   }
 })
 
@@ -641,7 +722,7 @@ test('existing groups can be changed without losing untouched groups; versions r
   assert.deepEqual(updated.detail.sets.map(group => group.reps), [8, 7])
   const invalid = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : { ...changed, version: 3 } }))
   const otherBaseline = await invalid.readSession('42')
-  await assert.rejects(invalid.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', otherBaseline), apiError('invalid_response'))
+  await assert.rejects(invalid.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', otherBaseline), apiError('reconcile_required'))
   const noop = makeApi('https://api.example.org', auth, async () => ({ statusCode: 200, data: original }))
   const noopBaseline = await noop.readSession('42')
   assert.equal((await noop.saveSets('42', 3, [{ ...second, completed: true }], ['entry-0001'], 'update-0002', noopBaseline)).detail.version, 3)
@@ -662,7 +743,7 @@ test('a write preserves creation and recording instants even when offsets or fra
   ]) {
     const bad = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? original : response }))
     const badBaseline = await bad.readSession('42')
-    await assert.rejects(bad.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', badBaseline), apiError('invalid_response'))
+    await assert.rejects(bad.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', badBaseline), apiError('reconcile_required'))
   }
 })
 
@@ -671,7 +752,7 @@ test('restoring a custom group cannot acknowledge a different resolved name', as
   const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200,
     data: request.method === 'GET' ? detail() : detail({ version: 4, sets: [{ ...set, resolvedExerciseName: '不同名称' }], exerciseEntryKeys: ['entry-0001'] }) }))
   const baseline = await api.readSession('42')
-  await assert.rejects(api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] }, 'restore-001', baseline), apiError('invalid_response'))
+  await assert.rejects(api.saveBatch('42', { expectedVersion: 3, exerciseEntryKeys: ['entry-0001'], sets: [write], restoreRecordKeys: ['record-001'] }, 'restore-001', baseline), apiError('reconcile_required'))
 })
 
 
@@ -692,7 +773,7 @@ test('finish rejects a 200 response unless the saved status, version, fields and
   for (const response of wrong) {
     const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial : response }))
     const baseline = await api.readSession('42')
-    await assert.rejects(api.finishSession('42', { expectedVersion: 3, durationMin: null, note: '新备注' }, 'finish-0001', baseline), apiError('invalid_response'))
+    await assert.rejects(api.finishSession('42', { expectedVersion: 3, durationMin: null, note: '新备注' }, 'finish-0001', baseline), apiError('reconcile_required'))
   }
 })
 
@@ -701,7 +782,7 @@ test('no-op set batch cannot advance its update timestamp', async () => {
   const api = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200,
     data: request.method === 'GET' ? original : { ...original, updatedAt: '2026-10-29T08:00:01Z' } }))
   const baseline = await api.readSession('42')
-  await assert.rejects(api.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+  await assert.rejects(api.saveSets('42', 3, [{ ...set, completed: true }], ['entry-0001'], 'update-0001', baseline), apiError('reconcile_required'))
 })
 
 
@@ -725,7 +806,7 @@ test('finish rejects a backwards update instant but allows equal instants and of
   const bad = makeApi('https://api.example.org', auth, async request => ({ statusCode: 200, data: request.method === 'GET' ? initial :
     { ...finished, updatedAt: '2026-10-29T16:00:00.0000009+08:00' } }))
   const badBaseline = await bad.readSession('42')
-  await assert.rejects(bad.finishSession('42', { expectedVersion: 3 }, 'finish-0001', badBaseline), apiError('invalid_response'))
+  await assert.rejects(bad.finishSession('42', { expectedVersion: 3 }, 'finish-0001', badBaseline), apiError('reconcile_required'))
 })
 
 test('the original client event identity is required and must survive create, update and finish responses', async () => {
@@ -738,7 +819,7 @@ test('the original client event identity is required and must survive create, up
   const createApi = makeApi('https://api.example.org', auth, async () => ({
     statusCode: 201, data: detail({ clientEventId: 'event-0002' }),
   }))
-  await assert.rejects(createApi.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001'), apiError('invalid_response'))
+  await assert.rejects(createApi.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001'), apiError('reconcile_required'))
 
   const initial = detail({ sets: [set], exerciseEntryKeys: ['entry-0001'] })
   const write = { ...set, completed: true }
@@ -748,7 +829,7 @@ test('the original client event identity is required and must survive create, up
       sets: [set], exerciseEntryKeys: ['entry-0001'] }),
   }))
   const baseline = await updateApi.readSession('42')
-  await assert.rejects(updateApi.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('invalid_response'))
+  await assert.rejects(updateApi.saveSets('42', 3, [write], ['entry-0001'], 'update-0001', baseline), apiError('reconcile_required'))
 
   const finishApi = makeApi('https://api.example.org', auth, async request => ({
     statusCode: 200,
@@ -756,5 +837,5 @@ test('the original client event identity is required and must survive create, up
       recordedAt: '2026-10-29T08:01:00Z', sets: [set], exerciseEntryKeys: ['entry-0001'] }),
   }))
   const finishBaseline = await finishApi.readSession('42')
-  await assert.rejects(finishApi.finishSession('42', { expectedVersion: 3 }, 'finish-0001', finishBaseline), apiError('invalid_response'))
+  await assert.rejects(finishApi.finishSession('42', { expectedVersion: 3 }, 'finish-0001', finishBaseline), apiError('reconcile_required'))
 })

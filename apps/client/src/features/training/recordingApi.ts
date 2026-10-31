@@ -267,8 +267,14 @@ function validTimeZone(value: unknown): value is string {
 function decimal(value: unknown, min: number, max: number, places: number, exclusiveMin = false): boolean {
   if (typeof value !== 'number' || !Number.isFinite(value) || value > max ||
     (exclusiveMin ? value <= min : value < min)) return false
-  const scaled = value * 10 ** places
-  return Math.abs(scaled - Math.round(scaled)) < 1e-8
+  const text = String(value).toLowerCase()
+  const match = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/.exec(text)
+  if (!match) return false
+  const exponent = Number(match[3] || 0)
+  if (!Number.isSafeInteger(exponent)) return false
+  // Validate the shortest decimal JSON.stringify will emit. Epsilon-based
+  // scaling can accept real extra digits (e.g. 42.50000000005) by rounding.
+  return Math.max(0, (match[2]?.length || 0) - exponent) <= places
 }
 
 function validMeasurements(set: Record<string, unknown>, kind: SetKind): boolean {
@@ -443,6 +449,16 @@ function responseError(status: number): RecordingApiError {
   return new RecordingApiError('unavailable', status)
 }
 
+function reconcileWriteResponse(error: unknown): never {
+  if (error instanceof RecordingApiError) {
+    if (error.code === 'invalid_response' || error.code === 'network' || error.code === 'unavailable') {
+      throw new RecordingApiError('reconcile_required')
+    }
+    throw error
+  }
+  throw new RecordingApiError('reconcile_required')
+}
+
 function validIdempotencyKey(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9._~-]{8,128}$/.test(value)
 }
@@ -511,20 +527,26 @@ export class RecordingApi {
     try { response = await this.request({ url: `${this.base}${path}`, method, header, ...(encoded === undefined ? {} : { data: encoded }) }) }
     catch (error) {
       if (!isSameCredential()) throw new RecordingApiError('session_changed')
-      if (error instanceof RecordingApiError && error.code === 'reconcile_required') {
+      if (error instanceof RecordingApiError && error.code === 'invalid_request') throw new RecordingApiError('invalid_request')
+      if (method === 'POST') {
+        // Once dispatched, a lost/invalid response cannot prove the write did
+        // not commit. Keep the original key and reconcile; never mint a retry.
         throw new RecordingApiError('reconcile_required')
       }
-      if (error instanceof RecordingApiError && error.code === 'invalid_response') {
-        // A transport may reject a successful write's response (for example,
-        // duplicate native headers) before exposing its status or headers.
-        throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
-      }
+      if (error instanceof RecordingApiError && error.code === 'invalid_response') throw new RecordingApiError('invalid_response')
       throw new RecordingApiError('network')
     }
     if (!isSameCredential()) throw new RecordingApiError('session_changed')
-    if (!response || !Number.isInteger(response.statusCode)) throw new RecordingApiError('invalid_response')
-    if (response.statusCode < 200 || response.statusCode >= 300) throw responseError(response.statusCode)
-    if (response.statusCode !== expectedStatus) throw new RecordingApiError('invalid_response')
+    if (!response || !Number.isInteger(response.statusCode)) {
+      throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (method === 'POST' && response.statusCode >= 500) throw new RecordingApiError('reconcile_required')
+      throw responseError(response.statusCode)
+    }
+    if (response.statusCode !== expectedStatus) {
+      throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
+    }
     return { data: response.data, headers: response.headers, lease: { subjectId, generation }, isSameCredential }
   }
 
@@ -532,8 +554,15 @@ export class RecordingApi {
     data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
     const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey)
     const idempotencyKeyExpiresAt = method === 'POST' ? writeExpiry(response.headers) : undefined
-    const detail = parseSessionDetail(response.data)
-    if (expectedId !== undefined && detail.id !== expectedId) throw new RecordingApiError('invalid_response')
+    let detail: WorkoutSessionDetail
+    try { detail = parseSessionDetail(response.data) }
+    catch (error) {
+      if (method === 'POST') throw new RecordingApiError('reconcile_required')
+      throw error
+    }
+    if (expectedId !== undefined && detail.id !== expectedId) {
+      throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
+    }
     // Do not let edits to a response object change a later projection.
     const immutable = { ...detail, sets: detail.sets.map(set => Object.freeze({ ...set })),
       exerciseEntryKeys: [...detail.exerciseEntryKeys] }
@@ -575,9 +604,9 @@ export class RecordingApi {
     return this.call('POST', '/me/sessions', 201, undefined, {
       source: 'free', date: input.date, timeZone: input.timeZone, clientEventId: input.clientEventId,
     }, idempotencyKey).then(snapshot => {
-      if (snapshot.detail.clientEventId !== input.clientEventId) throw new RecordingApiError('invalid_response')
+      if (snapshot.detail.clientEventId !== input.clientEventId) throw new RecordingApiError('reconcile_required')
       return snapshot
-    })
+    }).catch(reconcileWriteResponse)
   }
 
   readSession(id: string): Promise<ScopedSessionDetail> {
@@ -706,7 +735,7 @@ export class RecordingApi {
           sets: JSON.stringify(cleanSets), order: JSON.stringify(order) })
       }
       return snapshot
-    })
+    }).catch(reconcileWriteResponse)
   }
 
   saveSets(id: string, expectedVersion: number, sets: SetPayload[], exerciseEntryKeys: string[], idempotencyKey: string,
@@ -761,7 +790,7 @@ export class RecordingApi {
         }
       }
       return snapshot
-    })
+    }).catch(reconcileWriteResponse)
   }
 }
 

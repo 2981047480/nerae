@@ -23,6 +23,7 @@ const today = '2026-10-30'
 const lease = { subjectId: '101', generation: 'login-1' }
 const credential = { ...lease, accessToken: 'synthetic-session-token' }
 const auth = { current: () => credential, isCurrent: (id, generation) => id === lease.subjectId && generation === lease.generation }
+const writeHeaders = Object.freeze({ 'Idempotency-Key-Expires-At': '2026-11-01T00:00:00.123456789Z' })
 const detail = overrides => ({
   id: '42', clientEventId: 'event-0001', date: today, timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 2,
   createdAt: '2026-10-30T01:00:00Z', updatedAt: '2026-10-30T01:00:00Z', recordedAt: null,
@@ -139,7 +140,8 @@ test('projection feeds the bound HTTP adapter without submitting unconfirmed gro
   const api = new RecordingApi('https://api.example.org', auth, async request => {
     requests.push(request)
     return request.method === 'GET' ? { statusCode: 200, data: detail() }
-      : { statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [serverA, serverB] }) }
+      : { statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [serverA, serverB] }),
+        headers: writeHeaders }
   }, lease)
   const snapshot = await api.readSession('42')
   const result = prepareOrderedConfirmedSet(local, snapshot, lease, auth, 'entry-0002', 'record-002', today)
@@ -202,7 +204,8 @@ async function pendingPerSetWrite(local = perSet(draft(), 'entry-0002', 'record-
   const edited = duringRequest(local)
   const saved = { recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseName: '划船',
     resolvedExerciseName: '划船', setIndex: 1, kind: 'bodyweight', reps: 6 }
-  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [serverA, saved] }) })
+  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002'], sets: [serverA, saved] }),
+    headers: writeHeaders })
   return { api, baseline, prepared, response: await pending, local, edited }
 }
 
@@ -273,7 +276,8 @@ test('after-workout acknowledgement keeps newer edits and confirms unchanged sub
   edited = addExercise(edited, 'entry-0004', { source: 'custom', exerciseName: '硬拉' }, 'bodyweight', 'record-004')
   const b = { recordKey: 'record-002', exerciseEntryKey: 'entry-0002', exerciseName: '划船', resolvedExerciseName: '划船', setIndex: 1, kind: 'bodyweight', reps: 6 }
   const c = { recordKey: 'record-003', exerciseEntryKey: 'entry-0003', exerciseName: '俯卧撑', resolvedExerciseName: '俯卧撑', setIndex: 1, kind: 'bodyweight', reps: 9 }
-  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002', 'entry-0003'], sets: [serverA, b, c] }) })
+  release({ statusCode: 200, data: detail({ version: 3, exerciseEntryKeys: ['entry-0001', 'entry-0002', 'entry-0003'], sets: [serverA, b, c] }),
+    headers: writeHeaders })
   const result = applySetsAcknowledgement(edited, prepared, await pending, auth, today)
   assert.equal(result.ok, true)
   assert.equal(result.draft.exercises[1].sets[0].confirmed, true)
