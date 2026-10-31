@@ -590,8 +590,8 @@ func TestWorkoutReplayOnlyApplication(t *testing.T) {
 		t.Fatalf("existing-operation replay did not recheck ownership: err=%v", err)
 	}
 
-	if _, err := f.db.ExecContext(f.ctx, `UPDATE transport_idempotency_record SET expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 SECOND WHERE actor_id = (SELECT user_id FROM workout_session WHERE id = ?) AND method = ? AND route = ? AND request_key = ?`, target, []byte("POST"), []byte(setReq.Path), []byte(setReq.Key)); err != nil {
-		t.Fatal("could not expire synthetic idempotency receipt")
+	if _, err := f.db.ExecContext(f.ctx, `UPDATE transport_idempotency_record SET created_at = UTC_TIMESTAMP(6) - INTERVAL 2 SECOND, expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 SECOND WHERE actor_id = (SELECT user_id FROM workout_session WHERE id = ?) AND method = ? AND route = ? AND request_key = ?`, target, []byte("POST"), []byte(setReq.Path), []byte(setReq.Key)); err != nil {
+		t.Fatalf("could not expire synthetic idempotency receipt: %v", err)
 	}
 	if result, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "sets", setReq); !errors.Is(err, idempotency.ErrReplayUnavailable) || len(result.Body) != 0 || setCalls.Load() != 1 {
 		t.Fatalf("expired receipt was not unavailable without mutation: err=%v", err)

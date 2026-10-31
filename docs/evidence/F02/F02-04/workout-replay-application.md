@@ -30,13 +30,19 @@ GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off \
   /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race -count=1 ./internal/modules/workout/application
 ```
 
-Exit code: `0`. A dedicated socket-only harness is provided at
-`workout-replay-application-smoke.py`. It initializes a fresh local MySQL
+Exit code: `0`. The dedicated socket-only harness
+`workout-replay-application-smoke.py` was then executed in the authorized local
+environment and exited `0`. It initialized a fresh MySQL 8.4.13 local datadir
 datadir, applies only the auth, user, workout, and idempotency migrations used
-by the application fixture, and runs only
-`TestWorkoutReplayOnlyApplication`. The harness was not run in this change
-because the Lead had reserved the database window for A01-24; the MySQL
-integration assertions therefore remain unverified here.
+by the application fixture, and ran only
+`TestWorkoutReplayOnlyApplication` with `-race`; the test passed. The harness
+shut down the server and removed only its successful directory. The first
+ordinary-sandbox attempt failed during MySQL initialization with a memory
+mapping SIGSEGV and remains at `/private/tmp/nerae-workout-integration-mysql-2lfujpxj`.
+The first authorized test attempt exposed the harness fixture's violation of
+the migration's `expires_at > created_at` check and remains at
+`/private/tmp/nerae-workout-integration-mysql-t55ug4s2`; the fixture now moves
+both timestamps into the past while preserving their ordering.
 
 ## Limits
 
