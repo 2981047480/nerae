@@ -8,10 +8,12 @@
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
 - 同主体待批准设备列表的内部数据库组件和 HTTP handler 已合入，并装配到本机受保护 API 进程；集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用。实际服务器部署、批准动作及可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
 - 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
+- 幂等事务可向固定服务端策略提供已验证的当前会话 ID，并在写入和回放过程中复核同一会话；私有 MySQL 测试覆盖同主体多会话及撤销。它只是批准决策的前置能力，批准接口和兑换仍未接入。[证据](evidence/F02/F02-04/actor-session-binding.md)
 - 当前会话撤销事务、DELETE handler 和 iOS/Android 原生传输接缝已合入，服务端已装配到本机受保护 API 进程。过期分类与不确定响应处理已修复；类型检查、23 项传输测试和两端本机 TLS 回归通过。部署、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
 - 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)
 - 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端可从待发日志查询并校验成功回执，同主体第二个合成会话的丢响应恢复已联测；草稿合并与日志结算仍未接通，不能据此宣称同步完成。[服务端](evidence/F02/F02-04/workout-replay-http.md) · [客户端](evidence/U02/U02-01/replay-pending-client.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；与待发日志的合成组合测试覆盖不确定 CAS、重启和切号，集成树训练测试 148/148、类型及 App/小程序源码探针通过。它尚无成功回执结算、完整队列或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [组合](evidence/U02/U02-01/secure-operation-journal-interop.md)
+- 草稿控制器提供仅本进程有效的持久化证明；账号变化、后续写入及并发覆盖会使旧证明失效。它不保证跨进程持久性或与待发日志原子提交。底层日志的值及版本可被同时回退，结算前必须解决 ABA，不能仅凭值相等清除待发请求。[草稿证明](evidence/U02/U02-02/draft-persistence-proof.md) · [ABA 复审](evidence/U02/U02-02/journal-aba-review.md)
 - 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时保留原请求并可只读查询回执；尚无客户端回执的持久结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/replay-pending-client.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
