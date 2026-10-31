@@ -26,7 +26,7 @@ export interface AuthenticatedMeWireResponse {
 
 export type SessionRevocationOutcome =
   | { readonly state: 'revoked' }
-  | { readonly state: 'rejected'; readonly reason: 'unauthorized' | 'forbidden' | 'not_found' | 'conflict' | 'expired' | 'rate_limited' }
+  | { readonly state: 'rejected'; readonly reason: 'unauthorized' }
   | { readonly state: 'unknown' }
 
 export type AppNativeHttpsPorts = {
@@ -448,11 +448,6 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
         typeof contentType === 'string' && /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentType.trim())
       return validError ? { state: 'rejected', reason: 'unauthorized' } : { state: 'unknown' }
     }
-    if (result.status === 403) return { state: 'rejected', reason: 'forbidden' }
-    if (result.status === 404) return { state: 'rejected', reason: 'not_found' }
-    if (result.status === 409) return { state: 'rejected', reason: 'conflict' }
-    if (result.status === 410) return { state: 'rejected', reason: 'expired' }
-    if (result.status === 429) return { state: 'rejected', reason: 'rate_limited' }
     return { state: 'unknown' }
   }
   return { authTransport, recordingRequest, readCurrentUser, revokeCurrentSession }

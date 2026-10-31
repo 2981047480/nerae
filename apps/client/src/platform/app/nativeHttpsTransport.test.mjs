@@ -84,6 +84,11 @@ test('revoke distinguishes explicit rejection from uncertain or malformed respon
     [ok('unauth-extra', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId, private: 'x' }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
     [ok('unauth-bad-details', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId, details: [] }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })), { state: 'unknown' }],
     [ok('unauth-content-type', 401, JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x', requestId }), JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'text/plain', 'x-request-id': requestId })), { state: 'unknown' }],
+    ...[403, 404, 409, 410, 429].map(status => [
+      ok(`unverified-${status}`, status, JSON.stringify({ code: 'UNVERIFIED', message: 'x', requestId }),
+        JSON.stringify({ 'cache-control': 'no-store', 'content-type': 'application/json', 'x-request-id': requestId })),
+      { state: 'unknown' },
+    ]),
   ]) {
     const ports = make((request, callbacks) => { callbacks.success(response); return response.requestId })
     assert.deepEqual(await ports.revokeCurrentSession('synthetic.revoke.token'), outcome)
