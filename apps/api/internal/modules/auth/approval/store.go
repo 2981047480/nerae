@@ -127,7 +127,7 @@ func (s *Store) ListPending(ctx context.Context, tx *sql.Tx, principal *session.
 		created, createdErr := time.Parse("2006-01-02 15:04:05.000000", string(createdRaw))
 		expires, expiresErr := time.Parse("2006-01-02 15:04:05.000000", string(expiresRaw))
 		id := string(idRaw)
-		if len(id) < 22 || len(id) > 128 || !validComparisonCode(string(code)) || createdErr != nil || expiresErr != nil || !expires.After(created) {
+		if !validApprovalOpaqueID(id) || !validComparisonCode(string(code)) || createdErr != nil || expiresErr != nil || !expires.After(created) {
 			return PendingList{}, ErrUnavailable
 		}
 		items = append(items, PendingListItem{ID: id, ComparisonCode: string(code), CreatedAt: created.UTC(), ExpiresAt: expires.UTC()})
@@ -692,6 +692,19 @@ func approvalRowError(err error) error {
 		return ErrInvalidReceipt
 	}
 	return ErrUnavailable
+}
+
+func validApprovalOpaqueID(value string) bool {
+	if len(value) < 22 || len(value) > 128 {
+		return false
+	}
+	for i := 0; i < len(value); i++ {
+		c := value[i]
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return true
 }
 
 // AfterCommit releases the polling secret only after a fresh transaction

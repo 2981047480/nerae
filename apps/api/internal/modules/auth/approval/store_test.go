@@ -337,6 +337,9 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 			len(listed.Items) == 1 && listed.Items[0].ExpiresAt.Equal(data.ExpiresAt),
 			len(listed.Items) == 1 && !listed.Items[0].CreatedAt.IsZero())
 	}
+	if !validApprovalOpaqueID(listed.Items[0].ID) || validApprovalOpaqueID(strings.Repeat("a", 21)+"/") {
+		t.Fatal("approval list ID validation did not match AuthOpaqueId constraints")
+	}
 	otherList, err := listFor(otherToken)
 	if err != nil || len(otherList.Items) != 0 {
 		t.Fatal("pending approval list crossed subject boundaries")
