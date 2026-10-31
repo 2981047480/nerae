@@ -2,23 +2,24 @@
 
 **阶段：第五轮本地 UI 样机与三端同步实施计划已形成；尚无可用业务服务或正式三端应用。**
 
-- 用户提供的 iOS 离线 SDK 实际为 5.33；基础 SDK 示例工程已以同版 HBuilderX 对应路径、Xcode 和本地 CocoaPods 完成未签名 iPhoneOS arm64 编译。项目 CLI 仍锁定 5.26；Nerae 资源、UTS 插件、AppKey、签名和手机运行均未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
+- 用户提供的 iOS 离线 SDK 实际为 5.33；基础 SDK 示例工程已以同版 HBuilderX 对应路径、Xcode 和本地 CocoaPods 完成未签名 iPhoneOS arm64 编译。项目 CLI 仍锁定 5.26；5.33 的完整项目资源导出遇到插件加载问题，Nerae 原生链接、AppKey、签名和手机运行均未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
 - App 端已组合原生 HTTPS、设备身份与签名、邮箱登录、会话和版本化成年声明；合成端口测试与 5.26 原生源码生成通过，账号切换/退出时清理登录临时状态。正式入口页面、线上路由、真实邮件、设备批准和真机仍未接通。[证据](evidence/A01/app-auth-runtime.md)
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
-- 同主体待批准设备列表的内部数据库组件及未挂载的 HTTP handler 已合入，集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用；生产路由、跨身份批准和可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
+- 同主体待批准设备列表的内部数据库组件和 HTTP handler 已合入，并装配到本机受保护 API 进程；集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用。实际服务器部署、批准动作及可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
 - 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
-- 当前会话撤销事务、未挂载的 DELETE handler 和 iOS/Android 原生传输接缝已合入。过期分类与不确定响应处理已修复；集成树类型检查、23 项传输测试和两端本机 TLS 回归通过。生产路由、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
-- 邮箱、成年声明和训练处理器已通过内部业务装配与私有 MySQL/Redis 联测，另有独立发信 worker 经本地 TLS 接收器验证；同键重放、无权账号拒绝、启动 epoch 回滚与锁顺序检查通过。API 尚未挂生产进程，验证码校验密钥版本校验、两种页面模式与真实双设备仍未完成。[API 装配](evidence/A01/api-business-assembly.md) · [worker](evidence/A01/worker-startup/report.md)
+- 当前会话撤销事务、DELETE handler 和 iOS/Android 原生传输接缝已合入，服务端已装配到本机受保护 API 进程。过期分类与不确定响应处理已修复；类型检查、23 项传输测试和两端本机 TLS 回归通过。部署、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
+- 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)
+- 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端尚未调用这些路径或可靠结算待发日志，不能据此宣称同步完成。[证据](evidence/F02/F02-04/workout-replay-http.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；与待发日志的合成组合测试覆盖不确定 CAS、重启和切号，集成树训练测试 148/148、类型及 App/小程序源码探针通过。它尚无成功回执结算、完整队列或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [组合](evidence/U02/U02-01/secure-operation-journal-interop.md)
-- 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时要求核对；集成树 123 项训练相关测试及私有 MySQL/TLS 客户端联测通过。尚无持久重放与响应结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/recording-idempotency-expiry-receipt.md) 可信代理来源 IP 解析器已局部测试但未连接服务；上线仍须限制后端监听并实测代理覆盖专用头。[证据](evidence/A01/trusted-source-ip-resolver.md)
-- 18+ 自我声明内部事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。合同、未挂载的登录和 `/me` handler 及客户端会话接缝已传递声明版本，A01-23/24 在隔离服务中复测通过；声明写入 HTTP 和 App 页面仍未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
+- 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时要求核对；集成树 123 项训练相关测试及私有 MySQL/TLS 客户端联测通过。尚无客户端持久重放与响应结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/recording-idempotency-expiry-receipt.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
+- 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
 - 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。iOS 的 UTS/Swift 参数标签错误修复后，HBuilderX 5.33 已编出未签名 iPhoneOS framework。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机及上层账号映射仍待完成。
 - App 会话工厂现绑定原生安全 vault 与 `/me` 验证端口，并限制同一 JS 进程仅有一个会话协调器；合成接线测试与 5.26 原生源码生成检查通过。设备密钥新增先持久预留 alias、再创建一次的接口，集成源码的 Swift/Kotlin 合成校验通过。[证据](evidence/A01/app-session-binding.md) 可信服务配置、App 入口、设备映射、真实手机和登录仍未接通。
 - 锁定 5.26 的客户端 UTS 编译依赖已补齐，HTTPS 原生插件改为从插件根目录导入；隔离夹具检查四个插件的 iOS/Android 原生代理和源码及小程序回退通过。此前内部目录导入会被错误编译为不支持平台回退。[证据](evidence/P02/P02-05/uts-import-resolution.md) 这不是原生链接、安装或真机验证，当前正式入口仍为空。
 - 集成代码 `7c75dbd` 已将邮箱登录的限流、事务、回执重放和当前用户读取接成未挂载 HTTP handler；真实组件在本机 TLS、隔离 MySQL/Redis 与 Go race 下验证了成功、失败、同键重试、账号禁用和新设备待批准。[证据](evidence/A01/A01-23/report.md) 客户端新增安全会话协调器及原生 HTTPS `/me` 恢复适配，集成树 137 项相关合成测试与完整客户端类型检查通过；尚未接原生 vault 或页面，也未与真实服务、邮箱或手机联调。[客户端](evidence/A01/me-verifier-progress.md)
-- 未完成项仍包括生产路由/配置与 SMTP worker、真实 QQ 邮件、新设备批准后的可靠兑换、18+ 本人声明 HTTP/页面、持久待发训练操作、记录页面、部署、iOS 可安装包及三端真机验收。设备签名别名必须独立持久保存，不能随会话清理，否则重登可能丢失原设备身份。
+- 未完成项仍包括生产代理与部署、真实 QQ 邮件、新设备批准后的可靠兑换、18+ 声明页面、待发操作回执结算、记录页面、iOS 可安装包及三端真机验收。设备签名别名必须独立持久保存，不能随会话清理，否则重登可能丢失原设备身份。
 - 邮箱挑战的内部签发已连接四维限流、短期加密幂等回执与发信队列；集成树私有 MySQL/Redis 测试覆盖同键并发、改变有效请求冲突、锁等待跨过到期、撤销状态、提交成功后确认丢失模拟及失败回滚。[A01-16](evidence/A01/A01-16/report.md) 仍未挂 HTTP、真实邮箱或生产 worker；设备提示仅参与请求摘要，尚未存储展示。
 - 邮箱挑战 HTTP handler 已在集成树使用真实签发组件、本机 TLS 和私有 MySQL/Redis 完成 race 联测，包括同键重放、冲突、限流、非法请求与错误脱敏；实际客户端认证适配器也以合成数据连接该接口验证了挑战及重放；[A01-18](evidence/A01/A01-18/report.md) 只表示请求被接受，尚未挂生产路由或发送真实邮件。
 - 邮箱验证码登录的早期外层事务组合接缝已验证错误次数提交、回滚和提交后授权复核；[A01-11](evidence/A01/A01-11/transaction-seam.md) 是当时的内部证据，后续回执重放进度见下。
