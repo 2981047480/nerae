@@ -1,4 +1,4 @@
-import { SecureVaultResult } from '../interface.uts'
+import { SecureVaultResult, VersionedSecureVaultResult } from '../interface.uts'
 
 function failure(errorCode: string): SecureVaultResult {
 	const parsed = JSON.parseObject<SecureVaultResult>(
@@ -54,4 +54,40 @@ export function readTrainingOperationJournal(): SecureVaultResult {
 
 export function compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult {
 	return decode(NeraeAndroidSecureVaultBridge.compareAndSetTrainingOperationJournal(UTSAndroid.getAppContext(), expectedFound, expectedValue, value), false)
+}
+
+function versionedFailure(errorCode: string): VersionedSecureVaultResult {
+	return { ok: false, errorCode: errorCode, found: false, value: '', revision: '' }
+}
+
+function validRevision(revision: string): boolean {
+	return /^(0|[1-9][0-9]{0,18})$/.test(revision) &&
+		(revision.length < 19 || revision <= '9223372036854775807')
+}
+
+function decodeVersioned(raw: string, isRead: boolean): VersionedSecureVaultResult {
+	try {
+		const parsed = JSON.parseObject<VersionedSecureVaultResult>(raw)
+		if (parsed == null) return versionedFailure('bridge_failure')
+		const result = parsed!
+		if (!result.ok) {
+			if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable' && result.errorCode != 'conflict') return versionedFailure('bridge_failure')
+			return versionedFailure(result.errorCode)
+		}
+		if (result.errorCode.length != 0 || !validRevision(result.revision)) return versionedFailure('bridge_failure')
+		if (!isRead && (result.found || result.value.length != 0 || result.revision == '0')) return versionedFailure('bridge_failure')
+		if (isRead && (result.found == (result.value.length == 0) || (result.found && result.revision == '0'))) return versionedFailure('bridge_failure')
+		return result
+	} catch (_error) {
+		return versionedFailure('bridge_failure')
+	}
+}
+
+export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult {
+	return decodeVersioned(NeraeAndroidSecureVaultBridge.readVersionedTrainingOperationJournal(UTSAndroid.getAppContext()), true)
+}
+export function compareAndSetVersionedTrainingOperationJournal(expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string): VersionedSecureVaultResult {
+	if (!validRevision(expectedRevision) || expectedFound == (expectedValue.length == 0) ||
+		(expectedFound && expectedRevision == '0') || newFound == (newValue.length == 0)) return versionedFailure('invalid_state')
+	return decodeVersioned(NeraeAndroidSecureVaultBridge.compareAndSetVersionedTrainingOperationJournal(UTSAndroid.getAppContext(), expectedRevision, expectedFound, expectedValue, newFound, newValue), false)
 }

@@ -7,7 +7,12 @@
 export interface NativeTrainingJournalPort {
   readTrainingOperationJournal(): unknown
   compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): unknown
+  readVersionedTrainingOperationJournal?(): unknown
+  compareAndSetVersionedTrainingOperationJournal?(expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string): unknown
 }
+
+/** Opaque, process-local handle; only the issuing adapter can consume it. */
+export interface JournalEntrySnapshot { readonly value: string }
 
 export interface JournalStorage {
   read(key: string): Promise<unknown>
@@ -49,6 +54,9 @@ const SET_WRITE_KEYS = ['completed', 'exerciseEntryKey', 'exerciseId', 'exercise
 const FINISH_KEYS = ['date', 'durationMin', 'expectedVersion', 'note', 'rpe'] as const
 
 type Registry = { schema: 1; entries: Record<string, string> }
+type NativeSnapshot = { found: boolean; value: string; revision: string }
+type SnapshotProof = { owner: SecureOperationJournalStorage; key: string; native: NativeSnapshot; entry: string; active: boolean }
+const snapshotProofs = new WeakMap<object, SnapshotProof>()
 
 function utf8Length(value: string): number {
   let bytes = 0
@@ -363,6 +371,44 @@ function validateNativeResult(raw: unknown, mode: 'read' | 'cas'): { found: bool
   return { found: result.found, value: result.value }
 }
 
+function validNativeRevision(value: unknown): value is string {
+  return typeof value === 'string' && /^(0|[1-9]\d{0,18})$/.test(value) &&
+    (value.length < 19 || value <= '9223372036854775807')
+}
+
+function nextRevision(value: string): string {
+  const digits = value.split('')
+  for (let index = digits.length - 1; index >= 0; index--) {
+    if (digits[index] !== '9') {
+      digits[index] = String(Number(digits[index]) + 1)
+      return digits.join('')
+    }
+    digits[index] = '0'
+  }
+  return `1${digits.join('')}`
+}
+
+function validateVersionedResult(raw: unknown, mode: 'read' | 'cas', expectedRevision?: string): NativeSnapshot | false {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new SecureJournalStorageError('unavailable')
+  const result = raw as Record<string, unknown>
+  if (!exactKeys(result, ['ok', 'errorCode', 'found', 'value', 'revision']) || typeof result.ok !== 'boolean' ||
+    typeof result.errorCode !== 'string' || typeof result.found !== 'boolean' || typeof result.value !== 'string' ||
+    typeof result.revision !== 'string') throw new SecureJournalStorageError('unavailable')
+  if (!result.ok) {
+    if (mode === 'cas' && result.errorCode === 'conflict' && !result.found && result.value === '' && result.revision === '') return false
+    throw new SecureJournalStorageError('unavailable')
+  }
+  if (result.errorCode !== '' || !validNativeRevision(result.revision)) throw new SecureJournalStorageError('unavailable')
+  if (mode === 'cas') {
+    if (result.found || result.value !== '' || !expectedRevision || result.revision !== nextRevision(expectedRevision)) {
+      throw new SecureJournalStorageError('unavailable')
+    }
+  } else if (result.found === (result.value.length === 0) || (result.found && result.revision === '0')) {
+    throw new SecureJournalStorageError('unavailable')
+  }
+  return { found: result.found, value: result.value, revision: result.revision }
+}
+
 /** Protected single-slot implementation of the frozen JournalStorage port. */
 export class SecureOperationJournalStorage implements JournalStorage {
   readonly #native: NativeTrainingJournalPort
@@ -407,6 +453,53 @@ export class SecureOperationJournalStorage implements JournalStorage {
     validateOperation(key, expectedValue)
     if (nextValue !== null) validateOperation(key, nextValue)
     return this.#mutate(key, expectedValue, nextValue)
+  }
+
+  /** Capture one entry with the native slot version; never persists a receipt. */
+  async readSnapshot(key: string): Promise<JournalEntrySnapshot | null> {
+    this.#assertKeyOwner(key)
+    this.#assertCurrent()
+    if (typeof this.#native.readVersionedTrainingOperationJournal !== 'function' ||
+      typeof this.#native.compareAndSetVersionedTrainingOperationJournal !== 'function') {
+      throw new SecureJournalStorageError('unavailable')
+    }
+    let raw: unknown
+    try { raw = this.#native.readVersionedTrainingOperationJournal() }
+    catch { this.#assertCurrent(); throw new SecureJournalStorageError('unavailable') }
+    this.#assertCurrent()
+    const native = validateVersionedResult(raw, 'read')
+    if (native === false) throw new SecureJournalStorageError('unavailable')
+    const registry = native.found ? decodeRegistry(native.value) : { schema: 1 as const, entries: {} }
+    if (!Object.prototype.hasOwnProperty.call(registry.entries, key)) return null
+    const entry = registry.entries[key]
+    const snapshot = Object.freeze({ value: entry })
+    snapshotProofs.set(snapshot, { owner: this, key, native, entry, active: true })
+    return snapshot
+  }
+
+  /** CAS against the captured slot version. Conflicts and unknown outcomes consume the handle. */
+  async compareAndSwapSnapshot(snapshot: JournalEntrySnapshot, nextValue: string | null): Promise<boolean> {
+    if (!snapshot || typeof snapshot !== 'object') throw new SecureJournalStorageError('invalid_operation')
+    const proof = snapshotProofs.get(snapshot)
+    if (!proof || proof.owner !== this || !proof.active) throw new SecureJournalStorageError('invalid_operation')
+    proof.active = false
+    this.#assertCurrent()
+    this.#assertKeyOwner(proof.key)
+    if (nextValue !== null) validateOperation(proof.key, nextValue)
+    const registry = decodeRegistry(proof.native.value)
+    if (registry.entries[proof.key] !== proof.entry) throw new SecureJournalStorageError('corrupt')
+    const updated = { ...registry.entries }
+    if (nextValue === null) delete updated[proof.key]
+    else updated[proof.key] = nextValue
+    const encoded = encodeRegistry(updated)
+    this.#assertCurrent()
+    const compare = this.#native.compareAndSetVersionedTrainingOperationJournal
+    if (typeof compare !== 'function') throw new SecureJournalStorageError('unavailable')
+    let raw: unknown
+    try { raw = compare.call(this.#native, proof.native.revision, proof.native.found, proof.native.value, true, encoded) }
+    catch { this.#assertCurrent(); throw new SecureJournalStorageError('unavailable') }
+    this.#assertCurrent()
+    return validateVersionedResult(raw, 'cas', proof.native.revision) !== false
   }
 
   async #readNative(): Promise<{ found: boolean; value: string }> {

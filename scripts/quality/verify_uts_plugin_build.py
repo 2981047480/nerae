@@ -25,7 +25,7 @@ import { createAppEmailLoginFlow } from '@/platform/app/nativeEmailLogin'
 import { createAppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { createNativeTrainingJournalStorage } from '@/platform/app/nativeTrainingJournalStorage'
 import { TrainingOperationJournal } from '@/features/training/operationJournal'
-import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
+import { readTrainingOperationJournal, compareAndSetTrainingOperationJournal, readVersionedTrainingOperationJournal, compareAndSetVersionedTrainingOperationJournal } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
 const authRuntime = shallowRef<AppAuthRuntime | null>(null)
@@ -34,7 +34,8 @@ function probe() {
     String(createAppDeviceIdentityCoordinator) + String(signAppEmailLoginChallenge) + String(createAppEmailLoginFlow) + String(createAppAuthRuntime) +
     String(createNativeTrainingJournalStorage) + String(TrainingOperationJournal) +
     String(createConfiguredAppHttpsPorts('https://example.invalid').revokeCurrentSession) +
-    String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal)
+    String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal) +
+    String(readVersionedTrainingOperationJournal) + String(compareAndSetVersionedTrainingOperationJournal)
 }
 </script>
 <template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" /></template>
@@ -43,7 +44,7 @@ function probe() {
 PLUGINS = {
     "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs", "signExistingDeviceProofByJs")),
     "nerae-random": ("neraeRandom", ("generateSecureRandomRequestKeyByJs",)),
-    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs", "readTrainingOperationJournalByJs", "compareAndSetTrainingOperationJournalByJs")),
+    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs", "readTrainingOperationJournalByJs", "compareAndSetTrainingOperationJournalByJs", "readVersionedTrainingOperationJournalByJs", "compareAndSetVersionedTrainingOperationJournalByJs")),
     "nerae-https": ("neraeHttps", ("requestByJs", "cancelByJs")),
 }
 

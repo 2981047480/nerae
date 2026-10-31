@@ -1,4 +1,4 @@
-import { SecureVaultResult } from './interface.uts'
+import { SecureVaultResult, VersionedSecureVaultResult } from './interface.uts'
 
 function unsupported(): SecureVaultResult {
   return { ok: false, errorCode: 'unsupported_platform', found: false, value: '' }
@@ -13,3 +13,9 @@ export function compareAndSetDeviceIdentityRegistry(_expectedFound: boolean, _ex
 
 export function readTrainingOperationJournal(): SecureVaultResult { return unsupported() }
 export function compareAndSetTrainingOperationJournal(_expectedFound: boolean, _expectedValue: string, _value: string): SecureVaultResult { return unsupported() }
+
+function unsupportedVersioned(): VersionedSecureVaultResult {
+  return { ok: false, errorCode: 'unsupported_platform', found: false, value: '', revision: '' }
+}
+export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult { return unsupportedVersioned() }
+export function compareAndSetVersionedTrainingOperationJournal(_expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _newFound: boolean, _newValue: string): VersionedSecureVaultResult { return unsupportedVersioned() }

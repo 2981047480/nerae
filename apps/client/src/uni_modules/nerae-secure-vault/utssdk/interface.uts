@@ -23,3 +23,16 @@ export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expec
 export type ReadTrainingOperationJournal = () => SecureVaultResult
 /** Atomic only within one App process. No unconditional overwrite or clear API is exposed. */
 export type CompareAndSetTrainingOperationJournal = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult
+
+/** Native-owned slot revision; writes and logical deletion advance it atomically. */
+export type VersionedSecureVaultResult = {
+  ok: boolean
+  errorCode: string
+  found: boolean
+  value: string
+  revision: string
+}
+export type ReadVersionedTrainingOperationJournal = () => VersionedSecureVaultResult
+export type CompareAndSetVersionedTrainingOperationJournal = (
+  expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string
+) => VersionedSecureVaultResult
