@@ -388,6 +388,48 @@ test('a queued write from another controller prevents an older write from return
   assert.equal(second.isCurrentPersistenceProof(newestProof), true)
 })
 
+test('an unrelated newer key blocks proof issuance but leaves proof-writing controller out of saving state', async () => {
+  const releases = []
+  const storage = {
+    async read() { return undefined },
+    write(key, value) {
+      if (key.includes('.101.')) return new Promise(resolve => releases.push(() => resolve()))
+      return Promise.resolve()
+    },
+  }
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const first = new DraftController('101', makeDraft(), storage, now, auth)
+  const pendingProof = first.persistWithProof()
+  await new Promise(resolve => setImmediate(resolve))
+  const otherDraft = createRecordingDraft('event-0002', '2026-10-29', 'Asia/Shanghai', '2026-10-29')
+  const unrelated = new DraftController('202', otherDraft, storage, now, auth)
+  assert.equal(await unrelated.persist(), true)
+  releases[0]()
+  assert.equal(await pendingProof, null)
+  assert.equal(first.status, 'not_saved')
+})
+
+test('ordinary persist keeps its boolean success when another key writes concurrently', async () => {
+  const releases = []
+  const storage = {
+    async read() { return undefined },
+    write(key) {
+      if (key.includes('.101.')) return new Promise(resolve => releases.push(resolve))
+      return Promise.resolve()
+    },
+  }
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const first = new DraftController('101', makeDraft(), storage, now, auth)
+  const pendingSave = first.persist()
+  await new Promise(resolve => setImmediate(resolve))
+  const otherDraft = createRecordingDraft('event-0002', '2026-10-29', 'Asia/Shanghai', '2026-10-29')
+  const unrelated = new DraftController('202', otherDraft, storage, now, auth)
+  assert.equal(await unrelated.persist(), true)
+  releases[0]()
+  assert.equal(await pendingSave, true)
+  assert.equal(first.status, 'saved_locally')
+})
+
 test('loading an old server-linked draft does not overwrite it when stable order requires reconciliation', async () => {
   const storage = memoryStore()
   const auth = { generation: 'session-1', isCurrent: () => true }

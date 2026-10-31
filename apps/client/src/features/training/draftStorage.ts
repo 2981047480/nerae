@@ -240,7 +240,9 @@ export class DraftController {
         if (revision === this.revision) this.status = 'not_saved'
         return { saved: false, proof: null }
       }
-      if (revision !== this.revision || writeRevision !== persistenceWriteRevision) {
+      if (revision !== this.revision) return { saved: false, proof: null }
+      if (issueProof && writeRevision !== persistenceWriteRevision) {
+        this.status = 'not_saved'
         return { saved: false, proof: null }
       }
       this.status = 'saved_locally'
