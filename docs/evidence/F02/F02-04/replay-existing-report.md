@@ -43,7 +43,10 @@ Coverage includes exact response/status/reference/expiry recovery, concurrent
 read recovery, no mutation on replay, absent/expired/in-progress rows, changed
 body/query/method, different actor/path, current resource revocation, ciphertext
 tampering, and expiry while waiting on a MySQL row lock. Expiry and absence do
-not disclose whether a receipt previously existed.
+not disclose whether a receipt previously existed. A deterministic test also
+cancels the context after final authorization/expiry checks and verifies that
+the commit-error path returns no cached body. It does not simulate a database
+server committing successfully while the commit acknowledgement is lost.
 
 ## Limits
 

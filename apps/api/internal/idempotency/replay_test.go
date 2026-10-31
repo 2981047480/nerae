@@ -248,3 +248,30 @@ func TestReplayExistingRejectsCorruptionAndExpiryAfterLockWait(t *testing.T) {
 		t.Fatal("expired lock-wait replay performed a business write")
 	}
 }
+
+func TestReplayExistingCommitOutcomeUnknownNeverReleasesBody(t *testing.T) {
+	f := newIdemFixture(t)
+	actor := f.actor(t)
+	req := idemRequest("POST", "/synthetic/replay-existing/commit-unknown", "ReplayCommitUnknown-01", []byte(`{"v":1}`))
+	_, calls := createReplayableResult(t, f, actor, req, "resource:commit-unknown", `{"secret":"cached"}`, "replay-commit-unknown-effect", f.authorize(actor))
+	ctx, cancel := context.WithCancel(f.ctx)
+	oldNow := f.store.now
+	clockReads := 0
+	f.store.now = func() time.Time {
+		clockReads++
+		if clockReads == 2 {
+			cancel()
+		}
+		return oldNow()
+	}
+	result, err := f.store.ReplayExisting(ctx, f.db, actor.token, req, f.authorize(actor))
+	f.store.now = oldNow
+	cancel()
+	if !errors.Is(err, ErrOutcomeUnknown) || len(result.Body) != 0 || result.ResultRef != "" || calls.Load() != 1 {
+		t.Fatal("uncertain read transaction commit released a cached response or ran a mutation")
+	}
+	var effects int
+	if err := f.db.QueryRowContext(f.ctx, `SELECT COUNT(*) FROM idempotency_test_effect WHERE event_id=?`, "replay-commit-unknown-effect").Scan(&effects); err != nil || effects != 1 {
+		t.Fatal("commit-unknown recovery changed synthetic business rows")
+	}
+}
