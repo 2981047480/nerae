@@ -21,6 +21,8 @@ export interface RecordingLease {
 export interface ScopedSessionDetail {
   lease: RecordingLease
   detail: WorkoutSessionDetail
+  /** Server-declared idempotency retention boundary for this successful write only. */
+  idempotencyKeyExpiresAt?: string
 }
 
 export interface WorkoutSessionSummary {
@@ -190,6 +192,45 @@ function validDateTime(value: unknown): value is string {
   const parts = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value)
   return Boolean(parts && validDate(parts[1]) && Number(parts[2]) < 24 && Number(parts[3]) < 60 &&
     Number(parts[4]) < 60 && !Number.isNaN(Date.parse(value)))
+}
+
+/** Accept a complete UTC RFC3339 timestamp and retain the server's exact precision. */
+function validIdempotencyExpiry(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length > 64) return false
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|\+00:00)$/.exec(value)
+  if (!match) return false
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+  const second = Number(match[6])
+  const daysInMonth = [31, ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 29 : 28,
+    31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth[month - 1] &&
+    hour <= 23 && minute <= 59 && second <= 59
+}
+
+/** A successful write without one unambiguous server expiry must be reconciled. */
+function writeExpiry(headers: Readonly<Record<string, string>> | undefined): string {
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
+    throw new RecordingApiError('reconcile_required')
+  }
+  try {
+    let found: string | undefined
+    for (const [name, value] of Object.entries(headers)) {
+      if (name.toLowerCase() !== 'idempotency-key-expires-at') continue
+      if (found !== undefined || typeof value !== 'string' || !validIdempotencyExpiry(value)) {
+        throw new RecordingApiError('reconcile_required')
+      }
+      found = value
+    }
+    if (found === undefined) throw new RecordingApiError('reconcile_required')
+    return found
+  } catch (error) {
+    if (error instanceof RecordingApiError) throw error
+    throw new RecordingApiError('reconcile_required')
+  }
 }
 
 /** Compare instants without losing sub-millisecond digits or requiring one offset spelling. */
@@ -433,7 +474,9 @@ export class RecordingApi {
   }
 
   private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
-    data?: unknown, idempotencyKey?: string): Promise<{ data: unknown; lease: RecordingLease; isSameCredential: () => boolean }> {
+    data?: unknown, idempotencyKey?: string): Promise<{
+      data: unknown; headers?: Readonly<Record<string, string>>; lease: RecordingLease; isSameCredential: () => boolean
+    }> {
     const credential = this.auth.current()
     if (!credential) throw new RecordingApiError('unauthenticated')
     // Capture scalar values: an auth store may mutate its current object while
@@ -466,20 +509,29 @@ export class RecordingApi {
     }
     let response: HttpResponse
     try { response = await this.request({ url: `${this.base}${path}`, method, header, ...(encoded === undefined ? {} : { data: encoded }) }) }
-    catch {
+    catch (error) {
       if (!isSameCredential()) throw new RecordingApiError('session_changed')
+      if (error instanceof RecordingApiError && error.code === 'reconcile_required') {
+        throw new RecordingApiError('reconcile_required')
+      }
+      if (error instanceof RecordingApiError && error.code === 'invalid_response') {
+        // A transport may reject a successful write's response (for example,
+        // duplicate native headers) before exposing its status or headers.
+        throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
+      }
       throw new RecordingApiError('network')
     }
     if (!isSameCredential()) throw new RecordingApiError('session_changed')
     if (!response || !Number.isInteger(response.statusCode)) throw new RecordingApiError('invalid_response')
     if (response.statusCode < 200 || response.statusCode >= 300) throw responseError(response.statusCode)
     if (response.statusCode !== expectedStatus) throw new RecordingApiError('invalid_response')
-    return { data: response.data, lease: { subjectId, generation }, isSameCredential }
+    return { data: response.data, headers: response.headers, lease: { subjectId, generation }, isSameCredential }
   }
 
   private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
     data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
     const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey)
+    const idempotencyKeyExpiresAt = method === 'POST' ? writeExpiry(response.headers) : undefined
     const detail = parseSessionDetail(response.data)
     if (expectedId !== undefined && detail.id !== expectedId) throw new RecordingApiError('invalid_response')
     // Do not let edits to a response object change a later projection.
@@ -488,7 +540,8 @@ export class RecordingApi {
     Object.freeze(immutable.sets)
     Object.freeze(immutable.exerciseEntryKeys)
     Object.freeze(immutable)
-    const scoped = Object.freeze({ lease: Object.freeze(response.lease), detail: immutable })
+    const scoped = Object.freeze({ lease: Object.freeze(response.lease), detail: immutable,
+      ...(idempotencyKeyExpiresAt === undefined ? {} : { idempotencyKeyExpiresAt }) })
     if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
     issuedSnapshots.set(scoped, this)
     return scoped
@@ -737,7 +790,11 @@ export function createUniRequestPort(): RequestPort {
         try {
           const headers = selectRecordingResponseHeaders(result.header)
           resolve({ statusCode: result.statusCode, data: result.data, ...(headers === undefined ? {} : { headers }) })
-        } catch { reject(new Error('invalid response headers')) }
+        } catch {
+          const successfulWrite = request.method === 'POST' && Number.isInteger(result.statusCode) &&
+            result.statusCode >= 200 && result.statusCode < 300
+          reject(new RecordingApiError(successfulWrite ? 'reconcile_required' : 'invalid_response'))
+        }
       },
       fail: () => reject(new Error('network unavailable')),
     })

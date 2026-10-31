@@ -20,7 +20,14 @@ const listedSession = overrides => ({
 })
 const sessionPage = (items, overrides) => ({ page: 1, pageSize: 20, total: items.length, items, ...overrides })
 const apiError = code => error => error instanceof RecordingApiError && error.code === code
-const makeApi = (base, leaseAuth, request) => new RecordingApi(base, leaseAuth, request, { subjectId: '101', generation: 'login-1' })
+const defaultWriteExpiry = '2001-01-01T00:00:00.123456789Z'
+const makeApi = (base, leaseAuth, request) => new RecordingApi(base, leaseAuth, async input => {
+  const response = await request(input)
+  return input.method === 'POST' && response && response.statusCode >= 200 && response.statusCode < 300 &&
+    response.headers === undefined
+    ? { ...response, headers: { 'Idempotency-Key-Expires-At': defaultWriteExpiry } }
+    : response
+}, { subjectId: '101', generation: 'login-1' })
 
 test('free-session creation sends the actual input with authentication and a caller-owned idempotency key', async () => {
   const requests = []
@@ -31,6 +38,7 @@ test('free-session creation sends the actual input with authentication and a cal
   const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
   const created = await api.createFreeSession(input, 'create-0001')
   assert.equal(created.detail.id, '42')
+  assert.equal(created.idempotencyKeyExpiresAt, defaultWriteExpiry)
   assert.equal(created.detail.clientEventId, input.clientEventId)
   assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions')
   assert.equal(requests[0].header.Authorization, 'Bearer real-session-token')
@@ -377,9 +385,96 @@ test('the uni-app recording adapter preserves only unambiguous allowed response 
       { 'Idempotency-Key-Expires-At': 'bad\r\nvalue' },
     ]) {
       globalThis.uni = { request(options) { options.success({ statusCode: 200, data: {}, header }) } }
-      await assert.rejects(request({ url: 'https://example.org', method: 'GET', header: {} }), /invalid response headers/)
+      await assert.rejects(request({ url: 'https://example.org', method: 'GET', header: {} }), apiError('invalid_response'))
     }
   } finally { globalThis.uni = previous }
+})
+
+test('write expiry is preserved exactly for create, set and finish, while GET never exposes a write receipt', async () => {
+  const expiry = '2001-02-28T23:59:59.120034500+00:00'
+  const initial = detail()
+  const api = makeApi('https://api.example.org/v1', auth, async request => {
+    if (request.method === 'GET') return { statusCode: 200, data: initial,
+      headers: { 'Idempotency-Key-Expires-At': '2001-03-01T00:00:00Z', 'Set-Cookie': 'secret=not-exposed' } }
+    if (request.url.endsWith('/me/sessions')) return { statusCode: 201, data: detail(), headers: { 'idempotency-key-expires-at': expiry } }
+    if (request.url.endsWith('/sets')) return { statusCode: 200,
+      data: detail({ version: 4, sets: [set], exerciseEntryKeys: ['entry-0001'] }), headers: { 'idempotency-key-expires-at': expiry } }
+    return { statusCode: 200,
+      data: detail({ version: 5, status: 'completed', recordedAt: '2026-10-29T08:00:01Z', sets: [set], exerciseEntryKeys: ['entry-0001'] }),
+      headers: { 'idempotency-key-expires-at': expiry } }
+  })
+
+  const created = await api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001')
+  assert.equal(created.idempotencyKeyExpiresAt, expiry)
+  const read = await api.readSession('42')
+  assert.equal(Object.hasOwn(read, 'idempotencyKeyExpiresAt'), false)
+  assert.deepEqual(Object.keys(read).sort(), ['detail', 'lease'])
+  const saved = await api.saveBatch('42', { expectedVersion: 3, sets: [{ ...set, completed: true }], exerciseEntryKeys: ['entry-0001'] },
+    'sets-0001', read)
+  assert.equal(saved.idempotencyKeyExpiresAt, expiry)
+  const completed = await api.finishSession('42', { expectedVersion: saved.detail.version }, 'finish-0001', saved)
+  assert.equal(completed.idempotencyKeyExpiresAt, expiry)
+  for (const result of [created, saved, completed]) {
+    assert.deepEqual(Object.keys(result).sort(), ['detail', 'idempotencyKeyExpiresAt', 'lease'])
+    assert.equal(JSON.stringify(result).includes('Set-Cookie'), false)
+    assert.equal(JSON.stringify(result).includes('Authorization'), false)
+  }
+})
+
+test('a successful write without one valid unambiguous expiry requires reconciliation without leaking headers', async () => {
+  const malformed = [
+    undefined,
+    {},
+    { 'Idempotency-Key-Expires-At': 'not-a-date', 'X-Request-ID': 'private-request-id' },
+    { 'Idempotency-Key-Expires-At': '2026-02-30T00:00:00Z' },
+    { 'Idempotency-Key-Expires-At': '2026-10-31T00:00:00+08:00' },
+    { 'Idempotency-Key-Expires-At': '2026-10-31T00:00:00.1234567890Z' },
+    { 'Idempotency-Key-Expires-At': '2026-10-31T00:00:00Z', 'idempotency-key-expires-at': '2026-11-01T00:00:00Z' },
+  ]
+  for (const headers of malformed) {
+    const api = new RecordingApi('https://api.example.org', auth, async () => ({ statusCode: 201, data: detail(), headers }),
+      { subjectId: '101', generation: 'login-1' })
+    await assert.rejects(api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' },
+      'create-0001'), error => apiError('reconcile_required')(error) && error.message === 'reconcile_required' &&
+        !JSON.stringify(error).includes('private-request-id'))
+  }
+})
+
+test('the real uni.request adapter turns a duplicate successful-write expiry header into reconciliation', async () => {
+  const previous = globalThis.uni
+  try {
+    globalThis.uni = { request(options) { options.success({ statusCode: 201, data: detail(), header: {
+      'Idempotency-Key-Expires-At': '2026-11-01T00:00:00Z',
+      'idempotency-key-expires-at': '2026-11-02T00:00:00Z',
+      'Set-Cookie': 'secret=hidden',
+    } }) } }
+    const api = new RecordingApi('https://api.example.org', auth, createUniRequestPort(),
+      { subjectId: '101', generation: 'login-1' })
+    await assert.rejects(api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' },
+      'create-0001'), apiError('reconcile_required'))
+  } finally { globalThis.uni = previous }
+})
+
+test('a native-style invalid response after a write is conservatively reconciled', async () => {
+  const api = new RecordingApi('https://api.example.org', auth, async () => {
+    throw new RecordingApiError('invalid_response')
+  }, { subjectId: '101', generation: 'login-1' })
+  await assert.rejects(api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' },
+    'create-0001'), apiError('reconcile_required'))
+})
+
+test('write response after an account or session change cannot release expiry metadata', async () => {
+  let generation = 'login-1'
+  let release
+  const switchingAuth = {
+    current: () => ({ ...credential, generation }),
+    isCurrent: (id, capturedGeneration) => id === '101' && capturedGeneration === generation,
+  }
+  const api = makeApi('https://api.example.org', switchingAuth, () => new Promise(resolve => { release = resolve }))
+  const pending = api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }, 'create-0001')
+  generation = 'login-2'
+  release({ statusCode: 201, data: detail(), headers: { 'Idempotency-Key-Expires-At': defaultWriteExpiry, 'Set-Cookie': 'secret=hidden' } })
+  await assert.rejects(pending, apiError('session_changed'))
 })
 
 
