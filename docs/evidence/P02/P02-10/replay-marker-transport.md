@@ -6,9 +6,12 @@ From integration baseline `4ddd0ca100f204b8e5325d758c27236947da4824`, the
 iOS and Android native HTTPS response allowlists and the TypeScript App
 transport now include `idempotency-replayed`. When present, both native
 bridges require the parsed value to equal exactly `true`; duplicate allowlisted
-headers or invalid values fail with the fixed `invalid_response` outcome. The
+headers visible to the bridge or invalid values fail with the fixed `invalid_response` outcome. The
 TypeScript adapter independently rejects duplicate/case-colliding JSON keys
 and any replay marker value other than the exact string `true`.
+On iOS, URLSession may coalesce headers before `allHeaderFields` is available;
+duplicates that the platform has already collapsed into one indistinguishable
+value cannot be independently detected by this bridge.
 
 The transport only preserves metadata. It does not change HTTP status, body,
 or success/error interpretation based on this header. A synthetic 503 carrying

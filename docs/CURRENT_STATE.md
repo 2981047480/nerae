@@ -10,9 +10,9 @@
 - 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
 - 当前会话撤销事务、DELETE handler 和 iOS/Android 原生传输接缝已合入，服务端已装配到本机受保护 API 进程。过期分类与不确定响应处理已修复；类型检查、23 项传输测试和两端本机 TLS 回归通过。部署、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
 - 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)
-- 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端尚未调用这些路径或可靠结算待发日志，不能据此宣称同步完成。[证据](evidence/F02/F02-04/workout-replay-http.md)
+- 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端可从待发日志查询并校验成功回执，同主体第二个合成会话的丢响应恢复已联测；草稿合并与日志结算仍未接通，不能据此宣称同步完成。[服务端](evidence/F02/F02-04/workout-replay-http.md) · [客户端](evidence/U02/U02-01/replay-pending-client.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；与待发日志的合成组合测试覆盖不确定 CAS、重启和切号，集成树训练测试 148/148、类型及 App/小程序源码探针通过。它尚无成功回执结算、完整队列或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [组合](evidence/U02/U02-01/secure-operation-journal-interop.md)
-- 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时要求核对；集成树 123 项训练相关测试及私有 MySQL/TLS 客户端联测通过。尚无客户端持久重放与响应结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/recording-idempotency-expiry-receipt.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
+- 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时保留原请求并可只读查询回执；尚无客户端回执的持久结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/replay-pending-client.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
 - 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。iOS 的 UTS/Swift 参数标签错误修复后，HBuilderX 5.33 已编出未签名 iPhoneOS framework。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机及上层账号映射仍待完成。
