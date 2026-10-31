@@ -282,6 +282,23 @@ test('any subsequent ordinary edit or persist invalidates a successful proof', a
   assert.equal(controller.isCurrentPersistenceProof(proof), false)
 })
 
+test('in-place transforms cannot change the frozen event identity or timezone', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  await assert.rejects(controller.update(draft => {
+    draft.clientEventId = 'event-0002'
+    return draft
+  }), /不能改变记录身份/)
+  assert.equal(controller.draft.clientEventId, 'event-0001')
+
+  await assert.rejects(controller.update(draft => {
+    draft.timeZone = 'America/Los_Angeles'
+    return draft
+  }), /不能改变记录身份/)
+  assert.equal(controller.draft.timeZone, 'Asia/Shanghai')
+})
+
 test('failed or uncertain write never produces a proof and invalidates an earlier proof', async () => {
   const storage = memoryStore()
   const auth = { generation: 'proof-session', isCurrent: () => true }
@@ -342,6 +359,33 @@ test('a newer same-draft write from another controller invalidates the earlier p
   release()
   const secondProof = await newerWrite
   assert.equal(second.isCurrentPersistenceProof(secondProof), true)
+})
+
+test('a queued write from another controller prevents an older write from returning a proof', async () => {
+  const data = new Map()
+  const releases = []
+  const storage = {
+    async read(key) { return data.get(key) },
+    write(key, value) {
+      return new Promise(resolve => releases.push(() => { data.set(key, value); resolve() }))
+    },
+  }
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const first = new DraftController('101', makeDraft(), storage, now, auth)
+  const second = new DraftController('101', makeDraft(), storage, now, auth)
+  const oldWrite = first.persistWithProof()
+  await new Promise(resolve => setImmediate(resolve))
+  const newerWrite = second.persistWithProof()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(releases.length, 1)
+  releases[0]()
+  assert.equal(await oldWrite, null)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(releases.length, 2)
+  releases[1]()
+  const newestProof = await newerWrite
+  assert.ok(newestProof)
+  assert.equal(second.isCurrentPersistenceProof(newestProof), true)
 })
 
 test('loading an old server-linked draft does not overwrite it when stable order requires reconciliation', async () => {

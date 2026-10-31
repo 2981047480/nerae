@@ -169,8 +169,10 @@ export class DraftController {
     this.invalidatePersistenceProof()
     this.assertCurrent()
     const current = cloneDraft(this.currentDraft)
+    const originalClientEventId = current.clientEventId
+    const originalTimeZone = current.timeZone
     const next = transform(current)
-    if (next.clientEventId !== current.clientEventId || next.timeZone !== current.timeZone) {
+    if (next.clientEventId !== originalClientEventId || next.timeZone !== originalTimeZone) {
       throw new Error('不能改变记录身份或已冻结的时区')
     }
     this.currentDraft = restoreDraft(next, todayInTimezone(next.timeZone, this.now()))
@@ -238,7 +240,9 @@ export class DraftController {
         if (revision === this.revision) this.status = 'not_saved'
         return { saved: false, proof: null }
       }
-      if (revision !== this.revision) return { saved: false, proof: null }
+      if (revision !== this.revision || writeRevision !== persistenceWriteRevision) {
+        return { saved: false, proof: null }
+      }
       this.status = 'saved_locally'
       if (!issueProof) return { saved: true, proof: null }
       const handle = Object.freeze({})
