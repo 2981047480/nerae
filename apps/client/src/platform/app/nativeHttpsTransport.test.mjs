@@ -54,7 +54,7 @@ test('current-session revoke uses same-origin bearer DELETE with no body and acc
     callbacks.success(ok('revoke-1', 204, '', '{"cache-control":"no-store","x-request-id":"logout-1"}'))
     return 'revoke-1'
   })
-  await ports.revokeCurrentSession('synthetic.revoke.token')
+  assert.deepEqual(await ports.revokeCurrentSession('synthetic.revoke.token'), { state: 'revoked' })
   assert.equal(sent.baseUrl, 'https://api.example.test/v1')
   assert.equal(sent.path, '/auth/sessions/current')
   assert.equal(sent.method, 'DELETE')
@@ -65,16 +65,24 @@ test('current-session revoke uses same-origin bearer DELETE with no body and acc
 })
 
 test('revoke distinguishes explicit rejection from uncertain or malformed responses', async () => {
-  for (const [response, code] of [
-    [ok('bad-body', 204, '{"unexpected":true}', '{"cache-control":"no-store"}'), 'invalid_response'],
-    [ok('empty-body', 204, '', '{}'), 'invalid_response'],
-    [ok('wrong-success', 200, '{"ok":true}', '{"cache-control":"no-store"}'), 'unavailable'],
-    [ok('server-error', 503, '{"code":"UNAVAILABLE"}', '{"cache-control":"no-store"}'), 'unavailable'],
-    [ok('auth-error', 401, '{"code":"UNAUTHENTICATED"}', '{"cache-control":"no-store"}'), 'unauthorized'],
+  for (const [response, outcome] of [
+    [ok('bad-body', 204, '{"unexpected":true}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
+    [ok('empty-body', 204, '', '{}'), { state: 'unknown' }],
+    [ok('wrong-success', 200, '{"ok":true}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
+    [ok('server-error', 503, '{"code":"UNAVAILABLE"}', '{"cache-control":"no-store"}'), { state: 'unknown' }],
+    [ok('auth-error', 401, '{"code":"UNAUTHENTICATED"}', '{"cache-control":"no-store"}'),
+      { state: 'rejected', reason: 'unauthorized' }],
   ]) {
     const ports = make((request, callbacks) => { callbacks.success(response); return response.requestId })
-    await assert.rejects(ports.revokeCurrentSession('synthetic.revoke.token'), errorCode(code))
+    assert.deepEqual(await ports.revokeCurrentSession('synthetic.revoke.token'), outcome)
   }
+  const failed = make((request, callbacks) => {
+    callbacks.fail({ requestId: 'network-unknown', code: 'network' })
+    return 'network-unknown'
+  })
+  assert.deepEqual(await failed.revokeCurrentSession('synthetic.revoke.token'), { state: 'unknown' })
+  const malformedToken = make(() => { throw new Error('must not reach native') })
+  await assert.rejects(malformedToken.revokeCurrentSession('bad\r\nheader'), errorCode('invalid_request'))
 })
 
 test('empty 204 support is scoped to revoke and does not relax GET or auth POST JSON responses', async () => {
@@ -92,7 +100,7 @@ test('late revoke callback after timeout is ignored and cancellation fires once'
   let cancellations = 0
   const ports = make((request, sent) => { callbacks = sent; return 'revoke-late' },
     'https://api.example.test/v1', () => { cancellations++ })
-  await assert.rejects(ports.revokeCurrentSession('synthetic.revoke.token'), errorCode('network'))
+  assert.deepEqual(await ports.revokeCurrentSession('synthetic.revoke.token'), { state: 'unknown' })
   assert.equal(cancellations, 1)
   callbacks.success(ok('revoke-late', 204, '', '{"cache-control":"no-store"}'))
   await new Promise(resolve => setTimeout(resolve, 20))

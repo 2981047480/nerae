@@ -24,6 +24,18 @@ export interface AuthenticatedMeWireResponse {
   readonly body: Readonly<Record<string, unknown>>
 }
 
+export type SessionRevocationOutcome =
+  | { readonly state: 'revoked' }
+  | { readonly state: 'rejected'; readonly reason: 'unauthorized' | 'forbidden' | 'not_found' | 'conflict' | 'expired' | 'rate_limited' }
+  | { readonly state: 'unknown' }
+
+export type AppNativeHttpsPorts = {
+  authTransport: SecureAuthTransport
+  recordingRequest: RequestPort
+  readCurrentUser(accessToken: string): Promise<AuthenticatedMeWireResponse>
+  revokeCurrentSession(accessToken: string): Promise<SessionRevocationOutcome>
+}
+
 const maxBodyBytes = 4 * 1024 * 1024
 const maxHeadersBytes = 20 * 1024
 const responseHeaderNames = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at'])
@@ -365,11 +377,7 @@ function makeNativeRequest(base: ConfiguredBase, port: NativeHttpsRequestPort, c
 
 /** App-only ports over the callback bridge. Construction requires an explicit HTTPS base. */
 export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: NativeHttpsRequestPort,
-  nativeCancel: NativeHttpsCancelPort, timeoutMs = 30_000): {
-    authTransport: SecureAuthTransport
-    recordingRequest: RequestPort
-    readCurrentUser(accessToken: string): Promise<AuthenticatedMeWireResponse>
-  } {
+  nativeCancel: NativeHttpsCancelPort, timeoutMs = 30_000): AppNativeHttpsPorts {
   let base: ConfiguredBase
   try {
     base = configuredBase(baseUrl)
@@ -405,26 +413,33 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
     }, '', 'auth')
     return Object.freeze({ status: result.status, headers: result.headers, body: result.body })
   }
-  const revokeCurrentSession = async (accessToken: string): Promise<void> => {
+  const revokeCurrentSession = async (accessToken: string): Promise<SessionRevocationOutcome> => {
     if (typeof accessToken !== 'string' || accessToken.length < 1 || accessToken.length > 8192 ||
       !/^[\x21-\x7e]+$/.test(accessToken)) throw new AuthApiError('invalid_request')
-    const result = await run('DELETE', `${base.baseUrl}/auth/sessions/current`, {
-      Accept: 'application/json', Authorization: `Bearer ${accessToken}`, 'Cache-Control': 'no-store',
-    }, '', 'auth', true)
+    let result: NativeParsedResponse
+    try {
+      result = await run('DELETE', `${base.baseUrl}/auth/sessions/current`, {
+        Accept: 'application/json', Authorization: `Bearer ${accessToken}`, 'Cache-Control': 'no-store',
+      }, '', 'auth', true)
+    } catch {
+      // The request may have reached the server and committed before its
+      // response was lost. Callers must not present this as a definite failure
+      // or blindly retry with a new operation.
+      return { state: 'unknown' }
+    }
     const cacheControl = Object.entries(result.headers).filter(([name]) => name.toLowerCase() === 'cache-control')
     if (cacheControl.length !== 1 || typeof cacheControl[0][1] !== 'string' ||
-      cacheControl[0][1].trim().toLowerCase() !== 'no-store') throw new AuthApiError('invalid_response')
+      cacheControl[0][1].trim().toLowerCase() !== 'no-store') return { state: 'unknown' }
     if (result.status === 204) {
-      if (result.emptyBody) return
-      throw new AuthApiError('invalid_response', result.status)
+      return result.emptyBody ? { state: 'revoked' } : { state: 'unknown' }
     }
-    if (result.status === 401) throw new AuthApiError('unauthorized', result.status)
-    if (result.status === 403) throw new AuthApiError('forbidden', result.status)
-    if (result.status === 404) throw new AuthApiError('not_found', result.status)
-    if (result.status === 409) throw new AuthApiError('conflict', result.status)
-    if (result.status === 410) throw new AuthApiError('expired', result.status)
-    if (result.status === 429) throw new AuthApiError('rate_limited', result.status)
-    throw new AuthApiError('unavailable', result.status)
+    if (result.status === 401) return { state: 'rejected', reason: 'unauthorized' }
+    if (result.status === 403) return { state: 'rejected', reason: 'forbidden' }
+    if (result.status === 404) return { state: 'rejected', reason: 'not_found' }
+    if (result.status === 409) return { state: 'rejected', reason: 'conflict' }
+    if (result.status === 410) return { state: 'rejected', reason: 'expired' }
+    if (result.status === 429) return { state: 'rejected', reason: 'rate_limited' }
+    return { state: 'unknown' }
   }
   return { authTransport, recordingRequest, readCurrentUser, revokeCurrentSession }
 }

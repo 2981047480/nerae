@@ -188,6 +188,11 @@ class Handler(BaseHTTPRequestHandler):
             self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad")
         elif route == "/logout-body-unframed":
             self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nbad")
+        elif route == "/logout-keepalive":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\n\r\n")
+            self.close_connection = False
+            time.sleep(1.5)
+            self.close_connection = True
         elif route == "/logout-no-store":
             self.raw(b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
         elif route == "/logout-unauthorized":

@@ -185,8 +185,6 @@ internal object HttpsTransport {
             if ((contentLength != null && contentLength != 0L) || transferEncoding != null) {
                 throw HttpsFailure("invalid_response")
             }
-            socket.soTimeout = remainingMillis(deadlineNanos)
-            if (input.read() != -1) throw HttpsFailure("invalid_response")
             return ByteArray(0)
         }
         if (status == 304) return ByteArray(0)

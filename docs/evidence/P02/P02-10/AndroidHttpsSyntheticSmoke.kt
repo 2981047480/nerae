@@ -106,7 +106,12 @@ fun main(args: Array<String>) {
         val revokeHit = readHits(hitsFile).drop(beforeRevoke).single()
         check(revokeHit.method == "DELETE" && revokeHit.authorizationPresent && revokeHit.contentLength.isEmpty())
         checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-length", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
-        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-unframed", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
+        val unframed204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-unframed", method = "DELETE", headersJson = revokeHeaders))
+        check(unframed204.ok && unframed204.status == 204 && unframed204.body.isEmpty())
+        val keepAliveStarted = System.nanoTime()
+        val keepAlive204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-keepalive", method = "DELETE", headersJson = revokeHeaders))
+        val keepAliveElapsedMs = (System.nanoTime() - keepAliveStarted) / 1_000_000
+        check(keepAlive204.ok && keepAlive204.status == 204 && keepAlive204.body.isEmpty() && keepAliveElapsedMs < 1_000)
         val emptyFramingHits = readHits(hitsFile).size
         checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-empty", method = "DELETE", body = "x", headersJson = revokeHeaders)), "invalid_request")
         check(readHits(hitsFile).size == emptyFramingHits)

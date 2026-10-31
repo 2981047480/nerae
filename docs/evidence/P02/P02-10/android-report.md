@@ -27,3 +27,7 @@ Status: **partial**. The Android HTTPS transport was integrated in `bddbec2` and
 - HBuilderX generated the UTS Kotlin wrapper, but the generated wrapper was not fully linked against the Android app's DCloud runtime. No uni-app Android resource build, APK/AAB, installation, emulator, or device test was performed.
 - No authentication or workout caller is connected. Callers still must parse and validate the returned `headersJson` and response body against their own schema. No production endpoint was contacted.
 - Ordinary sandbox loopback was denied; the successful harness required the task-scoped authorization for local-only binding. The scripts are invoked with `bash` because changing executable file modes was denied by the filesystem.
+
+## P02-14 session revoke delta
+
+The later P02-14 change adds bodyless DELETE to the existing GET/POST surface. It rejects a body on DELETE and rejects 204 responses framed with nonzero Content-Length or Transfer-Encoding. It returns as soon as a valid 204 header block is read; the local TLS regression keeps the peer socket open and confirms the callback completes within one second. The transport cannot detect illegal unframed trailing bytes after 204 without waiting for EOF; the probe records that limitation explicitly. Updated Kotlin + local TLS harness passed, but this remains JVM evidence rather than Android device evidence. See `docs/evidence/P02/P02-14/session-revoke-native-transport.md` for the complete task evidence and remaining boundary.
