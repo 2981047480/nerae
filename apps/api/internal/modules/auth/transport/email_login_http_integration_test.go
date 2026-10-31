@@ -182,9 +182,14 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("current-user handler setup failed")
 	}
+	approvalListHandler, err := NewApprovalListHandler(db, approvals, sessions, sessions, validator)
+	if err != nil {
+		t.Fatal("approval list handler setup failed")
+	}
 	mux := http.NewServeMux()
 	mux.Handle("/auth/email-login", loginHandler)
 	mux.Handle("/me", meHandler)
+	mux.Handle(approvalListPath, approvalListHandler)
 	server := httptest.NewTLSServer(mux)
 	defer server.Close()
 
@@ -256,6 +261,27 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 		}
 		return response.StatusCode, response.Header.Clone(), bodyBytes
 	}
+	getApprovals := func(token string) (int, []byte) {
+		t.Helper()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+approvalListPath, nil)
+		if err != nil {
+			t.Fatal("approval list request setup failed")
+		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		req.Header.Set("X-User-ID", "999")
+		response, err := server.Client().Do(req)
+		if err != nil {
+			t.Fatal("approval list TLS request failed")
+		}
+		payload, readErr := io.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if readErr != nil || response.Header.Get("Cache-Control") != "no-store" {
+			t.Fatal("approval list response unavailable or cacheable")
+		}
+		return response.StatusCode, payload
+	}
 
 	device, public := emailLoginHTTPDevice(t)
 	challengeID, nonce := issue("a01-23-login@example.test", public)
@@ -288,6 +314,10 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 	}
 	if bytes.Contains(meBody, []byte(first.Token)) {
 		t.Fatal("GET /me exposed the bearer token")
+	}
+	status, emptyApprovals := getApprovals(first.Token)
+	if status != http.StatusOK || string(emptyApprovals) != `{"items":[]}` {
+		t.Fatal("fresh authenticated account did not get an empty approval list")
 	}
 
 	changedInput := map[string]string{"challengeId": challengeID, "code": "999999", "deviceProof": input["deviceProof"]}
@@ -348,6 +378,63 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 		replayPending.ApprovalId != pending.ApprovalId || replayPending.ApprovalSecret != pending.ApprovalSecret {
 		t.Fatal("new-device replay did not preserve the original pending approval")
 	}
+	status, ownerApprovals := getApprovals(first.Token)
+	var list api.LoginApprovalList
+	if status != http.StatusOK || json.Unmarshal(ownerApprovals, &list) != nil || len(list.Items) != 1 ||
+		list.Items[0].Id != pending.ApprovalId || list.Items[0].ComparisonCode != pending.ComparisonCode ||
+		bytes.Contains(ownerApprovals, []byte(pending.ApprovalSecret)) || bytes.Contains(ownerApprovals, []byte(pending.Nonce)) ||
+		bytes.Contains(ownerApprovals, []byte(first.Token)) {
+		t.Fatal("owner approval list did not match the pending request or exposed credentials")
+	}
+	otherDevice, otherPublic := emailLoginHTTPDevice(t)
+	otherID, otherNonce := issue("a01-23-other@example.test", otherPublic)
+	otherBody, err := json.Marshal(map[string]string{"challengeId": otherID, "code": "012345",
+		"deviceProof": emailLoginHTTPProof(t, otherDevice, otherID, otherNonce)})
+	if err != nil {
+		t.Fatal("second subject login encoding failed")
+	}
+	status, _, otherLoginBody := post(otherBody, emailLoginHTTPKey(t))
+	var other api.PhoneAuthSuccess
+	if status != http.StatusOK || json.Unmarshal(otherLoginBody, &other) != nil || other.Token == "" || other.User.Id == first.User.Id {
+		t.Fatal("second synthetic subject did not authenticate")
+	}
+	status, otherApprovals := getApprovals(other.Token)
+	if status != http.StatusOK || string(otherApprovals) != `{"items":[]}` || bytes.Contains(otherApprovals, []byte(pending.ApprovalId)) {
+		t.Fatal("other subject could see the owner's pending approval")
+	}
+	status, _ = getApprovals("")
+	if status != http.StatusUnauthorized {
+		t.Fatal("anonymous approval listing was accepted")
+	}
+	// All rows are synthetic and live only in the private test database.
+	for i := 0; i < 100; i++ {
+		id := fmt.Sprintf("overflow%016d", i)
+		challenge := fmt.Sprintf("challenge%015d", i)
+		_, err := db.ExecContext(ctx, `INSERT INTO auth_login_approval
+			(id, user_id, identity_id, challenge_id, token_version, identity_version, target_fingerprint,
+			 public_x, public_y, secret_digest, key_id, nonce, comparison_code, state, decision_session_id, created_at, expires_at, decided_at)
+			SELECT ?, user_id, identity_id, ?, token_version, identity_version, target_fingerprint,
+			 public_x, public_y, secret_digest, key_id, nonce, comparison_code, state, decision_session_id, created_at, expires_at, decided_at
+			FROM auth_login_approval WHERE id = ?`, []byte(id), []byte(challenge), []byte(pending.ApprovalId))
+		if err != nil {
+			t.Fatal("could not stage overflow fixture")
+		}
+	}
+	status, overflowApprovals := getApprovals(first.Token)
+	if status != http.StatusServiceUnavailable || bytes.Contains(overflowApprovals, []byte(pending.ApprovalId)) {
+		t.Fatal("overflow list returned a partial result")
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_login_approval WHERE id LIKE 'overflow%'`); err != nil {
+		t.Fatal("could not clear private overflow fixture")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at=UTC_TIMESTAMP(6)-INTERVAL 2 MINUTE,
+		expires_at=UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE WHERE id=?`, []byte(pending.ApprovalId)); err != nil {
+		t.Fatal("could not stage expired approval fixture")
+	}
+	status, expiredApprovals := getApprovals(first.Token)
+	if status != http.StatusOK || string(expiredApprovals) != `{"items":[]}` {
+		t.Fatal("expired approval remained in the HTTP list")
+	}
 
 	malformed := []byte(strings.TrimSuffix(string(requestBody), "}") + `,"unexpected":"value"}`)
 	status, _, malformedBody := post(malformed, emailLoginHTTPKey(t))
@@ -406,6 +493,10 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 	status, _, disabledMe := getMe(first.Token)
 	if status != http.StatusUnauthorized || responseContainsCredentialOrUser(disabledMe, first.Token) {
 		t.Fatal("disabled account still received a current-user response")
+	}
+	status, disabledApprovals := getApprovals(first.Token)
+	if status != http.StatusUnauthorized || bytes.Contains(disabledApprovals, []byte(pending.ApprovalId)) {
+		t.Fatal("disabled account still received its pending approval")
 	}
 	status, _, disabledReplay := post(requestBody, idempotencyKey)
 	if status != http.StatusUnauthorized || responseContainsCredentialOrUser(disabledReplay, first.Token) {
