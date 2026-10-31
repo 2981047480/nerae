@@ -69,7 +69,7 @@ def main() -> int:
                 time.sleep(0.2)
             else:
                 raise RuntimeError("private MySQL did not become ready")
-            migration = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql", "user/0001_user.up.sql", "user/0002_age_declaration_version.up.sql", "auth/0003_email_identity.up.sql", "workout/0001_workout_session.up.sql", "workout/0002_workout_sets.up.sql", "auth/0004_auth_session.up.sql", "auth/0005_login_approval.up.sql", "auth/0006_approval_exchange.up.sql", "auth/0009_email_login_receipt.up.sql", "workout/0003_workout_exercise_order.up.sql"))
+            migration = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql", "user/0001_user.up.sql", "user/0002_age_declaration_version.up.sql", "auth/0003_email_identity.up.sql", "auth/0007_email_outbox.up.sql", "auth/0010_email_code_hash_key_epoch.up.sql", "workout/0001_workout_session.up.sql", "workout/0002_workout_sets.up.sql", "auth/0004_auth_session.up.sql", "auth/0005_login_approval.up.sql", "auth/0006_approval_exchange.up.sql", "auth/0009_email_login_receipt.up.sql", "workout/0003_workout_exercise_order.up.sql"))
             sql = "CREATE DATABASE nerae_approval_test;\nUSE nerae_approval_test;\n" + migration
             apply = subprocess.run(mysql, input=sql, text=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, env=env, timeout=20, check=False)

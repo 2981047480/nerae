@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,7 +22,6 @@ import (
 
 	"nerae/api/internal/idempotency"
 	"nerae/api/internal/middleware"
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -48,14 +48,14 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal("email protector setup failed")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{
 		ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 		DeviceProof: authdomain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second},
 	})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("identity resolver setup failed")

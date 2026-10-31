@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
@@ -28,7 +29,6 @@ import (
 	"nerae/api/internal/middleware"
 	"nerae/api/internal/modules/auth/application"
 	"nerae/api/internal/modules/auth/approval"
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -105,12 +105,12 @@ func TestEmailLoginHTTPRealCoordinatorOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("proof replay setup failed")
 	}
-	challenges, err := challenge.NewStore(hasher, proofReplay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, proofReplay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, identities)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, identities, hasher)
 	resolver, err := identity.NewResolver(identities)
 	if err != nil {
 		t.Fatal("identity resolver setup failed")

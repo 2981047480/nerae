@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"nerae/api/internal/modules/auth/approval"
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -53,12 +53,12 @@ func TestEmailLoginCoordinatorWithPrivateMySQLAndRedis(t *testing.T) {
 	if err != nil {
 		t.Fatal("identity protector initialization failed")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store initialization failed")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("identity resolver initialization failed")

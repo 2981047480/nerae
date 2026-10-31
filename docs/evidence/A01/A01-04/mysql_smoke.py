@@ -74,6 +74,8 @@ def main() -> int:
                 (ROOT / "apps/api/migrations/auth/0002_email_challenge.up.sql").read_text(),
                 (ROOT / "apps/api/migrations/user/0001_user.up.sql").read_text(),
                 (ROOT / "apps/api/migrations/auth/0003_email_identity.up.sql").read_text(),
+                (ROOT / "apps/api/migrations/auth/0007_email_outbox.up.sql").read_text(),
+                (ROOT / "apps/api/migrations/auth/0010_email_code_hash_key_epoch.up.sql").read_text(),
             ])
             sql = "CREATE DATABASE nerae_email_test;\nUSE nerae_email_test;\n" + migration
             apply = subprocess.run(mysql, input=sql, text=True, stdout=subprocess.PIPE,

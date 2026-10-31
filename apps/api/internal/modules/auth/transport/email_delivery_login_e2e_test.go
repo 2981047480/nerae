@@ -37,6 +37,7 @@ import (
 	"nerae/api/internal/modules/auth/approval"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
 	"nerae/api/internal/modules/auth/issuance"
@@ -121,7 +122,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("proof replay setup failed")
 	}
-	challenges, err := challenge.NewStore(hasher, proofReplay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, proofReplay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
@@ -132,7 +133,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	}
 	smtp, smtpMessages, smtpListener, smtpConnections := localDeliverySMTP(t)
 	defer smtpListener.Close()
-	outbox, err := issuance.NewOutbox(deriver, "a01-24-code-v1", hasher, identities, smtp, 20*time.Second)
+	outbox, err := issuance.NewOutbox(deriver, "a01-24-code-v1", hasher, "fixture-email-code-hash-v1", identities, smtp, 20*time.Second)
 	if err != nil {
 		t.Fatal("outbox setup failed")
 	}
@@ -143,7 +144,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	requestKeys := requestKeyConfig()
 	// The HTTP producer has no SMTP sender; the separate worker outbox above
 	// consumes the same database queue using the same key material.
-	producer, err := issuance.NewEnqueueOutbox(deriver, "a01-24-code-v1", hasher, identities)
+	producer, err := issuance.NewEnqueueOutbox(deriver, "a01-24-code-v1", hasher, "fixture-email-code-hash-v1", identities)
 	if err != nil {
 		t.Fatal("enqueue-only outbox setup failed")
 	}
@@ -159,7 +160,12 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("epoch initialization transaction failed")
 	}
-	for _, initialize := range []func(context.Context, *sql.Tx) error{identityEpoch.Initialize, outbox.InitializeCodeKey, issuer.InitializeKey} {
+	hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		_ = bootstrapTx.Rollback()
+		t.Fatal("code hash epoch setup failed")
+	}
+	for _, initialize := range []func(context.Context, *sql.Tx) error{identityEpoch.Initialize, outbox.InitializeCodeKey, hashEpoch.Initialize, issuer.InitializeKey} {
 		if err := initialize(ctx, bootstrapTx); err != nil {
 			_ = bootstrapTx.Rollback()
 			t.Fatal("challenge epoch initialization failed")

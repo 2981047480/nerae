@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,7 +26,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -108,14 +108,14 @@ func newIdemFixture(t *testing.T) *idemFixture {
 	if err != nil {
 		t.Fatal("could not initialize test identity protector")
 	}
-	f.challenges, err = challenge.NewStore(hasher, replay, protector, challenge.Policy{
+	f.challenges, err = challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{
 		ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second},
 	})
 	if err != nil {
 		t.Fatal("could not initialize test challenge store")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, f.db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, f.db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("could not initialize test identity resolver")

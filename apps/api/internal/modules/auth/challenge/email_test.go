@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
@@ -24,6 +25,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 
 	"nerae/api/internal/modules/auth/bootstrap"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/repository"
 )
@@ -110,7 +112,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
 	policy := Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 2, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}}
-	store, err := NewStore(hasher, replay, protector, policy)
+	store, err := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", policy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,21 +191,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if epochs != 0 {
 		t.Fatalf("uninitialized calls created an identity epoch: %d", epochs)
 	}
-	initializer, err := bootstrap.NewIdentityEpochInitializer(protector)
-	if err != nil {
-		t.Fatal("could not construct identity epoch initializer")
-	}
-	bootstrapTx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := initializer.Initialize(ctx, bootstrapTx); err != nil {
-		_ = bootstrapTx.Rollback()
-		t.Fatalf("explicit empty-database identity epoch initialization failed: %v", err)
-	}
-	if err := bootstrapTx.Commit(); err != nil {
-		t.Fatal("identity epoch bootstrap commit failed")
-	}
+	initializeChallengeEpochs(t, db, protector, hasher)
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_email_identity_key_epoch`).Scan(&epochs); err != nil || epochs != 1 {
 		t.Fatal("explicit initialization did not create exactly one epoch")
 	}
@@ -331,6 +319,11 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	initializer, err := bootstrap.NewIdentityEpochInitializer(protector)
+	if err != nil {
+		_ = reinitTx.Rollback()
+		t.Fatal("identity epoch initializer setup failed")
+	}
 	if err := initializer.Initialize(ctx, reinitTx); !errors.Is(err, bootstrap.ErrIdentityEpoch) {
 		_ = reinitTx.Rollback()
 		t.Fatal("bootstrapper recreated an epoch after challenge history existed")
@@ -368,7 +361,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	assertRejected(result, err, true)
 	result, err = attempt(first, "012345", testProof(t, private, first, nonce, "after-exhaustion", now), now, true)
 	assertRejected(result, err, false)
-	looser, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3, DeviceProof: policy.DeviceProof})
+	looser, _ := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3, DeviceProof: policy.DeviceProof})
 	looser.now = store.now
 	looseTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -416,7 +409,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 	}
 
 	wrongProtector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{5}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
-	wrongStore, _ := NewStore(hasher, replay, wrongProtector, policy)
+	wrongStore, _ := NewStore(hasher, replay, wrongProtector, "fixture-email-code-hash-v1", policy)
 	wrongTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -430,7 +423,7 @@ func TestEmailChallengeTransaction(t *testing.T) {
 
 	expired := strings.Repeat("D", 32)
 	issue(expired)
-	stricter, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: time.Minute, MaxAttempts: 1, DeviceProof: policy.DeviceProof})
+	stricter, _ := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", Policy{ChallengeTTL: time.Minute, MaxAttempts: 1, DeviceProof: policy.DeviceProof})
 	stricter.now = store.now
 	clock.Store(now.Add(time.Minute).UnixNano())
 	strictTx, err := db.BeginTx(ctx, nil)
@@ -642,12 +635,12 @@ func TestEmailChallengeTransaction(t *testing.T) {
 		result, err := candidate.Attempt(ctx, tx, AttemptInput{ChallengeID: policyID, Code: "012345", DeviceProof: proof})
 		assertRejected(result, err, false)
 	}
-	proofLooser, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3,
+	proofLooser, _ := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", Policy{ChallengeTTL: 10 * time.Minute, MaxAttempts: 3,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: 24 * time.Hour, ClockSkew: 5 * time.Minute}})
 	proofLooser.now = store.now
 	policyAttempt(proofLooser, testProofTimes(t, private, policyID, nonce, "old-lifetime-bound", now.Add(-6*time.Minute), now.Add(time.Minute)))
 	policyAttempt(proofLooser, testProofTimes(t, private, policyID, nonce, "old-skew-bound", now.Add(time.Minute), now.Add(2*time.Minute)))
-	proofStricter, _ := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 2,
+	proofStricter, _ := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 2,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: time.Minute, ClockSkew: 0}})
 	proofStricter.now = store.now
 	policyAttempt(proofStricter, testProofTimes(t, private, policyID, nonce, "new-lifetime-bound", now, now.Add(2*time.Minute)))
@@ -719,7 +712,7 @@ func TestEmailReceiptProofRevalidation(t *testing.T) {
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
-	store, err := NewStore(hasher, replay, protector, Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
+	store, err := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal(err)
@@ -728,21 +721,8 @@ func TestEmailReceiptProofRevalidation(t *testing.T) {
 	var clock atomic.Int64
 	clock.Store(now.UnixNano())
 	store.now = func() time.Time { return time.Unix(0, clock.Load()).UTC() }
-	initializer, err := bootstrap.NewIdentityEpochInitializer(protector)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := initializer.Initialize(ctx, tx); err != nil {
-		_ = tx.Rollback()
-		t.Fatal("identity epoch bootstrap failed")
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
-	}
+	initializeChallengeEpochs(t, db, protector, hasher)
+	var tx *sql.Tx
 	private, public := testKey(t)
 	fingerprint, err := domain.DeviceKeyFingerprint(public)
 	if err != nil {
@@ -953,6 +933,51 @@ func TestEmailReceiptProofRevalidation(t *testing.T) {
 	}
 }
 
+// initializeChallengeEpochs uses a synthetic derivation epoch because tests
+// in package challenge cannot import issuance without creating an import cycle.
+// The code-hash epoch itself is initialized by the production codeepoch store;
+// issuance tests exercise the real derivation-key bootstrap path.
+func initializeChallengeEpochs(t *testing.T, db *sql.DB, protector *domain.EmailIdentityProtector, hasher *domain.EmailCodeHasher) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	identityInitializer, err := bootstrap.NewIdentityEpochInitializer(protector)
+	if err != nil {
+		t.Fatal("identity epoch initializer setup failed")
+	}
+	hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		t.Fatal("code hash epoch setup failed")
+	}
+	key := bytes.Repeat([]byte{0x7a}, 32)
+	mac := hmac.New(sha256.New, key)
+	_, _ = mac.Write([]byte("nerae.auth.email-code-epoch.v1\x00"))
+	derivationTag := mac.Sum(nil)
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("epoch transaction failed")
+	}
+	defer tx.Rollback()
+	if err := identityInitializer.Initialize(ctx, tx); err != nil {
+		t.Fatal("identity epoch initialization failed")
+	}
+	var codeKeyID, codeTag []byte
+	err = tx.QueryRowContext(ctx, `SELECT key_id,key_tag FROM auth_email_code_key_epoch WHERE slot=1 FOR UPDATE`).Scan(&codeKeyID, &codeTag)
+	if errors.Is(err, sql.ErrNoRows) {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO auth_email_code_key_epoch(slot,key_id,key_tag) VALUES (1,?,?)`, []byte("challenge-fixture-code-v1"), derivationTag); err != nil {
+			t.Fatal("synthetic derivation epoch insert failed")
+		}
+	} else if err != nil || string(codeKeyID) != "challenge-fixture-code-v1" || !hmac.Equal(codeTag, derivationTag) {
+		t.Fatal("synthetic derivation epoch mismatch")
+	}
+	if err := hashEpoch.Initialize(ctx, tx); err != nil {
+		t.Fatal("code hash epoch initialization failed")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("epoch transaction commit failed")
+	}
+}
+
 func TestChallengeInputFormattingIsRedacted(t *testing.T) {
 	input := IssueInput{Email: "person@example.test", Code: "012345", Nonce: "private-nonce"}
 	attempt := AttemptInput{Code: "012345", DeviceProof: "private-proof"}
@@ -971,7 +996,7 @@ func TestChallengeInputFormattingIsRedacted(t *testing.T) {
 	if strings.Contains(log.String(), "012345") || strings.Contains(log.String(), "private") || strings.Contains(log.String(), input.Email) {
 		t.Fatal("structured logging exposed challenge secrets")
 	}
-	if _, err := NewStore(nil, nil, nil, Policy{}); !errors.Is(err, ErrChallengeStore) {
+	if _, err := NewStore(nil, nil, nil, "fixture-email-code-hash-v1", Policy{}); !errors.Is(err, ErrChallengeStore) {
 		t.Fatal("missing dependencies accepted")
 	}
 }
@@ -981,7 +1006,7 @@ func TestServerChallengePolicyValidation(t *testing.T) {
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
 	valid := Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: time.Minute}}
-	if _, err := NewStore(hasher, replay, protector, valid); err != nil {
+	if _, err := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", valid); err != nil {
 		t.Fatalf("valid server policy rejected: %v", err)
 	}
 	for _, policy := range []Policy{
@@ -992,7 +1017,7 @@ func TestServerChallengePolicyValidation(t *testing.T) {
 		{ChallengeTTL: time.Minute, MaxAttempts: 11, DeviceProof: valid.DeviceProof},
 		{ChallengeTTL: time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 25 * time.Hour}},
 	} {
-		if _, err := NewStore(hasher, replay, protector, policy); !errors.Is(err, ErrChallengeStore) {
+		if _, err := NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", policy); !errors.Is(err, ErrChallengeStore) {
 			t.Fatal("invalid server policy accepted")
 		}
 	}

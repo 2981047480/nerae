@@ -32,6 +32,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/mail"
 	"nerae/api/internal/modules/auth/repository"
@@ -58,15 +59,23 @@ func TestEnqueueOutboxCannotOperateAsWorker(t *testing.T) {
 	if err != nil {
 		t.Fatal("code deriver setup failed")
 	}
-	producer, err := NewEnqueueOutbox(deriver, "enqueue-v1", hasher, identities)
+	producer, err := NewEnqueueOutbox(deriver, "enqueue-v1", hasher, "fixture-email-code-hash-v1", identities)
 	if err != nil {
 		t.Fatal("enqueue-only outbox setup failed")
 	}
 	for _, construct := range []func() (*Outbox, error){
-		func() (*Outbox, error) { return NewEnqueueOutbox(nil, "enqueue-v1", hasher, identities) },
-		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "", hasher, identities) },
-		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "enqueue-v1", nil, identities) },
-		func() (*Outbox, error) { return NewEnqueueOutbox(deriver, "enqueue-v1", hasher, nil) },
+		func() (*Outbox, error) {
+			return NewEnqueueOutbox(nil, "enqueue-v1", hasher, "fixture-email-code-hash-v1", identities)
+		},
+		func() (*Outbox, error) {
+			return NewEnqueueOutbox(deriver, "", hasher, "fixture-email-code-hash-v1", identities)
+		},
+		func() (*Outbox, error) {
+			return NewEnqueueOutbox(deriver, "enqueue-v1", nil, "fixture-email-code-hash-v1", identities)
+		},
+		func() (*Outbox, error) {
+			return NewEnqueueOutbox(deriver, "enqueue-v1", hasher, "fixture-email-code-hash-v1", nil)
+		},
 	} {
 		if _, err := construct(); !errors.Is(err, ErrOutbox) {
 			t.Fatal("invalid producer configuration was accepted")
@@ -190,11 +199,11 @@ func openOutboxFixtureWithCodeEpoch(t *testing.T, initializeCodeEpoch bool) *out
 		t.Fatal("code deriver setup failed")
 	}
 	sender := &recordingSender{}
-	outbox, err := NewOutbox(deriver, "outbox-code-v1", hasher, identities, sender, 2*time.Second)
+	outbox, err := NewOutbox(deriver, "outbox-code-v1", hasher, "fixture-email-code-hash-v1", identities, sender, 2*time.Second)
 	if err != nil {
 		t.Fatal("outbox setup failed")
 	}
-	challengeStore, err := challenge.NewStore(hasher, replay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	challengeStore, err := challenge.NewStore(hasher, replay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
 	}
@@ -215,6 +224,15 @@ func openOutboxFixtureWithCodeEpoch(t *testing.T, initializeCodeEpoch bool) *out
 		if err := outbox.InitializeCodeKey(ctx, tx); err != nil {
 			_ = tx.Rollback()
 			t.Fatal("code epoch initialization failed")
+		}
+		hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+		if err != nil {
+			_ = tx.Rollback()
+			t.Fatal("code hash epoch setup failed")
+		}
+		if err := hashEpoch.Initialize(ctx, tx); err != nil {
+			_ = tx.Rollback()
+			t.Fatal("code hash epoch initialization failed")
 		}
 	} else {
 		var count int
@@ -373,12 +391,27 @@ func TestEmailOutboxCodeKeyBootstrapIsIdempotentAndFailClosed(t *testing.T) {
 	if err := tx.Commit(); err != nil {
 		t.Fatal("same-key restart commit failed")
 	}
+	hashEpoch, err := codeepoch.New(f.hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		t.Fatal("code hash epoch setup failed")
+	}
+	tx, err = f.db.BeginTx(f.ctx, nil)
+	if err != nil {
+		t.Fatal("code hash epoch transaction failed")
+	}
+	if err := hashEpoch.Initialize(f.ctx, tx); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("code hash epoch initialization failed")
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal("code hash epoch commit failed")
+	}
 
 	otherDeriver, err := NewDeriver(bytes.Repeat([]byte{0x56}, 32))
 	if err != nil {
 		t.Fatal("alternate derivation key setup failed")
 	}
-	otherOutbox, err := NewOutbox(otherDeriver, "outbox-code-v1", f.hasher, f.identities, f.sender, 2*time.Second)
+	otherOutbox, err := NewOutbox(otherDeriver, "outbox-code-v1", f.hasher, "fixture-email-code-hash-v1", f.identities, f.sender, 2*time.Second)
 	if err != nil {
 		t.Fatal("alternate outbox setup failed")
 	}
@@ -391,7 +424,7 @@ func TestEmailOutboxCodeKeyBootstrapIsIdempotentAndFailClosed(t *testing.T) {
 		t.Fatal("different derivation key was accepted")
 	}
 	_ = tx.Rollback()
-	otherIDOutbox, err := NewOutbox(f.outbox.deriver, "outbox-code-v2", f.hasher, f.identities, f.sender, 2*time.Second)
+	otherIDOutbox, err := NewOutbox(f.outbox.deriver, "outbox-code-v2", f.hasher, "fixture-email-code-hash-v1", f.identities, f.sender, 2*time.Second)
 	if err != nil {
 		t.Fatal("alternate key ID outbox setup failed")
 	}
@@ -1008,7 +1041,7 @@ func TestEmailOutboxSMTPInterop(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not configure local SMTP transport")
 	}
-	f.outbox, err = NewOutbox(f.outbox.deriver, "outbox-code-v1", f.hasher, f.identities, mailer, 10*time.Second)
+	f.outbox, err = NewOutbox(f.outbox.deriver, "outbox-code-v1", f.hasher, "fixture-email-code-hash-v1", f.identities, mailer, 10*time.Second)
 	if err != nil {
 		t.Fatal("could not configure outbox with SMTP transport")
 	}

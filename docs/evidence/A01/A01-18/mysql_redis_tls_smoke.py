@@ -22,7 +22,7 @@ MIGRATIONS = (
     "auth/0002_email_challenge.up.sql",
     "user/0001_user.up.sql",
     "auth/0003_email_identity.up.sql",
-    "auth/0007_email_outbox.up.sql",
+    "auth/0007_email_outbox.up.sql", "auth/0010_email_code_hash_key_epoch.up.sql",
     "auth/0008_email_challenge_request.up.sql",
 )
 MIN_FREE_BYTES = 1 << 30

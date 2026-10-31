@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"nerae/api/internal/idempotency"
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	authdomain "nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -47,19 +47,19 @@ func newWorkoutIdempotencyFixture(t *testing.T) *workoutIdempotencyFixture {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	t.Cleanup(cancel)
 
-	hasher, err := authdomain.NewEmailCodeHasher(bytes.Repeat([]byte{0x11}, 32))
+	hasher, err := authdomain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	if err != nil {
 		t.Fatal("could not initialize synthetic email challenge hasher")
 	}
-	replay, err := authrepo.NewProofReplayStore(bytes.Repeat([]byte{0x22}, 32))
+	replay, err := authrepo.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	if err != nil {
 		t.Fatal("could not initialize synthetic proof replay store")
 	}
-	protector, err := authdomain.NewEmailIdentityProtector(bytes.Repeat([]byte{0x33}, 32), bytes.Repeat([]byte{0x44}, 32), "a04-08-email-test")
+	protector, err := authdomain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "test-key")
 	if err != nil {
 		t.Fatal("could not initialize synthetic identity protector")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{
 		ChallengeTTL: 5 * time.Minute,
 		MaxAttempts:  3,
 		DeviceProof:  authdomain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second},
@@ -67,7 +67,7 @@ func newWorkoutIdempotencyFixture(t *testing.T) *workoutIdempotencyFixture {
 	if err != nil {
 		t.Fatal("could not initialize synthetic challenge store")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("could not initialize synthetic identity resolver")

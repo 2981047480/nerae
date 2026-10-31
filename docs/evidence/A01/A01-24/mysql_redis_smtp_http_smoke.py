@@ -29,7 +29,7 @@ MIGRATIONS = (
     "auth/0005_login_approval.up.sql",
     "auth/0006_approval_exchange.up.sql",
     "workout/0003_workout_exercise_order.up.sql",
-    "auth/0007_email_outbox.up.sql",
+    "auth/0007_email_outbox.up.sql", "auth/0010_email_code_hash_key_epoch.up.sql",
     "auth/0008_email_challenge_request.up.sql",
     "auth/0009_email_login_receipt.up.sql",
     "transport/0001_idempotency.up.sql",

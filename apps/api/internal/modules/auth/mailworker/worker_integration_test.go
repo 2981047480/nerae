@@ -28,6 +28,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/issuance"
 	authmail "nerae/api/internal/modules/auth/mail"
@@ -91,12 +92,12 @@ func TestWorkerOutboxPrivateMySQLLoopbackSMTP(t *testing.T) {
 	if err != nil {
 		t.Fatal("test code deriver setup failed")
 	}
-	challengeStore, err := challenge.NewStore(hasher, replay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	challengeStore, err := challenge.NewStore(hasher, replay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("test challenge store setup failed")
 	}
 	mailer, results, listener, acceptedConnections, sinkDone := workerLocalSMTP(t)
-	outbox, err := issuance.NewOutbox(deriver, "worker-test-code-v1", hasher, identities, mailer, 20*time.Second)
+	outbox, err := issuance.NewOutbox(deriver, "worker-test-code-v1", hasher, "fixture-email-code-hash-v1", identities, mailer, 20*time.Second)
 	if err != nil {
 		t.Fatal("test outbox setup failed")
 	}
@@ -116,6 +117,15 @@ func TestWorkerOutboxPrivateMySQLLoopbackSMTP(t *testing.T) {
 	if err := outbox.InitializeCodeKey(ctx, tx); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("test code epoch initialization failed")
+	}
+	hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal("test code hash epoch setup failed")
+	}
+	if err := hashEpoch.Initialize(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("test code hash epoch initialization failed")
 	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal("test epoch commit failed")

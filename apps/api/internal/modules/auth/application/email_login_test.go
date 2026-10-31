@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"nerae/api/internal/modules/auth/approval"
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -108,12 +108,12 @@ func TestEmailLoginTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal("protector initialization failed")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge initialization failed")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("resolver initialization failed")
@@ -334,7 +334,7 @@ func TestEmailLoginTransactionSeam(t *testing.T) {
 	db := emailFlowDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	hasher, err := domain.NewEmailCodeHasher(bytes.Repeat([]byte{0x61}, 32))
+	hasher, err := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	if err != nil {
 		t.Fatal("hasher initialization failed")
 	}
@@ -346,12 +346,12 @@ func TestEmailLoginTransactionSeam(t *testing.T) {
 	if err != nil {
 		t.Fatal("protector initialization failed")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge initialization failed")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, err := identity.NewResolver(protector)
 	if err != nil {
 		t.Fatal("resolver initialization failed")

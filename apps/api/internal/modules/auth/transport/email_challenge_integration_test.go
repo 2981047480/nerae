@@ -28,6 +28,7 @@ import (
 	"nerae/api/internal/middleware"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/issuance"
 	"nerae/api/internal/modules/auth/ratelimit"
@@ -82,7 +83,7 @@ func TestEmailChallengeHandlerRealIssuerOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("proof replay setup failed")
 	}
-	challengeStore, err := challenge.NewStore(hasher, replay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
+	challengeStore, err := challenge.NewStore(hasher, replay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
@@ -91,7 +92,7 @@ func TestEmailChallengeHandlerRealIssuerOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("code deriver setup failed")
 	}
-	outbox, err := issuance.NewOutbox(deriver, "a01-18-code-v1", hasher, identities, noSendCode{}, 2*time.Second)
+	outbox, err := issuance.NewOutbox(deriver, "a01-18-code-v1", hasher, "fixture-email-code-hash-v1", identities, noSendCode{}, 2*time.Second)
 	if err != nil {
 		t.Fatal("outbox setup failed")
 	}
@@ -120,6 +121,15 @@ func TestEmailChallengeHandlerRealIssuerOverLocalTLS(t *testing.T) {
 	if err := outbox.InitializeCodeKey(ctx, bootstrapTx); err != nil {
 		_ = bootstrapTx.Rollback()
 		t.Fatal("code epoch initialization failed")
+	}
+	hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		_ = bootstrapTx.Rollback()
+		t.Fatal("code hash epoch setup failed")
+	}
+	if err := hashEpoch.Initialize(ctx, bootstrapTx); err != nil {
+		_ = bootstrapTx.Rollback()
+		t.Fatal("code hash epoch initialization failed")
 	}
 	if err := issuer.InitializeKey(ctx, bootstrapTx); err != nil {
 		_ = bootstrapTx.Rollback()

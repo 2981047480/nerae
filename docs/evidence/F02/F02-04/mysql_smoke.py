@@ -29,6 +29,8 @@ MIGRATIONS = (
     "user/0002_age_declaration_version.up.sql",
     "auth/0003_email_identity.up.sql",
     "auth/0004_auth_session.up.sql",
+    "auth/0007_email_outbox.up.sql",
+    "auth/0010_email_code_hash_key_epoch.up.sql",
     "transport/0001_idempotency.up.sql",
 )
 

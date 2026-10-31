@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
-	authbootstraptest "nerae/api/internal/modules/auth/bootstrap/testsupport"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -107,12 +107,12 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	emailProtector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "email-test-key")
-	challenges, err := challenge.NewStore(hasher, replay, emailProtector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, replay, emailProtector, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("could not initialize challenges")
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, emailProtector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, emailProtector, hasher)
 	resolver, _ := identity.NewResolver(emailProtector)
 	codec, _ := session.NewTokenCodec(bytes.Repeat([]byte{5}, 32), session.TokenPolicy{MaxLifetime: time.Hour})
 	auth, _ := session.NewStore(resolver, codec)
@@ -826,12 +826,12 @@ func TestApprovalReceiptRecovery(t *testing.T) {
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{1}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{2}, 32))
 	protector, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{4}, 32), "email-test-key")
-	challenges, err := challenge.NewStore(hasher, replay, protector, challenge.Policy{ChallengeTTL: 5 * time.Minute,
+	challenges, err := challenge.NewStore(hasher, replay, protector, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute,
 		MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	authbootstraptest.InitializeIdentityEpoch(t, db, protector)
+	issuancetestsupport.InitializeEmailCodeHashEpoch(t, db, protector, hasher)
 	resolver, _ := identity.NewResolver(protector)
 	codec, _ := session.NewTokenCodec(bytes.Repeat([]byte{5}, 32), session.TokenPolicy{MaxLifetime: time.Hour})
 	sessions, _ := session.NewStore(resolver, codec)

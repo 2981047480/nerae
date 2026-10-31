@@ -25,6 +25,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/ratelimit"
 	"nerae/api/internal/modules/auth/repository"
@@ -72,9 +73,9 @@ func TestChallengeRequestIssuerRejectsReusedOrMissingKeys(t *testing.T) {
 	identities, _ := domain.NewEmailIdentityProtector(bytes.Repeat([]byte{1}, 32), bytes.Repeat([]byte{2}, 32), "request-test")
 	hasher, _ := domain.NewEmailCodeHasher(bytes.Repeat([]byte{3}, 32))
 	replay, _ := repository.NewProofReplayStore(bytes.Repeat([]byte{4}, 32))
-	challengeStore, _ := challenge.NewStore(hasher, replay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: time.Second}})
+	challengeStore, _ := challenge.NewStore(hasher, replay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: time.Second}})
 	deriver, _ := NewDeriver(bytes.Repeat([]byte{5}, 32))
-	outbox, _ := NewOutbox(deriver, "code-key", hasher, identities, &recordingSender{}, time.Second)
+	outbox, _ := NewOutbox(deriver, "code-key", hasher, "fixture-email-code-hash-v1", identities, &recordingSender{}, time.Second)
 	valid := requestKeys()
 	if _, err := NewChallengeRequestIssuer(challengeStore, outbox, identities, limiter, valid); err != nil {
 		t.Fatal("independent keys were rejected")
@@ -161,7 +162,7 @@ func openRequestFixture(t *testing.T, policy ratelimit.Policy) *requestFixture {
 	if err != nil {
 		t.Fatal("proof replay setup failed")
 	}
-	challenges, err := challenge.NewStore(hasher, replay, identities, challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
+	challenges, err := challenge.NewStore(hasher, replay, identities, "fixture-email-code-hash-v1", challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3, DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}})
 	if err != nil {
 		t.Fatal("challenge store setup failed")
 	}
@@ -169,7 +170,7 @@ func openRequestFixture(t *testing.T, policy ratelimit.Policy) *requestFixture {
 	if err != nil {
 		t.Fatal("code deriver setup failed")
 	}
-	outbox, err := NewOutbox(deriver, "a01-16-code-v1", hasher, identities, &recordingSender{}, 2*time.Second)
+	outbox, err := NewOutbox(deriver, "a01-16-code-v1", hasher, "fixture-email-code-hash-v1", identities, &recordingSender{}, 2*time.Second)
 	if err != nil {
 		t.Fatal("outbox setup failed")
 	}
@@ -203,6 +204,15 @@ func openRequestFixture(t *testing.T, policy ratelimit.Policy) *requestFixture {
 	if err := outbox.InitializeCodeKey(ctx, tx); err != nil {
 		_ = tx.Rollback()
 		t.Fatal("code epoch bootstrap failed")
+	}
+	hashEpoch, err := codeepoch.New(hasher, "fixture-email-code-hash-v1")
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatal("code hash epoch setup failed")
+	}
+	if err := hashEpoch.Initialize(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("code hash epoch bootstrap failed")
 	}
 	if err := issuer.InitializeKey(ctx, tx); err != nil {
 		_ = tx.Rollback()

@@ -75,7 +75,7 @@ def main() -> int:
                                                  "auth/0002_email_challenge.up.sql",
                                                  "user/0001_user.up.sql",
                                                  "auth/0003_email_identity.up.sql",
-                                                 "auth/0007_email_outbox.up.sql"))
+                                                 "auth/0007_email_outbox.up.sql", "auth/0010_email_code_hash_key_epoch.up.sql"))
             apply = subprocess.run(mysql, input=("CREATE DATABASE nerae_email_outbox_test;\nUSE nerae_email_outbox_test;\n" + migrations +
                                           "\nCREATE DATABASE nerae_email_smtp_test;\nUSE nerae_email_smtp_test;\n" + migrations),
                                    text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
