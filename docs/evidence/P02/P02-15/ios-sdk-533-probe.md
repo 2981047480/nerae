@@ -66,6 +66,19 @@ the fixture entry is not Nerae's actual page, and it is not an App link, signed
 package, installed device run, or evidence of functional cross-device sync.
 The GUI plugin-host activation failure remains unresolved.
 
+For repeatable verification, `python3 scripts/quality/verify_hbuilder_533_local.py`
+uses the local HBuilderX bundles and verifies App and Weixin import probes,
+generated proxies/wrappers, native source copies and the Weixin unsupported
+fallbacks; the integrated-source run exited 0. Weixin fallbacks only show that
+App-only bridges fail closed there; they do not implement Weixin login. The script creates
+an isolated fixture and removes that fixture only after success. Once a fixture
+is created, a failed probe retains it; compiler output is saved if the compiler
+has started. Set `NERAE_HBUILDERX_APP` to the actual local
+installation path when it differs. This script does not perform the separate
+Swift plugin-linking probe. The compiler has the caller's permissions: the
+script does not itself modify HBuilderX, but does not enforce an installation
+write lock or an OS-level network sandbox.
+
 ## iPhoneOS Swift source type-check
 
 With Xcode 26.6 and the iPhoneOS 26.5 SDK, the 5.26-generated UTS Swift
@@ -81,3 +94,40 @@ was from the pending shared adapter and its native Swift implementation was
 from the reviewed `d68a8c1` integration revision. This is source type-checking
 and isolated plugin linkage only: it does not link the four plugins into Nerae, establish 5.26/5.33 runtime
 compatibility, sign or install an app, or resolve the HBuilderX export failure.
+
+## Unsigned Xcode integration fixture
+
+An isolated copy of the SDK sample at
+`/private/tmp/nerae-ios-533-pod-probe-3r6s75__` was populated with the 5.33
+compile-only fixture resources and the generated `app-ios` sources for all four
+Nerae UTS plugins. Its `control.xml` and resource directory use the fixture's
+manifest AppID. CocoaPods 1.16.2 installed five local Pods (SDK Core and four
+plugins) without updating repositories. The sample's generator omitted required
+Podspec author/homepage fields; the **temporary fixture only** uses explicitly
+test-only metadata, including `example.invalid`. It is not release metadata.
+
+The first Xcode build failed to resolve `DCloudUTSFoundation` because CocoaPods
+did not discover SDK files through the fixture's initial directory symlink.
+An attempted framework search-path override reached a separate missing-header
+error. After using an isolated SDK copy and regenerating the Pods, all plugin
+targets compiled, but final linking failed because the SDK sample generator
+copied `DCloudUTSConfig` and `UTSCPP` into every static plugin. The temporary
+generator was then adjusted to compile those shared helpers in one plugin only.
+
+With those fixture-specific corrections, `xcodebuild` exited 0 for generic
+`iphoneos` arm64 with `CODE_SIGNING_ALLOWED=NO` and `INDEX_ENABLE_DATA_STORE=NO`;
+the log ends in `** BUILD SUCCEEDED **`. The resulting executable and debug
+library are arm64 Mach-O files. `nm` found all four generated UTS Objective-C
+classes in the linked debug library; the bundled `app-service.js` is identical
+to the 5.33 fixture output, and `codesign` reports the app is not signed.
+
+This is an **unsigned test fixture**, not an installable Nerae release or a
+usable page: the entry is the import probe, the generator/metadata changes exist
+only in the temporary sample, and class symbols do not prove plugin discovery
+or runtime behavior. No AppKey, team provisioning, real service, phone install,
+or device operation was verified. The generated support-code ownership and
+Podspec metadata must be solved in the eventual project packaging pipeline.
+The fixture copied the full generated resource directory, so its bundle also
+contains generated Swift/Kotlin source files and one root `config.json`; release
+packaging must exclude native source and separately verify per-plugin resource
+resolution. This fixture must not be installed or distributed as a product.
