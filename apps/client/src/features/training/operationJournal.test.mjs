@@ -8,6 +8,7 @@ class MemoryJournalStorage {
   values = new Map()
   failCreate = false
   failCas = false
+  failCasAfterCommit = false
   writes = 0
 
   async read(key) { return this.values.get(key) }
@@ -24,6 +25,10 @@ class MemoryJournalStorage {
     if (next === null) this.values.delete(key)
     else this.values.set(key, next)
     this.writes++
+    if (this.failCasAfterCommit) {
+      this.failCasAfterCommit = false
+      throw new Error('native outcome unknown')
+    }
     return true
   }
 }
@@ -158,10 +163,9 @@ test('network ambiguity preserves the same bytes and key; it never treats raw 2x
   const firstRequest = first.operation.request
   // A network exception or unvalidated 2xx is deliberately not passed as proof.
   await journal.markUncertain(first)
-  const second = await journal.beginSend('event-0001')
-  assert.deepEqual(second.operation.request, firstRequest)
-  await journal.markUncertain(second)
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('reconciliation_required'))
   assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+  assert.deepEqual((await journal.readPending('event-0001')).request, firstRequest)
 })
 
 test('an old same-account, same-event snapshot cannot clear a newer write intent', async () => {
@@ -203,17 +207,21 @@ test('raw responses and issued snapshots cannot settle without request-bound rep
   assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
 })
 
-test('not-applied permits only the exact same request retry; unknown stays pending', async () => {
+test('a bare not-applied verdict cannot authorize retry or change the stored operation', async () => {
   const storage = new MemoryJournalStorage()
   const auth = makeAuth()
   const journal = makeJournal(storage, auth)
   await journal.stage('event-0001', createRequest())
   const permit = await journal.beginSend('event-0001')
   await journal.markUncertain(permit)
-  assert.deepEqual(await journal.reconcile('event-0001', async () => ({ verdict: 'unknown' })), { state: 'still_uncertain' })
-  assert.deepEqual(await journal.reconcile('event-0001', async () => ({ verdict: 'not_applied' })), { state: 'retry_ready' })
-  const retry = await journal.beginSend('event-0001')
-  assert.deepEqual(retry.operation.request, createRequest())
+  const key = [...storage.values.keys()][0]
+  const before = storage.values.get(key)
+  const writes = storage.writes
+  await assert.rejects(journal.reconcile('event-0001', async () => ({ verdict: 'not_applied' })), isJournalError('invalid_operation'))
+  assert.equal(storage.values.get(key), before)
+  assert.equal(storage.writes, writes)
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('reconciliation_required'))
+  assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
 })
 
 test('same subject may recover after a new login generation, while the old lease cannot read or send', async () => {
@@ -236,11 +244,13 @@ test('same subject may recover after a new login generation, while the old lease
 
 test('an operation is scoped to subject plus event and never crosses accounts', async () => {
   const storage = new MemoryJournalStorage()
-  await makeJournal(storage, makeAuth('101', 'one')).stage('event-0001', createRequest())
+  const original = await makeJournal(storage, makeAuth('101', 'one')).stage('event-0001', createRequest())
   const other = makeJournal(storage, makeAuth('202', 'two'))
   assert.equal(await other.readPending('event-0001'), null)
+  await assert.rejects(other.beginSend('event-0001'), isJournalError('conflict'))
   await other.stage('event-0001', createRequest())
   assert.equal(storage.values.size, 2)
+  assert.equal((await makeJournal(storage, makeAuth('101', 'one')).readPending('event-0001')).request.body, original.request.body)
 })
 
 test('storage failure, concurrent send, corrupted records and expiry fail closed without deleting evidence', async () => {
@@ -254,7 +264,7 @@ test('storage failure, concurrent send, corrupted records and expiry fail closed
   await journal.stage('event-0001', createRequest())
   const permit = await journal.beginSend('event-0001')
   const concurrent = makeJournal(storage, auth, () => now.value)
-  await assert.rejects(concurrent.beginSend('event-0001'), isJournalError('busy'))
+  await assert.rejects(concurrent.beginSend('event-0001'), isJournalError('reconciliation_required'))
   await journal.markUncertain(permit)
 
   const key = [...storage.values.keys()][0]
@@ -263,8 +273,97 @@ test('storage failure, concurrent send, corrupted records and expiry fail closed
   await assert.rejects(journal.readPending('event-0001'), isJournalError('corrupt'))
   storage.values.set(key, valid)
   now.value += 86_400_001
-  await assert.rejects(journal.beginSend('event-0001'), isJournalError('expired'))
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('reconciliation_required'))
   assert.equal(storage.values.has(key), true)
+})
+
+test('clock rollback and a new lease cannot make an uncertain request dispatchable', async () => {
+  const storage = new MemoryJournalStorage()
+  const firstAuth = makeAuth('101', 'session-1')
+  const now = { value: 20_000_000 }
+  const first = makeJournal(storage, firstAuth, () => now.value)
+  await first.stage('event-0001', createRequest())
+  const permit = await first.beginSend('event-0001')
+  await first.markUncertain(permit)
+  const key = [...storage.values.keys()][0]
+  const before = storage.values.get(key)
+  const writes = storage.writes
+
+  // Advance beyond the local retention horizon, then roll the wall clock back.
+  // The recovered lease must not use that clock to authorize a replay.
+  now.value += 86_400_001
+  firstAuth.set({ subjectId: '101', generation: 'session-2' })
+  now.value = 1
+  const recovered = makeJournal(storage, firstAuth, () => now.value)
+  await assert.rejects(recovered.beginSend('event-0001'), isJournalError('reconciliation_required'))
+  assert.equal(storage.values.get(key), before)
+  assert.equal(storage.writes, writes)
+  assert.deepEqual((await recovered.readPending('event-0001')).request, createRequest())
+})
+
+test('local retention can refuse a never-sent first dispatch but never deletes the staged request', async () => {
+  const storage = new MemoryJournalStorage()
+  const auth = makeAuth()
+  const now = { value: 30_000_000 }
+  const journal = makeJournal(storage, auth, () => now.value)
+  await journal.stage('event-0001', createRequest())
+  const key = [...storage.values.keys()][0]
+  const before = storage.values.get(key)
+  now.value += 86_400_001
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('expired'))
+  assert.equal(storage.values.get(key), before)
+  assert.equal((await journal.readPending('event-0001')).request.idempotencyKey, createRequest().idempotencyKey)
+})
+
+test('a crash-shaped in-flight record and an indeterminate CAS never yield a second permit', async () => {
+  const storage = new MemoryJournalStorage()
+  const auth = makeAuth('101', 'session-1')
+  const first = makeJournal(storage, auth)
+  await first.stage('event-0001', createRequest())
+  storage.failCasAfterCommit = true
+  await assert.rejects(first.beginSend('event-0001'), isJournalError('unavailable'))
+  const key = [...storage.values.keys()][0]
+  const firstStored = JSON.parse(storage.values.get(key))
+  assert.equal(firstStored.state, 'in_flight')
+  assert.deepEqual(firstStored.request, createRequest())
+
+  // Simulate process restart with the same lease generation: no process-local
+  // busy state remains, but the durable marker still forbids a second send.
+  const restarted = makeJournal(storage, auth, () => { throw new Error('wall clock unavailable') })
+  await assert.rejects(restarted.beginSend('event-0001'), isJournalError('reconciliation_required'))
+  assert.equal((await restarted.readPending('event-0001')).state, 'in_flight')
+  storage.failCas = true
+  await assert.rejects(restarted.reconcile('event-0001', async () => ({ verdict: 'unknown' })), isJournalError('unavailable'))
+  // Reconciliation may fail when CAS outcome is unknown; the original body
+  // remains and no dispatch permit is returned.
+  const stillStored = JSON.parse(storage.values.get(key))
+  assert.deepEqual(stillStored.request, createRequest())
+
+  auth.set({ subjectId: '101', generation: 'session-2' })
+  const nextLease = makeJournal(storage, auth, () => 1)
+  await assert.rejects(nextLease.beginSend('event-0001'), isJournalError('reconciliation_required'))
+  assert.deepEqual((await nextLease.readPending('event-0001')).request, createRequest())
+})
+
+test('concurrent recovery attempts cannot resend an uncertain operation or alter its request', async () => {
+  const storage = new MemoryJournalStorage()
+  const auth = makeAuth('101', 'session-1')
+  const first = makeJournal(storage, auth)
+  await first.stage('event-0001', createRequest())
+  const permit = await first.beginSend('event-0001')
+  await first.markUncertain(permit)
+  auth.set({ subjectId: '101', generation: 'session-2' })
+  const before = storage.values.get([...storage.values.keys()][0])
+  const writes = storage.writes
+  const recoveredA = makeJournal(storage, auth, () => 1)
+  const recoveredB = makeJournal(storage, auth, () => 1)
+  const outcomes = await Promise.allSettled([
+    recoveredA.beginSend('event-0001'),
+    recoveredB.beginSend('event-0001'),
+  ])
+  assert.ok(outcomes.every(result => result.status === 'rejected' && result.reason.code === 'reconciliation_required'))
+  assert.equal(storage.values.get([...storage.values.keys()][0]), before)
+  assert.equal(storage.writes, writes)
 })
 
 test('auth change during persistence prevents a dispatchable operation result', async () => {

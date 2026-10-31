@@ -33,7 +33,7 @@ export interface JournalStorage {
 
 export type JournalErrorCode =
   | 'unauthenticated' | 'session_changed' | 'invalid_operation' | 'conflict'
-  | 'busy' | 'unavailable' | 'corrupt' | 'expired'
+  | 'busy' | 'unavailable' | 'corrupt' | 'expired' | 'reconciliation_required'
 
 export class OperationJournalError extends Error {
   readonly code: JournalErrorCode
@@ -59,13 +59,9 @@ export interface PendingOperation {
 }
 
 export type ReconciliationDecision =
-  | { readonly verdict: 'applied'; readonly evidence?: unknown }
-  /** Authorizes retry of the exact same key and bytes; it never permits editing them. */
-  | { readonly verdict: 'not_applied' }
+  | { readonly verdict: 'applied' }
   | { readonly verdict: 'unknown' }
-export type ReconciliationResult =
-  | { readonly state: 'retry_ready' }
-  | { readonly state: 'still_uncertain' }
+export type ReconciliationResult = { readonly state: 'still_uncertain' }
 
 type StoredOperation = {
   schema: 1
@@ -101,6 +97,7 @@ function messageFor(code: JournalErrorCode): string {
     case 'unavailable': return '本机待发记录暂不可用，输入仍保留'
     case 'corrupt': return '本机待发记录无法校验，原数据仍被保留'
     case 'expired': return '待发记录已超过本机重试期限，请先从服务端核对'
+    case 'reconciliation_required': return '写入结果尚未确认，原请求和训练内容仍保留'
   }
 }
 
@@ -234,7 +231,7 @@ function freezeOperation(value: StoredOperation): PendingOperation {
 function encode(value: StoredOperation): string { return JSON.stringify(value) }
 
 export interface OperationJournalOptions {
-  /** Must be shorter than the server's configured idempotency retention. */
+  /** Local retention bound; it never authorizes replay of an attempted operation. */
   retentionMs: number
   now?: () => number
 }
@@ -335,11 +332,14 @@ export class TrainingOperationJournal {
       if (raw === undefined || raw === null) throw new OperationJournalError('conflict')
       const existing = decode(raw)
       this.#assertOwner(existing, lease.subjectId, clientEventId)
+      // Only a newly staged, never-dispatched operation can be issued without
+      // server-bound evidence. A persisted in_flight/uncertain marker may mean
+      // the server already committed, regardless of clock or local retention.
+      if (existing.state !== 'ready' || existing.revision !== 1) {
+        throw new OperationJournalError('reconciliation_required')
+      }
       const now = this.#timestamp()
       if (now >= existing.expiresAt) throw new OperationJournalError('expired')
-      if (existing.state === 'in_flight' && existing.attemptGeneration === lease.generation) {
-        throw new OperationJournalError('busy')
-      }
       const next: StoredOperation = { ...existing, revision: existing.revision + 1, state: 'in_flight',
         attemptGeneration: lease.generation }
       if (!Number.isSafeInteger(next.revision)) throw new OperationJournalError('conflict')
@@ -404,14 +404,11 @@ export class TrainingOperationJournal {
     if (raw === undefined || raw === null) throw new OperationJournalError('conflict')
     const operation = decode(raw)
     this.#assertOwner(operation, lease.subjectId, clientEventId)
-    if (operation.state === 'in_flight' && operation.attemptGeneration === lease.generation) {
-      throw new OperationJournalError('busy')
-    }
     let decision: ReconciliationDecision
     try { decision = await inspect(freezeOperation(operation)) }
     catch { this.#assertLease(lease); return { state: 'still_uncertain' } }
     this.#assertLease(lease)
-    if (!decision || !['applied', 'not_applied', 'unknown'].includes(decision.verdict)) {
+    if (!decision || !['applied', 'unknown'].includes(decision.verdict)) {
       throw new OperationJournalError('invalid_operation')
     }
     if (decision.verdict === 'applied') {
@@ -419,27 +416,14 @@ export class TrainingOperationJournal {
       // caused it. Keep the intent until a replay API returns bound evidence.
       return { state: 'still_uncertain' }
     }
-    if (decision.verdict === 'unknown') {
-      const next: StoredOperation = { ...operation, revision: operation.revision + 1,
-        state: 'uncertain', attemptGeneration: undefined }
-      let changed: boolean
-      try { changed = await this.#storage.compareAndSwap(key, String(raw), encode(next)) }
-      catch { throw new OperationJournalError('unavailable') }
-      this.#assertLease(lease)
-      if (!changed) throw new OperationJournalError('conflict')
-      return { state: 'still_uncertain' }
-    }
-
-    const now = this.#timestamp()
-    if (now >= operation.expiresAt) throw new OperationJournalError('expired')
     const next: StoredOperation = { ...operation, revision: operation.revision + 1,
-      state: 'ready', attemptGeneration: undefined }
+      state: 'uncertain', attemptGeneration: undefined }
     let changed: boolean
     try { changed = await this.#storage.compareAndSwap(key, String(raw), encode(next)) }
     catch { throw new OperationJournalError('unavailable') }
     this.#assertLease(lease)
     if (!changed) throw new OperationJournalError('conflict')
-    return { state: 'retry_ready' }
+    return { state: 'still_uncertain' }
   }
 
   #captureLease(): JournalCredential {
