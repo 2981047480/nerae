@@ -21,6 +21,14 @@ xcodebuild -workspace /private/tmp/nerae-sdk533-core-20261031/SDK/HBuilder-Hello
 
 A separate copy of the current client source was prepared at `/private/tmp/nerae-native-533-build`, with the existing import probe as its isolated entry and the current client dependency directory linked for compilation. HBuilderX CLI 5.33 was invoked for an iOS app-resource export. It repeatedly reported that `compile-typescript` was missing and attempted to install it. The export was stopped after the repeated failure; no usable resource output or Nerae-plugin link was established. A read-only follow-up found the plugin directory and its TypeScript dependency, but HBuilderX's own log recorded a plugin-host installation/load exception after reporting installation success. The root cause is not yet established; directory existence and CLI exit status do not prove the plugin is usable. The earlier successful 5.33 small probe used a different source state. The 5.26 App/Weixin import probe on the integrated source did pass, but it is not a 5.33 native link or device run.
 
+A later isolated source copy, `/private/tmp/nerae-hx-533-minimaldeps-nl2x4hya/src`,
+linked only `core-js` rather than the project's whole dependency directory and
+was exported once with the same HBuilderX command. The log at
+`/private/tmp/nerae-hx-533-minimaldeps-nl2x4hya/export.log` still reported the
+missing `compile-typescript` plugin and repeated the export; the attempt was
+stopped after 65 seconds. Removing the full dependency-directory link alone
+did not resolve the problem. This result does not establish a root cause.
+
 ## iPhoneOS Swift source type-check
 
 With Xcode 26.6 and the iPhoneOS 26.5 SDK, the 5.26-generated UTS Swift

@@ -2,7 +2,7 @@
 
 **阶段：第五轮本地 UI 样机与三端同步实施计划已形成；尚无可用业务服务或正式三端应用。**
 
-- 用户提供的 iOS 离线 SDK 实际为 5.33；基础 SDK 示例工程已以同版 HBuilderX 对应路径、Xcode 和本地 CocoaPods 完成未签名 iPhoneOS arm64 编译。项目 CLI 仍锁定 5.26；5.33 的完整项目资源导出遇到插件加载问题，Nerae 原生链接、AppKey、签名和手机运行均未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
+- 用户提供的 iOS 离线 SDK 实际为 5.33；基础 SDK 示例工程已完成未签名 iPhoneOS arm64 编译，四个 Nerae 原生插件也分别通过独立源码编译与链接探针。项目 CLI 仍锁定 5.26；5.33 的完整项目资源导出遇到插件加载问题，完整 App 原生链接、AppKey、签名和手机运行均未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
 - App 端已组合原生 HTTPS、设备身份与签名、邮箱登录、会话和版本化成年声明；合成端口测试与 5.26 原生源码生成通过，账号切换/退出时清理登录临时状态。正式入口页面、线上路由、真实邮件、设备批准和真机仍未接通。[证据](evidence/A01/app-auth-runtime.md)
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
@@ -13,7 +13,8 @@
 - 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)
 - 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端可从待发日志查询并校验成功回执，同主体第二个合成会话的丢响应恢复已联测；草稿合并与日志结算仍未接通，不能据此宣称同步完成。[服务端](evidence/F02/F02-04/workout-replay-http.md) · [客户端](evidence/U02/U02-01/replay-pending-client.md)
 - 训练待发操作新增独立的 iOS/Android 原生安全存储槽及绑定当前账号/会话的客户端适配器；与待发日志的合成组合测试覆盖不确定 CAS、重启和切号，集成树训练测试 148/148、类型及 App/小程序源码探针通过。它尚无成功回执结算、完整队列或跨设备同步，客户端主体检查不等于原生 vault 的账号访问控制。[槽](evidence/P02/P02-13/report.md) · [组合](evidence/U02/U02-01/secure-operation-journal-interop.md)
-- 草稿控制器提供仅本进程有效的持久化证明；账号变化、后续写入及并发覆盖会使旧证明失效。它不保证跨进程持久性或与待发日志原子提交。底层日志的值及版本可被同时回退，结算前必须解决 ABA，不能仅凭值相等清除待发请求。[草稿证明](evidence/U02/U02-02/draft-persistence-proof.md) · [ABA 复审](evidence/U02/U02-02/journal-aba-review.md)
+- 草稿控制器提供仅本进程有效的持久化证明；账号变化、后续写入及并发覆盖会使旧证明失效。它不保证跨进程持久性或与待发日志原子提交。旧日志比较只检查可替换的值，存在 ABA，不能据此清除待发请求。[草稿证明](evidence/U02/U02-02/draft-persistence-proof.md) · [ABA 复审](evidence/U02/U02-02/journal-aba-review.md)
+- iOS 训练待发日志已实现原生维护的槽版本和旧数据迁移；合成 Swift 测试覆盖改回旧值、删除重建、旧版本迟到写入和不确定写入。Android、共享客户端版本化接线、回执结算和真机 Keychain 验证仍在进行；进程外写入与整机回滚不在该机制的保证范围内。[证据](evidence/P02/P02-13/ios-versioned-journal.md)
 - 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时保留原请求并可只读查询回执；尚无客户端回执的持久结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/replay-pending-client.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。
