@@ -26,6 +26,8 @@ MIGRATIONS = (
     "workout/0002_workout_sets.up.sql",
     "auth/0004_auth_session.up.sql",
     "workout/0003_workout_exercise_order.up.sql",
+    "auth/0007_email_outbox.up.sql",
+    "auth/0010_email_code_hash_key_epoch.up.sql",
     "transport/0001_idempotency.up.sql",
 )
 
