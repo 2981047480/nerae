@@ -70,10 +70,11 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	resolved, resolveErr := filepath.EvalSymlinks(parent)
 	dirInfo, dirErr := os.Lstat(parent)
 	socketInfo, socketErr := os.Lstat(socket)
-	if cfg.Net != "unix" || cfg.DBName != "nerae_a01_24_test" || cfg.User != "root" || cfg.Passwd != "" ||
+	validFixture := (cfg.DBName == "nerae_a01_24_test" && strings.HasPrefix(filepath.Base(resolved), "nerae-a01-24-")) ||
+		(cfg.DBName == "nerae_a01_25_test" && strings.HasPrefix(filepath.Base(resolved), "nerae-a01-25-"))
+	if cfg.Net != "unix" || !validFixture || cfg.User != "root" || cfg.Passwd != "" ||
 		!cfg.ParseTime || cfg.Loc != time.UTC || filepath.Base(socket) != "mysql.sock" || resolveErr != nil ||
-		dirErr != nil || socketErr != nil || filepath.Dir(resolved) != "/private/tmp" ||
-		!strings.HasPrefix(filepath.Base(resolved), "nerae-a01-24-") || !dirInfo.IsDir() ||
+		dirErr != nil || socketErr != nil || filepath.Dir(resolved) != "/private/tmp" || !dirInfo.IsDir() ||
 		dirInfo.Mode().Perm()&0077 != 0 || dirInfo.Mode()&os.ModeSymlink != 0 || socketInfo.Mode()&os.ModeSocket == 0 {
 		t.Fatal("refusing non-isolated MySQL target")
 	}
@@ -235,6 +236,10 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("current-user handler setup failed")
 	}
+	logoutHandler, err := NewCurrentSessionDeleteHandler(db, sessions, validator)
+	if err != nil {
+		t.Fatal("current-session delete handler setup failed")
+	}
 	ageHandler, err := NewAgeVerifyHandler(db, sessions, sessions, validator)
 	if err != nil {
 		t.Fatal("age verification handler setup failed")
@@ -296,6 +301,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	mux.Handle(emailChallengesPath, challengeHandler)
 	mux.Handle(emailLoginPath, loginHandler)
 	mux.Handle("/me", meHandler)
+	mux.Handle("/auth/sessions/current", logoutHandler)
 	mux.Handle(ageVerifyPath, ageHandler)
 	mux.Handle("/me/sessions", workoutHandler)
 	mux.Handle("/me/sessions/", workoutHandler)
@@ -717,8 +723,95 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("issued session claims could not be verified")
 	}
-	if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state = 'revoked', revoked_at = UTC_TIMESTAMP(6) WHERE id = ?`, []byte(claims.SessionID)); err != nil {
-		t.Fatal("could not revoke synthetic session")
+	// Race a live protected read with logout. Either the read acquired the
+	// session locks first (200) or logout did (401); after logout commits, all
+	// later reads must observe the revoked state.
+	startConcurrent := make(chan struct{})
+	type concurrentHTTPResult struct {
+		response *http.Response
+		err      error
+	}
+	logoutResult := make(chan concurrentHTTPResult, 1)
+	readResult := make(chan concurrentHTTPResult, 1)
+	logoutRequest, err := http.NewRequestWithContext(ctx, http.MethodDelete, server.URL+"/auth/sessions/current", nil)
+	if err != nil {
+		t.Fatal("logout request setup failed")
+	}
+	logoutRequest.Header.Set("Authorization", "Bearer "+success.Token)
+	readRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/me", nil)
+	if err != nil {
+		t.Fatal("concurrent session read setup failed")
+	}
+	readRequest.Header.Set("Authorization", "Bearer "+success.Token)
+	go func() {
+		<-startConcurrent
+		response, doErr := server.Client().Do(logoutRequest)
+		logoutResult <- concurrentHTTPResult{response: response, err: doErr}
+	}()
+	go func() {
+		<-startConcurrent
+		response, doErr := server.Client().Do(readRequest)
+		readResult <- concurrentHTTPResult{response: response, err: doErr}
+	}()
+	close(startConcurrent)
+	logoutOutcome := <-logoutResult
+	readOutcome := <-readResult
+	if logoutOutcome.err != nil || readOutcome.err != nil || logoutOutcome.response == nil || readOutcome.response == nil {
+		t.Fatal("concurrent logout/read request failed")
+	}
+	logoutResponse, readResponse := logoutOutcome.response, readOutcome.response
+	if readResponse.StatusCode != http.StatusOK && readResponse.StatusCode != http.StatusUnauthorized {
+		_ = readResponse.Body.Close()
+		_ = logoutResponse.Body.Close()
+		t.Fatal("concurrent read returned an unexpected status")
+	}
+	_, _ = io.Copy(io.Discard, readResponse.Body)
+	_ = readResponse.Body.Close()
+	logoutBody, readErr := io.ReadAll(logoutResponse.Body)
+	_ = logoutResponse.Body.Close()
+	if readErr != nil || logoutResponse.StatusCode != http.StatusNoContent || logoutResponse.Header.Get("Cache-Control") != "no-store" || len(logoutBody) != 0 {
+		t.Fatal("logout did not return an empty no-store 204 after commit")
+	}
+	var state string
+	var revokedAt sql.NullString
+	if err := db.QueryRowContext(ctx, `SELECT state, DATE_FORMAT(revoked_at, '%Y-%m-%d %H:%i:%s.%f') FROM auth_session WHERE id = ?`, []byte(claims.SessionID)).Scan(&state, &revokedAt); err != nil || state != "revoked" || !revokedAt.Valid {
+		t.Fatal("logout did not durably revoke the authenticated session")
+	}
+	// The other authenticated session remains usable; logout must not revoke the account.
+	otherMeReq, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/me", nil)
+	if err != nil {
+		t.Fatal("other session check setup failed")
+	}
+	otherMeReq.Header.Set("Authorization", "Bearer "+otherSuccess.Token)
+	otherMeResp, err := server.Client().Do(otherMeReq)
+	if err != nil {
+		t.Fatal("other session check failed")
+	}
+	otherMeBody, readErr := io.ReadAll(otherMeResp.Body)
+	_ = otherMeResp.Body.Close()
+	if readErr != nil || otherMeResp.StatusCode != http.StatusOK || !bytes.Contains(otherMeBody, []byte(otherSuccess.User.Id)) {
+		t.Fatal("logout revoked a different authenticated session")
+	}
+	// A repeated request using the revoked bearer is rejected rather than
+	// treating stale credentials as proof of a successful logout.
+	repeatReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, server.URL+"/auth/sessions/current", nil)
+	if err != nil {
+		t.Fatal("repeat logout setup failed")
+	}
+	repeatReq.Header.Set("Authorization", "Bearer "+success.Token)
+	repeatResp, err := server.Client().Do(repeatReq)
+	if err != nil {
+		t.Fatal("repeat logout request failed")
+	}
+	repeatBody, readErr := io.ReadAll(repeatResp.Body)
+	_ = repeatResp.Body.Close()
+	if readErr != nil || repeatResp.StatusCode != http.StatusUnauthorized || repeatResp.Header.Get("Cache-Control") != "no-store" || bytes.Contains(repeatBody, []byte(success.Token)) {
+		t.Fatal("repeated logout did not reject the revoked bearer safely")
+	}
+	// The original login receipt cannot resurrect a session after logout.
+	status, receiptReplayHeaders, receiptReplayBody := post(emailLoginPath, loginBody, loginKey)
+	if status != http.StatusUnauthorized || receiptReplayHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(receiptReplayBody, []byte(success.Token)) {
+		t.Fatal("login receipt replay restored a revoked session")
 	}
 	status, revokedHeaders, revokedResponse := postAge(server.Client(), server.URL, success.Token, []byte(`{"isAdult":true,"expectedVersion":5}`))
 	if status != http.StatusUnauthorized || revokedHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(revokedResponse, []byte(success.Token)) {
@@ -753,11 +846,33 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("unavailable login handler setup failed")
 	}
+	unavailableLogout, err := NewCurrentSessionDeleteHandler(closedDB, sessions, validator)
+	if err != nil {
+		t.Fatal("unavailable logout handler setup failed")
+	}
 	if code, responseHeaders, body := postWithHandler(t, ctx, unavailableChallenge, emailChallengesPath, challengeBody, emailLoginHTTPKey(t)); code != http.StatusServiceUnavailable || responseHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(body, []byte(success.Token)) {
 		t.Fatal("unavailable challenge service did not fail closed")
 	}
 	if code, responseHeaders, body := postWithHandler(t, ctx, unavailableLogin, emailLoginPath, loginBody, emailLoginHTTPKey(t)); code != http.StatusServiceUnavailable || responseHeaders.Get("Cache-Control") != "no-store" || bytes.Contains(body, []byte(success.Token)) {
 		t.Fatal("unavailable login service did not fail closed")
+	}
+	logoutServer := httptest.NewTLSServer(unavailableLogout)
+	logoutReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, logoutServer.URL+"/auth/sessions/current", nil)
+	if err != nil {
+		logoutServer.Close()
+		t.Fatal("unavailable logout request setup failed")
+	}
+	logoutReq.Header.Set("Authorization", "Bearer "+otherSuccess.Token)
+	logoutResp, err := logoutServer.Client().Do(logoutReq)
+	if err != nil {
+		logoutServer.Close()
+		t.Fatal("unavailable logout request failed")
+	}
+	logoutErrBody, readErr := io.ReadAll(logoutResp.Body)
+	_ = logoutResp.Body.Close()
+	logoutServer.Close()
+	if readErr != nil || logoutResp.StatusCode != http.StatusServiceUnavailable || logoutResp.Header.Get("Cache-Control") != "no-store" || bytes.Contains(logoutErrBody, []byte(otherSuccess.Token)) {
+		t.Fatal("unavailable logout did not fail closed without claiming success")
 	}
 
 	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP; synthetic test-only services")
