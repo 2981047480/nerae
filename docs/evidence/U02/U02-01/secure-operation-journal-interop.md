@@ -27,3 +27,14 @@
 ## 限制
 
 失败或结果未知的 native CAS 永远按未知处理；若 in-flight 标记可能已提交，当前 journal 不自动重发，也没有服务端绑定回执来安全结算/清除记录。测试仅用同步合成 CAS 回调，未测原生异步桥、设备重启、多个 App 进程或实际 secure vault。训练草稿和 journal 的原子合并、HTTP 发送接线、服务端幂等回执及恢复仍未实现。
+
+## Generation 切换错误分类修复
+
+`TrainingOperationJournal` 现在保留真实 `SecureOperationJournalStorage` 抛出的 `session_changed` 分类；其他存储错误仍收敛为 `unavailable`。新组合用例分别在原生读取返回后、以及 CAS 已持久写入 `in_flight` 后切换同主体 session generation。前者不会写入，后者不给 permit；新 generation 可查看已提交的原请求，但 `beginSend` 返回 `reconciliation_required`，不会自动重发。测试仍通过合成 native port，不证明平台原生桥或多进程行为。
+
+本轮验证：
+
+- `node --import ./docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/operationJournalStorageInterop.test.mjs`：8/8 通过。
+- `node --import ./docs/evidence/P02/P02-11/node-ts-loader.mjs --test apps/client/src/features/training/*.test.mjs`：148/148 通过。
+- `vue-tsc --noEmit -p apps/client/tsconfig.json`：退出码 0；使用 `/Users/zephyr/.codex/worktrees/nerae-client-recording/nerae/apps/client/node_modules` 的临时 symlink 作为类型依赖，命令后已移除；未安装依赖或更改锁文件。
+- `git diff --check`：通过。

@@ -25,14 +25,23 @@ function nativePort(initial = null) {
     value: initial,
     history: [],
     nextMode: null,
+    afterRead: null,
+    afterCAS: null,
     readTrainingOperationJournal() {
-      return { ok: true, errorCode: '', found: this.value !== null, value: this.value ?? '' }
+      const result = { ok: true, errorCode: '', found: this.value !== null, value: this.value ?? '' }
+      const afterRead = this.afterRead
+      this.afterRead = null
+      afterRead?.()
+      return result
     },
     compareAndSetTrainingOperationJournal(expectedFound, expectedValue, nextValue) {
       const matched = (this.value !== null) === expectedFound && (this.value ?? '') === expectedValue
       this.history.push({ expectedFound, expectedValue, nextValue, matched })
       if (!matched) return { ok: false, errorCode: 'conflict', found: false, value: '' }
       this.value = nextValue
+      const afterCAS = this.afterCAS
+      this.afterCAS = null
+      afterCAS?.()
       if (this.nextMode === 'commit_then_throw') {
         this.nextMode = null
         throw new Error('synthetic unknown native result')
@@ -151,4 +160,42 @@ test('native CAS error response after commit also fails closed and never produce
   await assert.rejects(journal.beginSend(eventId), isCode('unavailable'))
   assert.equal(JSON.parse(JSON.parse(native.value).entries[keyFor('101')]).state, 'in_flight')
   await assert.rejects(journal.beginSend(eventId), isCode('reconciliation_required'))
+})
+
+test('generation change during adapter read is preserved and does not consume the first-send state', async () => {
+  const native = nativePort()
+  const auth = makeAuth()
+  const journal = journalFor(makeStorage(native, auth), auth)
+  await journal.stage(eventId, request)
+  const writesBeforeRead = native.history.length
+
+  native.afterRead = () => auth.set({ subjectId: '101', generation: 'gen-b' })
+  await assert.rejects(journal.beginSend(eventId), isCode('session_changed'))
+  assert.equal(native.history.length, writesBeforeRead)
+  assert.equal(JSON.parse(JSON.parse(native.value).entries[keyFor('101')]).state, 'ready')
+
+  const recovered = journalFor(makeStorage(native, auth), auth)
+  const permit = await recovered.beginSend(eventId)
+  assert.equal(permit.isCurrent(), true)
+  assert.deepEqual(permit.operation.request, request)
+  await recovered.markUncertain(permit)
+})
+
+test('generation change after committing in-flight CAS returns session_changed and never grants a second permit', async () => {
+  const native = nativePort()
+  const auth = makeAuth()
+  const journal = journalFor(makeStorage(native, auth), auth)
+  await journal.stage(eventId, request)
+  native.afterCAS = () => auth.set({ subjectId: '101', generation: 'gen-b' })
+
+  await assert.rejects(journal.beginSend(eventId), isCode('session_changed'))
+  assert.equal(native.history.length, 2)
+  const stored = JSON.parse(native.value).entries[keyFor('101')]
+  assert.equal(JSON.parse(stored).state, 'in_flight')
+  assert.deepEqual(JSON.parse(stored).request, request)
+
+  const recovered = journalFor(makeStorage(native, auth), auth)
+  assert.equal((await recovered.readPending(eventId)).state, 'in_flight')
+  await assert.rejects(recovered.beginSend(eventId), isCode('reconciliation_required'))
+  assert.equal(native.history.length, 2, 'no new permit or CAS after the committed state became ambiguous')
 })

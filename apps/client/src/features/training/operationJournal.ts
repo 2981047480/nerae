@@ -101,6 +101,20 @@ function messageFor(code: JournalErrorCode): string {
   }
 }
 
+function storageFailure(error: unknown): OperationJournalError {
+  if (error && typeof error === 'object') {
+    const candidate = error as { readonly name?: unknown; readonly code?: unknown }
+    if (candidate.name === 'SecureJournalStorageError' && candidate.code === 'session_changed') {
+      return new OperationJournalError('session_changed')
+    }
+  }
+  return new OperationJournalError('unavailable')
+}
+
+function operationFailure(error: unknown): OperationJournalError {
+  return error instanceof OperationJournalError ? error : storageFailure(error)
+}
+
 function validSubject(value: unknown): value is string {
   return typeof value === 'string' && /^[1-9]\d{0,19}$/.test(value)
 }
@@ -348,7 +362,7 @@ export class TrainingOperationJournal {
       expiresAt: now + this.#retentionMs, request }
     if (!Number.isSafeInteger(candidate.expiresAt)) throw new OperationJournalError('invalid_operation')
     let raw: unknown
-    try { raw = await this.#storage.read(key) } catch { throw new OperationJournalError('unavailable') }
+    try { raw = await this.#storage.read(key) } catch (error) { throw storageFailure(error) }
     this.#assertLease(lease)
     if (raw !== undefined && raw !== null) {
       const existing = decode(raw)
@@ -368,8 +382,7 @@ export class TrainingOperationJournal {
       if (now >= raced.expiresAt) throw new OperationJournalError('expired')
       return freezeOperation(raced)
     } catch (error) {
-      if (error instanceof OperationJournalError) throw error
-      throw new OperationJournalError('unavailable')
+      throw operationFailure(error)
     }
   }
 
@@ -378,7 +391,7 @@ export class TrainingOperationJournal {
     const lease = this.#captureLease()
     const key = storageKey(lease.subjectId, clientEventId)
     let raw: unknown
-    try { raw = await this.#storage.read(key) } catch { throw new OperationJournalError('unavailable') }
+    try { raw = await this.#storage.read(key) } catch (error) { throw storageFailure(error) }
     this.#assertLease(lease)
     if (raw === undefined || raw === null) return null
     const operation = decode(raw)
@@ -398,7 +411,7 @@ export class TrainingOperationJournal {
     this.#busy.add(key)
     try {
       let raw: unknown
-      try { raw = await this.#storage.read(key) } catch { throw new OperationJournalError('unavailable') }
+      try { raw = await this.#storage.read(key) } catch (error) { throw storageFailure(error) }
       this.#assertLease(lease)
       if (raw === undefined || raw === null) throw new OperationJournalError('conflict')
       const existing = decode(raw)
@@ -417,7 +430,7 @@ export class TrainingOperationJournal {
       const nextBytes = encode(next)
       let changed: boolean
       try { changed = await this.#storage.compareAndSwap(key, String(raw), nextBytes) }
-      catch { throw new OperationJournalError('unavailable') }
+      catch (error) { throw storageFailure(error) }
       this.#assertLease(lease)
       if (!changed) throw new OperationJournalError('conflict')
       const proof: PermitProof = { key, storedBytes: nextBytes, subjectId: lease.subjectId,
@@ -427,8 +440,7 @@ export class TrainingOperationJournal {
       return permit
     } catch (error) {
       this.#busy.delete(key)
-      if (error instanceof OperationJournalError) throw error
-      throw new OperationJournalError('unavailable')
+      throw operationFailure(error)
     }
   }
 
@@ -446,7 +458,7 @@ export class TrainingOperationJournal {
       const nextBytes = encode(next)
       let changed: boolean
       try { changed = await this.#storage.compareAndSwap(proof.key, proof.storedBytes, nextBytes) }
-      catch { throw new OperationJournalError('unavailable') }
+      catch (error) { throw storageFailure(error) }
       this.#assertLease(lease)
       if (!changed) throw new OperationJournalError('conflict')
     } finally {
@@ -470,7 +482,7 @@ export class TrainingOperationJournal {
     const key = storageKey(lease.subjectId, clientEventId)
     if (this.#busy.has(key)) throw new OperationJournalError('busy')
     let raw: unknown
-    try { raw = await this.#storage.read(key) } catch { throw new OperationJournalError('unavailable') }
+    try { raw = await this.#storage.read(key) } catch (error) { throw storageFailure(error) }
     this.#assertLease(lease)
     if (raw === undefined || raw === null) throw new OperationJournalError('conflict')
     const operation = decode(raw)
@@ -491,7 +503,7 @@ export class TrainingOperationJournal {
       state: 'uncertain', attemptGeneration: undefined }
     let changed: boolean
     try { changed = await this.#storage.compareAndSwap(key, String(raw), encode(next)) }
-    catch { throw new OperationJournalError('unavailable') }
+    catch (error) { throw storageFailure(error) }
     this.#assertLease(lease)
     if (!changed) throw new OperationJournalError('conflict')
     return { state: 'still_uncertain' }
