@@ -23,3 +23,11 @@ Foundation `URLSession` suppresses unframed bytes following a 204 response: the 
 ## Boundary
 
 The port only returns transport outcome. It does not clear local session state, prove that the server has mounted the endpoint, or resolve a lost response after the server may have committed revocation.
+
+## Server expiry classification follow-up
+
+The session revoke implementation now classifies an expired principal recheck as `ErrInvalidSession` only when the already-authenticated principal's valid clock confirms expiry. If the conditional UPDATE affects zero rows, it performs a locking current read: missing, revoked, or explicitly expired is invalid; a live row, an unknown state, or a query error remains unavailable. This avoids reporting a definite auth failure for storage corruption.
+
+- `GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOMODCACHE=/private/tmp/nerae-go-api-mod GOCACHE=/private/tmp/nerae-go-api-cache /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race ./internal/modules/auth/session ./internal/modules/auth/transport` from `apps/api`: passed.
+- `python3 -B docs/evidence/A01/A01-07/mysql_smoke.py`: passed with a fresh socket-only private MySQL; it loaded the harness's seven listed migrations and ran the session package with `-race`. The new real-DB assertions covered a controllable expiry clock, an expired DB row, cancelled DB recheck, normal current-session revocation, replay of revoke, and preservation of a second session. Unknown/corrupt state classification is covered by a pure unit test because the schema CHECK correctly prevents persisting that invalid state.
+- The private DB suite exercises the zero-row classification helper directly against a locked expired row; it does not time expiry to fall strictly between the service's liveness SELECT and conditional UPDATE. That narrow race remains covered by the production recheck logic but was not injected end-to-end.

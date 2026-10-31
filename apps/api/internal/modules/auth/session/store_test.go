@@ -349,6 +349,9 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `UPDATE user SET age_verified_at = NULL WHERE id = ?`, details.SubjectID); err != nil {
 		t.Fatal("could not restore isolated age fixture")
 	}
+	revokeCheckTime := time.Now().UTC()
+	codec.now = func() time.Time { return revokeCheckTime }
+	store.now = func() time.Time { return revokeCheckTime }
 	expiringTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal("could not begin principal expiry check")
@@ -358,14 +361,39 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		_ = expiringTx.Rollback()
 		t.Fatal("could not authenticate expiry fixture")
 	}
-	codec.now = func() time.Time { return claims.ExpiresAt }
-	store.now = codec.now
-	if _, err := expiringPrincipal.ForTransaction(ctx, expiringTx); err == nil {
+	revokeCheckTime = claims.ExpiresAt
+	if _, err := expiringPrincipal.ForTransaction(ctx, expiringTx); !errors.Is(err, ErrSessionUnavailable) {
 		_ = expiringTx.Rollback()
-		t.Fatal("principal remained usable at token expiry")
+		t.Fatal("principal recheck did not fail closed at expiry")
+	} else if classified := classifyPrincipalRecheckError(expiringPrincipal, err); !errors.Is(classified, ErrInvalidSession) {
+		_ = expiringTx.Rollback()
+		t.Fatal("revoke did not distinguish expiry from recheck unavailability")
 	}
+	revokeCheckTime = time.Now().UTC()
 	codec.now = time.Now
 	store.now = time.Now
+	if classified := classifyPrincipalRecheckError(expiringPrincipal, ErrSessionUnavailable); !errors.Is(classified, ErrSessionUnavailable) {
+		_ = expiringTx.Rollback()
+		t.Fatal("non-expiry principal recheck failure was misclassified")
+	}
+	if _, err := expiringTx.ExecContext(ctx, `UPDATE auth_session SET authenticated_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 MINUTE), expires_at=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 SECOND) WHERE id=?`, []byte(claims.SessionID)); err != nil {
+		_ = expiringTx.Rollback()
+		t.Fatal("could not prepare deterministic expired-row classification")
+	}
+	if err := classifyUnchangedSession(ctx, expiringTx, claims.SessionID); !errors.Is(err, ErrInvalidSession) {
+		_ = expiringTx.Rollback()
+		t.Fatal("expired current row was not classified as invalid")
+	}
+	if err := classifyUnchangedSession(ctx, expiringTx, strings.Repeat("A", 22)); !errors.Is(err, ErrInvalidSession) {
+		_ = expiringTx.Rollback()
+		t.Fatal("missing current row was not classified as invalid")
+	}
+	canceledLookup, cancelLookup := context.WithCancel(ctx)
+	cancelLookup()
+	if err := classifyUnchangedSession(canceledLookup, expiringTx, claims.SessionID); !errors.Is(err, ErrSessionUnavailable) {
+		_ = expiringTx.Rollback()
+		t.Fatal("database lookup failure was not classified as unavailable")
+	}
 	_ = expiringTx.Rollback()
 	for _, value := range []any{issued, &issued, principal, *principal, details, &details} {
 		if _, err := json.Marshal(value); err == nil {
@@ -525,6 +553,22 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	_ = negativeTx.Rollback()
 	if _, err := store.Authenticate(ctx, negativeTx, token); !errors.Is(err, ErrSessionUnavailable) {
 		t.Fatal("ended transaction was not classified unavailable")
+	}
+
+	if err := store.RevokeCurrent(ctx, db, secondToken); err != nil {
+		t.Fatal("current-session revoke failed for an active session")
+	}
+	otherSessionTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin other-session preservation check")
+	}
+	if _, err := store.Authenticate(ctx, otherSessionTx, token); err != nil {
+		_ = otherSessionTx.Rollback()
+		t.Fatal("revoking one session invalidated another session")
+	}
+	_ = otherSessionTx.Rollback()
+	if err := store.RevokeCurrent(ctx, db, secondToken); !errors.Is(err, ErrInvalidSession) {
+		t.Fatal("repeating revoke did not classify the already-revoked session as invalid")
 	}
 
 	// A device revocation waits for an in-flight authorized transaction; after
