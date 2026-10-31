@@ -75,3 +75,33 @@ func TestEmailCodeGenerationAndInvalidInputs(t *testing.T) {
 		t.Fatalf("invalid digest length accepted: %v", err)
 	}
 }
+
+func TestEmailCodeHasherKeyEpochTagIsDomainSeparatedAndStable(t *testing.T) {
+	keyA := bytes.Repeat([]byte{0x61}, 32)
+	keyB := bytes.Repeat([]byte{0x62}, 32)
+	hasherA, err := NewEmailCodeHasher(keyA)
+	if err != nil {
+		t.Fatal("hasher setup failed")
+	}
+	hasherAAgain, _ := NewEmailCodeHasher(keyA)
+	hasherB, _ := NewEmailCodeHasher(keyB)
+	tagA, err := hasherA.KeyEpochTag()
+	if err != nil {
+		t.Fatal("key epoch tag failed")
+	}
+	tagAAgain, err := hasherAAgain.KeyEpochTag()
+	if err != nil {
+		t.Fatal("recreated key epoch tag failed")
+	}
+	tagB, err := hasherB.KeyEpochTag()
+	if err != nil {
+		t.Fatal("second key epoch tag failed")
+	}
+	if tagA != tagAAgain || tagA == tagB || bytes.Equal(tagA[:], keyA) {
+		t.Fatal("key epoch tag stability, separation, or secrecy check failed")
+	}
+	var zero EmailCodeHasher
+	if _, err := zero.KeyEpochTag(); !errors.Is(err, ErrInvalidEmailChallenge) {
+		t.Fatal("zero-value hasher returned a tag")
+	}
+}

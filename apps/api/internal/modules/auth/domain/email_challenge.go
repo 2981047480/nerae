@@ -33,6 +33,20 @@ func NewEmailCodeHasher(key []byte) (*EmailCodeHasher, error) {
 	return &EmailCodeHasher{key: append([]byte(nil), key...)}, nil
 }
 
+// KeyEpochTag returns a non-secret, domain-separated HMAC binding for the
+// configured verifier key. It does not establish that the key has sufficient
+// entropy; configuration must supply a protected high-entropy value.
+func (h *EmailCodeHasher) KeyEpochTag() ([sha256.Size]byte, error) {
+	if h == nil || len(h.key) < 32 {
+		return [sha256.Size]byte{}, ErrInvalidEmailChallenge
+	}
+	mac := hmac.New(sha256.New, h.key)
+	_, _ = mac.Write([]byte("nerae.auth.email-code-hash-epoch.v1\x00"))
+	var tag [sha256.Size]byte
+	copy(tag[:], mac.Sum(nil))
+	return tag, nil
+}
+
 // Digest binds a code to a server-generated challenge and an email purpose.
 // Expiry, rate limiting, single-use consumption and device trust are enforced
 // separately and must all succeed before issuing a real session.
