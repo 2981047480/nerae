@@ -340,9 +340,12 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 	if err != nil || before.SubjectID == 0 {
 		return Result{}, ErrUnavailable
 	}
+	currentActor, err := actorFromPrincipalDetails(before)
+	if err != nil {
+		return Result{}, ErrUnavailable
+	}
 	readView := accessView{tx: tx, reads: s.reads}
 	view := transactionView{accessView: readView, writes: s.writes}
-	currentActor := Actor{subjectID: before.SubjectID, ageVerified: before.AgeVerified}
 	if err := authorize(ctx, readView, currentActor, "", 0); err != nil {
 		return Result{}, authorizeError(err)
 	}
@@ -434,10 +437,13 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 			return Result{}, ErrUnavailable
 		}
 		live, err := principal.ForTransaction(ctx, tx)
-		if err != nil || live.SubjectID != before.SubjectID {
+		if err != nil || !samePrincipalSession(before, live) {
 			return Result{}, ErrUnavailable
 		}
-		currentActor = Actor{subjectID: live.SubjectID, ageVerified: live.AgeVerified}
+		currentActor, err = actorFromPrincipalDetails(live)
+		if err != nil {
+			return Result{}, ErrUnavailable
+		}
 		if err := authorize(ctx, readView, currentActor, reply.ResultRef, reply.Status); err != nil {
 			return Result{}, authorizeError(err)
 		}
@@ -472,10 +478,13 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 			return Result{}, ErrUnavailable
 		}
 		live, err := principal.ForTransaction(ctx, tx)
-		if err != nil || live.SubjectID != before.SubjectID {
+		if err != nil || !samePrincipalSession(before, live) {
 			return Result{}, ErrUnavailable
 		}
-		currentActor = Actor{subjectID: live.SubjectID, ageVerified: live.AgeVerified}
+		currentActor, err = actorFromPrincipalDetails(live)
+		if err != nil {
+			return Result{}, ErrUnavailable
+		}
 		if err := authorize(ctx, readView, currentActor, string(ref), int(savedStatus.Int64)); err != nil {
 			return Result{}, authorizeError(err)
 		}
@@ -485,7 +494,7 @@ func (s *Store) Execute(ctx context.Context, db *sql.DB, token string, input Req
 		}
 	}
 	after, err := principal.ForTransaction(ctx, tx)
-	if err != nil || after.SubjectID != before.SubjectID || after.AgeVerified != currentActor.ageVerified {
+	if err != nil || !samePrincipalSession(before, after) || after.AgeVerified != currentActor.ageVerified {
 		return Result{}, ErrUnavailable
 	}
 	lastCheck := s.now().UTC().Truncate(time.Microsecond)

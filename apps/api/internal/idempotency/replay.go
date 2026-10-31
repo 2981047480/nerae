@@ -67,8 +67,11 @@ func (s *Store) ReplayExisting(ctx context.Context, db *sql.DB, token string, in
 	if err != nil || before.SubjectID == 0 {
 		return Result{}, ErrUnavailable
 	}
+	actor, err := actorFromPrincipalDetails(before)
+	if err != nil {
+		return Result{}, ErrUnavailable
+	}
 	readView := accessView{tx: tx, reads: s.reads}
-	actor := Actor{subjectID: before.SubjectID, ageVerified: before.AgeVerified}
 	if err := authorize(ctx, readView, actor, "", 0); err != nil {
 		return Result{}, authorizeError(err)
 	}
@@ -117,10 +120,13 @@ func (s *Store) ReplayExisting(ctx context.Context, db *sql.DB, token string, in
 		return Result{}, ErrUnavailable
 	}
 	current, err := principal.ForTransaction(ctx, tx)
-	if err != nil || current.SubjectID != before.SubjectID {
+	if err != nil || !samePrincipalSession(before, current) {
 		return Result{}, ErrUnavailable
 	}
-	actor = Actor{subjectID: current.SubjectID, ageVerified: current.AgeVerified}
+	actor, err = actorFromPrincipalDetails(current)
+	if err != nil {
+		return Result{}, ErrUnavailable
+	}
 	if err := authorize(ctx, readView, actor, string(ref), int(status.Int64)); err != nil {
 		return Result{}, authorizeError(err)
 	}
@@ -129,7 +135,7 @@ func (s *Store) ReplayExisting(ctx context.Context, db *sql.DB, token string, in
 		return Result{}, err
 	}
 	after, err := principal.ForTransaction(ctx, tx)
-	if err != nil || after.SubjectID != before.SubjectID || after.AgeVerified != actor.ageVerified {
+	if err != nil || !samePrincipalSession(before, after) || after.AgeVerified != actor.ageVerified {
 		return Result{}, ErrUnavailable
 	}
 	lastCheck := s.now().UTC().Truncate(time.Microsecond)

@@ -31,6 +31,78 @@ func (f *idemFixture) replay(actor idemActor, req Request, authorize Authorize) 
 	return f.store.ReplayExisting(f.ctx, f.db, actor.token, req, authorize)
 }
 
+func TestActorSessionIDTracksTheVerifiedSessionAndRevocationBlocksReplay(t *testing.T) {
+	f := newIdemFixture(t)
+	firstActor := f.actor(t)
+	secondSession := f.newSessionFor(t, firstActor)
+	if secondSession.subjectID != firstActor.subjectID || secondSession.sessionID == firstActor.sessionID {
+		t.Fatal("fixture did not create two distinct authenticated sessions for one subject")
+	}
+	req := idemRequest("POST", "/synthetic/session-bound/replay", "SessionBoundReplay-01", []byte(`{"v":1}`))
+	event := "session-bound-replay-effect"
+	var firstObserved []string
+	authorizeFirst := func(_ context.Context, tx ReadTransaction, actor Actor, _ string, _ int) error {
+		if tx == nil || actor.SubjectID() != firstActor.subjectID || actor.SessionID() != firstActor.sessionID {
+			return ErrForbidden
+		}
+		firstObserved = append(firstObserved, actor.SessionID())
+		return nil
+	}
+	mutatedSession := ""
+	created, err := f.execute(firstActor, req, authorizeFirst, func(ctx context.Context, tx Transaction, actor Actor) (Reply, error) {
+		mutatedSession = actor.SessionID()
+		if _, err := tx.ExecContext(ctx, testInsertEffectSQL, event, actor.SubjectID(), req.Method, req.Path, []byte("synthetic")); err != nil {
+			return Reply{}, ErrUnavailable
+		}
+		return Reply{Status: 201, Body: []byte(`{"ok":true}`), ResultRef: "resource:session-bound"}, nil
+	})
+	if err != nil || created.Replayed || mutatedSession != firstActor.sessionID || len(firstObserved) < 2 {
+		t.Fatal("Execute did not expose the validated original session through every callback")
+	}
+	for _, id := range firstObserved {
+		if id != firstActor.sessionID {
+			t.Fatal("Execute changed the authenticated session between authorization checks")
+		}
+	}
+
+	var replayObserved []string
+	authorizeSecondSession := func(_ context.Context, tx ReadTransaction, actor Actor, _ string, _ int) error {
+		if tx == nil || actor.SubjectID() != secondSession.subjectID || actor.SessionID() != secondSession.sessionID {
+			return ErrForbidden
+		}
+		replayObserved = append(replayObserved, actor.SessionID())
+		return nil
+	}
+	replayed, err := f.replay(secondSession, req, authorizeSecondSession)
+	if err != nil || !replayed.Replayed || replayed.ResultRef != created.ResultRef || !bytes.Equal(replayed.Body, created.Body) || len(replayObserved) < 2 {
+		t.Fatal("ReplayExisting did not bind authorization to the exact authenticated session")
+	}
+	for _, id := range replayObserved {
+		if id != secondSession.sessionID {
+			t.Fatal("ReplayExisting changed the authenticated session between authorization checks")
+		}
+	}
+
+	if _, err := f.db.ExecContext(f.ctx, `UPDATE auth_session SET state='revoked', revoked_at=UTC_TIMESTAMP(6) WHERE id=? AND user_id=?`,
+		[]byte(secondSession.sessionID), secondSession.subjectID); err != nil {
+		t.Fatal("could not revoke the synthetic replay session")
+	}
+	result, err := f.replay(secondSession, req, authorizeSecondSession)
+	if !errors.Is(err, ErrAuthentication) || result.Body != nil || result.ResultRef != "" {
+		t.Fatal("revoked authenticated session received an idempotent response")
+	}
+	if _, err := f.execute(secondSession, req, authorizeSecondSession, func(context.Context, Transaction, Actor) (Reply, error) {
+		t.Fatal("revoked session reached mutation callback")
+		return Reply{}, nil
+	}); !errors.Is(err, ErrAuthentication) {
+		t.Fatal("revoked session was allowed to execute an idempotent operation")
+	}
+	var effects int
+	if err := f.db.QueryRowContext(f.ctx, `SELECT COUNT(*) FROM idempotency_test_effect WHERE event_id=?`, event).Scan(&effects); err != nil || effects != 1 {
+		t.Fatal("session revocation caused a second business mutation")
+	}
+}
+
 func TestReplayExistingReturnsOnlyCurrentCommittedReceipt(t *testing.T) {
 	f := newIdemFixture(t)
 	actor := f.actor(t)

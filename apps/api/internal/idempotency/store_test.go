@@ -37,6 +37,9 @@ type idemActor struct {
 	token     string
 	subjectID uint64
 	sessionID string
+	email     string
+	deviceKey *ecdsa.PrivateKey
+	publicKey domain.DevicePublicJWK
 }
 
 var nextIdemEmail atomic.Uint64
@@ -205,6 +208,20 @@ func idemProof(t *testing.T, key *ecdsa.PrivateKey, id, nonce string) string {
 func (f *idemFixture) actor(t *testing.T) idemActor {
 	t.Helper()
 	key, public := idemDevice(t)
+	email := fmt.Sprintf("idempotency-%d@example.test", nextIdemEmail.Add(1))
+	return f.issueActor(t, email, key, public)
+}
+
+func (f *idemFixture) newSessionFor(t *testing.T, previous idemActor) idemActor {
+	t.Helper()
+	if previous.email == "" || previous.deviceKey == nil || previous.publicKey.X == "" {
+		t.Fatal("previous actor does not have an authenticated test device")
+	}
+	return f.issueActor(t, previous.email, previous.deviceKey, previous.publicKey)
+}
+
+func (f *idemFixture) issueActor(t *testing.T, email string, key *ecdsa.PrivateKey, public domain.DevicePublicJWK) idemActor {
+	t.Helper()
 	id, err := domain.GenerateChallengeID()
 	if err != nil {
 		t.Fatal("could not generate challenge ID")
@@ -213,7 +230,6 @@ func (f *idemFixture) actor(t *testing.T) idemActor {
 	if err != nil {
 		t.Fatal("could not generate challenge nonce")
 	}
-	email := fmt.Sprintf("idempotency-%d@example.test", nextIdemEmail.Add(1))
 	issueTx, err := f.db.BeginTx(f.ctx, nil)
 	if err != nil {
 		t.Fatal("could not begin challenge issuance")
@@ -258,16 +274,45 @@ func (f *idemFixture) actor(t *testing.T) idemActor {
 	if _, err := fmt.Sscan(claims.SubjectID, &subjectID); err != nil || subjectID == 0 {
 		t.Fatal("synthetic session had no authenticated subject")
 	}
-	return idemActor{token: token, subjectID: subjectID, sessionID: claims.SessionID}
+	return idemActor{token: token, subjectID: subjectID, sessionID: claims.SessionID,
+		email: email, deviceKey: key, publicKey: public}
 }
 
 func (f *idemFixture) authorize(actor idemActor) Authorize {
 	return func(ctx context.Context, tx ReadTransaction, principal Actor, _ string, _ int) error {
-		if tx == nil || principal.SubjectID() != actor.subjectID {
+		if tx == nil || principal.SubjectID() != actor.subjectID || principal.SessionID() != actor.sessionID {
 			return ErrForbidden
 		}
 		return nil
 	}
+}
+
+func TestZeroActorHasNoIdentityAndRemainsRedacted(t *testing.T) {
+	var actor Actor
+	if actor.SubjectID() != 0 || actor.SessionID() != "" || actor.AgeVerified() {
+		t.Fatal("zero actor carried authenticated identity")
+	}
+	checkRedaction(t, []string{"forged-session-id"}, actor)
+}
+
+func TestActorIdentityComesFromValidatedPrincipalDetailsAndFieldsStayPrivate(t *testing.T) {
+	details := session.PrincipalDetails{SubjectID: 42, SessionID: "opaque-session-42", AgeVerified: true}
+	actor, err := actorFromPrincipalDetails(details)
+	if err != nil || actor.SubjectID() != details.SubjectID || actor.SessionID() != details.SessionID || !actor.AgeVerified() {
+		t.Fatal("validated principal details were not copied into the actor")
+	}
+	for _, invalid := range []session.PrincipalDetails{{}, {SessionID: "opaque-session-42"}, {SubjectID: 42}} {
+		if actor, err := actorFromPrincipalDetails(invalid); !errors.Is(err, ErrUnavailable) || actor.SubjectID() != 0 || actor.SessionID() != "" {
+			t.Fatal("incomplete principal details created an authenticated actor")
+		}
+	}
+	typeOfActor := reflect.TypeOf(Actor{})
+	for i := 0; i < typeOfActor.NumField(); i++ {
+		if typeOfActor.Field(i).PkgPath == "" {
+			t.Fatal("actor identity field became externally writable")
+		}
+	}
+	checkRedaction(t, []string{details.SessionID}, actor)
 }
 
 func (f *idemFixture) execute(actor idemActor, req Request, auth Authorize, mutate Mutate) (Result, error) {
