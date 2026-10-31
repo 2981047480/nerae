@@ -23,6 +23,13 @@ const (
 	maxSecretsSize = 32 * 1024
 )
 
+var workerSecretJSONFields = map[string]struct{}{
+	"smtp_address": {}, "smtp_username": {}, "smtp_password": {}, "smtp_from": {}, "smtp_timeout_ms": {},
+	"email_identity_index_key": {}, "email_identity_encryption_key": {}, "email_identity_key_id": {},
+	"email_code_hash_key": {}, "email_code_derivation_key": {}, "email_code_key_id": {},
+	"poll_interval_ms": {}, "recovery_batch": {}, "lease_ms": {}, "startup_timeout_ms": {},
+}
+
 var errWorkerConfig = errors.New("worker configuration unavailable")
 
 // workerSecrets is loaded only from an explicitly configured, permission-
@@ -55,7 +62,7 @@ func loadWorkerSecrets() (workerSecrets, error) {
 	if !filepath.IsAbs(path) {
 		return workerSecrets{}, errWorkerConfig
 	}
-	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return workerSecrets{}, errWorkerConfig
 	}
@@ -109,6 +116,9 @@ func validUniqueTopLevelJSON(raw []byte) bool {
 		if !ok {
 			return false
 		}
+		if _, canonical := workerSecretJSONFields[name]; !canonical {
+			return false
+		}
 		if _, duplicate := seen[name]; duplicate {
 			return false
 		}
@@ -142,12 +152,27 @@ func (s workerSecrets) valid() bool {
 		if err != nil || len(key) != 32 || base64.RawURLEncoding.EncodeToString(key) != encoded {
 			return false
 		}
+		if isZeroKey(key) {
+			return false
+		}
 		for _, prior := range decoded {
 			if bytes.Equal(key, prior) {
 				return false
 			}
 		}
 		decoded = append(decoded, key)
+	}
+	return true
+}
+
+func isZeroKey(key []byte) bool {
+	if len(key) == 0 {
+		return true
+	}
+	for _, value := range key {
+		if value != 0 {
+			return false
+		}
 	}
 	return true
 }

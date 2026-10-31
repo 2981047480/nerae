@@ -34,3 +34,14 @@ The process DSN continues to come from shared `NERAE_MYSQL_DSN`; the existing sh
 - Existing legacy lazy-initializing writers must be stopped before deploying the epoch bootstrap path. API processes must be configured with the same identity and code keys/IDs. Missing schema, key mismatch, history without required epochs, or database failure causes startup to fail closed.
 - Code-hasher epoch/version protection remains absent; identity/code epoch checks do not solve that key-rotation gap.
 - The worker is assembled as a separate process only. The API production routes, trusted proxy boundary, public HTTPS deployment, QQ delivery, app installation, real login and new-device approval exchange remain outside this evidence.
+
+## Protected configuration boundary follow-up
+
+On base `68e7ea0`, the secrets-file reader now opens with `O_NONBLOCK` before checking the opened descriptor is a regular file. This prevents FIFO paths from hanging startup while preserving final-component `O_NOFOLLOW`, owner/mode/size checks, and bounded reads. Top-level JSON member names must exactly match the documented tags; case variants and case-variant duplicates fail before struct decoding. All four configured key values must be distinct, canonical 32-byte base64url encodings and nonzero.
+
+Verification (no database access):
+
+- `GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOCACHE=/private/tmp/nerae-go-api-cache GOMODCACHE=/private/tmp/nerae-go-api-mod /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race -run 'TestLoadWorkerSecrets|TestWorkerSecrets|TestWorkerDSN' ./cmd/worker` — exit `0`; includes regular-file success, FIFO nonblocking rejection, canonical JSON, malformed/duplicate/case-variant field rejection, zero-key rejection, redaction, and DSN TLS policy.
+- `/private/tmp/nerae-go-toolchain-1.27.3/go/bin/gofmt -w apps/api/cmd/worker/protected_config.go apps/api/cmd/worker/protected_config_test.go` and `git diff --check` — exit `0`.
+
+This does not add or claim an email-code hasher epoch; that consistency/rotation gap remains a separate follow-up.

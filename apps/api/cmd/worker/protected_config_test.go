@@ -8,7 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 func validSecretsForTest() workerSecrets {
@@ -86,6 +88,26 @@ func TestLoadWorkerSecretsRequiresProtectedExplicitConfig(t *testing.T) {
 			t.Fatal("symlink config accepted")
 		}
 	})
+	t.Run("fifo does not block", func(t *testing.T) {
+		fifo := filepath.Join(t.TempDir(), "worker-secrets.fifo")
+		if err := syscall.Mkfifo(fifo, 0600); err != nil {
+			t.Fatal("could not prepare FIFO fixture")
+		}
+		t.Setenv(secretsFileEnv, fifo)
+		result := make(chan error, 1)
+		go func() {
+			_, err := loadWorkerSecrets()
+			result <- err
+		}()
+		select {
+		case err := <-result:
+			if err == nil {
+				t.Fatal("FIFO config accepted")
+			}
+		case <-time.After(time.Second):
+			t.Fatal("opening a FIFO config blocked")
+		}
+	})
 	t.Run("valid", func(t *testing.T) {
 		file := writeSecretsFile(t, marshalSecrets(t, validSecretsForTest()), 0600)
 		t.Setenv(secretsFileEnv, file)
@@ -105,6 +127,16 @@ func TestWorkerSecretsRejectMalformedKeysAndDuplicateFields(t *testing.T) {
 		{"padded encoding", func(c *workerSecrets) { c.EmailCodeHashKey += "=" }},
 		{"short key", func(c *workerSecrets) { c.EmailCodeHashKey = base64.RawURLEncoding.EncodeToString([]byte("short")) }},
 		{"reused key", func(c *workerSecrets) { c.EmailCodeHashKey = c.EmailIdentityIndexKey }},
+		{"zero identity index key", func(c *workerSecrets) {
+			c.EmailIdentityIndexKey = base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+		}},
+		{"zero identity encryption key", func(c *workerSecrets) {
+			c.EmailIdentityEncryptionKey = base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+		}},
+		{"zero code hash key", func(c *workerSecrets) { c.EmailCodeHashKey = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) }},
+		{"zero code derivation key", func(c *workerSecrets) {
+			c.EmailCodeDerivationKey = base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+		}},
 		{"missing identity key id", func(c *workerSecrets) { c.EmailIdentityKeyID = "" }},
 		{"invalid interval", func(c *workerSecrets) { c.PollIntervalMS = 1 }},
 		{"missing smtp secret", func(c *workerSecrets) { c.SMTPPassword = "" }},
@@ -131,6 +163,22 @@ func TestWorkerSecretsRejectMalformedKeysAndDuplicateFields(t *testing.T) {
 		t.Setenv(secretsFileEnv, file)
 		if _, err := loadWorkerSecrets(); err == nil {
 			t.Fatal("duplicate field accepted")
+		}
+	})
+	t.Run("noncanonical case variant alone", func(t *testing.T) {
+		raw := strings.Replace(string(marshalSecrets(t, valid)), `"smtp_password"`, `"SMTP_PASSWORD"`, 1)
+		file := writeSecretsFile(t, []byte(raw), 0600)
+		t.Setenv(secretsFileEnv, file)
+		if _, err := loadWorkerSecrets(); err == nil {
+			t.Fatal("case-variant field accepted")
+		}
+	})
+	t.Run("noncanonical case variant with canonical field", func(t *testing.T) {
+		raw := strings.Replace(string(marshalSecrets(t, valid)), `"smtp_password":`, `"SMTP_PASSWORD":"alternate", "smtp_password":`, 1)
+		file := writeSecretsFile(t, []byte(raw), 0600)
+		t.Setenv(secretsFileEnv, file)
+		if _, err := loadWorkerSecrets(); err == nil {
+			t.Fatal("case-variant duplicate field accepted")
 		}
 	})
 	t.Run("trailing document", func(t *testing.T) {
