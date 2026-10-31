@@ -26,7 +26,7 @@ const (
 var workerSecretJSONFields = map[string]struct{}{
 	"smtp_address": {}, "smtp_username": {}, "smtp_password": {}, "smtp_from": {}, "smtp_timeout_ms": {},
 	"email_identity_index_key": {}, "email_identity_encryption_key": {}, "email_identity_key_id": {},
-	"email_code_hash_key": {}, "email_code_derivation_key": {}, "email_code_key_id": {},
+	"email_code_hash_key": {}, "email_code_derivation_key": {}, "email_code_key_id": {}, "email_code_hash_key_id": {},
 	"poll_interval_ms": {}, "recovery_batch": {}, "lease_ms": {}, "startup_timeout_ms": {},
 }
 
@@ -44,6 +44,7 @@ type workerSecrets struct {
 	EmailIdentityEncryptionKey string `json:"email_identity_encryption_key"`
 	EmailIdentityKeyID         string `json:"email_identity_key_id"`
 	EmailCodeHashKey           string `json:"email_code_hash_key"`
+	EmailCodeHashKeyID         string `json:"email_code_hash_key_id"`
 	EmailCodeDerivationKey     string `json:"email_code_derivation_key"`
 	EmailCodeKeyID             string `json:"email_code_key_id"`
 	PollIntervalMS             int64  `json:"poll_interval_ms"`
@@ -138,7 +139,7 @@ func validUniqueTopLevelJSON(raw []byte) bool {
 
 func (s workerSecrets) valid() bool {
 	if s.SMTPAddress == "" || s.SMTPUsername == "" || s.SMTPPassword == "" || s.SMTPFrom == "" ||
-		!validKeyID(s.EmailIdentityKeyID) || !validKeyID(s.EmailCodeKeyID) ||
+		!validKeyID(s.EmailIdentityKeyID) || !validKeyID(s.EmailCodeKeyID) || !validKeyID(s.EmailCodeHashKeyID) ||
 		s.SMTPTimeoutMS < 1 || s.SMTPTimeoutMS > int64(time.Minute/time.Millisecond) ||
 		s.PollIntervalMS < 100 || s.PollIntervalMS > int64(time.Minute/time.Millisecond) ||
 		s.RecoveryBatch < 1 || s.RecoveryBatch > 500 || s.LeaseMS < 1000 || s.LeaseMS > int64((10*time.Minute)/time.Millisecond) ||

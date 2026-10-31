@@ -72,6 +72,23 @@ func TestWorkerProcessStartupValidatesEpochAndSendsWithLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("protected startup config rejected")
 	}
+	// A late epoch mismatch must roll back the identity and derivation epoch
+	// rows that startup just initialized earlier in this same transaction.
+	if _, err := db.ExecContext(ctx, `INSERT INTO auth_email_code_hash_key_epoch (slot,key_id,key_tag) VALUES (1,?,?)`, []byte("wrong-hash-key"), bytes.Repeat([]byte{0x7f}, 32)); err != nil {
+		t.Fatal("could not prepare code hash epoch mismatch")
+	}
+	if _, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, loaded, slog.New(slog.NewTextHandler(io.Discard, nil))); err == nil {
+		t.Fatal("startup accepted mismatched code hash epoch")
+	}
+	for _, table := range []string{"auth_email_identity_key_epoch", "auth_email_code_key_epoch"} {
+		var count int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("failed startup partially committed %s", table)
+		}
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_email_code_hash_key_epoch WHERE slot=1`); err != nil {
+		t.Fatal("could not remove synthetic hash epoch mismatch")
+	}
 	startupRuntime, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, loaded, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal("startup epoch verification failed on a fresh private schema")
@@ -148,6 +165,22 @@ func TestWorkerProcessStartupValidatesEpochAndSendsWithLocalTLS(t *testing.T) {
 	if _, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, wrongIdentity, slog.New(slog.NewTextHandler(io.Discard, nil))); err == nil {
 		t.Fatal("mismatched identity epoch accepted")
 	}
+	wrongHasherKey := loaded
+	wrongHasherKey.EmailCodeHashKey = base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x55}, 32))
+	if _, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, wrongHasherKey, slog.New(slog.NewTextHandler(io.Discard, nil))); err == nil {
+		t.Fatal("mismatched code hash key accepted")
+	}
+	wrongHasherID := loaded
+	wrongHasherID.EmailCodeHashKeyID = "different-hash-key-v1"
+	if _, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, wrongHasherID, slog.New(slog.NewTextHandler(io.Discard, nil))); err == nil {
+		t.Fatal("mismatched code hash key id accepted")
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM auth_email_code_hash_key_epoch WHERE slot=1`); err != nil {
+		t.Fatal("private test could not remove code hash epoch")
+	}
+	if _, err := newRuntime(ctx, config.Config{MySQLDSN: dsn}, loaded, slog.New(slog.NewTextHandler(io.Discard, nil))); err == nil {
+		t.Fatal("missing code hash epoch was recreated despite challenge history")
+	}
 	if _, err := db.ExecContext(ctx, `DELETE FROM auth_email_code_key_epoch WHERE slot=1`); err != nil {
 		t.Fatal("private test could not remove code epoch")
 	}
@@ -184,7 +217,7 @@ func enqueueStartupChallenge(t *testing.T, ctx context.Context, r *runtime) (str
 	if err != nil {
 		t.Fatal("test replay store setup failed")
 	}
-	challenges, err := challenge.NewStore(r.hasher, replay, r.identities, challenge.Policy{
+	challenges, err := challenge.NewStore(r.hasher, replay, r.identities, r.hasherID, challenge.Policy{
 		ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 		DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second},
 	})

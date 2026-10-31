@@ -14,10 +14,10 @@ The worker validates a UTC, parsed MySQL DSN and requires `tls=true` for TCP con
 
 - SMTP: `smtp_address`, `smtp_username`, `smtp_password`, `smtp_from`, `smtp_timeout_ms`.
 - Identity protection: `email_identity_index_key`, `email_identity_encryption_key`, `email_identity_key_id`.
-- Email code verification/delivery: `email_code_hash_key`, `email_code_derivation_key`, `email_code_key_id`.
+- Email code verification/delivery: `email_code_hash_key`, required `email_code_hash_key_id`, `email_code_derivation_key`, `email_code_key_id`.
 - Loop bounds: `poll_interval_ms`, `recovery_batch`, `lease_ms`, `startup_timeout_ms`.
 
-The process DSN continues to come from shared `NERAE_MYSQL_DSN`; the existing shared config loader also requires a syntactically valid `NERAE_REDIS_URL`, but this worker does not connect to Redis. `email_identity_key_id` plus the index/encryption keys feed the existing identity epoch tag. `email_code_key_id` plus the derivation key feed `auth_email_code_key_epoch`. The code hasher key currently has no persisted epoch in the schema; API and worker must therefore receive the same protected value, and its rotation requires a coordinated stopped deployment. It is not covered by the epoch checks in this change.
+The process DSN continues to come from shared `NERAE_MYSQL_DSN`; the existing shared config loader also requires a syntactically valid `NERAE_REDIS_URL`, but this worker does not connect to Redis. `email_identity_key_id` plus the index/encryption keys feed the existing identity epoch tag. `email_code_key_id` plus the derivation key feed `auth_email_code_key_epoch`; `email_code_hash_key_id` plus the independent hasher key feed `auth_email_code_hash_key_epoch`. Startup checks all three in the order identity → derivation → code hash, in a single transaction. A missing code-hash epoch can be created only when the email challenge history tables are empty; any later mismatch causes the entire startup transaction to roll back. This task wires the startup check; it does not change challenge-consumption runtime code. The API-side per-use hash epoch lock and coordinated rotation remain separate integration work.
 
 ## Verification
 
@@ -32,7 +32,7 @@ The process DSN continues to come from shared `NERAE_MYSQL_DSN`; the existing sh
 - No QQ/real SMTP account, real mailbox, external network, or delivery was used. The TLS sink proves local protocol and startup wiring only.
 - The secrets file mechanism validates local ownership and mode; deployment must mount/create it securely and provide stable high-entropy independent keys. Neither this code nor file permissions provide a secrets manager, key rotation, backup/recovery, or fleet-wide provisioning.
 - Existing legacy lazy-initializing writers must be stopped before deploying the epoch bootstrap path. API processes must be configured with the same identity and code keys/IDs. Missing schema, key mismatch, history without required epochs, or database failure causes startup to fail closed.
-- Code-hasher epoch/version protection remains absent; identity/code epoch checks do not solve that key-rotation gap.
+- Startup code-hasher epoch is now checked as described above. The Lead-reviewed prerequisite commit adds hash-epoch locks to challenge and Outbox operations, and this task passes the configured key ID through worker construction. API-side runtime behavior remains subject to Lead's independent integrated review; coordinated key rotation and fleet rollout remain unverified.
 - The worker is assembled as a separate process only. The API production routes, trusted proxy boundary, public HTTPS deployment, QQ delivery, app installation, real login and new-device approval exchange remain outside this evidence.
 
 ## Protected configuration boundary follow-up
@@ -44,4 +44,10 @@ Verification (no database access):
 - `GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOCACHE=/private/tmp/nerae-go-api-cache GOMODCACHE=/private/tmp/nerae-go-api-mod /private/tmp/nerae-go-toolchain-1.27.3/go/bin/go test -race -run 'TestLoadWorkerSecrets|TestWorkerSecrets|TestWorkerDSN' ./cmd/worker` — exit `0`; includes regular-file success, FIFO nonblocking rejection, canonical JSON, malformed/duplicate/case-variant field rejection, zero-key rejection, redaction, and DSN TLS policy.
 - `/private/tmp/nerae-go-toolchain-1.27.3/go/bin/gofmt -w apps/api/cmd/worker/protected_config.go apps/api/cmd/worker/protected_config_test.go` and `git diff --check` — exit `0`.
 
-This does not add or claim an email-code hasher epoch; that consistency/rotation gap remains a separate follow-up.
+That protected-configuration change did not yet add a code-hasher epoch. The later worker-startup follow-up below adds its required ID and startup initialization/check, while the Lead-reviewed prerequisite adds per-use epoch locks to the auth modules.
+
+## Code-hasher epoch startup follow-up
+
+On worker candidate base `90383ad` plus Lead-reviewed runtime API `64d2882`, the worker requires `email_code_hash_key_id`, passes it through the Outbox and challenge constructors, and calls `codeepoch.Initialize` after identity and code-derivation epoch initialization in the same startup transaction. A missing hash epoch is initialized only against empty challenge history. Tests cover wrong hasher key and ID, missing hash epoch after a committed challenge, same-config restart through the `run` path, rollback of earlier epoch inserts after a later hash-epoch mismatch, and local TLS SMTP send.
+
+The final `go test -race -count=1 ./cmd/worker` and `python3 -B docs/evidence/A01/A01-19/mysql_smoke.py --worker-startup-only` both exited 0. The default full-package harness currently fails to compile because existing issuance/mailworker test fixtures have not yet adopted the newly reviewed constructor parameters; only the worker-startup-only run is claimed here. The harness applied migrations 0001, 0002, user/0001, 0003, 0007, and 0010 to its private schemas. API-side runtime semantics, key rotation, production entrypoint assembly, real SMTP, and deployment remain unverified/out of scope.

@@ -20,7 +20,8 @@ func validSecretsForTest() workerSecrets {
 		SMTPFrom: "worker@example.test", SMTPTimeoutMS: 5000,
 		EmailIdentityIndexKey: encode(0x11), EmailIdentityEncryptionKey: encode(0x22), EmailIdentityKeyID: "identity-v1",
 		EmailCodeHashKey: encode(0x33), EmailCodeDerivationKey: encode(0x44), EmailCodeKeyID: "code-v1",
-		PollIntervalMS: 1000, RecoveryBatch: 10, LeaseMS: 20000, StartupTimeoutMS: 5000,
+		EmailCodeHashKeyID: "code-hash-v1",
+		PollIntervalMS:     1000, RecoveryBatch: 10, LeaseMS: 20000, StartupTimeoutMS: 5000,
 	}
 }
 
@@ -138,6 +139,8 @@ func TestWorkerSecretsRejectMalformedKeysAndDuplicateFields(t *testing.T) {
 			c.EmailCodeDerivationKey = base64.RawURLEncoding.EncodeToString(make([]byte, 32))
 		}},
 		{"missing identity key id", func(c *workerSecrets) { c.EmailIdentityKeyID = "" }},
+		{"missing code hash key id", func(c *workerSecrets) { c.EmailCodeHashKeyID = "" }},
+		{"invalid code hash key id", func(c *workerSecrets) { c.EmailCodeHashKeyID = "../bad" }},
 		{"invalid interval", func(c *workerSecrets) { c.PollIntervalMS = 1 }},
 		{"missing smtp secret", func(c *workerSecrets) { c.SMTPPassword = "" }},
 	}

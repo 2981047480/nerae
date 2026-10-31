@@ -2,6 +2,7 @@
 """Create a disposable socket-only MySQL and run A01-19 local TLS tests."""
 from __future__ import annotations
 
+import argparse
 import getpass
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ GO = Path("/private/tmp/nerae-go-toolchain-1.27.3/go/bin/go")
 TEMP = Path("/private/tmp")
 
 
-def main() -> int:
+def main(startup_only: bool = False) -> int:
     binaries = [MYSQL / "bin/mysqld", MYSQL / "bin/mysql", MYSQL / "bin/mysqladmin", GO]
     if any(not binary.is_file() for binary in binaries):
         raise RuntimeError("required local MySQL or Go executable is missing")
@@ -66,7 +67,7 @@ def main() -> int:
 
             migration_names = ("auth/0001_device_proof_replay.up.sql", "auth/0002_email_challenge.up.sql",
                                "user/0001_user.up.sql", "auth/0003_email_identity.up.sql",
-                               "auth/0007_email_outbox.up.sql")
+                               "auth/0007_email_outbox.up.sql", "auth/0010_email_code_hash_key_epoch.up.sql")
             migrations = "\n".join((ROOT / "apps/api/migrations" / name).read_text() for name in migration_names)
             databases = ("nerae_email_worker_test", "nerae_email_outbox_test", "nerae_email_smtp_test",
                          "nerae_email_worker_startup_test")
@@ -84,9 +85,10 @@ def main() -> int:
                         "NERAE_EMAIL_OUTBOX_TEST_DSN": f"root@unix({sock})/nerae_email_outbox_test?parseTime=true&loc=UTC",
                         "NERAE_EMAIL_OUTBOX_SMTP_TEST_DSN": f"root@unix({sock})/nerae_email_smtp_test?parseTime=true&loc=UTC",
                         "NERAE_WORKER_STARTUP_TEST_DSN": f"root@unix({sock})/nerae_email_worker_startup_test?parseTime=true&loc=UTC"}
-            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v",
-                                     "./internal/modules/auth/mailworker", "./internal/modules/auth/issuance",
-                                     "./internal/modules/auth/mail", "./cmd/worker"], cwd=ROOT / "apps/api", env=test_env,
+            packages = (["./cmd/worker"] if startup_only else
+                        ["./internal/modules/auth/mailworker", "./internal/modules/auth/issuance",
+                         "./internal/modules/auth/mail", "./cmd/worker"])
+            result = subprocess.run([str(GO), "test", "-race", "-count=1", "-v", *packages], cwd=ROOT / "apps/api", env=test_env,
                                     timeout=240, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     text=True, check=False)
             print(result.stdout, end="")
@@ -111,14 +113,18 @@ def main() -> int:
         if succeeded and (child is None or child.poll() is not None):
             shutil.rmtree(base)
     if succeeded:
-        print("PASS: isolated socket-only MySQL and loopback TLS SMTP worker test; private directory removed")
+        scope = "worker-startup" if startup_only else "worker packages"
+        print(f"PASS: isolated socket-only MySQL and loopback TLS {scope} test; private directory removed")
         return 0
     return 1
 
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--worker-startup-only", action="store_true",
+                            help="run only cmd/worker integration against the private MySQL and local TLS sink")
+        sys.exit(main(parser.parse_args().worker_startup_only))
     except RuntimeError as error:
         print(f"FAIL: {error}", file=sys.stderr)
         sys.exit(1)

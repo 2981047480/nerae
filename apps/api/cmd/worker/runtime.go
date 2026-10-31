@@ -11,6 +11,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"nerae/api/internal/config"
 	"nerae/api/internal/modules/auth/bootstrap"
+	"nerae/api/internal/modules/auth/codeepoch"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/issuance"
 	authmail "nerae/api/internal/modules/auth/mail"
@@ -28,6 +29,7 @@ type runtime struct {
 	outbox     *issuance.Outbox
 	identities *domain.EmailIdentityProtector
 	hasher     *domain.EmailCodeHasher
+	hasherID   string
 	deriver    *issuance.Deriver
 }
 
@@ -81,7 +83,7 @@ func newRuntime(ctx context.Context, cfg config.Config, secrets workerSecrets, l
 	if err != nil {
 		return nil, errWorkerStartup
 	}
-	outbox, err := issuance.NewOutbox(deriver, secrets.EmailCodeKeyID, hasher, identities, mailer,
+	outbox, err := issuance.NewOutbox(deriver, secrets.EmailCodeKeyID, hasher, secrets.EmailCodeHashKeyID, identities, mailer,
 		time.Duration(secrets.LeaseMS)*time.Millisecond)
 	if err != nil {
 		return nil, errWorkerStartup
@@ -120,6 +122,12 @@ func newRuntime(ctx context.Context, cfg config.Config, secrets workerSecrets, l
 	if err := outbox.InitializeCodeKey(startupCtx, tx); err != nil {
 		return nil, errWorkerStartup
 	}
+	// Keep startup epoch acquisition ordered like challenge writes: identity,
+	// code derivation, then code hash. The caller owns this single transaction.
+	hashEpoch, err := codeepoch.New(hasher, secrets.EmailCodeHashKeyID)
+	if err != nil || hashEpoch.Initialize(startupCtx, tx) != nil {
+		return nil, errWorkerStartup
+	}
 	if err := tx.Commit(); err != nil {
 		// Unknown commit outcome is not retried. The next process start will
 		// verify the epoch row against the same configured keys.
@@ -130,7 +138,7 @@ func newRuntime(ctx context.Context, cfg config.Config, secrets workerSecrets, l
 		return nil, errWorkerStartup
 	}
 	closeOnFailure = false
-	return &runtime{db: db, worker: worker, outbox: outbox, identities: identities, hasher: hasher, deriver: deriver}, nil
+	return &runtime{db: db, worker: worker, outbox: outbox, identities: identities, hasher: hasher, hasherID: secrets.EmailCodeHashKeyID, deriver: deriver}, nil
 }
 
 func validWorkerDSN(value string) bool {
