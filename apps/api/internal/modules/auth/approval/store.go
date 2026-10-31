@@ -47,6 +47,115 @@ type Store struct {
 	now      func() time.Time
 }
 
+// maxPendingListItems is a conservative internal bound. The wire contract has
+// no pagination semantics, so an overfull result fails closed instead of
+// returning a misleading partial list.
+const maxPendingListItems = 100
+
+// PendingListItem contains only fields permitted by the login-approval list
+// contract. It intentionally excludes challenge, device, key and secret data.
+type PendingListItem struct {
+	ID             string    `json:"id"`
+	ComparisonCode string    `json:"comparisonCode"`
+	CreatedAt      time.Time `json:"createdAt"`
+	ExpiresAt      time.Time `json:"expiresAt"`
+}
+
+func (PendingListItem) String() string   { return "PendingApprovalListItem{redacted}" }
+func (PendingListItem) GoString() string { return "PendingApprovalListItem{redacted}" }
+func (PendingListItem) LogValue() slog.Value {
+	return slog.StringValue("PendingApprovalListItem{redacted}")
+}
+
+type PendingList struct {
+	Items []PendingListItem `json:"items"`
+}
+
+func (PendingList) String() string       { return "PendingApprovalList{redacted}" }
+func (PendingList) GoString() string     { return "PendingApprovalList{redacted}" }
+func (PendingList) LogValue() slog.Value { return slog.StringValue("PendingApprovalList{redacted}") }
+
+// ListPending reads the current subject's pending approvals from a transaction
+// authenticated by Principal. The caller must commit the transaction before
+// exposing the returned list. This primitive is not an HTTP handler and does
+// not authorize a decision; Decide currently retains its same-identity rule.
+func (s *Store) ListPending(ctx context.Context, tx *sql.Tx, principal *session.Principal) (PendingList, error) {
+	if s == nil || s.now == nil || ctx == nil || tx == nil || principal == nil {
+		return PendingList{}, ErrUnavailable
+	}
+	actor, err := principal.ForTransaction(ctx, tx)
+	if err != nil || actor.SubjectID == 0 || actor.SessionID == "" {
+		return PendingList{}, ErrUnavailable
+	}
+	if s.checkEpoch(ctx, tx) != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	var status string
+	var tokenVersion, identityVersion uint64
+	if err := tx.QueryRowContext(ctx, `SELECT status, token_version, identity_version FROM user WHERE id = ? FOR UPDATE`, actor.SubjectID).
+		Scan(&status, &tokenVersion, &identityVersion); err != nil || status != "active" || tokenVersion == 0 || identityVersion == 0 {
+		return PendingList{}, ErrUnavailable
+	}
+	var sessionUser uint64
+	var sessionState string
+	if err := tx.QueryRowContext(ctx, `SELECT user_id, state FROM auth_session WHERE id = ? FOR UPDATE`, []byte(actor.SessionID)).
+		Scan(&sessionUser, &sessionState); err != nil || sessionUser != actor.SubjectID || sessionState != "active" {
+		return PendingList{}, ErrUnavailable
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT a.id, a.comparison_code,
+		DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s.%f'),
+		DATE_FORMAT(a.expires_at, '%Y-%m-%d %H:%i:%s.%f')
+		FROM auth_login_approval a
+		JOIN login_identity i ON i.id = a.identity_id AND i.user_id = a.user_id
+			AND i.kind = 'email' AND i.provider_scope = 'beta-email' AND i.state = 'active'
+		WHERE a.user_id = ? AND a.token_version = ? AND a.identity_version = ? AND a.state = 'pending'
+			AND a.expires_at > UTC_TIMESTAMP(6)
+		ORDER BY a.created_at ASC, a.id ASC LIMIT ? FOR UPDATE`, actor.SubjectID, tokenVersion, identityVersion, maxPendingListItems+1)
+	if err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	defer rows.Close()
+	items := make([]PendingListItem, 0, maxPendingListItems)
+	for rows.Next() {
+		var idRaw, code, createdRaw, expiresRaw []byte
+		if err := rows.Scan(&idRaw, &code, &createdRaw, &expiresRaw); err != nil {
+			return PendingList{}, ErrUnavailable
+		}
+		if len(items) == maxPendingListItems {
+			return PendingList{}, ErrUnavailable
+		}
+		created, createdErr := time.Parse("2006-01-02 15:04:05.000000", string(createdRaw))
+		expires, expiresErr := time.Parse("2006-01-02 15:04:05.000000", string(expiresRaw))
+		id := string(idRaw)
+		if len(id) < 22 || len(id) > 128 || !validComparisonCode(string(code)) || createdErr != nil || expiresErr != nil || !expires.After(created) {
+			return PendingList{}, ErrUnavailable
+		}
+		items = append(items, PendingListItem{ID: id, ComparisonCode: string(code), CreatedAt: created.UTC(), ExpiresAt: expires.UTC()})
+	}
+	if rows.Err() != nil || rows.Close() != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	// The SQL predicate uses statement-time UTC. Recheck after acquiring row
+	// locks so a wait cannot return an approval that expired while blocked.
+	var nowRaw string
+	if err := tx.QueryRowContext(ctx, `SELECT DATE_FORMAT(UTC_TIMESTAMP(6), '%Y-%m-%d %H:%i:%s.%f')`).Scan(&nowRaw); err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	dbNow, err := time.Parse("2006-01-02 15:04:05.000000", nowRaw)
+	if err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	for _, item := range items {
+		if !item.ExpiresAt.After(dbNow) {
+			return PendingList{}, ErrUnavailable
+		}
+	}
+	if _, err := principal.ForTransaction(ctx, tx); err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	return PendingList{Items: items}, nil
+}
+
 // NewStore requires an externally generated 256-bit HMAC key and explicit
 // bounded policy. It does not load secrets or provide rotation.
 func NewStore(resolver *identity.Resolver, key []byte, keyID string, policy Policy) (*Store, error) {

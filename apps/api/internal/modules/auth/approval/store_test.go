@@ -308,6 +308,134 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		return pending, data
 	}
 	pending, data := begin()
+	listFor := func(credential string) (PendingList, error) {
+		t.Helper()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return PendingList{}, err
+		}
+		defer tx.Rollback()
+		principal, err := auth.Authenticate(ctx, tx, credential)
+		if err != nil {
+			return PendingList{}, err
+		}
+		result, err := store.ListPending(ctx, tx, principal)
+		if err != nil {
+			return PendingList{}, err
+		}
+		if err := tx.Commit(); err != nil {
+			return PendingList{}, ErrUnavailable
+		}
+		return result, nil
+	}
+	listed, err := listFor(token)
+	if err != nil || len(listed.Items) != 1 || listed.Items[0].ID != data.ID || listed.Items[0].ComparisonCode != data.ComparisonCode ||
+		!listed.Items[0].ExpiresAt.Equal(data.ExpiresAt) || listed.Items[0].CreatedAt.IsZero() {
+		t.Fatalf("authenticated subject could not read pending summary: err=%v count=%d idMatch=%t codeMatch=%t expiryMatch=%t created=%t",
+			err, len(listed.Items), len(listed.Items) == 1 && listed.Items[0].ID == data.ID,
+			len(listed.Items) == 1 && listed.Items[0].ComparisonCode == data.ComparisonCode,
+			len(listed.Items) == 1 && listed.Items[0].ExpiresAt.Equal(data.ExpiresAt),
+			len(listed.Items) == 1 && !listed.Items[0].CreatedAt.IsZero())
+	}
+	otherList, err := listFor(otherToken)
+	if err != nil || len(otherList.Items) != 0 {
+		t.Fatal("pending approval list crossed subject boundaries")
+	}
+	encodedList, err := json.Marshal(listed)
+	if err != nil || !bytes.Contains(encodedList, []byte(`"comparisonCode"`)) || bytes.Contains(encodedList, []byte(data.Secret)) ||
+		bytes.Contains(encodedList, []byte(data.Nonce)) || bytes.Contains(encodedList, []byte(`"secret"`)) || bytes.Contains(encodedList, []byte(`"nonce"`)) {
+		t.Fatal("pending approval list exposed fields outside its bounded contract")
+	}
+	lockedListTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin concurrent list check")
+	}
+	lockedPrincipal, err := auth.Authenticate(ctx, lockedListTx, token)
+	if err != nil {
+		_ = lockedListTx.Rollback()
+		t.Fatal("could not authenticate concurrent list check")
+	}
+	if _, err := store.ListPending(ctx, lockedListTx, lockedPrincipal); err != nil {
+		_ = lockedListTx.Rollback()
+		t.Fatal("could not lock pending row for list snapshot")
+	}
+	updateStarted := make(chan struct{})
+	updateDone := make(chan error, 1)
+	go func() {
+		close(updateStarted)
+		_, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET state='denied', decision_session_id=?, decided_at=UTC_TIMESTAMP(6) WHERE id=?`,
+			[]byte(claims.SessionID), []byte(data.ID))
+		updateDone <- err
+	}()
+	<-updateStarted
+	select {
+	case <-updateDone:
+		_ = lockedListTx.Rollback()
+		t.Fatal("approval mutation did not wait for the list transaction lock")
+	case <-time.After(100 * time.Millisecond):
+	}
+	if err := lockedListTx.Commit(); err != nil {
+		t.Fatal("could not commit list snapshot")
+	}
+	select {
+	case err := <-updateDone:
+		if err != nil {
+			t.Fatal("concurrent approval mutation failed after list commit")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("concurrent approval mutation remained blocked after list commit")
+	}
+	if afterDecision, err := listFor(token); err != nil || len(afterDecision.Items) != 0 {
+		t.Fatal("decided approval remained visible in a fresh list")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET state='pending', decision_session_id=NULL, decided_at=NULL, expires_at=? WHERE id=?`,
+		timestamp(data.ExpiresAt), []byte(data.ID)); err != nil {
+		t.Fatal("could not restore synthetic pending approval")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at=UTC_TIMESTAMP(6)-INTERVAL 1 HOUR,
+		expires_at=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE id=?`, []byte(data.ID)); err != nil {
+		t.Fatal("could not stage expired list item")
+	}
+	if expiredList, err := listFor(token); err != nil || len(expiredList.Items) != 0 {
+		t.Fatal("expired approval was returned by pending list")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at=?, expires_at=? WHERE id=?`,
+		timestamp(listed.Items[0].CreatedAt), timestamp(data.ExpiresAt), []byte(data.ID)); err != nil {
+		t.Fatal("could not restore pending approval expiry")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked', revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(claims.SessionID)); err != nil {
+		t.Fatal("could not stage revoked list session")
+	}
+	if _, err := listFor(token); err == nil {
+		t.Fatal("revoked session read a pending approval list")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='active', revoked_at=NULL WHERE id=?`, []byte(claims.SessionID)); err != nil {
+		t.Fatal("could not restore isolated list session")
+	}
+	// The internal cap is deliberately fail-closed: cap+1 is detected without
+	// returning any prefix as if it were the complete pending list.
+	baseTime := time.Now().UTC().Truncate(time.Microsecond)
+	for i := 0; i < maxPendingListItems; i++ {
+		id, idErr := domain.GenerateChallengeID()
+		challengeID, challengeErr := domain.GenerateChallengeID()
+		if idErr != nil || challengeErr != nil {
+			t.Fatal("could not generate isolated list-cap identifiers")
+		}
+		created := timestamp(baseTime.Add(time.Duration(i+1) * time.Microsecond))
+		expires := timestamp(baseTime.Add(5 * time.Minute))
+		if _, err := db.ExecContext(ctx, `INSERT INTO auth_login_approval
+			(id,user_id,identity_id,challenge_id,token_version,identity_version,target_fingerprint,public_x,public_y,
+			 secret_digest,key_id,nonce,comparison_code,state,created_at,expires_at)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'pending',?,?)`, []byte(id), claims.SubjectID, []byte(pending.identityID), []byte(challengeID),
+			pending.tokenVersion, pending.identityVersion, bytes.Repeat([]byte{13}, 32),
+			strings.Repeat("A", 43), strings.Repeat("B", 43), bytes.Repeat([]byte{14}, 32), []byte(store.keyID),
+			[]byte(strings.Repeat("C", 43)), fmt.Sprintf("%06d", i), created, expires); err != nil {
+			t.Fatal("could not seed bounded approval list")
+		}
+	}
+	if overfull, err := listFor(token); !errors.Is(err, ErrUnavailable) || len(overfull.Items) != 0 {
+		t.Fatal("overfull pending list returned partial data")
+	}
 	if _, err := db.ExecContext(ctx, `UPDATE login_identity SET subject_lookup_hmac = ? WHERE id = ?`, bytes.Repeat([]byte{11}, 32), []byte(pending.identityID)); err != nil {
 		t.Fatal(err)
 	}
