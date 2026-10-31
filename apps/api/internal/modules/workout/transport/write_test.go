@@ -261,6 +261,10 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		t.Fatalf("valid unsupported plan create returned %d, want 503", got.status)
 	}
 
+	missingReplay := request(http.MethodPost, "/me/sessions/replay", createBody, tokenA, "create-key-0001")
+	if missingReplay.status != http.StatusServiceUnavailable || missingReplay.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("missing receipt did not fail closed without a replay marker")
+	}
 	created := request(http.MethodPost, "/me/sessions", createBody, tokenA, "create-key-0001")
 	if created.status != http.StatusCreated || created.headers.Get("Idempotency-Key-Expires-At") == "" || created.headers.Get("X-Request-ID") == "" {
 		t.Fatalf("free creation failed or omitted success headers: %d %v %s", created.status, created.headers, created.body)
@@ -281,6 +285,13 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	createReplay := request(http.MethodPost, "/me/sessions", createBody, tokenA, "create-key-0001")
 	if createReplay.status != http.StatusCreated || !bytes.Equal(createReplay.body, created.body) || createReplay.headers.Get("Idempotency-Key-Expires-At") != created.headers.Get("Idempotency-Key-Expires-At") {
 		t.Fatal("create idempotency replay did not return the original result")
+	}
+	createOnly := request(http.MethodPost, "/me/sessions/replay", createBody, tokenA, "create-key-0001")
+	if createOnly.status != created.status || !bytes.Equal(createOnly.body, created.body) || createOnly.headers.Get("Idempotency-Replayed") != "true" || createOnly.headers.Get("Idempotency-Key-Expires-At") != created.headers.Get("Idempotency-Key-Expires-At") {
+		t.Fatal("create replay-only route did not return the committed receipt")
+	}
+	if got := request(http.MethodPost, "/me/sessions/replay", createBody, tokenB, "create-key-0001"); got.status != http.StatusServiceUnavailable || got.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("another subject received or detected the creation receipt")
 	}
 
 	var sessionID uint64
@@ -315,11 +326,19 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if savedReplay.status != http.StatusOK || !bytes.Equal(savedReplay.body, saved.body) || savedReplay.headers.Get("Idempotency-Key-Expires-At") != saved.headers.Get("Idempotency-Key-Expires-At") {
 		t.Fatal("identical set request did not replay the original response")
 	}
+	setsOnly := request(http.MethodPost, setsPath+"/replay", setBody, tokenA, "sets-key-0001")
+	if setsOnly.status != saved.status || !bytes.Equal(setsOnly.body, saved.body) || setsOnly.headers.Get("Idempotency-Replayed") != "true" {
+		t.Fatal("sets replay-only route did not return the committed receipt")
+	}
 
 	otherBody := []byte(strings.Replace(string(setBody), "42.50", "43.00", 1))
 	conflict := request(http.MethodPost, setsPath, otherBody, tokenA, "sets-key-0001")
 	if conflict.status != http.StatusConflict || bytes.Contains(conflict.body, []byte("write-record-001")) || assertRequestID(conflict) == "" {
 		t.Fatalf("same key with another request did not return a safe 409: %d %s", conflict.status, conflict.body)
+	}
+	conflictingReplay := request(http.MethodPost, setsPath+"/replay", otherBody, tokenA, "sets-key-0001")
+	if conflictingReplay.status != http.StatusConflict || conflictingReplay.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("changed replay body was not rejected without a receipt marker")
 	}
 
 	staleBody := []byte(`{"expectedVersion":1,"exerciseEntryKeys":["write-entry-001"],"deleteRecordKeys":["write-record-001"]}`)
@@ -331,6 +350,10 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	staleReplay := request(http.MethodPost, setsPath, staleBody, tokenA, "stale-key-0001")
 	if staleReplay.status != http.StatusPreconditionFailed || !bytes.Equal(staleReplay.body, stale.body) || staleReplay.headers.Get("X-Request-ID") != staleID {
 		t.Fatal("cached 412 did not preserve exact body and request ID")
+	}
+	staleOnly := request(http.MethodPost, setsPath+"/replay", staleBody, tokenA, "stale-key-0001")
+	if staleOnly.status != stale.status || !bytes.Equal(staleOnly.body, stale.body) || staleOnly.headers.Get("Idempotency-Replayed") != "true" || staleOnly.headers.Get("X-Request-ID") != staleID {
+		t.Fatal("cached rejection was not distinguishable from a fresh error")
 	}
 
 	duplicateJSON := []byte(`{"expectedVersion":2,"expectedVersion":2,"exerciseEntryKeys":["write-entry-001"],"sets":[{"recordKey":"write-record-002","exerciseEntryKey":"write-entry-001","exerciseName":"卧推","kind":"weight","setIndex":2,"weightKg":10,"reps":5}]}`)
@@ -355,6 +378,9 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if got := request(http.MethodPost, setsPath, setBody, tokenB, "sets-key-0001"); got.status != http.StatusForbidden || bytes.Contains(got.body, []byte("write-record-001")) || bytes.Contains(got.body, []byte("42.50")) {
 		t.Fatalf("another subject received cached response or non-generic result: %d %s", got.status, got.body)
 	}
+	if got := request(http.MethodPost, setsPath+"/replay", setBody, tokenB, "sets-key-0001"); got.status != http.StatusForbidden || got.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("another subject received a set receipt")
+	}
 
 	finishPath := "/me/sessions/" + createdSession.ID + "/finish"
 	optionalFinish := []byte(`{"expectedVersion":2,"durationMin":null}`)
@@ -376,6 +402,20 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	finishReplay := request(http.MethodPost, finishPath, finishBody, tokenA, "finish-key-0001")
 	if finishReplay.status != http.StatusOK || !bytes.Equal(finishReplay.body, finished.body) {
 		t.Fatal("finish replay did not return the original response")
+	}
+	finishOnly := request(http.MethodPost, finishPath+"/replay", finishBody, tokenA, "finish-key-0001")
+	if finishOnly.status != finished.status || !bytes.Equal(finishOnly.body, finished.body) || finishOnly.headers.Get("Idempotency-Replayed") != "true" {
+		t.Fatal("finish replay-only route did not return the committed receipt")
+	}
+	aged, err := db.ExecContext(ctx, `UPDATE transport_idempotency_record SET created_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 2 HOUR),expires_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 HOUR) WHERE actor_id=? AND method=? AND route=? AND request_key=?`, claimsA.SubjectID, "POST", finishPath, []byte("finish-key-0001"))
+	if err != nil {
+		t.Fatal("could not expire the synthetic finish receipt")
+	}
+	if count, err := aged.RowsAffected(); err != nil || count != 1 {
+		t.Fatal("synthetic finish receipt expiry did not affect exactly one row")
+	}
+	if got := request(http.MethodPost, finishPath+"/replay", finishBody, tokenA, "finish-key-0001"); got.status != http.StatusServiceUnavailable || got.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("expired replay-only receipt did not fail closed")
 	}
 
 	readback := request(http.MethodGet, "/me/sessions/"+createdSession.ID, nil, tokenA, "")
@@ -490,6 +530,20 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 			t.Fatal("client interoperability did not run")
 		}
 		t.Log("PASS: actual client adapter created, saved, replayed, finished and restored over isolated TLS HTTP")
+	}
+	clearAdultForTest(t, ctx, db, auth, tokenA)
+	for _, item := range []struct {
+		path string
+		body []byte
+		key  string
+	}{
+		{"/me/sessions/replay", createBody, "create-key-0001"},
+		{setsPath + "/replay", setBody, "sets-key-0001"},
+	} {
+		got := request(http.MethodPost, item.path, item.body, tokenA, item.key)
+		if got.status != http.StatusForbidden || got.headers.Get("Idempotency-Replayed") != "" {
+			t.Fatal("withdrawn adult declaration did not block replay")
+		}
 	}
 }
 

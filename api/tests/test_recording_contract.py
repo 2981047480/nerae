@@ -4,6 +4,25 @@ from test_static_contract import ContractCase
 
 
 class RecordingContractTests(ContractCase):
+    def test_replay_routes_bind_the_original_request_and_mark_receipts(self):
+        for original, replay, status in (
+            ('/me/sessions', '/me/sessions/replay', '201'),
+            ('/me/sessions/{id}/sets', '/me/sessions/{id}/sets/replay', '200'),
+            ('/me/sessions/{id}/finish', '/me/sessions/{id}/finish/replay', '200'),
+        ):
+            with self.subTest(replay=replay):
+                self.assertEqual(self.contract.request(original, 'post'), self.contract.request(replay, 'post'))
+                self.assertTrue(any(p['name'] == 'Idempotency-Key' and p.get('required') is True
+                                    for p in self.contract.parameters(replay, 'post')))
+                responses = self.contract.operation(replay, 'post')['responses']
+                success = self.contract.deref(responses[status])
+                marker = success['headers']['Idempotency-Replayed']
+                self.assertTrue(marker['required'])
+                self.assertEqual(marker['schema']['enum'], ['true'])
+                failure = self.contract.deref(responses['409'])
+                self.assertEqual(failure['headers']['Idempotency-Replayed']['schema']['enum'], ['true'])
+                self.assertIn('503', responses)
+
     def test_recording_kinds_carry_only_their_actual_measurements(self):
         schema = self.contract.schema('SetRecord')
         base = {'exerciseId': '101', 'exerciseEntryKey': 'exercise-test-001',

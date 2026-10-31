@@ -4489,6 +4489,111 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       operationId: postMeSessionsIdFinish
       x-required-role: authenticated_resource_owner_or_participant
+  /me/sessions/replay:
+    post:
+      tags: [Records]
+      summary: 只读取创建训练记录的原回执
+      description: |
+        使用原创建请求的 Idempotency-Key 和原 JSON 请求体；认证主体、原方法和原路径均须匹配。只返回仍在保留期内、当前权限仍允许的已提交回执，不创建或修改记录。缺失或过期统一返回503且不带回执标记，不能据此推断原请求是否提交。回执命中时返回原状态和正文，并带 Idempotency-Replayed: true；同键异摘要返回409且不带该标记。
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkoutCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/WorkoutReplayCreated'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '412':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '422':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: postMeSessionsReplay
+      x-required-role: authenticated_resource_owner_or_participant
+  /me/sessions/{id}/sets/replay:
+    post:
+      tags: [Records]
+      summary: 只读取保存训练组的原回执
+      description: 使用原保存请求的 Idempotency-Key 和原 JSON 请求体；其他规则与创建回执只读查询相同，不会修改训练组。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetBatchUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/WorkoutReplayOK'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '412':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '422':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: postMeSessionsIdSetsReplay
+      x-required-role: authenticated_resource_owner_or_participant
+  /me/sessions/{id}/finish/replay:
+    post:
+      tags: [Records]
+      summary: 只读取完成训练记录的原回执
+      description: 使用原完成请求的 Idempotency-Key 和原 JSON 请求体；其他规则与创建回执只读查询相同，不会完成或修改训练记录。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkoutFinish'
+      responses:
+        '200':
+          $ref: '#/components/responses/WorkoutReplayOK'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '412':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '422':
+          $ref: '#/components/responses/WorkoutReplayFailure'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: postMeSessionsIdFinishReplay
+      x-required-role: authenticated_resource_owner_or_participant
   /me/stats/weekly:
     get:
       tags:
@@ -7207,6 +7312,14 @@ components:
       bearerFormat: JWT
       description: 独立admin_account主体、issuer/audience=nerae-admin与服务端RBAC；普通用户JWT即使带admin字段也无效。敏感访问需授权工单并审计。
   parameters:
+    WorkoutSessionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[1-9][0-9]*$
+        maxLength: 20
     Page:
       name: page
       in: query
@@ -7238,6 +7351,39 @@ components:
         maxLength: 128
       description: 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。
   responses:
+    WorkoutReplayCreated:
+      description: 已重新验证授权的原创建回执
+      headers:
+        Idempotency-Replayed:
+          required: true
+          schema: {type: string, enum: ['true']}
+        Idempotency-Key-Expires-At:
+          schema: {type: string, format: date-time}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WorkoutSessionDetail'
+    WorkoutReplayOK:
+      description: 已重新验证授权的原训练记录回执
+      headers:
+        Idempotency-Replayed:
+          required: true
+          schema: {type: string, enum: ['true']}
+        Idempotency-Key-Expires-At:
+          schema: {type: string, format: date-time}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WorkoutSessionDetail'
+    WorkoutReplayFailure:
+      description: 业务错误；仅当 Idempotency-Replayed 为 true 时才是已提交的原错误回执，否则不得推断原操作结果。
+      headers:
+        Idempotency-Replayed:
+          schema: {type: string, enum: ['true']}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     AuthError:
       description: 认证或身份操作失败；不得缓存，不透露其他账号资料。
       headers:

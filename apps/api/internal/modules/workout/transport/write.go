@@ -1,6 +1,5 @@
 // Package transport contains explicit HTTP projections for workout operations.
-// This handler is only for isolated assembly until the production route, rate
-// limits, and release review are complete.
+// Deployment, public ingress and release review remain separate concerns.
 package transport
 
 import (
@@ -31,8 +30,8 @@ type writeHandler struct {
 	executor  *application.WorkoutExecutor
 }
 
-// NewWriteHandler creates isolated-test routes only. It does not mount them on
-// the production router or provide request rate limiting.
+// NewWriteHandler constructs the routes; its caller controls mounting and
+// network access. It does not provide request rate limiting.
 func NewWriteHandler(db *sql.DB, service *application.Service, validator *middleware.SchemaValidator, executor *application.WorkoutExecutor) (http.Handler, error) {
 	if db == nil || service == nil || validator == nil || executor == nil {
 		return nil, middleware.ErrContract
@@ -40,8 +39,11 @@ func NewWriteHandler(db *sql.DB, service *application.Service, validator *middle
 	h := &writeHandler{db: db, service: service, validator: validator, executor: executor}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /me/sessions", h.create)
+	mux.HandleFunc("POST /me/sessions/replay", h.replayCreate)
 	mux.HandleFunc("POST /me/sessions/{id}/sets", h.updateSets)
+	mux.HandleFunc("POST /me/sessions/{id}/sets/replay", h.replaySets)
 	mux.HandleFunc("POST /me/sessions/{id}/finish", h.finish)
+	mux.HandleFunc("POST /me/sessions/{id}/finish/replay", h.replayFinish)
 	return mux, nil
 }
 
@@ -74,11 +76,63 @@ func writeFailureKind(err error) middleware.ErrorKind {
 		return middleware.VersionConflict
 	case errors.Is(err, idempotency.ErrInvalid), errors.Is(err, middleware.ErrInvalidRequest), errors.Is(err, repository.ErrInvalid), errors.Is(err, domain.ErrInvalid):
 		return middleware.ValidationError
-	case errors.Is(err, idempotency.ErrUnavailable), errors.Is(err, idempotency.ErrOutcomeUnknown), errors.Is(err, application.ErrUnavailable), errors.Is(err, repository.ErrUnavailable), errors.Is(err, repository.ErrUnsupportedSource), errors.Is(err, middleware.ErrContract):
+	case errors.Is(err, idempotency.ErrReplayUnavailable), errors.Is(err, idempotency.ErrUnavailable), errors.Is(err, idempotency.ErrOutcomeUnknown), errors.Is(err, application.ErrUnavailable), errors.Is(err, repository.ErrUnavailable), errors.Is(err, repository.ErrUnsupportedSource), errors.Is(err, middleware.ErrContract):
 		return middleware.Unavailable
 	default:
 		return middleware.InternalError
 	}
+}
+
+// Replay routes are separate from writes: if a proxy drops a header or a
+// receipt has expired, a recovery request still cannot turn into a mutation.
+func (h *writeHandler) replayCreate(w http.ResponseWriter, r *http.Request) {
+	id, ok := newWriteRequestID(w)
+	if !ok {
+		return
+	}
+	token, req, _, ok := h.request(w, r, "WorkoutCreate", "/me/sessions/replay", id)
+	if !ok {
+		return
+	}
+	req.Path = "/me/sessions"
+	result, err := h.executor.ReplayCreation(r.Context(), h.db, token, req)
+	if err != nil {
+		h.fail(w, id, writeFailureKind(err))
+		return
+	}
+	h.writeResult(w, id, result)
+}
+
+func (h *writeHandler) replaySets(w http.ResponseWriter, r *http.Request) {
+	h.replayExisting(w, r, "sets", "SetBatchUpdate")
+}
+
+func (h *writeHandler) replayFinish(w http.ResponseWriter, r *http.Request) {
+	h.replayExisting(w, r, "finish", "WorkoutFinish")
+}
+
+func (h *writeHandler) replayExisting(w http.ResponseWriter, r *http.Request, operation, schema string) {
+	id, ok := newWriteRequestID(w)
+	if !ok {
+		return
+	}
+	target, err := parseSessionID(r.PathValue("id"))
+	if err != nil {
+		h.fail(w, id, middleware.ValidationError)
+		return
+	}
+	path := "/me/sessions/" + strconv.FormatUint(target, 10) + "/" + operation
+	token, req, _, ok := h.request(w, r, schema, path+"/replay", id)
+	if !ok {
+		return
+	}
+	req.Path = path
+	result, err := h.executor.ReplayExisting(r.Context(), h.db, token, target, operation, req)
+	if err != nil {
+		h.fail(w, id, writeFailureKind(err))
+		return
+	}
+	h.writeResult(w, id, result)
 }
 
 func writeInputError(err error) middleware.ErrorKind {
@@ -349,6 +403,9 @@ func (h *writeHandler) writeResult(w http.ResponseWriter, id middleware.RequestI
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Request-ID", requestIDValue)
+	if result.Replayed {
+		w.Header().Set("Idempotency-Replayed", "true")
+	}
 	if result.Status >= 200 && result.Status <= 299 && !result.ExpiresAt.IsZero() {
 		w.Header().Set("Idempotency-Key-Expires-At", result.ExpiresAt.UTC().Format(time.RFC3339Nano))
 	}

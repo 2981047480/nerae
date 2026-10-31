@@ -1559,6 +1559,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/sessions/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 只读取创建训练记录的原回执
+         * @description 使用原创建请求的 Idempotency-Key 和原 JSON 请求体；认证主体、原方法和原路径均须匹配。只返回仍在保留期内、当前权限仍允许的已提交回执，不创建或修改记录。缺失或过期统一返回503且不带回执标记，不能据此推断原请求是否提交。回执命中时返回原状态和正文，并带 Idempotency-Replayed: true；同键异摘要返回409且不带该标记。
+         *
+         */
+        post: operations["postMeSessionsReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/sessions/{id}/sets/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 只读取保存训练组的原回执
+         * @description 使用原保存请求的 Idempotency-Key 和原 JSON 请求体；其他规则与创建回执只读查询相同，不会修改训练组。
+         */
+        post: operations["postMeSessionsIdSetsReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/sessions/{id}/finish/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 只读取完成训练记录的原回执
+         * @description 使用原完成请求的 Idempotency-Key 和原 JSON 请求体；其他规则与创建回执只读查询相同，不会完成或修改训练记录。
+         */
+        post: operations["postMeSessionsIdFinishReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/stats/weekly": {
         parameters: {
             query?: never;
@@ -4094,6 +4155,38 @@ export interface components {
         };
     };
     responses: {
+        /** @description 已重新验证授权的原创建回执 */
+        WorkoutReplayCreated: {
+            headers: {
+                "Idempotency-Replayed": "true";
+                "Idempotency-Key-Expires-At"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["WorkoutSessionDetail"];
+            };
+        };
+        /** @description 已重新验证授权的原训练记录回执 */
+        WorkoutReplayOK: {
+            headers: {
+                "Idempotency-Replayed": "true";
+                "Idempotency-Key-Expires-At"?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["WorkoutSessionDetail"];
+            };
+        };
+        /** @description 业务错误；仅当 Idempotency-Replayed 为 true 时才是已提交的原错误回执，否则不得推断原操作结果。 */
+        WorkoutReplayFailure: {
+            headers: {
+                "Idempotency-Replayed"?: "true";
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description 认证或身份操作失败；不得缓存，不透露其他账号资料。 */
         AuthError: {
             headers: {
@@ -4142,6 +4235,7 @@ export interface components {
         };
     };
     parameters: {
+        WorkoutSessionId: string;
         Page: number;
         PageSize: number;
         Id: string;
@@ -7375,6 +7469,91 @@ export interface operations {
             412: components["responses"]["Error"];
             422: components["responses"]["Error"];
             429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeSessionsReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutCreate"];
+            };
+        };
+        responses: {
+            201: components["responses"]["WorkoutReplayCreated"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeSessionsIdSetsReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBatchUpdate"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WorkoutReplayOK"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeSessionsIdFinishReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutFinish"];
+            };
+        };
+        responses: {
+            200: components["responses"]["WorkoutReplayOK"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
             500: components["responses"]["Error"];
             503: components["responses"]["Error"];
         };
