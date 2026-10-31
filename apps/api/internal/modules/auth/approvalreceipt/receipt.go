@@ -6,18 +6,21 @@
 package approvalreceipt
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"hash"
 	"io"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -42,6 +45,7 @@ const (
 	epochKeyDomain = "nerae.auth.approval-receipt.epoch-key.v1\x00"
 	epochDomain    = "nerae.auth.approval-receipt.epoch.v1\x00"
 	resultSession  = "issued_session"
+	databaseNowSQL = "SELECT DATE_FORMAT(UTC_TIMESTAMP(6), '%Y-%m-%d %H:%i:%s.%f')"
 )
 
 // KeyConfig uses three independently managed 256-bit keys. Validation checks
@@ -50,6 +54,65 @@ type KeyConfig struct {
 	IdempotencyHMACKey []byte
 	RequestHMACKey     []byte
 	AES256GCMKey       []byte
+}
+
+// SubjectScope and ApprovalScope are different opaque types so callers cannot
+// accidentally substitute one scope for the other. Only Crypto derives them.
+type SubjectScope struct{ digest [sha256.Size]byte }
+type ApprovalScope struct{ digest [sha256.Size]byte }
+
+func (SubjectScope) String() string                { return "ApprovalSubjectScope{redacted}" }
+func (SubjectScope) GoString() string              { return "ApprovalSubjectScope{redacted}" }
+func (SubjectScope) MarshalJSON() ([]byte, error)  { return nil, ErrInvalidInput }
+func (SubjectScope) LogValue() slog.Value          { return slog.StringValue("ApprovalSubjectScope{redacted}") }
+func (ApprovalScope) String() string               { return "ApprovalIDScope{redacted}" }
+func (ApprovalScope) GoString() string             { return "ApprovalIDScope{redacted}" }
+func (ApprovalScope) MarshalJSON() ([]byte, error) { return nil, ErrInvalidInput }
+func (ApprovalScope) LogValue() slog.Value         { return slog.StringValue("ApprovalIDScope{redacted}") }
+
+// Digest returns the non-reversible keyed value for persistence or equality
+// checks. It is not the raw subject or approval identifier.
+func (s SubjectScope) Digest() [sha256.Size]byte  { return s.digest }
+func (s ApprovalScope) Digest() [sha256.Size]byte { return s.digest }
+
+// DatabaseUTC is an explicit timestamp read from the authoritative DB clock.
+// Its fields are private; callers obtain one through ReadDatabaseUTC.
+type DatabaseUTC struct {
+	at time.Time
+	tx *sql.Tx
+}
+
+// ReadDatabaseUTC obtains UTC_TIMESTAMP(6) within the supplied transaction.
+// Seal and Open require this value and reject zero or expired receipt times.
+func ReadDatabaseUTC(ctx context.Context, tx *sql.Tx) (DatabaseUTC, error) {
+	if ctx == nil || tx == nil {
+		return DatabaseUTC{}, ErrInvalidInput
+	}
+	var raw string
+	if err := tx.QueryRowContext(ctx, databaseNowSQL).Scan(&raw); err != nil {
+		return DatabaseUTC{}, ErrInvalidInput
+	}
+	parsed, err := time.Parse("2006-01-02 15:04:05.000000", raw)
+	if err != nil || parsed.Location() != time.UTC || parsed.Format("2006-01-02 15:04:05.000000") != raw {
+		return DatabaseUTC{}, ErrInvalidInput
+	}
+	return DatabaseUTC{at: parsed, tx: tx}, nil
+}
+
+func (DatabaseUTC) String() string               { return "ApprovalReceiptDatabaseUTC{redacted}" }
+func (DatabaseUTC) GoString() string             { return "ApprovalReceiptDatabaseUTC{redacted}" }
+func (DatabaseUTC) MarshalJSON() ([]byte, error) { return nil, ErrInvalidInput }
+func (DatabaseUTC) LogValue() slog.Value {
+	return slog.StringValue("ApprovalReceiptDatabaseUTC{redacted}")
+}
+
+// CurrentSessionVerifier must verify the token with the configured session
+// codec and, in tx, re-read its user/session/device/identity authorization and
+// active state. It returns verified token subject/session IDs, token expiry,
+// and database session expiry; the latter two must agree. A cryptographic
+// token check alone is insufficient.
+type CurrentSessionVerifier interface {
+	VerifyCurrentSession(context.Context, *sql.Tx, string) (subjectID, sessionID string, tokenExpiresAt, sessionExpiresAt time.Time, err error)
 }
 
 func (KeyConfig) String() string               { return "ApprovalReceiptKeyConfig{redacted}" }
@@ -91,8 +154,8 @@ func (b Binding) RequestDigest() [sha256.Size]byte     { return b.requestHMAC }
 // the exact request binding, result session ID, key ID, and UTC expiry. Scopes
 // must be nonzero 32-byte protected values, not caller-supplied identities.
 type Context struct {
-	subjectScope  [sha256.Size]byte
-	approvalScope [sha256.Size]byte
+	subjectScope  SubjectScope
+	approvalScope ApprovalScope
 	binding       Binding
 	keyID         string
 	resultType    string
@@ -210,22 +273,44 @@ func (c *Crypto) Summarize(req Request) (Binding, error) {
 // NewContext accepts only an issued-session receipt. Pending/denied/expired
 // poll results are intentionally outside this primitive; their dynamic
 // idempotency semantics must be settled by the owning coordinator/contract.
-func (c *Crypto) NewContext(keyID string, subjectScope, approvalScope []byte, binding Binding, resultType, reference string, expiresAt time.Time) (Context, error) {
-	if !c.validKeys() || !validKeyID(keyID) || len(subjectScope) != sha256.Size || len(approvalScope) != sha256.Size ||
-		allZero(subjectScope) || allZero(approvalScope) || !validBinding(binding) || resultType != resultSession ||
+func (c *Crypto) SubjectScope(subjectID string) (SubjectScope, error) {
+	if !c.validKeys() || !validSubjectID(subjectID) {
+		return SubjectScope{}, ErrInvalidInput
+	}
+	return SubjectScope{digest: scopeDigest(c.requestKey[:], "subject", subjectID)}, nil
+}
+
+func (c *Crypto) ApprovalScope(approvalID string) (ApprovalScope, error) {
+	if !c.validKeys() || !validOpaqueID(approvalID) {
+		return ApprovalScope{}, ErrInvalidInput
+	}
+	return ApprovalScope{digest: scopeDigest(c.requestKey[:], "approval", approvalID)}, nil
+}
+
+func (c *Crypto) NewContext(keyID string, subjectScope SubjectScope, approvalScope ApprovalScope, binding Binding, resultType, reference string, expiresAt time.Time) (Context, error) {
+	if !c.validKeys() || !validKeyID(keyID) || !validSubjectScope(subjectScope) || !validApprovalScope(approvalScope) || !validBinding(binding) || resultType != resultSession ||
 		!validOpaqueID(reference) || expiresAt.IsZero() || expiresAt.Location() != time.UTC || expiresAt.Nanosecond()%int(time.Microsecond) != 0 {
 		return Context{}, ErrInvalidInput
 	}
-	var subject, approval [sha256.Size]byte
-	copy(subject[:], subjectScope)
-	copy(approval[:], approvalScope)
-	return Context{subjectScope: subject, approvalScope: approval, binding: binding, keyID: keyID,
+	expectedApprovalScope, err := c.ApprovalScope(binding.approvalID)
+	if err != nil || subtle.ConstantTimeCompare(expectedApprovalScope.digest[:], approvalScope.digest[:]) != 1 {
+		return Context{}, ErrInvalidInput
+	}
+	return Context{subjectScope: subjectScope, approvalScope: approvalScope, binding: binding, keyID: keyID,
 		resultType: resultType, reference: reference, expiresAt: expiresAt}, nil
 }
 
-func (c *Crypto) Seal(ctx Context, plaintext []byte) (Sealed, error) {
-	if !c.validKeys() || c.random == nil || !validContext(ctx) || len(plaintext) == 0 || len(plaintext) > maxPlaintext {
+func (c *Crypto) Seal(ctx context.Context, receiptContext Context, token string, now DatabaseUTC, tx *sql.Tx, verifier CurrentSessionVerifier) (Sealed, error) {
+	if !c.validKeys() || c.random == nil || !validContext(receiptContext) || ctx == nil || tx == nil || verifier == nil || !validDatabaseUTC(now) || now.tx != tx ||
+		!receiptContext.expiresAt.After(now.at) || !validTokenEncoding(token) {
 		return Sealed{}, ErrInvalidInput
+	}
+	if c.verifySessionBinding(ctx, tx, receiptContext, token, now, verifier) != nil {
+		return Sealed{}, ErrInvalidReceipt
+	}
+	freshNow, err := ReadDatabaseUTC(ctx, tx)
+	if err != nil || !receiptContext.expiresAt.After(freshNow.at) {
+		return Sealed{}, ErrInvalidReceipt
 	}
 	aead, err := c.aead()
 	if err != nil {
@@ -235,18 +320,20 @@ func (c *Crypto) Seal(ctx Context, plaintext []byte) (Sealed, error) {
 	if _, err := io.ReadFull(c.random, nonce); err != nil {
 		return Sealed{}, ErrInvalidReceipt
 	}
-	blob := make([]byte, 1, 1+len(nonce)+len(plaintext)+aead.Overhead())
+	blob := make([]byte, 1, 1+len(nonce)+len(token)+aead.Overhead())
 	blob[0] = receiptVersion
 	blob = append(blob, nonce...)
-	blob = aead.Seal(blob, nonce, plaintext, associatedData(ctx))
+	blob = aead.Seal(blob, nonce, []byte(token), associatedData(receiptContext))
 	return Sealed{blob: blob}, nil
 }
 
-// Open authenticates and decrypts bytes only. It does not check expiry or
-// authorize release; callers must reverify the original proof, JTI marker,
-// current user/identity/device/session state, and transaction outcome first.
-func (c *Crypto) Open(ctx Context, sealed Sealed) (Plaintext, error) {
-	if c == nil || !c.validKeys() || !validContext(ctx) {
+// Open authenticates the receipt only after checking expiry and invoking the
+// trusted current-session verifier. Callers must independently reverify the
+// original signed proof and JTI marker before calling Open, then commit the
+// owning transaction before releasing returned plaintext.
+func (c *Crypto) Open(ctx context.Context, receiptContext Context, sealed Sealed, now DatabaseUTC, tx *sql.Tx, verifier CurrentSessionVerifier) (Plaintext, error) {
+	if c == nil || !c.validKeys() || !validContext(receiptContext) || ctx == nil || tx == nil || verifier == nil || !validDatabaseUTC(now) || now.tx != tx ||
+		!receiptContext.expiresAt.After(now.at) {
 		return Plaintext{}, ErrInvalidReceipt
 	}
 	aead, err := c.aead()
@@ -258,8 +345,12 @@ func (c *Crypto) Open(ctx Context, sealed Sealed) (Plaintext, error) {
 		return Plaintext{}, ErrInvalidReceipt
 	}
 	nonce := sealed.blob[1 : 1+aead.NonceSize()]
-	data, err := aead.Open(nil, nonce, sealed.blob[1+aead.NonceSize():], associatedData(ctx))
-	if err != nil || len(data) == 0 || len(data) > maxPlaintext {
+	data, err := aead.Open(nil, nonce, sealed.blob[1+aead.NonceSize():], associatedData(receiptContext))
+	if err != nil || !validTokenEncoding(string(data)) || c.verifySessionBinding(ctx, tx, receiptContext, string(data), now, verifier) != nil {
+		return Plaintext{}, ErrInvalidReceipt
+	}
+	freshNow, err := ReadDatabaseUTC(ctx, tx)
+	if err != nil || !receiptContext.expiresAt.After(freshNow.at) {
 		return Plaintext{}, ErrInvalidReceipt
 	}
 	return Plaintext{data: data}, nil
@@ -284,7 +375,7 @@ func (c *Crypto) validKeys() bool {
 }
 
 func validContext(c Context) bool {
-	return !allZero(c.subjectScope[:]) && !allZero(c.approvalScope[:]) && validBinding(c.binding) && validKeyID(c.keyID) &&
+	return validSubjectScope(c.subjectScope) && validApprovalScope(c.approvalScope) && validBinding(c.binding) && validKeyID(c.keyID) &&
 		c.resultType == resultSession && validOpaqueID(c.reference) && !c.expiresAt.IsZero() &&
 		c.expiresAt.Location() == time.UTC && c.expiresAt.Nanosecond()%int(time.Microsecond) == 0
 }
@@ -292,8 +383,8 @@ func validContext(c Context) bool {
 func associatedData(c Context) []byte {
 	out := append([]byte(nil), aadDomain...)
 	writeBytes(&out, []byte(c.keyID))
-	writeBytes(&out, c.subjectScope[:])
-	writeBytes(&out, c.approvalScope[:])
+	writeBytes(&out, c.subjectScope.digest[:])
+	writeBytes(&out, c.approvalScope.digest[:])
 	writeBytes(&out, c.binding.idempotencyHMAC[:])
 	writeBytes(&out, c.binding.requestHMAC[:])
 	writeBytes(&out, []byte(c.binding.approvalID))
@@ -307,6 +398,39 @@ func associatedData(c Context) []byte {
 
 func validBinding(b Binding) bool {
 	return validOpaqueID(b.approvalID) && b.idempotencyHMAC != ([sha256.Size]byte{}) && b.requestHMAC != ([sha256.Size]byte{})
+}
+
+func (c *Crypto) verifySessionBinding(ctx context.Context, tx *sql.Tx, receiptContext Context, token string, now DatabaseUTC, verifier CurrentSessionVerifier) error {
+	subjectID, sessionID, tokenExpiry, sessionExpiry, err := verifier.VerifyCurrentSession(ctx, tx, token)
+	if err != nil || !validSubjectID(subjectID) || !validOpaqueID(sessionID) || sessionID != receiptContext.reference ||
+		tokenExpiry.IsZero() || tokenExpiry.Location() != time.UTC || sessionExpiry.IsZero() || sessionExpiry.Location() != time.UTC ||
+		!tokenExpiry.Equal(sessionExpiry) || !sessionExpiry.After(now.at) ||
+		receiptContext.expiresAt.After(sessionExpiry) {
+		return ErrInvalidReceipt
+	}
+	derived, err := c.SubjectScope(subjectID)
+	if err != nil || subtle.ConstantTimeCompare(derived.digest[:], receiptContext.subjectScope.digest[:]) != 1 {
+		return ErrInvalidReceipt
+	}
+	return nil
+}
+
+func validDatabaseUTC(now DatabaseUTC) bool {
+	return now.tx != nil && !now.at.IsZero() && now.at.Location() == time.UTC && now.at.Nanosecond()%int(time.Microsecond) == 0
+}
+
+func validSubjectScope(scope SubjectScope) bool { return !allZero(scope.digest[:]) }
+
+func validApprovalScope(scope ApprovalScope) bool { return !allZero(scope.digest[:]) }
+
+func scopeDigest(key []byte, kind, value string) [sha256.Size]byte {
+	h := hmac.New(sha256.New, key)
+	_, _ = io.WriteString(h, "nerae.auth.approval-receipt.scope.v1\x00")
+	writePart(h, []byte(kind))
+	writePart(h, []byte(value))
+	var digest [sha256.Size]byte
+	copy(digest[:], h.Sum(nil))
+	return digest
 }
 
 func keyTag(key []byte, role string) [sha256.Size]byte {
@@ -338,6 +462,27 @@ func validOpaqueID(s string) bool {
 	for i := range s {
 		c := s[i]
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return true
+}
+
+func validSubjectID(s string) bool {
+	if len(s) == 0 || len(s) > 20 || s[0] == '0' {
+		return false
+	}
+	id, err := strconv.ParseUint(s, 10, 64)
+	return err == nil && id != 0 && strconv.FormatUint(id, 10) == s
+}
+
+func validTokenEncoding(s string) bool {
+	if len(s) < 32 || len(s) > maxPlaintext {
+		return false
+	}
+	for i := range s {
+		c := s[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.') {
 			return false
 		}
 	}
