@@ -89,6 +89,26 @@ private func versionedJournalTests() throws {
                                               expectedValue: "", newFound: true, newValue: "{\"op\":\"A\"}")
     try check(recreated.value == captured.value && recreated.revision == "5")
 
+    // If a new install started with no v1 item, a later old-version writer
+    // creating one is also detected rather than treated as a fresh migration.
+    let lateLegacy = SyntheticBackend()
+    let lateCurrent = SyntheticBackend()
+    let lateJournal = NeraeVersionedTrainingJournal(legacy: lateLegacy, current: lateCurrent)
+    let neverStored = try lateJournal.read()
+    try check(!neverStored.found && neverStored.revision == "0")
+    let versionedOnly = try lateJournal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                                      expectedValue: "", newFound: true,
+                                                      newValue: "{\"source\":\"v2\"}")
+    let versionedBytesBeforeLegacyAppears = lateCurrent.data
+    lateLegacy.data = Data("{\"source\":\"late-v1\"}".utf8)
+    try expect(.unavailable) { _ = try lateJournal.read() }
+    try expect(.unavailable) {
+        _ = try lateJournal.compareAndSet(expectedRevision: versionedOnly.revision, expectedFound: true,
+                                          expectedValue: versionedOnly.value, newFound: true,
+                                          newValue: "{\"source\":\"overwrite\"}")
+    }
+    try check(lateCurrent.data == versionedBytesBeforeLegacyAppears)
+
     // A same-value rewrite is still a new native version.
     let rewritten = try journal.compareAndSet(expectedRevision: recreated.revision, expectedFound: true,
                                               expectedValue: recreated.value, newFound: true,

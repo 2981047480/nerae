@@ -27,6 +27,8 @@ primitive, not completed replay settlement.
 - A malformed v2 item, invalid v1 value, changed/recreated v1 item after
   migration, failed verification, or uncertain write returns a fixed
   unavailable result; v2 is never silently replaced from v1.
+- A v2 item created when v1 was absent records that absence. If a legacy v1
+  item later appears, reads and writes fail closed without changing v2.
 - A logical delete is represented by a v2 tombstone (`found=false`, empty
   payload) and keeps the revision. Recreating the value must CAS against that
   tombstone and increments again.
