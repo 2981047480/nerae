@@ -27,7 +27,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_hit(self):
         route = urlsplit(self.path).path
-        entry = {"server": self.server.tag, "path": route, "cookiePresent": self.headers.get("Cookie") is not None}
+        entry = {"server": self.server.tag, "path": route, "cookiePresent": self.headers.get("Cookie") is not None,
+                 "method": self.command,
+                 "authorizationPresent": self.headers.get("Authorization") == "Bearer synthetic-probe",
+                 "contentLength": self.headers.get("Content-Length", "")}
         with HITS_LOCK:
             with open(HITS, "a", encoding="utf-8") as output:
                 output.write(json.dumps(entry, separators=(",", ":")) + "\n")
@@ -38,6 +41,9 @@ class Handler(BaseHTTPRequestHandler):
         self.handle_request()
 
     def do_POST(self):
+        self.handle_request()
+
+    def do_DELETE(self):
         self.handle_request()
 
     def send_bytes(self, status, body=b"", headers=None, close=False):
@@ -176,6 +182,21 @@ class Handler(BaseHTTPRequestHandler):
                 pass
         elif route == "/post-size":
             self.send_bytes(200, str(len(body)).encode("ascii"), {"Content-Type": "text/plain"})
+        elif route == "/logout-empty":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+        elif route == "/logout-body-length":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad")
+        elif route == "/logout-body-unframed":
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nbad")
+        elif route == "/logout-no-store":
+            self.raw(b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+        elif route == "/logout-unauthorized":
+            self.send_bytes(401, b'{"code":"UNAUTHENTICATED"}', {"Content-Type": "application/json", "Cache-Control": "no-store"}, close=True)
+        elif route == "/logout-200":
+            self.send_bytes(200, b'{"unexpected":true}', {"Content-Type": "application/json", "Cache-Control": "no-store"}, close=True)
+        elif route == "/logout-slow":
+            time.sleep(1.5)
+            self.raw(b"HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
         elif route == "/slow":
             time.sleep(2.2)
             self.send_bytes(200, b"slow", close=True)

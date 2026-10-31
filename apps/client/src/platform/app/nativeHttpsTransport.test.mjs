@@ -47,6 +47,58 @@ test('recording request preserves raw body, caller idempotency key and method', 
   assert.equal(Object.isFrozen(response.headers), true)
 })
 
+test('current-session revoke uses same-origin bearer DELETE with no body and accepts only no-store empty 204', async () => {
+  let sent
+  const ports = make((request, callbacks) => {
+    sent = request
+    callbacks.success(ok('revoke-1', 204, '', '{"cache-control":"no-store","x-request-id":"logout-1"}'))
+    return 'revoke-1'
+  })
+  await ports.revokeCurrentSession('synthetic.revoke.token')
+  assert.equal(sent.baseUrl, 'https://api.example.test/v1')
+  assert.equal(sent.path, '/auth/sessions/current')
+  assert.equal(sent.method, 'DELETE')
+  assert.equal(sent.body, '')
+  assert.deepEqual(JSON.parse(sent.headersJson), {
+    Accept: 'application/json', Authorization: 'Bearer synthetic.revoke.token', 'Cache-Control': 'no-store',
+  })
+})
+
+test('revoke distinguishes explicit rejection from uncertain or malformed responses', async () => {
+  for (const [response, code] of [
+    [ok('bad-body', 204, '{"unexpected":true}', '{"cache-control":"no-store"}'), 'invalid_response'],
+    [ok('empty-body', 204, '', '{}'), 'invalid_response'],
+    [ok('wrong-success', 200, '{"ok":true}', '{"cache-control":"no-store"}'), 'unavailable'],
+    [ok('server-error', 503, '{"code":"UNAVAILABLE"}', '{"cache-control":"no-store"}'), 'unavailable'],
+    [ok('auth-error', 401, '{"code":"UNAUTHENTICATED"}', '{"cache-control":"no-store"}'), 'unauthorized'],
+  ]) {
+    const ports = make((request, callbacks) => { callbacks.success(response); return response.requestId })
+    await assert.rejects(ports.revokeCurrentSession('synthetic.revoke.token'), errorCode(code))
+  }
+})
+
+test('empty 204 support is scoped to revoke and does not relax GET or auth POST JSON responses', async () => {
+  const ports = make((request, callbacks) => {
+    callbacks.success(ok('empty', 204, '', '{"cache-control":"no-store"}'))
+    return 'empty'
+  })
+  await assert.rejects(ports.readCurrentUser('synthetic.token'), errorCode('invalid_response'))
+  await assert.rejects(ports.authTransport({ url: 'https://api.example.test/v1/auth/session', method: 'POST',
+    headers: { Authorization: 'Bearer synthetic.token' }, body: '{}' }), errorCode('invalid_response'))
+})
+
+test('late revoke callback after timeout is ignored and cancellation fires once', async () => {
+  let callbacks
+  let cancellations = 0
+  const ports = make((request, sent) => { callbacks = sent; return 'revoke-late' },
+    'https://api.example.test/v1', () => { cancellations++ })
+  await assert.rejects(ports.revokeCurrentSession('synthetic.revoke.token'), errorCode('network'))
+  assert.equal(cancellations, 1)
+  callbacks.success(ok('revoke-late', 204, '', '{"cache-control":"no-store"}'))
+  await new Promise(resolve => setTimeout(resolve, 20))
+  assert.equal(cancellations, 1)
+})
+
 test('recording GET supports exact base path and query and carries no body', async () => {
   let sent
   const ports = make((request, callbacks) => { sent = request; callbacks.success(ok('req-3')); return 'req-3' })

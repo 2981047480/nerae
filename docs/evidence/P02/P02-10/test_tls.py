@@ -57,7 +57,22 @@ assert run('requestTooLarge')['code'] == 'invalid_request'
 assert run('requestAtLimit')['status'] == 200
 assert run('timeout', timeout=1000)['code'] == 'timeout'
 assert run('cancel', timeout=5000)['code'] == 'cancelled'
+revoke = run('revoke')
+assert revoke['ok'] and revoke['status'] == 204 and revoke['body'] == ''
+assert json.loads(revoke['headersJson'])['cache-control'] == 'no-store'
+assert run('revokeBody')['code'] == 'invalid_request'
+assert run('revokeBodyLength')['code'] == 'invalid_response'
+unframed_204 = run('revokeBodyUnframed')
+print('iOS URLSession unframed 204 probe:', {key: unframed_204[key] for key in ('ok', 'status', 'code')})
+assert run('revokeMissingNoStore')['ok'] and run('revokeMissingNoStore')['status'] == 204
+assert run('revokeUnauthorized')['status'] == 401
+assert run('revokeNon204')['status'] == 200
+before_cancel = len(open(hits, encoding='utf-8').read().splitlines())
+assert run('revokeCancel', timeout=5000)['code'] == 'cancelled'
+time.sleep(1.7)
+delete_hits = [json.loads(line) for line in open(hits, encoding='utf-8').read().splitlines()[before_cancel:]]
+assert any(hit['method'] == 'DELETE' and hit['path'] == '/logout-slow' and hit['authorizationPresent'] and hit['contentLength'] in ('', '0') for hit in delete_hits)
 run('setCookie')
 assert run('checkCookie')['body'] == 'absent'
 assert run('inspect')['ok']
-print('PASS: TLS trust/hostname failures, redirect refusal, bounded bodies, timeout/cancel, cache and cookie policy; each callback count was exactly one.')
+print('PASS: TLS trust/hostname failures, redirect refusal, bounded bodies, timeout/cancel, cache/cookie policy, and DELETE empty-204 framing; callbacks settled exactly once.')

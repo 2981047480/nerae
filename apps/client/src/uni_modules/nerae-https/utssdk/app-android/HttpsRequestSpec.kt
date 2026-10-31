@@ -42,7 +42,7 @@ internal class HttpsRequestSpec private constructor(
             val timeoutLexeme = (fields["timeoutMs"] as? JsonScalar.Number)?.lexeme
                 ?: throw HttpsFailure("invalid_request")
             val timeout = parseTimeout(timeoutLexeme) ?: throw HttpsFailure("invalid_request")
-            if (method !in setOf("GET", "POST")) {
+            if (method !in setOf("GET", "POST", "DELETE")) {
                 throw HttpsFailure("invalid_request")
             }
 
@@ -52,7 +52,7 @@ internal class HttpsRequestSpec private constructor(
             } catch (_: Exception) {
                 throw HttpsFailure("invalid_request")
             }
-            if (body.size > MAX_REQUEST_BYTES || (method == "GET" && body.isNotEmpty())) {
+            if (body.size > MAX_REQUEST_BYTES || ((method == "GET" || method == "DELETE") && body.isNotEmpty())) {
                 throw HttpsFailure("invalid_request")
             }
             val (host, port, authority, basePath) = parseBase(base)

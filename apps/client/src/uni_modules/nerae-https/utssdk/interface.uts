@@ -1,4 +1,4 @@
-export type HttpsMethod = 'GET' | 'POST'
+export type HttpsMethod = 'GET' | 'POST' | 'DELETE'
 
 export type HttpsRequest = {
   /** HTTPS origin with an optional API path prefix, for example https://api.example/v1. */

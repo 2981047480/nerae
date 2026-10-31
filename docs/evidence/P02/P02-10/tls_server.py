@@ -75,6 +75,35 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_body(200, 'followed')
         else:
             self.send_body(404, 'not-found')
+    def do_DELETE(self):
+        with open(os.environ['NERAE_TLS_HITS'], 'a', encoding='utf-8') as out:
+            out.write(json.dumps({'method': 'DELETE', 'path': self.path,
+                                  'authorizationPresent': self.headers.get('Authorization') == 'Bearer synthetic-probe',
+                                  'contentLength': self.headers.get('Content-Length', '')}) + '\n')
+        if self.path == '/logout-empty':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-body-length':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-body-unframed':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nbad')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-no-store':
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            self.wfile.flush(); self.close_connection = True
+        elif self.path == '/logout-unauthorized':
+            self.send_body(401, '{"code":"UNAUTHENTICATED"}', {'Content-Type': 'application/json', 'Cache-Control': 'no-store'})
+        elif self.path == '/logout-200':
+            self.send_body(200, '{"unexpected":true}', {'Content-Type': 'application/json', 'Cache-Control': 'no-store'})
+        elif self.path == '/logout-slow':
+            time.sleep(1.5)
+            self.wfile.write(b'HTTP/1.1 204 No Content\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n')
+            try: self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError): pass
+            self.close_connection = True
+        else:
+            self.send_body(404, 'not-found')
 
 tls_server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
 tls_server.server_port = tls_server.server_address[1]

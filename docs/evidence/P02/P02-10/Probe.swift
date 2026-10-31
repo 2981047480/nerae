@@ -30,6 +30,7 @@ final class ProbeState {
         lock.lock(); defer { lock.unlock() }
         return (count, payload)
     }
+    func callbackCount() -> Int { lock.lock(); defer { lock.unlock() }; return count }
 }
 
 let args = CommandLine.arguments
@@ -46,6 +47,14 @@ if anchorPath != "-", let anchor = try? Data(contentsOf: URL(fileURLWithPath: an
 let path: String
 switch mode {
 case "success", "invalidHeader", "requestTooLarge", "requestAtLimit": path = mode == "requestTooLarge" || mode == "requestAtLimit" ? "/post-size" : "/success?probe=ok"
+case "revoke": path = "/logout-empty"
+case "revokeBody": path = "/logout-empty"
+case "revokeBodyLength": path = "/logout-body-length"
+case "revokeBodyUnframed": path = "/logout-body-unframed"
+case "revokeMissingNoStore": path = "/logout-no-store"
+case "revokeUnauthorized": path = "/logout-unauthorized"
+case "revokeNon204": path = "/logout-200"
+case "revokeCancel": path = "/logout-slow"
 case "escape": path = "/../echo"
 case "spacePath": path = "/bad path"
 case "unicodePath": path = "/训练"
@@ -67,22 +76,27 @@ default: path = mode
 }
 var headers = ["Accept": "application/json", "Cache-Control": "no-store", "Authorization": "Bearer synthetic-probe"]
 if mode == "invalidHeader" { headers["X-Bad\r\nHeader"] = "value" }
+let isRevoke = mode.hasPrefix("revoke")
 let request: [String: Any] = [
     "baseUrl": base,
     "path": path,
-    "method": mode == "requestTooLarge" || mode == "requestAtLimit" ? "POST" : "GET",
+    "method": mode == "requestTooLarge" || mode == "requestAtLimit" ? "POST" : (isRevoke ? "DELETE" : "GET"),
     "headersJson": try! String(data: JSONSerialization.data(withJSONObject: headers), encoding: .utf8)!,
     "body": mode == "requestTooLarge" ? String(repeating: "x", count: 4 * 1024 * 1024 + 1) :
-        mode == "requestAtLimit" ? String(repeating: "x", count: 4 * 1024 * 1024) : "",
+        mode == "requestAtLimit" ? String(repeating: "x", count: 4 * 1024 * 1024) : (mode == "revokeBody" ? "unexpected" : ""),
     "timeoutMs": timeoutMs
 ]
 let json = String(data: try! JSONSerialization.data(withJSONObject: request), encoding: .utf8)!
 let state = ProbeState()
 let handle = NeraeHttpsBridge.request(json) { state.receive($0) }
-if mode == "cancel" {
+if mode == "cancel" || mode == "revokeCancel" {
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { NeraeHttpsBridge.cancel(handle) }
 }
 let (count, result) = state.wait(seconds: Double(timeoutMs) / 1_000.0 + 4)
+if mode == "revokeCancel" {
+    Thread.sleep(forTimeInterval: 1.8)
+    guard state.callbackCount() == 1 else { fputs("late cancellation callback was delivered\n", stderr); exit(2) }
+}
 guard count == 1, let data = result.data(using: .utf8),
       let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
     fputs("callback count/result invalid\n", stderr); exit(2)

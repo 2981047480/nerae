@@ -21,7 +21,8 @@ private data class ProbeResult(
 
 private data class ProbeRequest(val payload: String, val timeoutMsText: String)
 
-private data class Hit(val server: String, val path: String, val cookiePresent: Boolean)
+private data class Hit(val server: String, val path: String, val cookiePresent: Boolean, val method: String,
+                      val authorizationPresent: Boolean, val contentLength: String)
 
 private val resultKeys = setOf("ok", "requestId", "status", "headersJson", "body", "code")
 
@@ -96,6 +97,29 @@ fun main(args: Array<String>) {
         val validClose = call(registry, request("https://127.0.0.1:$goodPort", "/close-good"))
         check(validClose.ok && validClose.body == "close-ok")
 
+        val revokeHeaders = "{\"Accept\":\"application/json\",\"Authorization\":\"Bearer synthetic-probe\",\"Cache-Control\":\"no-store\"}"
+        val beforeRevoke = readHits(hitsFile).size
+        val empty204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-empty", method = "DELETE", headersJson = revokeHeaders))
+        check(empty204.ok && empty204.status == 204 && empty204.body.isEmpty())
+        val empty204Headers = StrictJson.parseFlatObject(empty204.headersJson, 2048, null)
+        check(empty204Headers["cache-control"] == JsonScalar.Text("no-store"))
+        val revokeHit = readHits(hitsFile).drop(beforeRevoke).single()
+        check(revokeHit.method == "DELETE" && revokeHit.authorizationPresent && revokeHit.contentLength.isEmpty())
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-length", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-body-unframed", method = "DELETE", headersJson = revokeHeaders)), "invalid_response")
+        val emptyFramingHits = readHits(hitsFile).size
+        checkFailureCode(call(registry, request("https://127.0.0.1:$goodPort", "/logout-empty", method = "DELETE", body = "x", headersJson = revokeHeaders)), "invalid_request")
+        check(readHits(hitsFile).size == emptyFramingHits)
+        val rejected204Headers = call(registry, request("https://127.0.0.1:$goodPort", "/logout-no-store", method = "DELETE", headersJson = revokeHeaders))
+        check(rejected204Headers.ok && rejected204Headers.status == 204 && rejected204Headers.headersJson == "{}")
+        val explicit401 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-unauthorized", method = "DELETE", headersJson = revokeHeaders))
+        check(explicit401.ok && explicit401.status == 401 && explicit401.body.contains("UNAUTHENTICATED"))
+        val non204 = call(registry, request("https://127.0.0.1:$goodPort", "/logout-200", method = "DELETE", headersJson = revokeHeaders))
+        check(non204.ok && non204.status == 200)
+        val lateLogout = call(registry, request("https://127.0.0.1:$goodPort", "/logout-slow", method = "DELETE", headersJson = revokeHeaders,
+            timeoutMs = 5_000), cancelAfterMs = 100, lateCallbackWaitMs = 1_800)
+        checkFailureCode(lateLogout, "cancelled")
+
         assertInvalidResponse(registry, goodPort, "/bad-status")
         assertInvalidResponse(registry, goodPort, "/long-header")
         assertInvalidResponse(registry, goodPort, "/folded-header")
@@ -136,6 +160,7 @@ fun main(args: Array<String>) {
             request("https://127.0.0.1:$goodPort", "/success", headersJson = "{\"Authorization\":\"a\\r\\nb\"}") to "invalid_request",
             request("https://127.0.0.1:$goodPort", "/success", method = "PUT") to "invalid_request",
             request("https://127.0.0.1:$goodPort", "/success", method = "GET", body = "x") to "invalid_request",
+            request("https://127.0.0.1:$goodPort", "/logout-empty", method = "DELETE", body = "x") to "invalid_request",
             request("https://127.0.0.1:$goodPort", "/success", timeoutLexeme = "1000.5") to "invalid_request",
             request("https://127.0.0.1:$goodPort", "/success", timeoutLexeme = "1e999999999") to "invalid_request"
         )
@@ -192,7 +217,8 @@ private fun assertTimeoutNumberFormatting() {
     }
 }
 
-private fun call(registry: HttpsRequestRegistry, request: ProbeRequest, cancelAfterMs: Long? = null): ProbeResult {
+private fun call(registry: HttpsRequestRegistry, request: ProbeRequest, cancelAfterMs: Long? = null,
+                 lateCallbackWaitMs: Long = 0): ProbeResult {
     val count = AtomicInteger()
     val raw = AtomicReference<String>()
     val callbackThread = AtomicReference<String>()
@@ -208,7 +234,7 @@ private fun call(registry: HttpsRequestRegistry, request: ProbeRequest, cancelAf
         registry.cancel(id)
     }
     check(latch.await(15, TimeUnit.SECONDS)) { "callback timeout" }
-    Thread.sleep(75)
+    Thread.sleep(maxOf(75L, lateCallbackWaitMs))
     check(count.get() == 1) { "callback count ${count.get()}" }
     check(callbackThread.get().contains("callback"))
     return parseResult(raw.get())
@@ -334,10 +360,13 @@ private fun assertRejectedExecutors(goodPort: Int) {
 }
 
 private fun readHits(file: File): List<Hit> = if (!file.exists()) emptyList() else file.readLines().map { line ->
-    val fields = StrictJson.parseFlatObject(line, 2048, setOf("server", "path", "cookiePresent"))
+    val fields = StrictJson.parseFlatObject(line, 2048, setOf("server", "path", "cookiePresent", "method", "authorizationPresent", "contentLength"))
     Hit(
         (fields["server"] as JsonScalar.Text).value,
         (fields["path"] as JsonScalar.Text).value,
-        (fields["cookiePresent"] as JsonScalar.Bool).value
+        (fields["cookiePresent"] as JsonScalar.Bool).value,
+        (fields["method"] as JsonScalar.Text).value,
+        (fields["authorizationPresent"] as JsonScalar.Bool).value,
+        (fields["contentLength"] as JsonScalar.Text).value
     )
 }

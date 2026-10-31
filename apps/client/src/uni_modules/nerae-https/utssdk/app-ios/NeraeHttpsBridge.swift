@@ -93,10 +93,10 @@ private struct HttpsRequestSpec {
               let headersText = value["headersJson"] as? String,
               let bodyText = value["body"] as? String,
               let timeoutMs = value["timeoutMs"] as? Int,
-              method == "GET" || method == "POST",
+              method == "GET" || method == "POST" || method == "DELETE",
               (1_000...120_000).contains(timeoutMs),
               let body = bodyText.data(using: .utf8), body.count <= maxBodyBytes,
-              method != "GET" || body.isEmpty,
+              (method != "GET" && method != "DELETE") || body.isEmpty,
               let headersData = headersText.data(using: .utf8), headersData.count <= 20 * 1024,
               let headersObject = try? JSONSerialization.jsonObject(with: headersData),
               let rawHeaders = headersObject as? [String: Any],
@@ -287,6 +287,11 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
             finish(error: "response_too_large")
             return
         }
+        if http.statusCode == 204 && !Self.hasValidEmpty204Framing(http) {
+            completionHandler(.cancel)
+            finish(error: "invalid_response")
+            return
+        }
         lock.lock()
         self.response = http
         lock.unlock()
@@ -320,6 +325,10 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
             finish(error: "invalid_response")
             return
         }
+        if http.statusCode == 204 && !body.isEmpty {
+            finish(error: "invalid_response")
+            return
+        }
         finish(response: HttpsWire.success(id: id, status: http.statusCode,
                                            headers: Self.safeHeaders(http), body: bodyText))
     }
@@ -350,6 +359,22 @@ private final class HttpsRequestOperation: NSObject, URLSessionDataDelegate, URL
             result[name.lowercased()] = value
         }
         return result
+    }
+
+    private static func hasValidEmpty204Framing(_ response: HTTPURLResponse) -> Bool {
+        for (rawName, rawValue) in response.allHeaderFields {
+            guard let name = rawName as? String else { return false }
+            let lower = name.lowercased()
+            if lower == "transfer-encoding" { return false }
+            if lower == "content-length" {
+                let text: String
+                if let value = rawValue as? String { text = value }
+                else if let value = rawValue as? NSNumber { text = value.stringValue }
+                else { return false }
+                if text.trimmingCharacters(in: .whitespaces) != "0" { return false }
+            }
+        }
+        return response.expectedContentLength <= 0
     }
 
     fileprivate func finish(response result: String? = nil, error: String? = nil) {

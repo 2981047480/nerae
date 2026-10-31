@@ -1,7 +1,7 @@
 import { AuthApiError, type AuthHttpRequest, type AuthHttpResponse, type SecureAuthTransport } from '../../api/auth/emailAuthApi'
 import { RecordingApiError, type HttpRequest, type HttpResponse, type RequestPort } from '../../features/training/recordingApi'
 
-export type HttpsMethod = 'GET' | 'POST'
+export type HttpsMethod = 'GET' | 'POST' | 'DELETE'
 export type HttpsRequest = {
   baseUrl: string
   path: string
@@ -252,7 +252,8 @@ function headersForNative(value: unknown): string {
 
 function requestBody(value: unknown, method: HttpsMethod): string {
   if (value === undefined) return ''
-  if (typeof value !== 'string' || !wellFormed(value) || utf8ByteLength(value) > maxBodyBytes || (method === 'GET' && value !== '')) {
+  if (typeof value !== 'string' || !wellFormed(value) || utf8ByteLength(value) > maxBodyBytes ||
+    ((method === 'GET' || method === 'DELETE') && value !== '')) {
     throw new TransportFailure('invalid_request')
   }
   return value
@@ -262,14 +263,26 @@ function validRequestId(value: unknown): value is string {
   return typeof value === 'string' && value.length <= 128 && /^[\x21-\x7e]*$/.test(value)
 }
 
-function validateNativeResponse(value: unknown, expectedRequestId: string): { status: number; headers: Readonly<Record<string, string>>; body: Record<string, unknown> } {
+type NativeParsedResponse = {
+  status: number
+  headers: Readonly<Record<string, string>>
+  body: Record<string, unknown>
+  emptyBody: boolean
+}
+
+function validateNativeResponse(value: unknown, expectedRequestId: string, allowEmpty204 = false): NativeParsedResponse {
   if (!object(value) || Object.keys(value).length !== 4 || !['requestId', 'status', 'headersJson', 'body'].every(key => Object.prototype.hasOwnProperty.call(value, key)) ||
     !validRequestId(value.requestId) || !expectedRequestId || value.requestId !== expectedRequestId ||
     typeof value.headersJson !== 'string' || typeof value.body !== 'string' ||
     !Number.isInteger(value.status) || Number(value.status) < 100 || Number(value.status) > 599) {
     throw new TransportFailure('invalid_response')
   }
-  return { status: Number(value.status), headers: responseHeaders(value.headersJson), body: parsedResponseBody(value.body) }
+  const status = Number(value.status)
+  const headers = responseHeaders(value.headersJson)
+  if (allowEmpty204 && status === 204 && value.body === '') {
+    return { status, headers, body: Object.freeze({}), emptyBody: true }
+  }
+  return { status, headers, body: parsedResponseBody(value.body), emptyBody: value.body === '' }
 }
 
 function mapFailure(code: HttpsErrorCode, surface: 'auth' | 'recording'): Error {
@@ -294,7 +307,8 @@ function nativeFailure(value: unknown, returnedId: string): HttpsErrorCode {
 }
 
 function makeNativeRequest(base: ConfiguredBase, port: NativeHttpsRequestPort, cancel: NativeHttpsCancelPort,
-  timeoutMs: number, method: HttpsMethod, url: string, headers: unknown, data: unknown): Promise<{ status: number; headers: Readonly<Record<string, string>>; body: Record<string, unknown> }> {
+  timeoutMs: number, method: HttpsMethod, url: string, headers: unknown, data: unknown,
+  allowEmpty204 = false): Promise<NativeParsedResponse> {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120_000) throw new TransportFailure('invalid_configuration')
   const path = routeFor(base, url)
   const headersJson = headersForNative(headers)
@@ -314,7 +328,7 @@ function makeNativeRequest(base: ConfiguredBase, port: NativeHttpsRequestPort, c
         reject(new TransportFailure(nativeFailure(callback.value, returnedId)))
         return
       }
-      try { resolve(validateNativeResponse(callback.value, returnedId)) }
+      try { resolve(validateNativeResponse(callback.value, returnedId, allowEmpty204)) }
       catch (error) { reject(error instanceof TransportFailure ? error : new TransportFailure('invalid_response')) }
     }
     const callbacks: HttpsCallbacks = {
@@ -363,9 +377,9 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
       !Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120_000) throw new TransportFailure('invalid_configuration')
   } catch { throw new AuthApiError('invalid_configuration') }
 
-  const run = (method: HttpsMethod, url: string, headers: unknown, body: unknown, surface: 'auth' | 'recording') => {
+  const run = (method: HttpsMethod, url: string, headers: unknown, body: unknown, surface: 'auth' | 'recording', allowEmpty204 = false) => {
     try {
-      return makeNativeRequest(base, nativeRequest, nativeCancel, timeoutMs, method, url, headers, body).catch(error => {
+      return makeNativeRequest(base, nativeRequest, nativeCancel, timeoutMs, method, url, headers, body, allowEmpty204).catch(error => {
         throw mapFailure(error instanceof TransportFailure ? error.code : 'unavailable', surface)
       })
     } catch (error) {
@@ -391,5 +405,26 @@ export function createAppNativeHttpsPorts(baseUrl: string, nativeRequest: Native
     }, '', 'auth')
     return Object.freeze({ status: result.status, headers: result.headers, body: result.body })
   }
-  return { authTransport, recordingRequest, readCurrentUser }
+  const revokeCurrentSession = async (accessToken: string): Promise<void> => {
+    if (typeof accessToken !== 'string' || accessToken.length < 1 || accessToken.length > 8192 ||
+      !/^[\x21-\x7e]+$/.test(accessToken)) throw new AuthApiError('invalid_request')
+    const result = await run('DELETE', `${base.baseUrl}/auth/sessions/current`, {
+      Accept: 'application/json', Authorization: `Bearer ${accessToken}`, 'Cache-Control': 'no-store',
+    }, '', 'auth', true)
+    const cacheControl = Object.entries(result.headers).filter(([name]) => name.toLowerCase() === 'cache-control')
+    if (cacheControl.length !== 1 || typeof cacheControl[0][1] !== 'string' ||
+      cacheControl[0][1].trim().toLowerCase() !== 'no-store') throw new AuthApiError('invalid_response')
+    if (result.status === 204) {
+      if (result.emptyBody) return
+      throw new AuthApiError('invalid_response', result.status)
+    }
+    if (result.status === 401) throw new AuthApiError('unauthorized', result.status)
+    if (result.status === 403) throw new AuthApiError('forbidden', result.status)
+    if (result.status === 404) throw new AuthApiError('not_found', result.status)
+    if (result.status === 409) throw new AuthApiError('conflict', result.status)
+    if (result.status === 410) throw new AuthApiError('expired', result.status)
+    if (result.status === 429) throw new AuthApiError('rate_limited', result.status)
+    throw new AuthApiError('unavailable', result.status)
+  }
+  return { authTransport, recordingRequest, readCurrentUser, revokeCurrentSession }
 }
