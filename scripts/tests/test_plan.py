@@ -324,6 +324,7 @@ class PlanTests(unittest.TestCase):
         tasks['F01-04']['acceptance_requires']=[]
         for task in self.doc['tasks']:
             task['status']='planned'
+        tasks['F01-04']['write_allowlist'].append('scripts/dev/collision.py')
         check['write_allowlist'].append('scripts/dev/collision.py')
         self.assertTrue(any('F01-04/F01-05: unordered write overlap' in e for e in plan.validate(self.doc)))
 
