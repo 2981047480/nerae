@@ -16,6 +16,10 @@ export interface AuthLease {
 // Storage is shared by controller instances in one app runtime. Serializing by
 // key ensures an already-started old-session write finishes before a new write.
 const writesByKey = new Map<string, Promise<void>>()
+// A newer local write may come from another controller for the same draft.
+// This process-wide monotonic fence conservatively invalidates all older
+// proofs, without retaining an unbounded per-draft revision registry.
+let persistenceWriteRevision = 0
 // An unsuccessful disk write must not make an older disk snapshot look current
 // to another controller in the same runtime. This is not durable storage.
 const failedSnapshotsByKey = new Map<string, string>()
@@ -31,7 +35,33 @@ function enqueueWrite(key: string, operation: () => Promise<void>): Promise<void
 
 export type LocalDraftStatus = 'not_saved' | 'saving' | 'saved_locally' | 'storage_error'
 
+declare const draftPersistenceProofBrand: unique symbol
+
+/**
+ * Opaque proof of one successful write in the current JavaScript runtime.
+ * It is intentionally not serializable and does not prove cross-process or
+ * cross-storage atomicity.
+ */
+export type DraftPersistenceProof = { readonly [draftPersistenceProofBrand]: true }
+
+type DraftPersistenceProofRecord = {
+  controller: DraftController
+  subjectId: string
+  generation: string
+  revision: number
+  writeRevision: number
+  snapshot: string
+}
+
+const draftPersistenceProofs = new WeakMap<object, DraftPersistenceProofRecord>()
+
 type DraftEnvelope = { schema: 1; subjectId: string; draft: RecordingDraft }
+
+function cloneDraft(draft: RecordingDraft): RecordingDraft {
+  // RecordingDraft is a JSON-shaped value. Returning a copy prevents callers
+  // from mutating controller state without going through update().
+  return JSON.parse(JSON.stringify(draft)) as RecordingDraft
+}
 
 function storageKey(subjectId: string, clientEventId: string): string {
   if (!/^[1-9]\d{0,19}$/.test(subjectId)) throw new Error('需要已验证的账号才能保存草稿')
@@ -74,6 +104,7 @@ export class DraftController {
   private readonly now: () => Date
   private readonly auth: AuthLease
   private readonly generation: string
+  private currentPersistenceProof: object | null = null
 
   constructor(subjectId: string, draft: RecordingDraft, storage: DraftStorage, now: () => Date, auth: AuthLease) {
     this.subjectId = subjectId
@@ -89,7 +120,7 @@ export class DraftController {
 
   get draft(): RecordingDraft {
     this.assertCurrent()
-    return this.currentDraft
+    return cloneDraft(this.currentDraft)
   }
 
   /** Bind network operations to the same authenticated owner as this draft. */
@@ -135,9 +166,11 @@ export class DraftController {
 
   /** Update visible state first; a failed device write never discards the input. */
   async update(transform: (draft: RecordingDraft) => RecordingDraft): Promise<boolean> {
+    this.invalidatePersistenceProof()
     this.assertCurrent()
-    const next = transform(this.draft)
-    if (next.clientEventId !== this.draft.clientEventId || next.timeZone !== this.draft.timeZone) {
+    const current = cloneDraft(this.currentDraft)
+    const next = transform(current)
+    if (next.clientEventId !== current.clientEventId || next.timeZone !== current.timeZone) {
       throw new Error('不能改变记录身份或已冻结的时区')
     }
     this.currentDraft = restoreDraft(next, todayInTimezone(next.timeZone, this.now()))
@@ -146,9 +179,44 @@ export class DraftController {
 
   /** Stores an immutable snapshot. A later edit cannot be overwritten by an older write. */
   async persist(): Promise<boolean> {
+    this.invalidatePersistenceProof()
+    return (await this.persistSnapshot(false)).saved
+  }
+
+  /**
+   * Persist the exact current draft and return an opaque in-process handle only
+   * if that write completes successfully and is still the latest revision.
+   * A later update/persist invalidates the handle before starting its write.
+   */
+  async persistWithProof(): Promise<DraftPersistenceProof | null> {
+    this.invalidatePersistenceProof()
+    return (await this.persistSnapshot(true)).proof
+  }
+
+  /** Check an opaque proof against this controller's live lease and exact current bytes. */
+  isCurrentPersistenceProof(proof: unknown): proof is DraftPersistenceProof {
+    if (!proof || typeof proof !== 'object' || this.currentPersistenceProof !== proof) return false
+    const record = draftPersistenceProofs.get(proof)
+    if (!record || record.controller !== this || record.subjectId !== this.subjectId ||
+      record.generation !== this.generation || record.revision !== this.revision ||
+      record.writeRevision !== persistenceWriteRevision || this.status !== 'saved_locally') return false
+    try {
+      this.assertCurrent()
+      return JSON.stringify({ schema: 1, subjectId: this.subjectId, draft: this.currentDraft }) === record.snapshot
+    } catch { return false }
+  }
+
+  private invalidatePersistenceProof(): void {
+    if (this.currentPersistenceProof) draftPersistenceProofs.delete(this.currentPersistenceProof)
+    this.currentPersistenceProof = null
+  }
+
+  private async persistSnapshot(issueProof: boolean): Promise<{ saved: boolean; proof: DraftPersistenceProof | null }> {
     this.assertCurrent()
     const revision = ++this.revision
-    const envelope: DraftEnvelope = { schema: 1, subjectId: this.subjectId, draft: this.draft }
+    if (!Number.isSafeInteger(persistenceWriteRevision + 1)) throw new Error('本机写入版本不可用')
+    const writeRevision = ++persistenceWriteRevision
+    const envelope: DraftEnvelope = { schema: 1, subjectId: this.subjectId, draft: cloneDraft(this.currentDraft) }
     const snapshot = JSON.stringify(envelope)
     this.status = 'saving'
     // Authorization was checked before the snapshot was queued. Finishing an
@@ -168,14 +236,19 @@ export class DraftController {
       await operation
       if (!this.auth.isCurrent(this.subjectId, this.generation)) {
         if (revision === this.revision) this.status = 'not_saved'
-        return false
+        return { saved: false, proof: null }
       }
-      if (revision !== this.revision) return false
+      if (revision !== this.revision) return { saved: false, proof: null }
       this.status = 'saved_locally'
-      return true
+      if (!issueProof) return { saved: true, proof: null }
+      const handle = Object.freeze({})
+      draftPersistenceProofs.set(handle, { controller: this, subjectId: this.subjectId,
+        generation: this.generation, revision, writeRevision, snapshot })
+      this.currentPersistenceProof = handle
+      return { saved: true, proof: handle as DraftPersistenceProof }
     } catch {
       if (revision === this.revision) this.status = 'storage_error'
-      return false
+      return { saved: false, proof: null }
     }
   }
 }

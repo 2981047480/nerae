@@ -242,6 +242,108 @@ test('session expiry preserves the latest queued draft for the same subject afte
   assert.throws(() => old.draft, /账号已变化/)
 })
 
+test('persistence proof is opaque and bound to one controller, subject, generation, revision and exact draft', async () => {
+  const storage = memoryStore()
+  let generation = 'proof-session-1'
+  const auth = { generation, isCurrent: (id, captured) => id === '101' && captured === generation }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  const proof = await controller.persistWithProof()
+  assert.ok(proof)
+  assert.deepEqual(Object.keys(proof), [])
+  assert.equal(JSON.stringify(proof), '{}')
+  assert.equal(controller.isCurrentPersistenceProof(proof), true)
+
+  const otherController = new DraftController('101', makeDraft(), storage, now, auth)
+  assert.equal(otherController.isCurrentPersistenceProof(proof), false)
+  assert.equal(controller.isCurrentPersistenceProof({}), false)
+
+  controller.draft.exercises[0].sets[0].reps = '8'
+  assert.equal(controller.draft.exercises[0].sets[0].reps, '')
+  assert.equal(controller.isCurrentPersistenceProof(proof), true)
+  await controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '8'))
+  assert.equal(controller.isCurrentPersistenceProof(proof), false)
+
+  generation = 'proof-session-2'
+  assert.equal(controller.isCurrentPersistenceProof(proof), false)
+})
+
+test('any subsequent ordinary edit or persist invalidates a successful proof', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  let proof = await controller.persistWithProof()
+  assert.equal(controller.isCurrentPersistenceProof(proof), true)
+  assert.equal(await controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '8')), true)
+  assert.equal(controller.isCurrentPersistenceProof(proof), false)
+
+  proof = await controller.persistWithProof()
+  assert.equal(controller.isCurrentPersistenceProof(proof), true)
+  assert.equal(await controller.persist(), true)
+  assert.equal(controller.isCurrentPersistenceProof(proof), false)
+})
+
+test('failed or uncertain write never produces a proof and invalidates an earlier proof', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  const previousProof = await controller.persistWithProof()
+  assert.equal(controller.isCurrentPersistenceProof(previousProof), true)
+
+  // Simulate a native write that may have persisted before reporting failure.
+  storage.write = async (key, value) => {
+    storage.data.set(key, value)
+    throw new Error('write acknowledgement lost')
+  }
+  assert.equal(await controller.persistWithProof(), null)
+  assert.equal(controller.status, 'storage_error')
+  assert.equal(controller.isCurrentPersistenceProof(previousProof), false)
+})
+
+test('a newer concurrent persist invalidates an earlier proof even when writes finish in order', async () => {
+  const data = new Map()
+  const releases = []
+  let writes = 0
+  const storage = {
+    async read(key) { return data.get(key) },
+    write(key, value) {
+      writes++
+      return new Promise(resolve => releases.push(() => { data.set(key, value); resolve() }))
+    },
+  }
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const controller = new DraftController('101', makeDraft(), storage, now, auth)
+  const older = controller.persistWithProof()
+  await new Promise(resolve => setImmediate(resolve))
+  const newer = controller.persistWithProof()
+  releases[0]()
+  assert.equal(await older, null)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(writes, 2)
+  releases[1]()
+  const latestProof = await newer
+  assert.ok(latestProof)
+  assert.equal(controller.isCurrentPersistenceProof(latestProof), true)
+})
+
+test('a newer same-draft write from another controller invalidates the earlier proof immediately', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'proof-session', isCurrent: () => true }
+  const first = new DraftController('101', makeDraft(), storage, now, auth)
+  const firstProof = await first.persistWithProof()
+  assert.equal(first.isCurrentPersistenceProof(firstProof), true)
+
+  let release
+  storage.write = () => new Promise(resolve => { release = resolve })
+  const second = new DraftController('101', makeDraft(), storage, now, auth)
+  const newerWrite = second.persistWithProof()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(typeof release, 'function')
+  assert.equal(first.isCurrentPersistenceProof(firstProof), false)
+  release()
+  const secondProof = await newerWrite
+  assert.equal(second.isCurrentPersistenceProof(secondProof), true)
+})
+
 test('loading an old server-linked draft does not overwrite it when stable order requires reconciliation', async () => {
   const storage = memoryStore()
   const auth = { generation: 'session-1', isCurrent: () => true }
