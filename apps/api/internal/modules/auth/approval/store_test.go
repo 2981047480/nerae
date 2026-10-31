@@ -16,6 +16,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -307,26 +308,63 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		}
 		return pending, data
 	}
+	// A synthetic linked identity/session exercises subject-wide listing without
+	// relying on a registered external WeChat account or provider integration.
+	var ownerID uint64
+	var deviceID []byte
+	expectedOwnerID, ownerErr := strconv.ParseUint(claims.SubjectID, 10, 64)
+	if err := db.QueryRowContext(ctx, `SELECT user_id, device_id FROM auth_session WHERE id=?`, []byte(claims.SessionID)).
+		Scan(&ownerID, &deviceID); err != nil || ownerErr != nil || ownerID != expectedOwnerID {
+		t.Fatal("could not load isolated session owner")
+	}
+	var emailIdentityID []byte
+	if err := db.QueryRowContext(ctx, `SELECT id FROM login_identity WHERE user_id=? AND kind='email' AND state='active'`, ownerID).Scan(&emailIdentityID); err != nil {
+		t.Fatal("could not load isolated email identity")
+	}
+	wechatIdentityID, _ := domain.GenerateChallengeID()
+	wechatSessionID, _ := domain.GenerateChallengeID()
+	wechatChallengeID, _ := domain.GenerateChallengeID()
+	linkTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin synthetic linked identity fixture")
+	}
+	defer linkTx.Rollback()
+	linkNow := time.Now().UTC().Truncate(time.Microsecond)
+	if _, err := linkTx.ExecContext(ctx, `INSERT INTO login_identity
+		(id,user_id,kind,provider_scope,subject_enc,subject_lookup_hmac,key_id,state,verified_at,created_at,updated_at)
+		VALUES (?,?, 'wechat_mini','synthetic-test',?,?,?,'active',?,?,?)`, []byte(wechatIdentityID), ownerID,
+		[]byte{1, 2, 3}, bytes.Repeat([]byte{18}, 32), []byte("synthetic-key"), timestamp(linkNow), timestamp(linkNow), timestamp(linkNow)); err != nil {
+		_ = linkTx.Rollback()
+		t.Fatal("could not insert synthetic linked identity")
+	}
+	if _, err := linkTx.ExecContext(ctx, `UPDATE user SET identity_version=identity_version+1 WHERE id=?`, ownerID); err != nil {
+		_ = linkTx.Rollback()
+		t.Fatal("could not advance identity version for synthetic link")
+	}
+	wechatToken, err := codec.Issue(claims.SubjectID, wechatSessionID, claims.TokenVersion)
+	if err != nil {
+		_ = linkTx.Rollback()
+		t.Fatal("could not issue synthetic linked session token")
+	}
+	wechatClaims, err := codec.Verify(wechatToken.ForResponse())
+	if err != nil {
+		_ = linkTx.Rollback()
+		t.Fatal("could not verify synthetic linked session token")
+	}
+	if _, err := linkTx.ExecContext(ctx, `INSERT INTO auth_session
+		(id,user_id,identity_id,device_id,login_challenge_id,token_version,state,authenticated_at,expires_at,created_at)
+		VALUES (?,?,?,?,?,?,'active',?,?,?)`, []byte(wechatSessionID), ownerID, []byte(wechatIdentityID), deviceID,
+		[]byte(wechatChallengeID), wechatClaims.TokenVersion, timestamp(wechatClaims.IssuedAt), timestamp(wechatClaims.ExpiresAt), timestamp(linkNow)); err != nil {
+		_ = linkTx.Rollback()
+		t.Fatal("could not insert synthetic linked session")
+	}
+	if err := linkTx.Commit(); err != nil {
+		t.Fatal("could not commit synthetic linked identity fixture")
+	}
 	pending, data := begin()
 	listFor := func(credential string) (PendingList, error) {
 		t.Helper()
-		tx, err := db.BeginTx(ctx, nil)
-		if err != nil {
-			return PendingList{}, err
-		}
-		defer tx.Rollback()
-		principal, err := auth.Authenticate(ctx, tx, credential)
-		if err != nil {
-			return PendingList{}, err
-		}
-		result, err := store.ListPending(ctx, tx, principal)
-		if err != nil {
-			return PendingList{}, err
-		}
-		if err := tx.Commit(); err != nil {
-			return PendingList{}, ErrUnavailable
-		}
-		return result, nil
+		return store.ListPending(ctx, db, auth, credential)
 	}
 	listed, err := listFor(token)
 	if err != nil || len(listed.Items) != 1 || listed.Items[0].ID != data.ID || listed.Items[0].ComparisonCode != data.ComparisonCode ||
@@ -339,6 +377,94 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	}
 	if !validApprovalOpaqueID(listed.Items[0].ID) || validApprovalOpaqueID(strings.Repeat("a", 21)+"/") {
 		t.Fatal("approval list ID validation did not match AuthOpaqueId constraints")
+	}
+	wechatList, err := listFor(wechatToken.ForResponse())
+	if err != nil || len(wechatList.Items) != 1 || wechatList.Items[0].ID != data.ID {
+		t.Fatal("synthetic same-subject session with a different identity could not list pending item")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE user SET identity_version=identity_version+1 WHERE id=?`, ownerID); err != nil {
+		t.Fatal("could not stage identity-version invalidation")
+	}
+	if invalidated, err := listFor(wechatToken.ForResponse()); err != nil || len(invalidated.Items) != 0 {
+		t.Fatal("pending approval survived an identity-version change")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE user SET identity_version=identity_version-1 WHERE id=?`, ownerID); err != nil {
+		t.Fatal("could not restore identity version")
+	}
+	// Model ResolveEmail's identity -> user lock order while the list principal
+	// already holds the other identity -> user. The list must not lock the email
+	// identity after acquiring the shared user row.
+	crossIdentityListTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("could not begin cross-identity lock-order check")
+	}
+	crossIdentityPrincipal, err := auth.Authenticate(ctx, crossIdentityListTx, wechatToken.ForResponse())
+	if err != nil {
+		_ = crossIdentityListTx.Rollback()
+		t.Fatal("could not authenticate synthetic linked session")
+	}
+	emailIdentityTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		_ = crossIdentityListTx.Rollback()
+		t.Fatal("could not begin email identity lock fixture")
+	}
+	var lockedEmailIdentity []byte
+	if err := emailIdentityTx.QueryRowContext(ctx, `SELECT id FROM login_identity WHERE id=? FOR UPDATE`, emailIdentityID).Scan(&lockedEmailIdentity); err != nil {
+		_ = emailIdentityTx.Rollback()
+		_ = crossIdentityListTx.Rollback()
+		t.Fatal("could not acquire ResolveEmail-order identity lock")
+	}
+	userLockStarted := make(chan struct{})
+	userLockDone := make(chan error, 1)
+	go func() {
+		close(userLockStarted)
+		var lockedUser uint64
+		userLockDone <- emailIdentityTx.QueryRowContext(ctx, `SELECT id FROM user WHERE id=? FOR UPDATE`, ownerID).Scan(&lockedUser)
+	}()
+	<-userLockStarted
+	select {
+	case err := <-userLockDone:
+		_ = emailIdentityTx.Rollback()
+		_ = crossIdentityListTx.Rollback()
+		if err != nil {
+			t.Fatal("email identity transaction failed before list lock check")
+		}
+		t.Fatal("email identity fixture did not wait for the shared user lock")
+	case <-time.After(100 * time.Millisecond):
+	}
+	crossListDone := make(chan error, 1)
+	go func() {
+		_, err := store.readPendingInTx(ctx, crossIdentityListTx, crossIdentityPrincipal)
+		crossListDone <- err
+	}()
+	select {
+	case err := <-crossListDone:
+		if err != nil {
+			_ = crossIdentityListTx.Rollback()
+			_ = emailIdentityTx.Rollback()
+			t.Fatal("cross-identity list deadlocked or failed while email identity waited on user")
+		}
+	case <-time.After(3 * time.Second):
+		_ = crossIdentityListTx.Rollback()
+		_ = emailIdentityTx.Rollback()
+		t.Fatal("cross-identity list waited on the other identity lock")
+	}
+	if err := crossIdentityListTx.Commit(); err != nil {
+		_ = emailIdentityTx.Rollback()
+		t.Fatal("could not commit cross-identity list lock check")
+	}
+	select {
+	case err := <-userLockDone:
+		if err != nil {
+			_ = emailIdentityTx.Rollback()
+			t.Fatal("email identity transaction did not continue after list commit")
+		}
+	case <-time.After(3 * time.Second):
+		_ = emailIdentityTx.Rollback()
+		t.Fatal("email identity transaction stayed blocked after list commit")
+	}
+	if err := emailIdentityTx.Commit(); err != nil {
+		t.Fatal("could not commit email identity lock fixture")
 	}
 	otherList, err := listFor(otherToken)
 	if err != nil || len(otherList.Items) != 0 {
@@ -358,7 +484,7 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 		_ = lockedListTx.Rollback()
 		t.Fatal("could not authenticate concurrent list check")
 	}
-	if _, err := store.ListPending(ctx, lockedListTx, lockedPrincipal); err != nil {
+	if _, err := store.readPendingInTx(ctx, lockedListTx, lockedPrincipal); err != nil {
 		_ = lockedListTx.Rollback()
 		t.Fatal("could not lock pending row for list snapshot")
 	}
@@ -414,6 +540,27 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	}
 	if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='active', revoked_at=NULL WHERE id=?`, []byte(claims.SessionID)); err != nil {
 		t.Fatal("could not restore isolated list session")
+	}
+	store.now = func() time.Time { return time.Now().Add(6 * time.Minute) }
+	if ahead, err := listFor(token); err != nil || len(ahead.Items) != 0 {
+		store.now = time.Now
+		t.Fatal("list did not use the approval application clock when it was ahead of database time")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at=UTC_TIMESTAMP(6)-INTERVAL 1 HOUR,
+		expires_at=UTC_TIMESTAMP(6)-INTERVAL 30 SECOND WHERE id=?`, []byte(data.ID)); err != nil {
+		store.now = time.Now
+		t.Fatal("could not stage database-expired item for clock-skew check")
+	}
+	store.now = func() time.Time { return time.Now().Add(-time.Minute) }
+	behind, err := listFor(token)
+	if err != nil || len(behind.Items) != 1 || behind.Items[0].ID != data.ID {
+		store.now = time.Now
+		t.Fatal("list did not match BeginEmail/Decide clock semantics when application time lagged database time")
+	}
+	store.now = time.Now
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at=?, expires_at=? WHERE id=?`,
+		timestamp(listed.Items[0].CreatedAt), timestamp(data.ExpiresAt), []byte(data.ID)); err != nil {
+		t.Fatal("could not restore pending approval after clock-skew check")
 	}
 	// The internal cap is deliberately fail-closed: cap+1 is detected without
 	// returning any prefix as if it were the complete pending list.
@@ -509,7 +656,9 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM trusted_device WHERE user_id = ?`, claims.SubjectID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("approval alone registered the new device")
 	}
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE user_id = ?`, claims.SubjectID).Scan(&count); err != nil || count != 1 {
+	// One original email session plus the synthetic linked-identity session
+	// above; deciding an approval must not issue an additional session.
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE user_id = ?`, claims.SubjectID).Scan(&count); err != nil || count != 2 {
 		t.Fatal("approval alone issued another session")
 	}
 	if err := decide(token, data, Deny, "", false); !errors.Is(err, ErrUnavailable) {

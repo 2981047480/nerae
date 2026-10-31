@@ -75,11 +75,38 @@ func (PendingList) String() string       { return "PendingApprovalList{redacted}
 func (PendingList) GoString() string     { return "PendingApprovalList{redacted}" }
 func (PendingList) LogValue() slog.Value { return slog.StringValue("PendingApprovalList{redacted}") }
 
-// ListPending reads the current subject's pending approvals from a transaction
-// authenticated by Principal. The caller must commit the transaction before
-// exposing the returned list. This primitive is not an HTTP handler and does
-// not authorize a decision; Decide currently retains its same-identity rule.
-func (s *Store) ListPending(ctx context.Context, tx *sql.Tx, principal *session.Principal) (PendingList, error) {
+// ListPending owns the read transaction and returns a serializable result only
+// after Commit succeeds. It does not authorize a decision; Decide currently
+// retains its same-identity rule.
+func (s *Store) ListPending(ctx context.Context, db *sql.DB, sessions *session.Store, bearerToken string) (PendingList, error) {
+	if s == nil || ctx == nil || db == nil || sessions == nil || bearerToken == "" {
+		return PendingList{}, ErrUnavailable
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	defer tx.Rollback()
+	principal, err := sessions.Authenticate(ctx, tx, bearerToken)
+	if err != nil {
+		if errors.Is(err, session.ErrInvalidSession) {
+			return PendingList{}, session.ErrInvalidSession
+		}
+		return PendingList{}, ErrUnavailable
+	}
+	result, err := s.readPendingInTx(ctx, tx, principal)
+	if err != nil {
+		return PendingList{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return PendingList{}, ErrUnavailable
+	}
+	return result, nil
+}
+
+// readPendingInTx is package-private so uncommitted list material cannot escape
+// through the supported API. ListPending is the only production release path.
+func (s *Store) readPendingInTx(ctx context.Context, tx *sql.Tx, principal *session.Principal) (PendingList, error) {
 	if s == nil || s.now == nil || ctx == nil || tx == nil || principal == nil {
 		return PendingList{}, ErrUnavailable
 	}
@@ -102,15 +129,25 @@ func (s *Store) ListPending(ctx context.Context, tx *sql.Tx, principal *session.
 		Scan(&sessionUser, &sessionState); err != nil || sessionUser != actor.SubjectID || sessionState != "active" {
 		return PendingList{}, ErrUnavailable
 	}
+	listTime := s.now().UTC().Truncate(time.Microsecond)
+	if listTime.IsZero() {
+		return PendingList{}, ErrUnavailable
+	}
+	// Do not lock a historical approval identity here. Principal authentication
+	// already locks current identity -> user -> device -> session; locking a
+	// different email identity after user would invert ResolveEmail's
+	// identity -> user order. Approval identity_version is the invalidation
+	// boundary; every future identity mutation must advance it under the user
+	// lock in the same transaction. Current production code only creates an
+	// identity with a new user and has no link/revoke mutation path.
 	rows, err := tx.QueryContext(ctx, `SELECT a.id, a.comparison_code,
 		DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s.%f'),
 		DATE_FORMAT(a.expires_at, '%Y-%m-%d %H:%i:%s.%f')
 		FROM auth_login_approval a
-		JOIN login_identity i ON i.id = a.identity_id AND i.user_id = a.user_id
-			AND i.kind = 'email' AND i.provider_scope = 'beta-email' AND i.state = 'active'
 		WHERE a.user_id = ? AND a.token_version = ? AND a.identity_version = ? AND a.state = 'pending'
-			AND a.expires_at > UTC_TIMESTAMP(6)
-		ORDER BY a.created_at ASC, a.id ASC LIMIT ? FOR UPDATE`, actor.SubjectID, tokenVersion, identityVersion, maxPendingListItems+1)
+			AND a.expires_at > ?
+		ORDER BY a.created_at ASC, a.id ASC LIMIT ? FOR UPDATE`, actor.SubjectID, tokenVersion, identityVersion,
+		timestamp(listTime), maxPendingListItems+1)
 	if err != nil {
 		return PendingList{}, ErrUnavailable
 	}
@@ -135,18 +172,14 @@ func (s *Store) ListPending(ctx context.Context, tx *sql.Tx, principal *session.
 	if rows.Err() != nil || rows.Close() != nil {
 		return PendingList{}, ErrUnavailable
 	}
-	// The SQL predicate uses statement-time UTC. Recheck after acquiring row
-	// locks so a wait cannot return an approval that expired while blocked.
-	var nowRaw string
-	if err := tx.QueryRowContext(ctx, `SELECT DATE_FORMAT(UTC_TIMESTAMP(6), '%Y-%m-%d %H:%i:%s.%f')`).Scan(&nowRaw); err != nil {
-		return PendingList{}, ErrUnavailable
-	}
-	dbNow, err := time.Parse("2006-01-02 15:04:05.000000", nowRaw)
-	if err != nil {
+	// Use the same application clock as BeginEmail and Decide, then recheck
+	// after locks so waiting does not return an item that expired meanwhile.
+	finalTime := s.now().UTC().Truncate(time.Microsecond)
+	if finalTime.IsZero() || finalTime.Before(listTime) {
 		return PendingList{}, ErrUnavailable
 	}
 	for _, item := range items {
-		if !item.ExpiresAt.After(dbNow) {
+		if !item.ExpiresAt.After(finalTime) {
 			return PendingList{}, ErrUnavailable
 		}
 	}
