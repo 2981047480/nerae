@@ -1,4 +1,5 @@
 import type { SetKind, SetWrite } from './recording'
+import { TrainingOperationJournal } from './operationJournal'
 
 /** Credentials come from the real identity module and are never stored here. */
 export interface RecordingCredential {
@@ -24,6 +25,11 @@ export interface ScopedSessionDetail {
   /** Server-declared idempotency retention boundary for this successful write only. */
   idempotencyKeyExpiresAt?: string
 }
+
+/** A read-only receipt. It does not clear a journal or overwrite a draft. */
+export type PendingReplayResult =
+  | { readonly state: 'unresolved' }
+  | { readonly state: 'committed'; readonly detail: WorkoutSessionDetail; readonly idempotencyKeyExpiresAt: string }
 
 export interface WorkoutSessionSummary {
   id: string
@@ -463,6 +469,67 @@ function validIdempotencyKey(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9._~-]{8,128}$/.test(value)
 }
 
+function validReplayHeaders(headers: Readonly<Record<string, string>> | undefined): boolean {
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers)) return false
+  const selected = new Map<string, string>()
+  try {
+    for (const [name, value] of Object.entries(headers)) {
+      const key = name.toLowerCase()
+      if (!['idempotency-replayed', 'content-type', 'cache-control', 'x-request-id'].includes(key)) continue
+      if (selected.has(key) || typeof value !== 'string') return false
+      selected.set(key, value)
+    }
+  } catch { return false }
+  return selected.get('idempotency-replayed') === 'true' &&
+    /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(selected.get('content-type') || '') &&
+    (selected.get('cache-control') || '').toLowerCase() === 'no-store' &&
+    /^[0-9a-f]{32}$/.test(selected.get('x-request-id') || '')
+}
+
+// Check only claims that the original request can establish. This historical
+// receipt is not a current snapshot and must never replace later user edits.
+function replayMatches(detail: WorkoutSessionDetail, eventId: string, body: Record<string, unknown>, match: RegExpExecArray | null): boolean {
+  if (detail.clientEventId !== eventId) return false
+  if (!match) {
+    return body.source === 'free' && body.clientEventId === eventId && detail.source === 'free' &&
+      body.date === detail.date && (body.timeZone === undefined || body.timeZone === detail.timeZone)
+  }
+  if (detail.id !== match[1] || detail.source !== 'free' || !validVersion(body.expectedVersion)) return false
+  const version = body.expectedVersion
+  if (match[2] === 'finish') {
+    if (version === Number.MAX_SAFE_INTEGER || detail.version !== version + 1 || detail.status !== 'completed' || detail.recordedAt === null) return false
+    if (body.date !== undefined && body.date !== detail.date) return false
+    for (const field of ['durationMin', 'rpe', 'note'] as const) {
+      if (Object.prototype.hasOwnProperty.call(body, field) && detail[field] !== body[field]) return false
+    }
+    return true
+  }
+  if (detail.version !== version && detail.version !== version + 1) return false
+  const order = keyList(body.exerciseEntryKeys, 2000, true, 'invalid_request')
+  if (detail.exerciseEntryKeys.length !== order.length || detail.exerciseEntryKeys.some((key, index) => key !== order[index])) return false
+  const returned = new Map(detail.sets.map(set => [set.recordKey, set]))
+  const written = new Set<string>()
+  if (body.sets !== undefined) {
+    if (!Array.isArray(body.sets) || body.sets.length === 0 || body.sets.length > 200) return false
+    for (const raw of body.sets) {
+      const expected = setPayload(raw)
+      const found = returned.get(expected.recordKey)
+      if (written.has(expected.recordKey) || !found || !matchesSetPayload(expected, found)) return false
+      written.add(expected.recordKey)
+    }
+  }
+  if (body.deleteRecordKeys !== undefined) {
+    const deleted = keyList(body.deleteRecordKeys, 200, false, 'invalid_request')
+    if (deleted.some(key => written.has(key) || returned.has(key))) return false
+    if (deleted.length + written.size > 200) return false
+  }
+  if (body.restoreRecordKeys !== undefined) {
+    const restored = keyList(body.restoreRecordKeys, 200, false, 'invalid_request')
+    if (restored.some(key => !written.has(key) || !returned.has(key))) return false
+  }
+  return true
+}
+
 /** Only HTTPS is accepted; the app must provide a real, configured API base. */
 function apiBase(value: string): string {
   let parsed: URL
@@ -489,10 +556,7 @@ export class RecordingApi {
     this.request = request
   }
 
-  private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
-    data?: unknown, idempotencyKey?: string): Promise<{
-      data: unknown; headers?: Readonly<Record<string, string>>; lease: RecordingLease; isSameCredential: () => boolean
-    }> {
+  private captureCredential(): { subjectId: string; generation: string; accessToken: string; isSameCredential: () => boolean } {
     const credential = this.auth.current()
     if (!credential) throw new RecordingApiError('unauthenticated')
     // Capture scalar values: an auth store may mutate its current object while
@@ -512,6 +576,14 @@ export class RecordingApi {
     if (subjectId !== this.lease.subjectId || generation !== this.lease.generation || !isSameCredential()) {
       throw new RecordingApiError('session_changed')
     }
+    return { subjectId, generation, accessToken, isSameCredential }
+  }
+
+  private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
+    data?: unknown, idempotencyKey?: string): Promise<{
+      data: unknown; headers?: Readonly<Record<string, string>>; lease: RecordingLease; isSameCredential: () => boolean
+    }> {
+    const { subjectId, generation, accessToken, isSameCredential } = this.captureCredential()
     if (method === 'POST' && !validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
     const header: Record<string, string> = { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
     if (method === 'POST') {
@@ -548,6 +620,51 @@ export class RecordingApi {
       throw new RecordingApiError(method === 'POST' ? 'reconcile_required' : 'invalid_response')
     }
     return { data: response.data, headers: response.headers, lease: { subjectId, generation }, isSameCredential }
+  }
+
+  /**
+   * Read a receipt for the exact request retained by the current subject's
+   * journal. No ordinary write is retried and no journal/draft is changed.
+   * A later coordinator must recheck the durable operation before settlement.
+   */
+  async replayPending(journal: TrainingOperationJournal, clientEventId: string): Promise<PendingReplayResult> {
+    if (!(journal instanceof TrainingOperationJournal) || !validKey(clientEventId)) throw new RecordingApiError('invalid_request')
+    const pending = await journal.readPending(clientEventId)
+    const credential = this.captureCredential()
+    if (!pending || pending.subjectId !== credential.subjectId || pending.clientEventId !== clientEventId ||
+      (pending.state !== 'in_flight' && pending.state !== 'uncertain')) return { state: 'unresolved' }
+    const original = pending.request
+    const match = /^\/me\/sessions\/([1-9]\d{0,19})\/(sets|finish)$/.exec(original.path)
+    if (original.method !== 'POST' || !validIdempotencyKey(original.idempotencyKey) ||
+      (original.path !== '/me/sessions' && !match)) return { state: 'unresolved' }
+    let submitted: unknown
+    try { submitted = JSON.parse(original.body) } catch { return { state: 'unresolved' } }
+    if (!object(submitted)) return { state: 'unresolved' }
+    let response: HttpResponse
+    try {
+      response = await this.request({ url: `${this.base}${original.path}/replay`, method: 'POST',
+        header: { Authorization: `Bearer ${credential.accessToken}`, Accept: 'application/json',
+          'Content-Type': 'application/json', 'Idempotency-Key': original.idempotencyKey }, data: original.body })
+    } catch {
+      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+      return { state: 'unresolved' }
+    }
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    const expectedStatus = match ? 200 : 201
+    if (!response || response.statusCode !== expectedStatus || !validReplayHeaders(response.headers)) return { state: 'unresolved' }
+    let detail: WorkoutSessionDetail
+    let expiry: string
+    try {
+      expiry = writeExpiry(response.headers)
+      detail = parseSessionDetail(response.data)
+      if (!replayMatches(detail, pending.clientEventId, submitted, match)) return { state: 'unresolved' }
+    } catch { return { state: 'unresolved' } }
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    const immutable = { ...detail, sets: detail.sets.map(set => Object.freeze({ ...set })),
+      exerciseEntryKeys: [...detail.exerciseEntryKeys] }
+    Object.freeze(immutable.sets)
+    Object.freeze(immutable.exerciseEntryKeys)
+    return Object.freeze({ state: 'committed', detail: Object.freeze(immutable), idempotencyKeyExpiresAt: expiry })
   }
 
   private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
@@ -795,7 +912,7 @@ export class RecordingApi {
 }
 
 /** Adapter to the actual uni-app network API on each target platform. */
-const permittedRecordingResponseHeaders = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at'])
+const permittedRecordingResponseHeaders = new Set(['content-type', 'cache-control', 'x-request-id', 'idempotency-key-expires-at', 'idempotency-replayed'])
 
 function selectRecordingResponseHeaders(raw: unknown): Readonly<Record<string, string>> | undefined {
   if (raw === undefined || raw === null) return undefined

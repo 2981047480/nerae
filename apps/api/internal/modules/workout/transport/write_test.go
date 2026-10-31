@@ -529,7 +529,11 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		if !bytes.Contains(output, []byte("PASS: actual client adapter")) {
 			t.Fatal("client interoperability did not run")
 		}
+		if !bytes.Contains(output, []byte("PASS: lost create response recovered as a read-only receipt")) {
+			t.Fatal("client replay-only recovery did not run")
+		}
 		t.Log("PASS: actual client adapter created, saved, replayed, finished and restored over isolated TLS HTTP")
+		t.Log("PASS: actual client read-only receipt recovery after a lost create response")
 	}
 	clearAdultForTest(t, ctx, db, auth, tokenA)
 	for _, item := range []struct {

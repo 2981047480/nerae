@@ -1,5 +1,7 @@
 /**
  * Durable intent journal for one pending training write per account/event.
+ * The event is the recording session's stable creation clientEventId, shared
+ * by its later set/finish writes; it is not a per-request idempotency key.
  * This module does not send requests, hold credentials, validate HTTP replies,
  * or grant server access. The injected storage must provide protected-at-rest
  * storage and atomic create/compare-and-swap semantics.

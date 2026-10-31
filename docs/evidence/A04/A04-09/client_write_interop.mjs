@@ -17,19 +17,26 @@ const hooks = registerHooks({
     if (specifier === './recordingApi' && context.parentURL?.endsWith('/recordingProjection.ts')) {
       return nextResolve('./recordingApi.ts', context)
     }
+    if (specifier === './operationJournal' && context.parentURL?.endsWith('/recordingApi.ts')) {
+      return nextResolve('./operationJournal.ts', context)
+    }
     return nextResolve(specifier, context)
   },
 })
 const featureDir = process.env.NERAE_INTEROP_CLIENT_DIR
 const { RecordingApi } = await import(pathToFileURL(path.join(featureDir, 'recordingApi.ts')).href)
 const { restoreConfirmedSession } = await import(pathToFileURL(path.join(featureDir, 'recordingProjection.ts')).href)
+const { TrainingOperationJournal } = await import(pathToFileURL(path.join(featureDir, 'operationJournal.ts')).href)
 hooks.deregister()
 const request = async options => {
   const response = await fetch(options.url, { method: options.method, headers: options.header, body: options.data })
   const data = await response.json()
-  const expiry = response.headers.get('Idempotency-Key-Expires-At')
-  return { statusCode: response.status, data,
-    ...(expiry === null ? {} : { headers: { 'idempotency-key-expires-at': expiry } }) }
+  const headers = {}
+  for (const name of ['idempotency-key-expires-at', 'idempotency-replayed', 'content-type', 'cache-control', 'x-request-id']) {
+    const value = response.headers.get(name)
+    if (value !== null) headers[name] = value
+  }
+  return { statusCode: response.status, data, headers }
 }
 const assertWriteExpiry = result => {
   assert.match(result.idempotencyKeyExpiresAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/)
@@ -102,4 +109,38 @@ assert.equal(afterRestored.ok, true)
 assert.deepEqual(afterRestored.draft.exercises.map(item => item.exerciseEntryKey), ['after-entry-002', 'after-entry-001'])
 assert.equal(afterRestored.draft.server.status, 'completed')
 await assert.rejects(other.api.readSession(after.detail.id), error => error.code === 'not_found')
+
+// Commit the original create on the real local server, discard its response,
+// then use a second session of the same subject for replay-only recovery.
+const storage = {
+  values: new Map(),
+  async read(key) { return this.values.get(key) },
+  async createIfAbsent(key, value) { if (this.values.has(key)) return false; this.values.set(key, value); return true },
+  async compareAndSwap(key, before, after) {
+    if (this.values.get(key) !== before) return false
+    if (after === null) this.values.delete(key); else this.values.set(key, after)
+    return true
+  },
+}
+const lostInput = { date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC', clientEventId: 'lost-client-event-001' }
+const originalBody = JSON.stringify({ source: 'free', ...lostInput })
+const journal = new TrainingOperationJournal(storage, first.auth, { retentionMs: 60_000 })
+await journal.stage(lostInput.clientEventId, { method: 'POST', path: '/me/sessions', body: originalBody, idempotencyKey: 'lost-create-key-001' })
+const permit = await journal.beginSend(lostInput.clientEventId)
+const lostApi = new RecordingApi(process.env.NERAE_INTEROP_URL, first.auth, async options => {
+  assert.equal(options.data, originalBody)
+  const committed = await request(options)
+  assert.equal(committed.statusCode, 201)
+  throw new Error('synthetic response lost after server commit')
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-a' })
+await assert.rejects(lostApi.createFreeSession(lostInput, 'lost-create-key-001'), error => error.code === 'reconcile_required')
+await journal.markUncertain(permit)
+const beforeReplay = [...storage.values.values()][0]
+const secondJournal = new TrainingOperationJournal(storage, again.auth, { retentionMs: 60_000 })
+const receipt = await again.api.replayPending(secondJournal, lostInput.clientEventId)
+assert.equal(receipt.state, 'committed')
+assert.equal(receipt.detail.clientEventId, lostInput.clientEventId)
+assert.equal([...storage.values.values()][0], beforeReplay)
+assert.equal((await secondJournal.readPending(lostInput.clientEventId)).state, 'uncertain')
+console.log('PASS: lost create response recovered as a read-only receipt using a second synthetic session; journal retained')
 console.log('PASS: actual client adapter created, saved, replayed, finished and restored both recording modes over isolated TLS HTTP')

@@ -1,0 +1,14 @@
+# Training journal receipt query
+
+The recording API can now read an in-flight or uncertain operation from the authenticated `TrainingOperationJournal` and query the separate replay-only route with the exact stored request body and idempotency key. The journal's `clientEventId` is the stable creation ID of the recording session, shared by subsequent set and finish operations; it is not an operation-specific key. A new login generation for the same verified subject may query the pending receipt; a changed subject, token or generation while the request is in flight cannot release it.
+
+Only a successful expected HTTP status with one valid replay marker, no-store/content-type/request-ID headers, valid server expiry, valid detail and request-related postconditions is returned as a historical committed receipt. Set values/order/deletions/restorations and finish state are checked where applicable. Missing or invalid evidence, a transport failure, missing/expired receipt and all non-success responses remain unresolved. The method never resends a normal write, clears the journal, overwrites a draft, or treats the historical receipt as a current snapshot. Cached error receipts are not yet settled.
+
+Verification on synthetic data:
+
+- `node --import ./docs/evidence/P02/P02-11/node-ts-loader.mjs --test --test-reporter=dot apps/client/src/features/training/*.test.mjs`: exit 0. Cases cover exact body/key reuse, same-subject new generation, session changes, malformed/duplicate headers, wrong event or payload, restored-key verification and journal retention.
+- Project `vue-tsc --noEmit -p apps/client/tsconfig.json`: exit 0 using the already installed pinned toolchain. An initial `pnpm --filter @nerae/client run typecheck` in the isolated worktree failed because pnpm attempted to replace the symlinked dependency directory without a TTY; no dependency installation or removal was performed.
+- The private MySQL and local TLS `docs/evidence/A04/A04-09/mysql_smoke.py` harness exited 0. It executed the actual TypeScript adapter and durable-journal API with an in-memory synthetic storage port, committed a create request, deliberately discarded the successful HTTP response, then read the matching receipt using a second authenticated session of the same subject. The test asserted that the journal remained unchanged. The same harness exercised both recording-mode payloads; it did not use native device storage, a real email address, real devices or production services.
+- Independent review found and prompted a fix for a restored-key validation gap; no remaining P0/P1 was reported. The same-session `clientEventId` contract is documented in the journal module.
+
+The client does not yet reconcile later edits, persist a receipt for crash-safe settlement, clear a confirmed journal entry, mount a recording page or provide real cross-device login. This is not a completed sync flow or installable app.
