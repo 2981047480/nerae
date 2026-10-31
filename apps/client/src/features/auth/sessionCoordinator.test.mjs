@@ -176,6 +176,270 @@ test('logout while a guarded install writes cannot renew its old guard', async (
   assert.equal(store.value, '')
 })
 
+test('cancelling an unused guard leaves an already authenticated session untouched', async () => {
+  const vault = memoryVault()
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  await coordinator.installAuthenticated(await authenticated('101', 'existing.synthetic'))
+  const original = coordinator.snapshot()
+  const guard = coordinator.captureInstallGuard()
+  let invalidated = 0
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { invalidated++ })
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'cancelled')
+  assert.equal(invalidated, 1)
+  assert.equal(coordinator.isCurrent(original.subjectId, original.generation), true)
+  assert.equal(JSON.parse(vault.value).accessToken, 'existing.synthetic')
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(await authenticated('202', 'late.synthetic'), guard)).status, 'superseded')
+})
+
+test('cancelling a guarded install during a vault write removes its late credential', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('accessToken')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  const installing = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'late.synthetic'), guard)
+  await writeStarted.promise
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  assert.equal(coordinator.current(), null)
+  releaseWrite.resolve()
+  assert.equal((await installing).status, 'superseded')
+  assert.equal(await cancelling, 'cancelled')
+  assert.equal(coordinator.current(), null)
+  assert.equal(vault.value, '')
+})
+
+test('cancelling an older guard cannot clear a newer account installation', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('old.synthetic')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  const old = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'old.synthetic'), guard)
+  await writeStarted.promise
+  const newer = coordinator.installAuthenticated(await authenticated('202', 'new.synthetic'))
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'cancelled')
+  releaseWrite.resolve()
+  assert.equal((await old).status, 'superseded')
+  assert.equal((await newer).status, 'authenticated')
+  assert.equal(coordinator.snapshot().subjectId, '202')
+  assert.equal(JSON.parse(vault.value).accessToken, 'new.synthetic')
+})
+
+test('a new account started during cancellation survives old vault cleanup', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('old.synthetic')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  const oldCredential = await authenticated('101', 'old.synthetic')
+  const newCredential = await authenticated('202', 'new.synthetic')
+  const old = coordinator.installAuthenticatedIfCurrent(oldCredential, guard)
+  await writeStarted.promise
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  const newer = coordinator.installAuthenticated(newCredential)
+  releaseWrite.resolve()
+  assert.equal((await old).status, 'superseded')
+  assert.equal(await cancelling, 'cancelled')
+  assert.equal((await newer).status, 'authenticated')
+  assert.equal(coordinator.snapshot().subjectId, '202')
+  assert.equal(JSON.parse(vault.value).accessToken, 'new.synthetic')
+})
+
+test('a restore queued after cancellation cannot revive the cancelled credential', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('cancelled.synthetic')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  let verifications = 0
+  const coordinator = new AuthSessionCoordinator(vault, async () => { verifications++; return { status: 'valid', user: user('101') } })
+  const guard = coordinator.captureInstallGuard()
+  const installing = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'cancelled.synthetic'), guard)
+  await writeStarted.promise
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  const restoring = coordinator.restore()
+  releaseWrite.resolve()
+  assert.equal((await installing).status, 'superseded')
+  assert.equal(await cancelling, 'cancelled')
+  assert.deepEqual(await restoring, { status: 'signed_out', reason: 'missing' })
+  assert.equal(verifications, 0)
+  assert.equal(vault.value, '')
+})
+
+test('cancellation also supersedes a restore already queued behind that install', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('cancelled.synthetic')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  let verifications = 0
+  const coordinator = new AuthSessionCoordinator(vault, async () => { verifications++; return { status: 'valid', user: user('101') } })
+  const guard = coordinator.captureInstallGuard()
+  const installing = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'cancelled.synthetic'), guard)
+  await writeStarted.promise
+  const firstRestore = coordinator.restore()
+  const secondRestore = coordinator.restore()
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  releaseWrite.resolve()
+  assert.equal((await installing).status, 'superseded')
+  assert.equal((await firstRestore).status, 'superseded')
+  assert.equal((await secondRestore).status, 'superseded')
+  assert.equal(await cancelling, 'cancelled')
+  assert.equal(coordinator.current(), null)
+  assert.equal(verifications, 0)
+  assert.equal(vault.value, '')
+})
+
+test('logout retirement is ordered before a subsequent restore', async () => {
+  const token = 'existing.synthetic.token'
+  const vault = memoryVault(JSON.stringify({ schema: 1, subjectId: '101', accessToken: token }))
+  let verifications = 0
+  const coordinator = new AuthSessionCoordinator(vault, async () => { verifications++; return { status: 'valid', user: user('101') } })
+  const loggingOut = coordinator.logout()
+  const restoring = coordinator.restore()
+  assert.equal((await loggingOut).status, 'superseded')
+  assert.deepEqual(await restoring, { status: 'signed_out', reason: 'missing' })
+  assert.equal(verifications, 0)
+  assert.equal(vault.value, '')
+})
+
+test('a reentrant restore from cancellation notification waits behind cleanup', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('cancelled.synthetic')) { writeStarted.resolve(); await releaseWrite.promise }
+    return write(value)
+  }
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'valid', user: user('101') }))
+  const guard = coordinator.captureInstallGuard()
+  let restoring
+  coordinator.subscribeInstallGuardInvalidation(guard, () => { restoring = coordinator.restore() })
+  const installing = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'cancelled.synthetic'), guard)
+  await writeStarted.promise
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  releaseWrite.resolve()
+  assert.equal((await installing).status, 'superseded')
+  assert.equal(await cancelling, 'cancelled')
+  assert.deepEqual(await restoring, { status: 'signed_out', reason: 'missing' })
+  assert.equal(vault.value, '')
+})
+
+test('failed cancellation cleanup blocks queued restore from activating the cancelled token', async () => {
+  const vault = memoryVault()
+  const writeStarted = deferred()
+  const releaseWrite = deferred()
+  const write = vault.writeAuthenticationState.bind(vault)
+  let failCleanup = false
+  vault.writeAuthenticationState = async value => {
+    if (value.includes('cancelled.synthetic')) { writeStarted.resolve(); await releaseWrite.promise; return write(value) }
+    if (failCleanup) return { ok: false, errorCode: 'unavailable', found: false, value: '' }
+    return write(value)
+  }
+  const clear = vault.clearAuthenticationState.bind(vault)
+  vault.clearAuthenticationState = () => failCleanup
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : clear()
+  let verifications = 0
+  const coordinator = new AuthSessionCoordinator(vault, async () => { verifications++; return { status: 'valid', user: user('101') } })
+  const guard = coordinator.captureInstallGuard()
+  const installing = coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'cancelled.synthetic'), guard)
+  await writeStarted.promise
+  failCleanup = true
+  const cancelling = coordinator.cancelInstallGuard(guard)
+  const restoring = coordinator.restore()
+  releaseWrite.resolve()
+  assert.equal((await installing).status, 'superseded')
+  assert.equal(await cancelling, 'unavailable')
+  assert.deepEqual(await restoring, { status: 'unavailable', reason: 'storage' })
+  assert.equal(verifications, 0)
+  assert.equal(coordinator.current(), null)
+  assert.equal(JSON.parse(vault.value).accessToken, 'cancelled.synthetic')
+  failCleanup = false
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'cancelled')
+  assert.equal(vault.value, '')
+  assert.deepEqual(await coordinator.restore(), { status: 'signed_out', reason: 'missing' })
+})
+
+test('cancellation retries a partially written credential when install cleanup failed', async () => {
+  const vault = memoryVault()
+  const write = vault.writeAuthenticationState.bind(vault)
+  const clear = vault.clearAuthenticationState.bind(vault)
+  let failCleanup = false
+  vault.writeAuthenticationState = value => {
+    if (value.includes('partial.synthetic')) {
+      write(value) // platform wrote the value but reported failure
+      failCleanup = true
+      return { ok: false, errorCode: 'unavailable', found: false, value: '' }
+    }
+    return failCleanup ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : write(value)
+  }
+  vault.clearAuthenticationState = () => failCleanup
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : clear()
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'valid', user: user('101') }))
+  const guard = coordinator.captureInstallGuard()
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'partial.synthetic'), guard)).status, 'unavailable')
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'unavailable')
+  assert.equal(JSON.parse(vault.value).accessToken, 'partial.synthetic')
+  failCleanup = false
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'cancelled')
+  assert.equal(vault.value, '')
+  assert.deepEqual(await coordinator.restore(), { status: 'signed_out', reason: 'missing' })
+})
+
+test('retrying failed cancellation never clears an intervening successful login', async () => {
+  const vault = memoryVault()
+  const write = vault.writeAuthenticationState.bind(vault)
+  const clear = vault.clearAuthenticationState.bind(vault)
+  let failCleanup = false
+  vault.writeAuthenticationState = value => failCleanup && !value.includes('accessToken')
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : write(value)
+  vault.clearAuthenticationState = () => failCleanup
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : clear()
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'old.synthetic'), guard)).status, 'authenticated')
+  failCleanup = true
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'unavailable')
+  failCleanup = false
+  assert.equal((await coordinator.installAuthenticated(await authenticated('202', 'new.synthetic'))).status, 'authenticated')
+  assert.equal(await coordinator.cancelInstallGuard(guard), 'superseded')
+  assert.equal(coordinator.snapshot().subjectId, '202')
+  assert.equal(JSON.parse(vault.value).accessToken, 'new.synthetic')
+})
+
+test('cancelling a just-completed guarded install revokes only that installed session', async () => {
+  const vault = memoryVault()
+  const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))
+  const guard = coordinator.captureInstallGuard()
+  assert.equal((await coordinator.installAuthenticatedIfCurrent(await authenticated('101', 'installed.synthetic'), guard)).status, 'authenticated')
+  const cancellation = coordinator.cancelInstallGuard(guard)
+  assert.equal(coordinator.current(), null)
+  assert.equal(await cancellation, 'cancelled')
+  assert.equal(vault.value, '')
+})
+
 test('approval result, copied result, and malformed authenticated data cannot be installed', async () => {
   const vault = memoryVault()
   const coordinator = new AuthSessionCoordinator(vault, async () => ({ status: 'unavailable' }))

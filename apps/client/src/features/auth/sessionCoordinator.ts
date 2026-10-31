@@ -50,7 +50,15 @@ type PersistedEntry = PersistedSession | { schema: 1; signedOut: true }
 type ActiveSession = PublicSession & { accessToken: string }
 
 let nextGeneration = 0
-type InstallGuardState = { owner: AuthSessionCoordinator; revision: number }
+type CancellationOutcome = 'cancelled' | 'superseded' | 'unavailable'
+type InstallGuardState = {
+  owner: AuthSessionCoordinator
+  revision: number
+  cancelled?: boolean
+  installationRevision?: number
+  retirementStarted?: boolean
+  retirementPending?: Promise<CancellationOutcome>
+}
 type InstallGuardWatch = { guard: SessionInstallGuard; invalidate: () => void }
 const installGuards = new WeakMap<object, InstallGuardState>()
 export type SessionInstallGuard = object
@@ -135,6 +143,9 @@ export class AuthSessionCoordinator implements RecordingAuth {
   #verifyPersisted: PersistedCredentialVerifier
   #active: ActiveSession | null = null
   #installGuardWatches = new Set<InstallGuardWatch>()
+  #vaultBlocked = false
+  #blockedCancellation: SessionInstallGuard | undefined
+  #currentInstallRevision: number | undefined
   private stateValue: SessionCoordinatorState = 'signed_out'
   private revision = 0
   private storageTail: Promise<void> = Promise.resolve()
@@ -192,7 +203,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
   isInstallGuardCurrent(guard: SessionInstallGuard): boolean {
     if (!guard || typeof guard !== 'object') return false
     const state = installGuards.get(guard)
-    return Boolean(state && state.owner === this && state.revision === this.revision)
+    return Boolean(state && state.owner === this && !state.cancelled && state.revision === this.revision)
   }
 
   /** Notify a pending login immediately when another session operation starts. */
@@ -203,6 +214,57 @@ export class AuthSessionCoordinator implements RecordingAuth {
     return () => { this.#installGuardWatches.delete(watch) }
   }
 
+  /**
+   * Cancel only the login tied to this guard. If its vault install has begun,
+   * invalidate that operation synchronously and serialize cleanup before any
+   * newer install. An old or foreign guard never signs out a newer session.
+   */
+  cancelInstallGuard(guard: SessionInstallGuard): Promise<CancellationOutcome> {
+    const state = guard && typeof guard === 'object' ? installGuards.get(guard) : undefined
+    if (!state || state.owner !== this) return Promise.resolve('superseded')
+    if (state.cancelled) {
+      if (state.retirementPending) return state.retirementPending
+      if (!state.retirementStarted || this.#blockedCancellation !== guard) return Promise.resolve('superseded')
+      // A later account installation owns the vault now. Do not let an old
+      // attempt erase it; wait for that operation or explicit logout to retire
+      // the blocked credential before considering this cancellation settled.
+      if (this.#currentInstallRevision !== undefined || this.stateValue === 'signing_out') return Promise.resolve('unavailable')
+      return this.retireCancelledGuard(guard, state)
+    }
+    state.cancelled = true
+    const ownsCurrentInstall = state.installationRevision !== undefined &&
+      (state.installationRevision === this.revision || state.installationRevision === this.#currentInstallRevision)
+    if (ownsCurrentInstall && (this.stateValue === 'installing' || this.stateValue === 'authenticated' ||
+      this.stateValue === 'restoring' || (this.stateValue === 'unavailable' && this.#vaultBlocked))) {
+      return this.retireCancelledGuard(guard, state)
+    }
+    this.#invalidateInstallGuards(undefined, guard)
+    return Promise.resolve('cancelled')
+  }
+
+  private retireCancelledGuard(guard: SessionInstallGuard, state: InstallGuardState): Promise<CancellationOutcome> {
+    // Enqueue cleanup before notifying watchers: a reentrant restore or new
+    // login must run after this barrier, even if it advances the revision.
+    const revision = this.begin('signing_out', undefined, false)
+    this.#currentInstallRevision = undefined
+    state.retirementStarted = true
+    const barrier = this.enqueue(async (): Promise<CancellationOutcome> => {
+      if (!await this.retireVault()) {
+        this.#vaultBlocked = true
+        this.#blockedCancellation = guard
+        this.failCurrent(revision, 'storage')
+        return 'unavailable'
+      }
+      this.#vaultBlocked = false
+      if (this.isLatest(revision)) this.stateValue = 'signed_out'
+      return 'cancelled'
+    })
+    state.retirementPending = barrier
+    void barrier.then(() => { if (state.retirementPending === barrier) state.retirementPending = undefined })
+    this.#invalidateInstallGuards()
+    return barrier
+  }
+
   /** An older login response cannot resurrect a session after logout or account switch. */
   async installAuthenticatedIfCurrent(result: Authenticated, guard: SessionInstallGuard): Promise<SessionCoordinatorResult> {
     if (!this.isInstallGuardCurrent(guard)) return { status: 'superseded' }
@@ -211,13 +273,18 @@ export class AuthSessionCoordinator implements RecordingAuth {
     const pending = this.#installAuthenticated(result, guard)
     const started = this.revision
     const installed = await pending
-    if (installed.status === 'unavailable' && started === before + 1 && this.revision === started) {
+    const state = installGuards.get(guard)
+    if (installed.status === 'unavailable' && state && !state.cancelled && started === before + 1 && this.revision === started) {
       // Only this failed install may renew the guard; an intervening logout,
       // restore or account switch must leave it stale.
-      installGuards.set(guard, { owner: this, revision: started })
+      state.revision = started
+      // A failed write followed by failed cleanup may still have left a token
+      // in the vault. Cancellation must retry retirement before reporting it
+      // complete, even though the install itself did not authenticate.
+      if (!this.#vaultBlocked) state.installationRevision = undefined
     }
     if (installed.status === 'authenticated') {
-      if (this.revision !== started || !this.isCurrent(installed.session.subjectId, installed.session.generation)) return { status: 'superseded' }
+      if (!state || state.cancelled || this.revision !== started || !this.isCurrent(installed.session.subjectId, installed.session.generation)) return { status: 'superseded' }
       this.#invalidateInstallGuards(undefined, guard)
       if (this.revision !== started || !this.isCurrent(installed.session.subjectId, installed.session.generation)) return { status: 'superseded' }
     }
@@ -242,23 +309,33 @@ export class AuthSessionCoordinator implements RecordingAuth {
       return { status: 'rejected' }
     }
 
+    if (preservedGuard) {
+      const state = installGuards.get(preservedGuard)
+      if (!state || state.owner !== this || state.cancelled || state.revision !== this.revision) return { status: 'superseded' }
+      state.installationRevision = this.revision + 1
+    }
     const revision = this.begin('installing', preservedGuard)
+    if (this.isLatest(revision)) this.#currentInstallRevision = revision
     const persisted = encodePersistedSession(user.id, accessToken)
     return this.enqueue(async () => {
       if (!this.isLatest(revision)) return { status: 'superseded' }
-      if (!await this.retireVault()) return this.failCurrent(revision, 'storage')
+      if (!await this.retireVault()) { this.#vaultBlocked = true; return this.failCurrent(revision, 'storage') }
+      this.#vaultBlocked = false
       if (!this.isLatest(revision)) return { status: 'superseded' }
       let written = false
       try { written = successfulVaultMutation(await this.#repository.writeAuthenticationState(persisted)) } catch { written = false }
       if (!written) {
         // The old credential was cleared before writing. Attempt cleanup in case the
         // platform reported failure after partially persisting the new value.
-        await this.retireVault()
+        this.#vaultBlocked = !await this.retireVault()
         return this.failCurrent(revision, 'storage')
       }
       if (!this.isLatest(revision)) return { status: 'superseded' }
       let generation: string
-      try { generation = newSessionGeneration() } catch { await this.retireVault(); return this.failCurrent(revision, 'storage') }
+      try { generation = newSessionGeneration() } catch {
+        this.#vaultBlocked = !await this.retireVault()
+        return this.failCurrent(revision, 'storage')
+      }
       this.#active = Object.freeze({ status: 'authenticated', subjectId: user.id, generation, user, accessToken })
       this.stateValue = 'authenticated'
       return { status: 'authenticated', session: this.snapshot()! }
@@ -273,6 +350,7 @@ export class AuthSessionCoordinator implements RecordingAuth {
     const revision = this.begin('restoring')
     return this.enqueue(async () => {
       if (!this.isLatest(revision)) return { status: 'superseded' }
+      if (this.#vaultBlocked) return this.failCurrent(revision, 'storage')
       let read: unknown
       try { read = await this.#repository.readAuthenticationState() } catch { return this.failCurrent(revision, 'storage') }
       if (!this.isLatest(revision)) return { status: 'superseded' }
@@ -311,35 +389,37 @@ export class AuthSessionCoordinator implements RecordingAuth {
 
   /** Logout invalidates all in-memory leases immediately, before awaiting vault I/O. */
   async logout(): Promise<SessionCoordinatorResult> {
-    const revision = this.begin('signing_out')
-    return this.enqueue(async () => {
-      if (!this.isLatest(revision)) return { status: 'superseded' }
-      if (!await this.retireVault()) return this.failCurrent(revision, 'storage')
-      if (!this.isLatest(revision)) return { status: 'superseded' }
-      this.stateValue = 'signed_out'
-      return { status: 'signed_out', reason: 'logged_out' }
-    })
+    return this.retireSession('logged_out')
   }
 
   /** Call on an authoritative expiry/revocation response; stale requests cannot clear a newer login. */
   async invalidateIfCurrent(subjectId: string, generation: string): Promise<SessionCoordinatorResult> {
     if (!this.isCurrent(subjectId, generation)) return { status: 'superseded' }
-    const revision = this.begin('signing_out')
-    return this.enqueue(async () => {
-      if (!this.isLatest(revision)) return { status: 'superseded' }
-      if (!await this.retireVault()) return this.failCurrent(revision, 'storage')
-      if (!this.isLatest(revision)) return { status: 'superseded' }
-      this.stateValue = 'signed_out'
-      return { status: 'signed_out', reason: 'expired' }
-    })
+    return this.retireSession('expired')
   }
 
-  private begin(state: SessionCoordinatorState, preservedGuard?: SessionInstallGuard): number {
+  private retireSession(reason: 'logged_out' | 'expired'): Promise<SessionCoordinatorResult> {
+    // Queue retirement before notifying watchers so a restore cannot skip it,
+    // and a reentrant new login always writes after the old credential is gone.
+    const revision = this.begin('signing_out', undefined, false)
+    this.#currentInstallRevision = undefined
+    const barrier = this.enqueue(async (): Promise<SessionCoordinatorResult> => {
+      if (!await this.retireVault()) { this.#vaultBlocked = true; return this.failCurrent(revision, 'storage') }
+      this.#vaultBlocked = false
+      if (!this.isLatest(revision)) return { status: 'superseded' }
+      this.stateValue = 'signed_out'
+      return { status: 'signed_out', reason }
+    })
+    this.#invalidateInstallGuards()
+    return barrier
+  }
+
+  private begin(state: SessionCoordinatorState, preservedGuard?: SessionInstallGuard, notify = true): number {
     if (this.revision >= Number.MAX_SAFE_INTEGER) throw new Error('session operation unavailable')
     const revision = ++this.revision
     this.#active = null
     this.stateValue = state
-    this.#invalidateInstallGuards(preservedGuard)
+    if (notify) this.#invalidateInstallGuards(preservedGuard)
     return revision
   }
 
@@ -364,7 +444,8 @@ export class AuthSessionCoordinator implements RecordingAuth {
 
   private async clearAndSignOut(revision: number, reason: 'invalid' | 'expired'): Promise<SessionCoordinatorResult> {
     if (!this.isLatest(revision)) return { status: 'superseded' }
-    if (!await this.retireVault()) return this.failCurrent(revision, 'storage')
+    if (!await this.retireVault()) { this.#vaultBlocked = true; return this.failCurrent(revision, 'storage') }
+    this.#vaultBlocked = false
     if (!this.isLatest(revision)) return { status: 'superseded' }
     this.stateValue = 'signed_out'
     return { status: 'signed_out', reason }
@@ -381,7 +462,9 @@ export class AuthSessionCoordinator implements RecordingAuth {
       tombstoneStored = successfulVaultMutation(await this.#repository.writeAuthenticationState(signedOutTombstone))
     } catch { tombstoneStored = false }
     const cleared = await this.clearVault()
-    return tombstoneStored || cleared
+    const retired = tombstoneStored || cleared
+    if (retired) this.#blockedCancellation = undefined
+    return retired
   }
 
   /** Serialize platform reads/writes; stale operations re-check their revision before publishing. */

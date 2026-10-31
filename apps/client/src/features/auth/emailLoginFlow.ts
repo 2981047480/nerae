@@ -5,6 +5,7 @@ import type { AuthSessionCoordinator, PublicSession, SessionInstallGuard } from 
 type ChallengeAttempt = { email: string; identity: ProtectedDeviceIdentity; key: string; guard: SessionInstallGuard }
 type LoginAttempt = { challengeId: string; code: string; deviceProof: string; key: string }
 type Proof = { forSubmission(): string }
+export type EmailLoginAttemptHandle = object
 
 export type EmailLoginFlowResult =
   | Readonly<{ status: 'waiting_code'; expiresAt: string }>
@@ -16,7 +17,7 @@ export type EmailLoginFlowResult =
 type AuthApiPort = Pick<EmailAuthApi, 'requestChallenge' | 'login'>
 type DevicePort = Pick<DeviceIdentityCoordinator, 'initializeFirstForEmail'>
 type SessionPort = Pick<AuthSessionCoordinator, 'captureInstallGuard' | 'isInstallGuardCurrent' |
-  'subscribeInstallGuardInvalidation' | 'installAuthenticatedIfCurrent' | 'isCurrent'>
+  'subscribeInstallGuardInvalidation' | 'cancelInstallGuard' | 'installAuthenticatedIfCurrent' | 'isCurrent'>
 
 /**
  * Coordinates a single in-memory email login. It retains an uncertain request's
@@ -35,13 +36,16 @@ export class EmailLoginFlow {
   #loginAttempt: LoginAttempt | null = null
   #approval: ApprovalRequired | null = null
   #unwatchGuard: (() => void) | null = null
+  #scope: { handle: EmailLoginAttemptHandle; guard: SessionInstallGuard | null; cancelling?: boolean;
+    cancelPending?: Promise<'cancelled' | 'superseded' | 'unavailable'> } | null = null
 
   constructor(api: AuthApiPort, devices: DevicePort, session: SessionPort, random: () => string,
     sign: (identity: ProtectedDeviceIdentity, challenge: Challenge) => Proof | null) {
     if (!api || typeof api.requestChallenge !== 'function' || typeof api.login !== 'function' ||
       !devices || typeof devices.initializeFirstForEmail !== 'function' ||
       !session || typeof session.captureInstallGuard !== 'function' || typeof session.isInstallGuardCurrent !== 'function' ||
-      typeof session.subscribeInstallGuardInvalidation !== 'function' || typeof session.installAuthenticatedIfCurrent !== 'function' ||
+      typeof session.subscribeInstallGuardInvalidation !== 'function' || typeof session.cancelInstallGuard !== 'function' ||
+      typeof session.installAuthenticatedIfCurrent !== 'function' ||
       typeof session.isCurrent !== 'function' || typeof random !== 'function' || typeof sign !== 'function') {
       throw new Error('email login dependencies unavailable')
     }
@@ -50,6 +54,46 @@ export class EmailLoginFlow {
     this.#session = session
     this.#random = random
     this.#sign = sign
+  }
+
+  /** Reserve one caller-owned login attempt; handles contain no credentials. */
+  openAttempt(): EmailLoginAttemptHandle | null {
+    if (this.#busy || this.#scope || this.#challengeAttempt || this.#challenge || this.#loginAttempt || this.#approval) return null
+    const handle = Object.freeze({})
+    this.#scope = { handle, guard: null }
+    return handle
+  }
+
+  /** Cancel only the matching attempt; the underlying HTTP request may still finish. */
+  cancelAttempt(handle: EmailLoginAttemptHandle): Promise<'cancelled' | 'superseded' | 'unavailable'> {
+    if (!this.#scope || this.#scope.handle !== handle) return Promise.resolve('superseded')
+    const scope = this.#scope
+    if (scope.cancelPending) return scope.cancelPending
+    const guard = scope.guard
+    this.#clearTransient()
+    if (!guard) { this.#scope = null; return Promise.resolve('cancelled') }
+    scope.cancelling = true
+    const pending = this.#session.cancelInstallGuard(guard).catch(() => 'unavailable' as const).then(result => {
+      if (this.#scope === scope) {
+        scope.cancelPending = undefined
+        if (result !== 'unavailable') this.#scope = null
+      }
+      return result
+    })
+    scope.cancelPending = pending
+    return pending
+  }
+
+  /** Release a finished attempt without affecting an authenticated session. */
+  releaseAttempt(handle: EmailLoginAttemptHandle): boolean {
+    if (!this.#scope || this.#scope.handle !== handle || this.#scope.cancelling || this.#busy ||
+      this.#challengeAttempt || this.#challenge || this.#loginAttempt || this.#approval) return false
+    this.#scope = null
+    return true
+  }
+
+  #allows(handle?: EmailLoginAttemptHandle): boolean {
+    return this.#scope ? !this.#scope.cancelling && this.#scope.handle === handle : handle === undefined
   }
 
   /** Explicitly discard local transient state only when no request is in flight. */
@@ -75,7 +119,8 @@ export class EmailLoginFlow {
   }
 
   /** Begin once, then call retryChallenge if the outcome is unknown. */
-  async requestCode(email: unknown): Promise<EmailLoginFlowResult> {
+  async requestCode(email: unknown, handle?: EmailLoginAttemptHandle): Promise<EmailLoginFlowResult> {
+    if (!this.#allows(handle)) return { status: 'not_ready' }
     if (this.#busy) return { status: 'busy' }
     if (this.#challengeAttempt && !this.#session.isInstallGuardCurrent(this.#challengeAttempt.guard)) this.#clearTransient()
     if (this.#challengeAttempt || this.#challenge || this.#loginAttempt || this.#approval) return { status: 'restart_required' }
@@ -84,6 +129,7 @@ export class EmailLoginFlow {
     try {
       const guard = this.#session.captureInstallGuard()
       if (!guard) return { status: 'session_changed' }
+      if (this.#scope && this.#scope.handle === handle) this.#scope.guard = guard
       this.#unwatchGuard = this.#session.subscribeInstallGuardInvalidation(guard, () => this.#clearTransient())
       const device = await this.#devices.initializeFirstForEmail(email)
       if (!this.#session.isInstallGuardCurrent(guard)) return this.#sessionChanged()
@@ -97,7 +143,8 @@ export class EmailLoginFlow {
     finally { this.#busy = false }
   }
 
-  async retryChallenge(): Promise<EmailLoginFlowResult> {
+  async retryChallenge(handle?: EmailLoginAttemptHandle): Promise<EmailLoginFlowResult> {
+    if (!this.#allows(handle)) return { status: 'not_ready' }
     if (this.#busy) return { status: 'busy' }
     if (!this.#challengeAttempt || this.#challenge || this.#loginAttempt || this.#approval) return { status: 'not_ready' }
     this.#busy = true
@@ -105,7 +152,8 @@ export class EmailLoginFlow {
     finally { this.#busy = false }
   }
 
-  async submitCode(code: unknown): Promise<EmailLoginFlowResult> {
+  async submitCode(code: unknown, handle?: EmailLoginAttemptHandle): Promise<EmailLoginFlowResult> {
+    if (!this.#allows(handle)) return { status: 'not_ready' }
     if (this.#busy) return { status: 'busy' }
     if (!this.#challengeAttempt || !this.#challenge || this.#approval) return { status: 'not_ready' }
     if (!this.#session.isInstallGuardCurrent(this.#challengeAttempt.guard)) return this.#sessionChanged()
@@ -126,7 +174,8 @@ export class EmailLoginFlow {
     finally { this.#busy = false }
   }
 
-  async retryLogin(): Promise<EmailLoginFlowResult> {
+  async retryLogin(handle?: EmailLoginAttemptHandle): Promise<EmailLoginFlowResult> {
+    if (!this.#allows(handle)) return { status: 'not_ready' }
     if (this.#busy) return { status: 'busy' }
     if (!this.#loginAttempt || this.#approval) return { status: 'not_ready' }
     this.#busy = true

@@ -118,7 +118,7 @@ test('approval result never installs a session or exposes its secret', async () 
 test('a failed vault install keeps the exact login attempt available for explicit retry', async () => {
   let installs = 0
   const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : reply(200, authenticated), {
-    session: { captureInstallGuard: () => ({}), isInstallGuardCurrent: () => true,
+    session: { captureInstallGuard: () => ({}), isInstallGuardCurrent: () => true, cancelInstallGuard: async () => 'cancelled',
       subscribeInstallGuardInvalidation: () => () => {}, isCurrent: () => false,
       async installAuthenticatedIfCurrent() { installs++; return { status: 'unavailable', reason: 'storage' } } },
   })
@@ -185,6 +185,112 @@ test('logout while awaiting code allows a fresh challenge without a manual reset
   assert.equal((await context.flow.requestCode('new@example.test')).status, 'waiting_code')
   assert.equal(context.requests.length, 2)
   assert.equal(JSON.parse(context.requests[1].body).email, 'new@example.test')
+})
+
+test('cancelling a scoped login before a late success cannot install a session', async () => {
+  let finish
+  const response = new Promise(resolve => { finish = resolve })
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : response)
+  const handle = context.flow.openAttempt()
+  assert.ok(handle)
+  assert.equal((await context.flow.requestCode(email)).status, 'not_ready')
+  assert.equal(await context.flow.cancelAttempt({}), 'superseded')
+  assert.equal((await context.flow.requestCode(email, handle)).status, 'waiting_code')
+  const pending = context.flow.submitCode('012345', handle)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(await context.flow.cancelAttempt(handle), 'cancelled')
+  finish(reply(200, authenticated))
+  assert.equal((await pending).status, 'session_changed')
+  assert.equal(context.session.current(), null)
+  assert.equal(context.storage.value, '')
+  const next = context.flow.openAttempt()
+  assert.ok(next)
+  assert.equal(await context.flow.cancelAttempt(handle), 'superseded')
+  assert.equal((await context.flow.requestCode('new@example.test', next)).status, 'waiting_code')
+})
+
+test('cancelling a scoped login during vault write cleans its credential without publishing it', async () => {
+  const storage = vault()
+  const write = storage.writeAuthenticationState.bind(storage)
+  let writingStarted
+  const started = new Promise(resolve => { writingStarted = resolve })
+  let release
+  const gate = new Promise(resolve => { release = resolve })
+  storage.writeAuthenticationState = async value => {
+    if (value.includes('accessToken')) { writingStarted(); await gate }
+    return write(value)
+  }
+  const session = new AuthSessionCoordinator(storage, async () => ({ status: 'unavailable' }))
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : reply(200, authenticated), { session })
+  const handle = context.flow.openAttempt()
+  await context.flow.requestCode(email, handle)
+  const pending = context.flow.submitCode('012345', handle)
+  await started
+  const cancelling = context.flow.cancelAttempt(handle)
+  assert.equal(session.current(), null)
+  release()
+  assert.equal((await pending).status, 'session_changed')
+  assert.equal(await cancelling, 'cancelled')
+  assert.equal(session.current(), null)
+  assert.equal(storage.value, '')
+})
+
+test('a finished attempt can be released without signing out and its old handle cannot cancel the session', async () => {
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : reply(200, authenticated))
+  const handle = context.flow.openAttempt()
+  await context.flow.requestCode(email, handle)
+  assert.equal((await context.flow.submitCode('012345', handle)).status, 'authenticated')
+  assert.equal(context.flow.releaseAttempt(handle), true)
+  assert.equal(await context.flow.cancelAttempt(handle), 'superseded')
+  assert.equal(context.session.snapshot().subjectId, '101')
+})
+
+test('failed scoped cancellation stays unavailable until the same handle safely retries cleanup', async () => {
+  const storage = vault()
+  const write = storage.writeAuthenticationState.bind(storage)
+  const clear = storage.clearAuthenticationState.bind(storage)
+  let cleanupFails = false
+  storage.writeAuthenticationState = value => cleanupFails && !value.includes('accessToken')
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : write(value)
+  storage.clearAuthenticationState = () => cleanupFails
+    ? { ok: false, errorCode: 'unavailable', found: false, value: '' } : clear()
+  const session = new AuthSessionCoordinator(storage, async () => ({ status: 'unavailable' }))
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : reply(200, authenticated), { session })
+  const handle = context.flow.openAttempt()
+  await context.flow.requestCode(email, handle)
+  assert.equal((await context.flow.submitCode('012345', handle)).status, 'authenticated')
+  cleanupFails = true
+  assert.equal(await context.flow.cancelAttempt(handle), 'unavailable')
+  assert.equal(context.flow.openAttempt(), null)
+  assert.equal(context.flow.releaseAttempt(handle), false)
+  assert.equal((await context.flow.requestCode(email, handle)).status, 'not_ready')
+  assert.equal(session.current(), null)
+  assert.notEqual(storage.value, '')
+  cleanupFails = false
+  assert.equal(await context.flow.cancelAttempt(handle), 'cancelled')
+  assert.equal(storage.value, '')
+  assert.ok(context.flow.openAttempt())
+})
+
+test('cancelling an old scoped attempt cannot sign out a later account', async () => {
+  let finish
+  const response = new Promise(resolve => { finish = resolve })
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge) : response)
+  const handle = context.flow.openAttempt()
+  await context.flow.requestCode(email, handle)
+  const pending = context.flow.submitCode('012345', handle)
+  await new Promise(resolve => setImmediate(resolve))
+  const otherApi = new EmailAuthApi('https://api.example.test', async () => reply(200, {
+    status: 'authenticated', token: 'other.synthetic.token', expiresIn: 3600,
+    user: { id: '202', nickname: '', roles: ['student'], ageVerified: false },
+  }))
+  const other = await otherApi.login({ challengeId, code: '123456', deviceProof }, 'A'.repeat(43))
+  assert.equal((await context.session.installAuthenticated(other)).status, 'authenticated')
+  assert.equal(await context.flow.cancelAttempt(handle), 'cancelled')
+  finish(reply(200, authenticated))
+  assert.equal((await pending).status, 'session_changed')
+  assert.equal(context.session.snapshot().subjectId, '202')
+  assert.equal(JSON.parse(context.storage.value).accessToken, 'other.synthetic.token')
 })
 
 test('logout immediately discards an idle uncertain login attempt', async () => {
