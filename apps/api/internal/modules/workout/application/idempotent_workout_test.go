@@ -524,6 +524,88 @@ func TestIdempotentWorkoutTransactions(t *testing.T) {
 	}
 }
 
+func TestWorkoutReplayOnlyApplication(t *testing.T) {
+	f := newWorkoutIdempotencyFixture(t)
+	createReq := idempotency.Request{Method: "POST", Path: "/me/sessions", Key: "replay-create-001", Body: []byte(`{"source":"free","date":"2026-10-28","timeZone":"UTC","clientEventId":"replay-create-event"}`)}
+	var creates atomic.Int32
+	createMutation := func(ctx context.Context, tx idempotency.Transaction, actor idempotency.Actor) (idempotency.Reply, error) {
+		creates.Add(1)
+		snapshot, err := f.service.CreateFreeForIdempotency(ctx, tx, actor, repository.FreeSessionInput{
+			Date: "2026-10-28", ClientEventID: "replay-create-event", TimeZone: stringPointer("UTC"),
+		})
+		if err != nil {
+			return idempotency.Reply{}, err
+		}
+		body, err := json.Marshal(workoutIdempotencyResponse{ID: strconv.FormatUint(snapshot.ID, 10), Version: snapshot.Version, Status: string(snapshot.Status), ClientEventID: snapshot.ClientEventID})
+		return idempotency.Reply{Status: 201, Body: body, ResultRef: WorkoutResultRef(snapshot.ID)}, err
+	}
+	created, err := f.executor.ExecuteCreation(f.ctx, f.db, f.tokenA, createReq, createMutation)
+	if err != nil || created.Status != 201 || creates.Load() != 1 {
+		t.Fatalf("initial create failed: err=%v", err)
+	}
+	createdAgain, err := f.executor.ReplayCreation(f.ctx, f.db, f.tokenA, createReq)
+	if err != nil || !createdAgain.Replayed || createdAgain.Status != created.Status || createdAgain.ResultRef != created.ResultRef || !bytes.Equal(createdAgain.Body, created.Body) || creates.Load() != 1 {
+		t.Fatalf("creation replay did not return the exact stored result without mutation: err=%v", err)
+	}
+
+	changed := createReq
+	changed.Body = []byte(`{"source":"free","date":"2026-10-27","timeZone":"UTC","clientEventId":"replay-create-event"}`)
+	if result, err := f.executor.ReplayCreation(f.ctx, f.db, f.tokenA, changed); !errors.Is(err, idempotency.ErrConflict) || len(result.Body) != 0 {
+		t.Fatalf("creation replay did not reject same-key request changes: err=%v", err)
+	}
+	if _, err := f.executor.ReplayCreation(f.ctx, f.db, f.tokenA, idempotency.Request{Method: "POST", Path: "/me/sessions/1/finish", Key: createReq.Key, Body: createReq.Body}); !errors.Is(err, idempotency.ErrInvalid) {
+		t.Fatalf("creation replay accepted a different method path: %v", err)
+	}
+	if result, err := f.executor.ReplayCreation(f.ctx, f.db, f.tokenB, createReq); !errors.Is(err, idempotency.ErrReplayUnavailable) || len(result.Body) != 0 {
+		t.Fatalf("creation replay exposed another actor's receipt: err=%v", err)
+	}
+	var target uint64
+	if err := f.db.QueryRowContext(f.ctx, `SELECT id FROM workout_session WHERE client_event_id = ?`, []byte("replay-create-event")).Scan(&target); err != nil || target == 0 {
+		t.Fatal("could not locate synthetic workout for existing-operation replay")
+	}
+
+	setReq := idempotency.Request{Method: "POST", Path: fmt.Sprintf("/me/sessions/%d/sets", target), Key: "replay-set-0001", Body: []byte(`{"expectedVersion":0,"sets":[]}`)}
+	var setCalls atomic.Int32
+	setMutation := func(context.Context, idempotency.Transaction, idempotency.Actor) (idempotency.Reply, error) {
+		setCalls.Add(1)
+		return idempotency.Reply{Status: 412, Body: []byte(`{"code":"VERSION_CONFLICT","message":"记录已更新，请先查看最新内容","requestId":"00000000000000000000000000000000"}`), ResultRef: WorkoutResultRef(target)}, nil
+	}
+	setResult, err := f.executor.ExecuteExisting(f.ctx, f.db, f.tokenA, target, "sets", setReq, setMutation)
+	if err != nil || setResult.Status != 412 || setCalls.Load() != 1 {
+		t.Fatalf("could not create an existing-operation terminal receipt: err=%v", err)
+	}
+	setReplay, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "sets", setReq)
+	if err != nil || !setReplay.Replayed || setReplay.Status != setResult.Status || setReplay.ResultRef != setResult.ResultRef || !bytes.Equal(setReplay.Body, setResult.Body) || setCalls.Load() != 1 {
+		t.Fatalf("existing-operation replay differed or executed mutation: err=%v", err)
+	}
+	changedSet := setReq
+	changedSet.Body = []byte(`{"expectedVersion":1,"sets":[]}`)
+	if result, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "sets", changedSet); !errors.Is(err, idempotency.ErrConflict) || len(result.Body) != 0 {
+		t.Fatalf("existing-operation replay did not reject same-key request changes: err=%v", err)
+	}
+	if _, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "finish", setReq); !errors.Is(err, idempotency.ErrInvalid) {
+		t.Fatalf("existing-operation replay accepted a mismatched operation path: %v", err)
+	}
+	if result, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenB, target, "sets", setReq); !errors.Is(err, idempotency.ErrForbidden) || len(result.Body) != 0 {
+		t.Fatalf("existing-operation replay did not recheck ownership: err=%v", err)
+	}
+
+	if _, err := f.db.ExecContext(f.ctx, `UPDATE transport_idempotency_record SET expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 SECOND WHERE actor_id = (SELECT user_id FROM workout_session WHERE id = ?) AND method = ? AND route = ? AND request_key = ?`, target, []byte("POST"), []byte(setReq.Path), []byte(setReq.Key)); err != nil {
+		t.Fatal("could not expire synthetic idempotency receipt")
+	}
+	if result, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "sets", setReq); !errors.Is(err, idempotency.ErrReplayUnavailable) || len(result.Body) != 0 || setCalls.Load() != 1 {
+		t.Fatalf("expired receipt was not unavailable without mutation: err=%v", err)
+	}
+
+	clearAdultForTest(t, f.ctx, f.db, f.auth, f.tokenA)
+	if result, err := f.executor.ReplayCreation(f.ctx, f.db, f.tokenA, createReq); !errors.Is(err, idempotency.ErrForbidden) || len(result.Body) != 0 {
+		t.Fatalf("creation replay ignored current age authorization: err=%v", err)
+	}
+	if result, err := f.executor.ReplayExisting(f.ctx, f.db, f.tokenA, target, "sets", setReq); !errors.Is(err, idempotency.ErrForbidden) || len(result.Body) != 0 {
+		t.Fatalf("existing-operation replay ignored current age authorization: err=%v", err)
+	}
+}
+
 func assertNoEventAndIdempotencyKey(t *testing.T, f *workoutIdempotencyFixture, eventID, key string) {
 	t.Helper()
 	var workoutCount, idemCount int

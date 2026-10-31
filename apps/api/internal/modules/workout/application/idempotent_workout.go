@@ -82,19 +82,54 @@ func (e *WorkoutExecutor) ExecuteCreation(ctx context.Context, db *sql.DB, token
 	return e.store.Execute(ctx, db, token, req, authorizeFreeCreation, expectedWorkoutStatus(mutate, 201))
 }
 
+// ReplayCreation returns only a live receipt for the exact create request. It
+// has no mutation callback, so an absent or expired receipt cannot create data.
+func (e *WorkoutExecutor) ReplayCreation(ctx context.Context, db *sql.DB, token string, req idempotency.Request) (idempotency.Result, error) {
+	if e == nil || e.store == nil {
+		return idempotency.Result{}, idempotency.ErrUnavailable
+	}
+	if req.Method != "POST" || req.Path != "/me/sessions" || req.RawQuery != "" {
+		return idempotency.Result{}, idempotency.ErrInvalid
+	}
+	return e.store.ReplayExisting(ctx, db, token, req, authorizeFreeCreation)
+}
+
 // ExecuteExisting accepts only set or finish writes for the exact target.
 func (e *WorkoutExecutor) ExecuteExisting(ctx context.Context, db *sql.DB, token string, target uint64, operation string, req idempotency.Request, mutate idempotency.Mutate) (idempotency.Result, error) {
 	if e == nil || e.store == nil || mutate == nil {
 		return idempotency.Result{}, idempotency.ErrUnavailable
 	}
+	if err := validateExistingWorkoutRoute(target, operation, req); err != nil {
+		return idempotency.Result{}, err
+	}
+	return e.store.Execute(ctx, db, token, req, authorizeExistingTarget(target), expectedWorkoutStatus(mutate, 200))
+}
+
+// ReplayExisting returns only a live receipt for the exact sets or finish
+// request. It shares ExecuteExisting's route and authorization constraints and
+// deliberately has no mutation callback.
+func (e *WorkoutExecutor) ReplayExisting(ctx context.Context, db *sql.DB, token string, target uint64, operation string, req idempotency.Request) (idempotency.Result, error) {
+	if e == nil || e.store == nil {
+		return idempotency.Result{}, idempotency.ErrUnavailable
+	}
+	if err := validateExistingWorkoutRoute(target, operation, req); err != nil {
+		return idempotency.Result{}, err
+	}
+	return e.store.ReplayExisting(ctx, db, token, req, authorizeExistingTarget(target))
+}
+
+func validateExistingWorkoutRoute(target uint64, operation string, req idempotency.Request) error {
 	if target == 0 || (operation != "sets" && operation != "finish") || req.Method != "POST" || req.RawQuery != "" ||
 		req.Path != "/me/sessions/"+strconv.FormatUint(target, 10)+"/"+operation {
-		return idempotency.Result{}, idempotency.ErrInvalid
+		return idempotency.ErrInvalid
 	}
-	authorize := func(ctx context.Context, tx idempotency.ReadTransaction, actor idempotency.Actor, ref string, status int) error {
+	return nil
+}
+
+func authorizeExistingTarget(target uint64) idempotency.Authorize {
+	return func(ctx context.Context, tx idempotency.ReadTransaction, actor idempotency.Actor, ref string, status int) error {
 		return authorizeExistingFree(ctx, tx, actor, target, ref, status)
 	}
-	return e.store.Execute(ctx, db, token, req, authorize, expectedWorkoutStatus(mutate, 200))
 }
 
 // WorkoutResultRef identifies the resource whose permission must be rechecked
