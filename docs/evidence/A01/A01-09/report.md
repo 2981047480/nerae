@@ -29,3 +29,9 @@
 - `mysql_smoke.py`：`f58f6dd2de7e2ee13ec575af98e5c5b4e1e71a5227709d6a3909d6c9b6e622b5`
 
 本次补测再次运行 `python3 -B docs/evidence/A01/A01-09/mysql_smoke.py`，退出码 0；`TestApprovedDeviceExchange` 与 `TestNewDeviceApprovalTransactions` 均通过。沙箱内首次尝试只失败于私有 MySQL 初始化（exit 1，未进入测试）；在受限授权下同一隔离 harness 成功，私有 socket 数据库已关闭并清理。最终测试文件 SHA-256：`a06294acc2d47f8abc491d58fd689a79509eaa4c9cfb3ece32699e2213abf2ae`。
+
+## 2026-11-03 集成复测
+
+基于集成版本 `f023821`，首次运行该脚本时，`TestApprovedDeviceExchange` 通过，但新增审批决定子测试因测试库缺少 `transport/0001_idempotency.up.sql` 无法初始化 epoch，整套退出 1，失败目录保留。测试脚本现补入这份既有迁移；再次运行退出 0，兑换、审批决定与回执恢复测试在同一个私有 MySQL 和 Go race 下通过，成功测试的临时数据库自行关闭并移除。
+
+这仍是两把合成设备密钥对本机数据库的测试；兑换接口仍缺安全回执和 HTTP 接线，不代表真实跨设备登录或手机同步已完成。
