@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	"nerae/api/internal/modules/auth/approvalreceipt"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -248,6 +249,217 @@ func TestEmailSessionLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not verify issued token")
 	}
+	t.Run("approval receipt uses a current transaction-bound session", func(t *testing.T) {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin approval receipt session check")
+		}
+		defer tx.Rollback()
+		subject, sessionID, signedExpiry, storedExpiry, err := store.VerifyCurrentSession(ctx, tx, token)
+		if err != nil || subject != claims.SubjectID || sessionID != claims.SessionID ||
+			!signedExpiry.Equal(claims.ExpiresAt) || !storedExpiry.Equal(claims.ExpiresAt) {
+			t.Fatal("current session verifier did not return the actual token and database identity")
+		}
+		if badSubject, badSession, badSigned, badStored, err := store.VerifyCurrentSession(ctx, tx, token+"invalid"); err == nil ||
+			badSubject != "" || badSession != "" || !badSigned.IsZero() || !badStored.IsZero() {
+			t.Fatal("invalid token returned session information")
+		}
+		crypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x31}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x32}, 32), AES256GCMKey: bytes.Repeat([]byte{0x33}, 32)})
+		if err != nil {
+			t.Fatal("could not create synthetic approval receipt crypto")
+		}
+		approvalID, err := domain.GenerateChallengeID()
+		if err != nil {
+			t.Fatal("could not create synthetic approval ID")
+		}
+		secret, err := domain.GenerateChallengeNonce()
+		if err != nil {
+			t.Fatal("could not create synthetic approval secret")
+		}
+		binding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ", ApprovalID: approvalID, ApprovalSecret: secret, DeviceProof: signed})
+		if err != nil {
+			t.Fatal("could not bind synthetic approval receipt")
+		}
+		scope, err := crypto.SubjectScope(subject)
+		if err != nil {
+			t.Fatal("could not derive synthetic subject scope")
+		}
+		approvalScope, err := crypto.ApprovalScope(approvalID)
+		if err != nil {
+			t.Fatal("could not derive synthetic approval scope")
+		}
+		receiptContext, err := crypto.NewContext("test-approval-receipt-v1", scope, approvalScope, binding, "issued_session", sessionID,
+			time.Now().UTC().Add(time.Minute).Truncate(time.Microsecond))
+		if err != nil {
+			t.Fatal("could not create synthetic approval receipt context")
+		}
+		dbNow, err := approvalreceipt.ReadDatabaseUTC(ctx, tx)
+		if err != nil {
+			t.Fatal("could not read private database time")
+		}
+		sealed, err := crypto.Seal(ctx, receiptContext, token, dbNow, tx, store)
+		if err != nil || bytes.Contains(sealed.Bytes(), []byte(token)) {
+			t.Fatal("real session verifier could not seal the synthetic receipt")
+		}
+		opened, err := crypto.Open(ctx, receiptContext, sealed, dbNow, tx, store)
+		if err != nil || string(opened.Bytes()) != token {
+			t.Fatal("real session verifier could not open the bound receipt")
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE auth_session SET expires_at=DATE_ADD(expires_at, INTERVAL 1 SECOND) WHERE id=?`, []byte(sessionID)); err != nil {
+			t.Fatal("could not change the synthetic session expiry")
+		}
+		if badSubject, badSession, badSigned, badStored, err := store.VerifyCurrentSession(ctx, tx, token); err == nil ||
+			badSubject != "" || badSession != "" || !badSigned.IsZero() || !badStored.IsZero() {
+			t.Fatal("a mismatch between signed and database expiry returned session information")
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE auth_session SET expires_at=? WHERE id=?`, utcTimestamp(claims.ExpiresAt), []byte(sessionID)); err != nil {
+			t.Fatal("could not restore the synthetic session expiry")
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE trusted_device SET state='revoked' WHERE id=(SELECT device_id FROM auth_session WHERE id=?)`, []byte(sessionID)); err != nil {
+			t.Fatal("could not revoke the synthetic device")
+		}
+		if opened, err := crypto.Open(ctx, receiptContext, sealed, dbNow, tx, store); err == nil || len(opened.Bytes()) != 0 {
+			t.Fatal("revoked device recovered the encrypted session")
+		}
+	})
+	t.Run("receipt verifier fails when the signed session expires during a lock wait", func(t *testing.T) {
+		shortCodec, err := NewTokenCodec(bytes.Repeat([]byte{5}, 32), TokenPolicy{MaxLifetime: 5 * time.Second})
+		if err != nil {
+			t.Fatal("could not create short-lived synthetic token codec")
+		}
+		shortStore, err := NewStore(resolver, shortCodec)
+		if err != nil {
+			t.Fatal("could not create short-lived synthetic session store")
+		}
+		shortToken, err := shortCodec.Issue(claims.SubjectID, claims.SessionID, claims.TokenVersion)
+		if err != nil {
+			t.Fatal("could not issue short-lived synthetic token")
+		}
+		shortClaims, err := shortCodec.Verify(shortToken.ForResponse())
+		if err != nil {
+			t.Fatal("could not verify short-lived synthetic token")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET authenticated_at=?, expires_at=? WHERE id=?`,
+			utcTimestamp(shortClaims.IssuedAt), utcTimestamp(shortClaims.ExpiresAt), []byte(claims.SessionID)); err != nil {
+			t.Fatal("could not set short-lived synthetic session")
+		}
+		defer func() {
+			if _, err := db.ExecContext(context.Background(), `UPDATE auth_session SET authenticated_at=?, expires_at=? WHERE id=?`,
+				utcTimestamp(claims.IssuedAt), utcTimestamp(claims.ExpiresAt), []byte(claims.SessionID)); err != nil {
+				t.Error("could not restore synthetic session")
+			}
+		}()
+		crypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x41}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x42}, 32), AES256GCMKey: bytes.Repeat([]byte{0x43}, 32)})
+		if err != nil {
+			t.Fatal("could not set up short-lived receipt crypto")
+		}
+		approvalID, err := domain.GenerateChallengeID()
+		if err != nil {
+			t.Fatal("could not create short-lived approval ID")
+		}
+		secret, err := domain.GenerateChallengeNonce()
+		if err != nil {
+			t.Fatal("could not create short-lived approval secret")
+		}
+		binding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: "AgICAgICAgICAgICAgICAg", ApprovalID: approvalID, ApprovalSecret: secret, DeviceProof: signed})
+		if err != nil {
+			t.Fatal("could not bind short-lived receipt")
+		}
+		subjectScope, err := crypto.SubjectScope(shortClaims.SubjectID)
+		if err != nil {
+			t.Fatal("could not derive short-lived subject scope")
+		}
+		approvalScope, err := crypto.ApprovalScope(approvalID)
+		if err != nil {
+			t.Fatal("could not derive short-lived approval scope")
+		}
+		receiptContext, err := crypto.NewContext("short-lived-test-v1", subjectScope, approvalScope, binding, "issued_session", shortClaims.SessionID, shortClaims.ExpiresAt)
+		if err != nil {
+			t.Fatal("could not create short-lived receipt context")
+		}
+		sealTx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin short-lived receipt transaction")
+		}
+		dbNow, err := approvalreceipt.ReadDatabaseUTC(ctx, sealTx)
+		if err != nil {
+			_ = sealTx.Rollback()
+			t.Fatal("could not read short-lived database clock")
+		}
+		sealed, err := crypto.Seal(ctx, receiptContext, shortToken.ForResponse(), dbNow, sealTx, shortStore)
+		rollbackErr := sealTx.Rollback()
+		if err != nil || rollbackErr != nil {
+			t.Fatal("could not prepare short-lived encrypted receipt")
+		}
+		gate, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not start identity lock gate")
+		}
+		defer gate.Rollback()
+		var identityID []byte
+		if err := gate.QueryRowContext(ctx, `SELECT id FROM login_identity WHERE id=(SELECT identity_id FROM auth_session WHERE id=?) FOR UPDATE`, []byte(claims.SessionID)).Scan(&identityID); err != nil {
+			t.Fatal("could not lock the synthetic identity")
+		}
+		result := make(chan error, 1)
+		go func() {
+			tx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				result <- err
+				return
+			}
+			defer tx.Rollback()
+			subject, sessionID, signedExpiry, storedExpiry, err := shortStore.VerifyCurrentSession(ctx, tx, shortToken.ForResponse())
+			if err == nil || subject != "" || sessionID != "" || !signedExpiry.IsZero() || !storedExpiry.IsZero() {
+				result <- errors.New("expired session returned information")
+				return
+			}
+			result <- nil
+		}()
+		deadline := time.Now().Add(5 * time.Second)
+		blocked := false
+		for time.Now().Before(deadline) {
+			var count int
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='login_identity'`).Scan(&count); err != nil {
+				t.Fatal("could not observe session verifier lock wait")
+			}
+			if count > 0 {
+				blocked = true
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if !blocked {
+			t.Fatal("session verifier did not reach the identity lock")
+		}
+		if delay := time.Until(shortClaims.ExpiresAt) + 50*time.Millisecond; delay > 0 {
+			time.Sleep(delay)
+		}
+		if err := gate.Rollback(); err != nil {
+			t.Fatal("could not release identity lock gate")
+		}
+		if err := <-result; err != nil {
+			t.Fatal("expired verifier did not fail closed")
+		}
+		// Even if both application clocks lag, receipt decryption uses the
+		// authoritative database clock and must not release an expired token.
+		stale := shortClaims.IssuedAt.Add(time.Second)
+		shortCodec.now = func() time.Time { return stale }
+		shortStore.now = func() time.Time { return stale }
+		readTx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin stale-clock receipt check")
+		}
+		defer readTx.Rollback()
+		dbNow, err = approvalreceipt.ReadDatabaseUTC(ctx, readTx)
+		if err != nil {
+			t.Fatal("could not read current database clock")
+		}
+		if opened, err := crypto.Open(ctx, receiptContext, sealed, dbNow, readTx, shortStore); err == nil || len(opened.Bytes()) != 0 {
+			t.Fatal("stale application clock released an expired receipt")
+		}
+	})
 	verifyTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
