@@ -18,13 +18,26 @@ export interface AuthLease {
 // Storage is shared by controller instances in one app runtime. Serializing by
 // key ensures an already-started old-session write finishes before a new write.
 const writesByKey = new Map<string, Promise<void>>()
+// Only reads currently waiting on storage retain a fence. A write to the same
+// key marks those reads stale; unrelated drafts do not force them to retry.
+const readsByKey = new Map<string, Set<{ changed: boolean }>>()
 // A newer local write may come from another controller for the same draft.
 // This process-wide monotonic fence conservatively invalidates all older
 // proofs, without retaining an unbounded per-draft revision registry.
 let persistenceWriteRevision = 0
 // An unsuccessful disk write must not make an older disk snapshot look current
 // to another controller in the same runtime. This is not durable storage.
-const failedSnapshotsByKey = new Map<string, string>()
+const failedSnapshotsByKey = new Map<string, { snapshot: string; writeRevision: number }>()
+
+function preserveFailedSnapshot(key: string, snapshot: string, writeRevision: number): void {
+  const existing = failedSnapshotsByKey.get(key)
+  if (!existing || existing.writeRevision < writeRevision) failedSnapshotsByKey.set(key, { snapshot, writeRevision })
+}
+
+function clearCompletedSnapshot(key: string, writeRevision: number): void {
+  const existing = failedSnapshotsByKey.get(key)
+  if (existing && existing.writeRevision <= writeRevision) failedSnapshotsByKey.delete(key)
+}
 
 function enqueueWrite(key: string, operation: () => Promise<void>): Promise<void> {
   const preceding = writesByKey.get(key) || Promise.resolve()
@@ -139,12 +152,46 @@ export class DraftController {
     const key = storageKey(subjectId, clientEventId)
     const generation = auth.generation
     if (!generation || !auth.isCurrent(subjectId, generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
-    const pending = writesByKey.get(key)
-    if (pending) await pending.catch(() => undefined)
-    if (!auth.isCurrent(subjectId, generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
-    const failedSnapshot = failedSnapshotsByKey.get(key)
-    const raw = failedSnapshot === undefined ? await storage.read(key) : failedSnapshot
-    if (!auth.isCurrent(subjectId, generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
+    let raw: unknown
+    let usedFailedSnapshot = false
+    let settledRead = false
+    // A write can start after the initial queue check while storage.read is
+    // pending. Retry rather than returning the captured older snapshot.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const pending = writesByKey.get(key)
+      if (pending) {
+        await pending.catch(() => undefined)
+        if (!auth.isCurrent(subjectId, generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
+        continue
+      }
+      const failedSnapshot = failedSnapshotsByKey.get(key)
+      if (failedSnapshot) {
+        raw = failedSnapshot.snapshot
+        usedFailedSnapshot = true
+        settledRead = true
+        break
+      }
+      const fence = { changed: false }
+      const readers = readsByKey.get(key) || new Set<{ changed: boolean }>()
+      readers.add(fence)
+      readsByKey.set(key, readers)
+      let readError: unknown
+      let readFailed = false
+      try { raw = await storage.read(key) }
+      catch (error) {
+        readError = error
+        readFailed = true
+      } finally {
+        readers.delete(fence)
+        if (readers.size === 0 && readsByKey.get(key) === readers) readsByKey.delete(key)
+      }
+      if (!auth.isCurrent(subjectId, generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
+      if (fence.changed || writesByKey.has(key) || failedSnapshotsByKey.has(key)) continue
+      if (readFailed) throw readError
+      settledRead = true
+      break
+    }
+    if (!settledRead) throw new Error('本机草稿仍在更新，请重试')
     let envelope: unknown = raw
     if (typeof raw === 'string') {
       try { envelope = JSON.parse(raw) } catch { throw new Error('本机草稿无法读取，原数据仍被保留') }
@@ -162,7 +209,7 @@ export class DraftController {
     }
     const restored = restoreDraft(candidate, todayInTimezone(candidate.timeZone, now()))
     const controller = new DraftController(subjectId, restored, storage, now, auth)
-    controller.status = failedSnapshot === undefined ? 'saved_locally' : 'storage_error'
+    controller.status = usedFailedSnapshot ? 'storage_error' : 'saved_locally'
     return controller
   }
 
@@ -220,6 +267,7 @@ export class DraftController {
     const revision = ++this.revision
     if (!Number.isSafeInteger(persistenceWriteRevision + 1)) throw new Error('本机写入版本不可用')
     const writeRevision = ++persistenceWriteRevision
+    for (const fence of readsByKey.get(this.key) || []) fence.changed = true
     const envelope: DraftEnvelope = { schema: 1, subjectId: this.subjectId, draft: cloneDraft(this.currentDraft) }
     const snapshot = JSON.stringify(envelope)
     let commit: () => Promise<void>
@@ -227,7 +275,7 @@ export class DraftController {
       commit = this.storage.prepareWrite ? this.storage.prepareWrite(this.key, snapshot) : () => this.storage.write(this.key, snapshot)
       if (typeof commit !== 'function') throw new Error('本机草稿写入不可用')
     } catch {
-      failedSnapshotsByKey.set(this.key, snapshot)
+      preserveFailedSnapshot(this.key, snapshot, writeRevision)
       this.status = 'storage_error'
       return { saved: false, proof: null }
     }
@@ -239,9 +287,9 @@ export class DraftController {
     const operation = enqueueWrite(this.key, async () => {
       try {
         await commit()
-        failedSnapshotsByKey.delete(this.key)
+        clearCompletedSnapshot(this.key, writeRevision)
       } catch (error) {
-        failedSnapshotsByKey.set(this.key, snapshot)
+        preserveFailedSnapshot(this.key, snapshot, writeRevision)
         throw error
       }
     })

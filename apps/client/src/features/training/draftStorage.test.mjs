@@ -117,6 +117,106 @@ test('overlapping writes are serialized so an old snapshot cannot overwrite a ne
   assert.equal(restored.draft.exercises[0].sets[0].reps, '9')
 })
 
+for (const olderFails of [false, true]) {
+  test(`a newer preparation failure survives an older queued ${olderFails ? 'failure' : 'success'}`, async () => {
+    const event = olderFails ? 'event-prepare-failure' : 'event-prepare-success'
+    const data = new Map()
+    let rejectPreparation = true
+    let release
+    const storage = {
+      async read(key) { return data.get(key) },
+      async write() { throw new Error('prepared writes expected') },
+      prepareWrite(key, value) {
+        const reps = JSON.parse(value).draft.exercises[0].sets[0].reps
+        if (reps === '9' && rejectPreparation) throw new Error('cannot prepare latest write')
+        if (reps === '8') return () => new Promise((resolve, reject) => {
+          release = () => olderFails ? reject(new Error('older write failed')) : (data.set(key, value), resolve())
+        })
+        return async () => { data.set(key, value) }
+      },
+    }
+    const auth = { generation: 'session-prepare', isCurrent: () => true }
+    const controller = new DraftController('101', { ...makeDraft(), clientEventId: event }, storage, now, auth)
+    const older = controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '8'))
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(typeof release, 'function')
+    assert.equal(await controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '9')), false)
+    release()
+    assert.equal(await older, false)
+    const recovered = await DraftController.load('101', event, storage, now, auth)
+    assert.equal(recovered.draft.exercises[0].sets[0].reps, '9')
+    assert.equal(recovered.status, 'storage_error')
+    rejectPreparation = false
+    assert.equal(await recovered.persist(), true)
+    const saved = await DraftController.load('101', event, storage, now, auth)
+    assert.equal(saved.draft.exercises[0].sets[0].reps, '9')
+    assert.equal(saved.status, 'saved_locally')
+  })
+}
+
+for (const newWriteFails of [false, true]) {
+  test(`a load in progress observes a newer ${newWriteFails ? 'failed' : 'successful'} write`, async () => {
+    const event = newWriteFails ? 'event-read-failure' : 'event-read-success'
+    const initial = { ...makeDraft(), clientEventId: event }
+    const key = `nerae.workout.draft.v1.101.${event}`
+    let stored = JSON.stringify({ schema: 1, subjectId: '101', draft: initial })
+    let releaseRead
+    let firstRead = true
+    const storage = {
+      read() {
+        const captured = stored
+        if (!firstRead) return Promise.resolve(captured)
+        firstRead = false
+        return new Promise(resolve => { releaseRead = () => resolve(captured) })
+      },
+      async write(_key, value) {
+        if (newWriteFails) throw new Error('write failed')
+        stored = value
+      },
+    }
+    const auth = { generation: 'session-read-race', isCurrent: () => true }
+    const controller = new DraftController('101', initial, storage, now, auth)
+    assert.equal(controller.key, key)
+    const loading = DraftController.load('101', event, storage, now, auth)
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(typeof releaseRead, 'function')
+    assert.equal(await controller.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', '9')), !newWriteFails)
+    releaseRead()
+    const recovered = await loading
+    assert.equal(recovered.draft.exercises[0].sets[0].reps, '9')
+    assert.equal(recovered.status, newWriteFails ? 'storage_error' : 'saved_locally')
+  })
+}
+
+test('writes to another draft do not invalidate a pending read', async () => {
+  const targetEvent = 'event-read-unrelated'
+  const otherEvent = 'event-write-unrelated'
+  const target = { ...makeDraft(), clientEventId: targetEvent }
+  const data = new Map([[`nerae.workout.draft.v1.101.${targetEvent}`, JSON.stringify({ schema: 1, subjectId: '101', draft: target })]])
+  let reads = 0
+  let releaseRead
+  const storage = {
+    read(key) {
+      reads++
+      const value = data.get(key)
+      if (reads !== 1) return Promise.resolve(value)
+      return new Promise(resolve => { releaseRead = () => resolve(value) })
+    },
+    async write(key, value) { data.set(key, value) },
+  }
+  const auth = { generation: 'session-unrelated-race', isCurrent: () => true }
+  const loading = DraftController.load('101', targetEvent, storage, now, auth)
+  await new Promise(resolve => setImmediate(resolve))
+  const other = new DraftController('101', { ...makeDraft(), clientEventId: otherEvent }, storage, now, auth)
+  for (let value = 1; value <= 9; value++) {
+    assert.equal(await other.update(draft => updateSet(draft, 'entry-0001', 'record-001', 'reps', String(value))), true)
+  }
+  releaseRead()
+  const loaded = await loading
+  assert.equal(loaded.draft.clientEventId, targetEvent)
+  assert.equal(reads, 1)
+})
+
 test('switching accounts blocks access while previously accepted local writes finish for the old subject', async () => {
   let active = '101'
   const auth = { generation: 'session-1', isCurrent: (id, generation) => id === active && generation === 'session-1' }
