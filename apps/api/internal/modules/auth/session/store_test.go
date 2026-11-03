@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	"nerae/api/internal/modules/auth/approvalledger"
 	"nerae/api/internal/modules/auth/approvalreceipt"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
@@ -306,6 +307,20 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		if err != nil || string(opened.Bytes()) != token {
 			t.Fatal("real session verifier could not open the bound receipt")
 		}
+		ledger, err := approvalledger.New(crypto, "test-approval-receipt-v1")
+		if err != nil || ledger.Initialize(ctx, tx) != nil {
+			t.Fatal("could not initialize synthetic approval receipt ledger")
+		}
+		handle, err := ledger.Lock(ctx, tx, subject, binding)
+		if err != nil || handle.Exists() {
+			t.Fatal("could not reserve a synthetic approval receipt")
+		}
+		if err := handle.Put(ctx, tx, sessionID, receiptContext.ExpiresAt(), sealed, store); err != nil {
+			t.Fatal("could not store the real-session-bound receipt")
+		}
+		if opened, err := handle.Open(ctx, tx, store); err != nil || string(opened.Bytes()) != token {
+			t.Fatal("ledger could not reopen the real-session-bound receipt")
+		}
 		if _, err := tx.ExecContext(ctx, `UPDATE auth_session SET expires_at=DATE_ADD(expires_at, INTERVAL 1 SECOND) WHERE id=?`, []byte(sessionID)); err != nil {
 			t.Fatal("could not change the synthetic session expiry")
 		}
@@ -321,6 +336,9 @@ func TestEmailSessionLifecycle(t *testing.T) {
 		}
 		if opened, err := crypto.Open(ctx, receiptContext, sealed, dbNow, tx, store); err == nil || len(opened.Bytes()) != 0 {
 			t.Fatal("revoked device recovered the encrypted session")
+		}
+		if opened, err := handle.Open(ctx, tx, store); err == nil || len(opened.Bytes()) != 0 {
+			t.Fatal("revoked device recovered the stored encrypted session")
 		}
 	})
 	t.Run("receipt verifier fails when the signed session expires during a lock wait", func(t *testing.T) {

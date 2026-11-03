@@ -112,6 +112,13 @@
       "module": "auth",
       "file": "0010_email_code_hash_key_epoch.up.sql",
       "sha256": "6e3e10036bb9a284ef792a5d8a9542899e5d49b1ee003fce3dca04f9d80dc4a6"
+    },
+    {
+      "order": 17,
+      "id": "auth/0011_approval_exchange_receipt.up.sql",
+      "module": "auth",
+      "file": "0011_approval_exchange_receipt.up.sql",
+      "sha256": "944253d08c0be3a27381cecb430ed3a881e71bddb982ce943b774b2ab36999a1"
     }
   ]
 }
