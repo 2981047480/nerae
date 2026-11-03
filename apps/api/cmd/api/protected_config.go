@@ -50,6 +50,10 @@ type apiSecretFile struct {
 	LoginRequest       string   `json:"login_request_key"`
 	LoginCipher        string   `json:"login_response_key"`
 	LoginID            string   `json:"login_key_id"`
+	ExchangeIdem       string   `json:"approval_exchange_idempotency_key"`
+	ExchangeRequest    string   `json:"approval_exchange_request_key"`
+	ExchangeCipher     string   `json:"approval_exchange_response_key"`
+	ExchangeID         string   `json:"approval_exchange_key_id"`
 	RateEmail          string   `json:"rate_email_key"`
 	RateDevice         string   `json:"rate_device_key"`
 	RateIP             string   `json:"rate_ip_key"`
@@ -66,6 +70,7 @@ type apiSecretFile struct {
 	ProofSkew          int64    `json:"proof_clock_skew_seconds"`
 	ChallengeRetention int64    `json:"challenge_receipt_seconds"`
 	LoginRetention     int64    `json:"login_receipt_seconds"`
+	ExchangeRetention  int64    `json:"approval_exchange_receipt_seconds"`
 	SessionLifetime    int64    `json:"session_lifetime_seconds"`
 	WorkoutRetention   int64    `json:"workout_receipt_seconds"`
 	ApprovalLifetime   int64    `json:"approval_lifetime_seconds"`
@@ -87,6 +92,10 @@ type apiSecretFile struct {
 	ApprovalAttempt    uint64   `json:"rate_approval_attempt_limit"`
 	ApprovalIP         uint64   `json:"rate_approval_ip_limit"`
 	ApprovalGlobal     uint64   `json:"rate_approval_global_limit"`
+	ExchangeWindow     int64    `json:"rate_approval_exchange_window_seconds"`
+	ExchangeCapability uint64   `json:"rate_approval_exchange_capability_limit"`
+	ExchangeIP         uint64   `json:"rate_approval_exchange_ip_limit"`
+	ExchangeGlobal     uint64   `json:"rate_approval_exchange_global_limit"`
 }
 
 func (apiSecretFile) String() string               { return "APISecrets{redacted}" }
@@ -194,7 +203,7 @@ func apiJSONFieldsAreCanonical(raw []byte) bool {
 
 func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 	keys := businessKeys{identityID: s.IdentityID, codeID: s.CodeID, codeHashID: s.CodeHashID,
-		approvalID: s.ApprovalID, challengeID: s.ChallengeID, loginID: s.LoginID,
+		approvalID: s.ApprovalID, challengeID: s.ChallengeID, loginID: s.LoginID, exchangeID: s.ExchangeID,
 		workoutNameID: s.WorkoutNameID, workoutID: s.WorkoutID}
 	var proxyCredential []byte
 	fields := []struct {
@@ -205,6 +214,7 @@ func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 		{s.ProofReplay, &keys.proofReplay}, {s.SessionToken, &keys.sessionToken}, {s.Approval, &keys.approval},
 		{s.ChallengeIdem, &keys.challengeIdempotency}, {s.ChallengeRequest, &keys.challengeRequest}, {s.ChallengeCipher, &keys.challengeCipher},
 		{s.LoginIdem, &keys.loginIdempotency}, {s.LoginRequest, &keys.loginRequest}, {s.LoginCipher, &keys.loginCipher},
+		{s.ExchangeIdem, &keys.exchangeIdempotency}, {s.ExchangeRequest, &keys.exchangeRequest}, {s.ExchangeCipher, &keys.exchangeCipher},
 		{s.RateEmail, &keys.rateEmail}, {s.RateDevice, &keys.rateDevice}, {s.RateIP, &keys.rateIP}, {s.RateGlobal, &keys.rateGlobal},
 		{s.WorkoutName, &keys.workoutName}, {s.WorkoutHash, &keys.workoutHash}, {s.WorkoutCipher, &keys.workoutCipher},
 		{s.ProxyCredential, &proxyCredential},
@@ -224,23 +234,23 @@ func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 	if !keys.distinctKeys() {
 		return apiBusinessSettings{}, errAPIConfig
 	}
-	for _, id := range []string{keys.identityID, keys.codeID, keys.codeHashID, keys.approvalID, keys.challengeID, keys.loginID, keys.workoutNameID, keys.workoutID} {
+	for _, id := range []string{keys.identityID, keys.codeID, keys.codeHashID, keys.approvalID, keys.challengeID, keys.loginID, keys.exchangeID, keys.workoutNameID, keys.workoutID} {
 		if !apiValidKeyID(id) {
 			return apiBusinessSettings{}, errAPIConfig
 		}
 	}
 	if !within(s.ChallengeTTL, 1, 1800) || s.ChallengeAttempts < 1 || s.ChallengeAttempts > 10 ||
 		!within(s.ProofLifetime, 1, 1800) || !within(s.ProofSkew, 0, 300) ||
-		!within(s.ChallengeRetention, 60, 86400) || !within(s.LoginRetention, 1, 86400) ||
+		!within(s.ChallengeRetention, 60, 86400) || !within(s.LoginRetention, 1, 86400) || !within(s.ExchangeRetention, 1, 86400) ||
 		!within(s.SessionLifetime, 1, 30*86400) || !within(s.WorkoutRetention, 1, 30*86400) ||
 		!within(s.ApprovalLifetime, 1, 1800) || !within(s.ReauthWindow, 1, 86400) ||
 		s.CodeDigits < 6 || s.CodeDigits > 10 || s.IPv6PrefixBits < 16 || s.IPv6PrefixBits > 128 ||
 		!within(s.ChallengeWindow, 1, 86400) || !within(s.LoginWindow, 1, 86400) ||
-		!within(s.ApprovalWindow, 1, 86400) || s.ApprovalWindow < s.ApprovalLifetime || s.ApprovalAttempt < 1 || s.ApprovalAttempt > 10 {
+		!within(s.ApprovalWindow, 1, 86400) || !within(s.ExchangeWindow, 1, 86400) || s.ApprovalWindow < s.ApprovalLifetime || s.ApprovalAttempt < 1 || s.ApprovalAttempt > 10 {
 		return apiBusinessSettings{}, errAPIConfig
 	}
 	limits := []uint64{s.ChallengeEmail, s.ChallengeDevice, s.ChallengeIP, s.ChallengeGlobal, s.LoginEmail, s.LoginDevice, s.LoginIP, s.LoginGlobal,
-		s.ApprovalSubject, s.ApprovalAttempt, s.ApprovalIP, s.ApprovalGlobal}
+		s.ApprovalSubject, s.ApprovalAttempt, s.ApprovalIP, s.ApprovalGlobal, s.ExchangeCapability, s.ExchangeIP, s.ExchangeGlobal}
 	for _, limit := range limits {
 		if limit < 1 || limit > 1000000 {
 			return apiBusinessSettings{}, errAPIConfig
@@ -258,13 +268,16 @@ func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 		return ratelimit.Policy{Email: dim(email), Device: dim(device), IP: dim(ip), Global: dim(global)}
 	}
 	approvalRate := policyFor(s.ApprovalWindow, s.ApprovalSubject, s.ApprovalAttempt, s.ApprovalIP, s.ApprovalGlobal)
+	exchangeRate := policyFor(s.ExchangeWindow, s.ExchangeCapability, s.ExchangeCapability, s.ExchangeIP, s.ExchangeGlobal)
 	policy := businessPolicy{challenge: challenge.Policy{ChallengeTTL: seconds(s.ChallengeTTL), MaxAttempts: s.ChallengeAttempts, DeviceProof: proof},
 		rate: ratelimit.Config{IPv6PrefixBits: s.IPv6PrefixBits,
 			EmailChallenge: policyFor(s.ChallengeWindow, s.ChallengeEmail, s.ChallengeDevice, s.ChallengeIP, s.ChallengeGlobal),
 			EmailLogin:     policyFor(s.LoginWindow, s.LoginEmail, s.LoginDevice, s.LoginIP, s.LoginGlobal)},
 		approvalRate:       ratelimit.ApprovalDecisionPolicy{Subject: approvalRate.Email, Approval: approvalRate.Device, IP: approvalRate.IP, Global: approvalRate.Global},
+		exchangeRate:       ratelimit.ApprovalExchangePolicy{Capability: exchangeRate.Device, IP: exchangeRate.IP, Global: exchangeRate.Global},
 		challengeRetention: seconds(s.ChallengeRetention), loginRetention: seconds(s.LoginRetention),
-		sessionLifetime: seconds(s.SessionLifetime), workoutRetention: seconds(s.WorkoutRetention),
+		exchangeRetention: seconds(s.ExchangeRetention),
+		sessionLifetime:   seconds(s.SessionLifetime), workoutRetention: seconds(s.WorkoutRetention),
 		approval: approval.Policy{Lifetime: seconds(s.ApprovalLifetime), ReauthWindow: seconds(s.ReauthWindow)}, codeDigits: s.CodeDigits}
 	if len(s.TrustedProxies) < 1 || len(s.TrustedProxies) > 16 {
 		return apiBusinessSettings{}, errAPIConfig

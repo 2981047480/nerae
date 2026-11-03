@@ -22,14 +22,16 @@ func validAPIConfigFixture() apiSecretFile {
 		ProofReplay: key(5), SessionToken: key(6), Approval: key(7), ApprovalID: "approval-v1",
 		ChallengeIdem: key(8), ChallengeRequest: key(9), ChallengeCipher: key(10), ChallengeID: "challenge-v1",
 		LoginIdem: key(11), LoginRequest: key(12), LoginCipher: key(13), LoginID: "login-v1",
+		ExchangeIdem: key(22), ExchangeRequest: key(23), ExchangeCipher: key(24), ExchangeID: "exchange-v1",
 		RateEmail: key(14), RateDevice: key(15), RateIP: key(16), RateGlobal: key(17),
 		WorkoutName: key(18), WorkoutNameID: "name-v1", WorkoutHash: key(19), WorkoutCipher: key(20), WorkoutID: "workout-v1",
 		TrustedProxies: []string{"127.0.0.1/32", "::1/128"}, ChallengeTTL: 300, ChallengeAttempts: 3,
-		ProofLifetime: 300, ProofSkew: 30, ChallengeRetention: 3600, LoginRetention: 120,
+		ProofLifetime: 300, ProofSkew: 30, ChallengeRetention: 3600, LoginRetention: 120, ExchangeRetention: 120,
 		SessionLifetime: 3600, WorkoutRetention: 86400, ApprovalLifetime: 300, ReauthWindow: 60,
 		CodeDigits: 6, IPv6PrefixBits: 64, ChallengeWindow: 900, ChallengeEmail: 5, ChallengeDevice: 10,
 		ChallengeIP: 30, ChallengeGlobal: 1000, LoginWindow: 900, LoginEmail: 10, LoginDevice: 20, LoginIP: 50, LoginGlobal: 1000,
-		ApprovalWindow: 300, ApprovalSubject: 10, ApprovalAttempt: 3, ApprovalIP: 20, ApprovalGlobal: 1000}
+		ApprovalWindow: 300, ApprovalSubject: 10, ApprovalAttempt: 3, ApprovalIP: 20, ApprovalGlobal: 1000,
+		ExchangeWindow: 60, ExchangeCapability: 20, ExchangeIP: 50, ExchangeGlobal: 1000}
 }
 
 func encodeAPIConfig(t *testing.T, v apiSecretFile) []byte {
@@ -64,7 +66,9 @@ func TestLoadAPISettingsProtectedFile(t *testing.T) {
 	if err != nil || len(settings.proxies) != 2 || settings.keys.identityID != fixture.IdentityID ||
 		settings.keys.codeHashID != fixture.CodeHashID || settings.policy.workoutRetention != 24*time.Hour ||
 		settings.policy.rate.EmailChallenge.Email.Limit != 5 || settings.policy.rate.EmailLogin.IP.Limit != 50 ||
-		settings.policy.approvalRate.Approval.Limit != 3 || settings.policy.approvalRate.Approval.Window != 5*time.Minute {
+		settings.policy.approvalRate.Approval.Limit != 3 || settings.policy.approvalRate.Approval.Window != 5*time.Minute ||
+		settings.policy.exchangeRate.Capability.Limit != 20 || settings.policy.exchangeRate.Capability.Window != time.Minute ||
+		settings.policy.exchangeRetention != 2*time.Minute {
 		t.Fatal("protected valid settings failed to load")
 	}
 	if fmt.Sprint(settings) != "APIBusinessSettings{redacted}" || fmt.Sprint(fixture) != "APISecrets{redacted}" {
@@ -143,6 +147,12 @@ func TestAPISettingsRejectAmbiguityAndInvalidPolicy(t *testing.T) {
 		"zero key":                    func(s *apiSecretFile) { s.CodeHash = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
 		"reused key":                  func(s *apiSecretFile) { s.CodeHash = s.SessionToken },
 		"reused proxy key":            func(s *apiSecretFile) { s.ProxyCredential = s.SessionToken },
+		"reused exchange key":         func(s *apiSecretFile) { s.ExchangeCipher = s.LoginCipher },
+		"missing exchange key":        func(s *apiSecretFile) { s.ExchangeIdem = "" },
+		"invalid exchange key id":     func(s *apiSecretFile) { s.ExchangeID = "bad/id" },
+		"invalid exchange retention":  func(s *apiSecretFile) { s.ExchangeRetention = 0 },
+		"missing exchange rate":       func(s *apiSecretFile) { s.ExchangeCapability = 0 },
+		"invalid exchange window":     func(s *apiSecretFile) { s.ExchangeWindow = 0 },
 		"zero proxy key":              func(s *apiSecretFile) { s.ProxyCredential = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
 		"invalid key id":              func(s *apiSecretFile) { s.CodeHashID = "bad/id" },
 		"public proxy":                func(s *apiSecretFile) { s.TrustedProxies = []string{"0.0.0.0/0"} },

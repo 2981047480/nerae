@@ -34,6 +34,8 @@ MIGRATIONS = (
     "auth/0009_email_login_receipt.up.sql",
     "auth/0010_email_code_hash_key_epoch.up.sql",
     "transport/0001_idempotency.up.sql",
+    "auth/0011_approval_exchange_receipt.up.sql",
+    "auth/0012_approval_poll_receipt.up.sql",
 )
 
 
@@ -99,6 +101,8 @@ def run() -> int:
             marker = "PASS: protected API process startup -> loopback business route -> enqueue -> clean shutdown"
             if marker not in test.stdout:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
+            if "PASS: protected API process exposes bounded approval exchange route" not in test.stdout:
+                raise RuntimeError("approval exchange route was not exercised")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, timeout=10, check=False)
             redis_child.wait(timeout=15)

@@ -14,6 +14,8 @@ import (
 	"nerae/api/internal/middleware"
 	authapp "nerae/api/internal/modules/auth/application"
 	"nerae/api/internal/modules/auth/approval"
+	"nerae/api/internal/modules/auth/approvalledger"
+	"nerae/api/internal/modules/auth/approvalreceipt"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/codeepoch"
@@ -37,13 +39,14 @@ var errBusinessStartup = errors.New("business startup unavailable")
 // businessKeys are supplied by protected server configuration. Values are
 // never accepted from HTTP requests, included in logs, or given defaults.
 type businessKeys struct {
-	identityIndex, identityCipher, codeHash, codeDerive                                        []byte
-	proofReplay, sessionToken, approval                                                        []byte
-	challengeIdempotency, challengeRequest, challengeCipher                                    []byte
-	loginIdempotency, loginRequest, loginCipher                                                []byte
-	rateEmail, rateDevice, rateIP, rateGlobal                                                  []byte
-	workoutName, workoutHash, workoutCipher                                                    []byte
-	identityID, codeID, codeHashID, approvalID, challengeID, loginID, workoutNameID, workoutID string
+	identityIndex, identityCipher, codeHash, codeDerive                                                    []byte
+	proofReplay, sessionToken, approval                                                                    []byte
+	challengeIdempotency, challengeRequest, challengeCipher                                                []byte
+	loginIdempotency, loginRequest, loginCipher                                                            []byte
+	exchangeIdempotency, exchangeRequest, exchangeCipher                                                   []byte
+	rateEmail, rateDevice, rateIP, rateGlobal                                                              []byte
+	workoutName, workoutHash, workoutCipher                                                                []byte
+	identityID, codeID, codeHashID, approvalID, challengeID, loginID, exchangeID, workoutNameID, workoutID string
 }
 
 func (businessKeys) String() string               { return "BusinessKeys{redacted}" }
@@ -58,7 +61,8 @@ func (k businessKeys) distinctKeys() bool {
 	keys := [][]byte{k.identityIndex, k.identityCipher, k.codeHash, k.codeDerive,
 		k.proofReplay, k.sessionToken, k.approval, k.challengeIdempotency,
 		k.challengeRequest, k.challengeCipher, k.loginIdempotency, k.loginRequest,
-		k.loginCipher, k.rateEmail, k.rateDevice, k.rateIP, k.rateGlobal,
+		k.loginCipher, k.exchangeIdempotency, k.exchangeRequest, k.exchangeCipher,
+		k.rateEmail, k.rateDevice, k.rateIP, k.rateGlobal,
 		k.workoutName, k.workoutHash, k.workoutCipher}
 	zero := make([]byte, 32)
 	for i, key := range keys {
@@ -78,7 +82,9 @@ type businessPolicy struct {
 	challenge                                                             challenge.Policy
 	rate                                                                  ratelimit.Config
 	approvalRate                                                          ratelimit.ApprovalDecisionPolicy
+	exchangeRate                                                          ratelimit.ApprovalExchangePolicy
 	challengeRetention, loginRetention, sessionLifetime, workoutRetention time.Duration
+	exchangeRetention                                                     time.Duration
 	approval                                                              approval.Policy
 	codeDigits                                                            int
 }
@@ -218,6 +224,40 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	if err != nil {
 		return nil, errBusinessStartup
 	}
+	exchangeCrypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{
+		IdempotencyHMACKey: keys.exchangeIdempotency, RequestHMACKey: keys.exchangeRequest, AES256GCMKey: keys.exchangeCipher,
+	})
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchangeLedger, err := approvalledger.New(exchangeCrypto, keys.exchangeID)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchanger, err := approval.NewExchanger(approvals, codec, proofReplay, policy.challenge.DeviceProof)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchangeReceipt, err := approval.NewReceiptExchanger(exchanger, exchangeLedger, exchangeCrypto, sessions, keys.exchangeID, policy.exchangeRetention)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	poll, err := approval.NewPollExchanger(exchangeReceipt, keys.exchangeID, policy.exchangeRetention)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchangeLimiter, err := ratelimit.NewApprovalExchangeLimiter(limiter, policy.exchangeRate)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchangeGate, err := approval.NewRateLimitedPoll(poll, exchangeLimiter)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	exchangeHandler, err := authtransport.NewApprovalExchangeHandler(db, exchangeGate, sessions, validator, ip)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
 	nameProtector, err := workoutrepo.NewExerciseNameProtector(keys.workoutName, keys.workoutNameID)
 	if err != nil {
 		return nil, errBusinessStartup
@@ -254,7 +294,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	defer tx.Rollback()
 	for _, initialize := range []func(context.Context, *sql.Tx) error{
 		identityEpoch.Initialize, ensureEmptyCodeEpochHistory, producer.InitializeCodeKey, hashEpoch.Initialize,
-		issuer.InitializeKey, ledger.Initialize, approvals.InitializeKey,
+		issuer.InitializeKey, ledger.Initialize, approvals.InitializeKey, poll.Initialize,
 		executor.InitializeKey, decisionExecutor.Initialize, nameProtector.InitializeExerciseKey,
 	} {
 		if err := initialize(ctx, tx); err != nil {
@@ -275,6 +315,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	mux := http.NewServeMux()
 	mux.Handle("/auth/email/challenges", challengeHandler)
 	mux.Handle("/auth/email-login", loginHandler)
+	mux.Handle("/auth/login-approvals/", exchangeHandler)
 	mux.Handle("/auth/sessions/current", logoutHandler)
 	mux.Handle("/me", meHandler)
 	mux.Handle("/me/age-verify", ageHandler)

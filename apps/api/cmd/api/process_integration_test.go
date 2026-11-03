@@ -180,6 +180,25 @@ func TestAPIProcessPrivateServices(t *testing.T) {
 	if me.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("anonymous /me status %d", me.StatusCode)
 	}
+	exchangePath := "/auth/login-approvals/approval-0000000000001/exchange"
+	exchangeRequest, err := http.NewRequest(http.MethodPost, base+exchangePath, strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal("approval exchange request construction failed")
+	}
+	exchangeRequest.Header.Set("Content-Type", "application/json")
+	exchangeRequest.Header.Set("Idempotency-Key", enc(idem))
+	exchangeRequest.Header.Set(trustedproxy.SourceIPHeader, "203.0.113.9")
+	exchangeRequest.Header.Set(proxyCredentialHeader, fixture.ProxyCredential)
+	exchangeResponse, err := client.Do(exchangeRequest)
+	if err != nil {
+		t.Fatal("local approval exchange request failed")
+	}
+	exchangeResponseBody, readErr := io.ReadAll(io.LimitReader(exchangeResponse.Body, 8192))
+	_ = exchangeResponse.Body.Close()
+	if readErr != nil || (exchangeResponse.StatusCode != http.StatusBadRequest && exchangeResponse.StatusCode != http.StatusUnprocessableEntity) ||
+		exchangeResponse.Header.Get("Cache-Control") != "no-store" || bytes.Contains(exchangeResponseBody, []byte("approval-0000000000001")) {
+		t.Fatalf("mounted approval exchange returned status %d", exchangeResponse.StatusCode)
+	}
 	cancel()
 	select {
 	case err := <-done:
@@ -193,4 +212,5 @@ func TestAPIProcessPrivateServices(t *testing.T) {
 		t.Fatal("process log leaked protected configuration or challenge material")
 	}
 	t.Log("PASS: protected API process startup -> loopback business route -> enqueue -> clean shutdown")
+	t.Log("PASS: protected API process exposes bounded approval exchange route")
 }

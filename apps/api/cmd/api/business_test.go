@@ -38,6 +38,7 @@ func businessFixture() (businessKeys, businessPolicy) {
 		proofReplay: key(5), sessionToken: key(6), approval: key(7),
 		challengeIdempotency: key(8), challengeRequest: key(9), challengeCipher: key(10),
 		loginIdempotency: key(11), loginRequest: key(12), loginCipher: key(13),
+		exchangeIdempotency: key(22), exchangeRequest: key(23), exchangeCipher: key(24), exchangeID: "assembly-exchange-v1",
 		rateEmail: key(14), rateDevice: key(15), rateIP: key(16), rateGlobal: key(17),
 		workoutName: key(18), workoutHash: key(19), workoutCipher: key(20),
 		identityID: "assembly-identity-v1", codeID: "assembly-code-v1", codeHashID: "assembly-code-hash-v1", approvalID: "assembly-approval-v1",
@@ -50,8 +51,9 @@ func businessFixture() (businessKeys, businessPolicy) {
 			DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}},
 		rate:               ratelimit.Config{IPv6PrefixBits: 64, EmailChallenge: limit, EmailLogin: limit},
 		approvalRate:       ratelimit.ApprovalDecisionPolicy{Subject: dim, Approval: ratelimit.DimensionPolicy{Limit: 3, Window: time.Hour}, IP: dim, Global: dim},
+		exchangeRate:       ratelimit.ApprovalExchangePolicy{Capability: dim, IP: dim, Global: dim},
 		challengeRetention: time.Hour, loginRetention: 2 * time.Minute, sessionLifetime: time.Hour,
-		workoutRetention: 24 * time.Hour, approval: approval.Policy{Lifetime: 5 * time.Minute, ReauthWindow: time.Minute}, codeDigits: 6,
+		exchangeRetention: 2 * time.Minute, workoutRetention: 24 * time.Hour, approval: approval.Policy{Lifetime: 5 * time.Minute, ReauthWindow: time.Minute}, codeDigits: 6,
 	}
 }
 
@@ -64,6 +66,8 @@ func TestBusinessKeysRejectMissingReusedAndDisclosure(t *testing.T) {
 		func(k *businessKeys) { k.rateEmail = nil },
 		func(k *businessKeys) { k.workoutCipher = make([]byte, 32) },
 		func(k *businessKeys) { k.codeHash = append([]byte(nil), k.sessionToken...) },
+		func(k *businessKeys) { k.exchangeCipher = nil },
+		func(k *businessKeys) { k.exchangeRequest = append([]byte(nil), k.loginRequest...) },
 	} {
 		bad := keys
 		replace(&bad)
@@ -130,6 +134,8 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		`SELECT COUNT(*) FROM auth_email_challenge_request_key_epoch`,
 		`SELECT COUNT(*) FROM auth_email_login_receipt_key_epoch`,
 		`SELECT COUNT(*) FROM auth_approval_key_epoch WHERE key_id IS NOT NULL`,
+		`SELECT COUNT(*) FROM auth_approval_exchange_receipt_key_epoch`,
+		`SELECT COUNT(*) FROM auth_approval_poll_key_epoch`,
 		`SELECT COUNT(*) FROM transport_idempotency_key_epoch WHERE key_id IS NOT NULL`,
 	} {
 		var count int
@@ -158,6 +164,21 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	unsafePolicy.approvalRate.Approval.Window = time.Second
 	if _, err := buildBusinessHandler(ctx, db, rdb, keys, unsafePolicy, proxies); err == nil {
 		t.Fatal("approval limit window shorter than the approval lifetime was accepted")
+	}
+	unsafePolicy = policy
+	unsafePolicy.exchangeRate.Capability.Limit = 0
+	if _, err := buildBusinessHandler(ctx, db, rdb, keys, unsafePolicy, proxies); err == nil {
+		t.Fatal("missing approval exchange capability limit was accepted")
+	}
+	unsafePolicy = policy
+	unsafePolicy.exchangeRetention = 0
+	if _, err := buildBusinessHandler(ctx, db, rdb, keys, unsafePolicy, proxies); err == nil {
+		t.Fatal("missing approval exchange receipt retention was accepted")
+	}
+	wrongExchangeKey := keys
+	wrongExchangeKey.exchangeCipher = bytes.Repeat([]byte{98}, 32)
+	if _, err := buildBusinessHandler(ctx, db, rdb, wrongExchangeKey, policy, proxies); err == nil {
+		t.Fatal("approval exchange epoch mismatch was accepted")
 	}
 	// Emulate a live workout transaction which already holds the idempotency
 	// epoch. Once startup has locked the earlier approval epoch, it must wait
@@ -236,10 +257,13 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		}
 		return enc(b)
 	}
+	proxyCredential := bytes.Repeat([]byte{25}, 32)
+	guarded := proxyBoundary(proxyCredential, handler)
 	request := func(method, path string, body []byte, token, key, peer, source string) *httptest.ResponseRecorder {
 		t.Helper()
 		r := httptest.NewRequest(method, path, bytes.NewReader(body)).WithContext(ctx)
 		r.RemoteAddr = peer
+		r.Header.Set(proxyCredentialHeader, enc(proxyCredential))
 		if body != nil {
 			r.Header.Set("Content-Type", "application/json")
 		}
@@ -253,7 +277,7 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 			r.Header.Set(trustedproxy.SourceIPHeader, source)
 		}
 		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, r)
+		guarded.ServeHTTP(w, r)
 		return w
 	}
 	peer, source := "127.0.0.1:12345", "203.0.113.23"
@@ -327,8 +351,32 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	secondLoginBody, _ := json.Marshal(map[string]string{"challengeId": string(secondChallenge.ChallengeId), "code": secondCode, "deviceProof": secondProof})
 	secondLogin := request("POST", "/auth/email-login", secondLoginBody, "", requestKey(), peer, source)
 	var pending api.PhoneAuthApprovalRequired
-	if secondLogin.Code != http.StatusOK || json.Unmarshal(secondLogin.Body.Bytes(), &pending) != nil || string(pending.Status) != "approval_required" || pending.ApprovalId == "" {
+	if secondLogin.Code != http.StatusOK || json.Unmarshal(secondLogin.Body.Bytes(), &pending) != nil || string(pending.Status) != "approval_required" || pending.ApprovalId == "" || pending.ApprovalSecret == "" || pending.Nonce == "" {
 		t.Fatal("assembled new-device login did not require approval")
+	}
+	exchangePath := "/auth/login-approvals/" + string(pending.ApprovalId) + "/exchange"
+	exchangeBody := func() []byte {
+		t.Helper()
+		now := time.Now().UTC()
+		claims, _ := json.Marshal(map[string]any{"aud": "nerae-auth-device", "purpose": "approval_exchange", "resourceId": pending.ApprovalId,
+			"nonce": pending.Nonce, "iat": now.Unix(), "exp": now.Add(time.Minute).Unix(), "jti": requestKey()})
+		unsigned := enc([]byte(`{"alg":"ES256","typ":"JWT"}`)) + "." + enc(claims)
+		digest := sha256.Sum256([]byte(unsigned))
+		r, s, err := ecdsa.Sign(rand.Reader, secondDevice, digest[:])
+		if err != nil {
+			t.Fatal("approval exchange signing failed")
+		}
+		proof := unsigned + "." + enc(append(r.FillBytes(make([]byte, 32)), s.FillBytes(make([]byte, 32))...))
+		body, _ := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret), "deviceProof": proof})
+		return body
+	}
+	pendingBody, pendingKey := exchangeBody(), requestKey()
+	if badIP := request("POST", exchangePath, pendingBody, "", pendingKey, "198.51.100.1:12345", source); badIP.Code != http.StatusServiceUnavailable {
+		t.Fatal("approval exchange accepted an untrusted proxy")
+	}
+	firstPoll := request("POST", exchangePath, pendingBody, "", pendingKey, peer, source)
+	if firstPoll.Code != http.StatusOK || firstPoll.Body.String() != `{"status":"pending"}` || firstPoll.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("assembled pending approval poll failed: %d", firstPoll.Code)
 	}
 	decisionPath := "/me/login-approvals/" + string(pending.ApprovalId) + "/decision"
 	decisionBody, _ := json.Marshal(map[string]any{"decision": "approve", "comparisonCode": pending.ComparisonCode, "confirmed": true})
@@ -343,6 +391,21 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	decisionReplay := request("POST", decisionPath, decisionBody, token, decisionKey, peer, source)
 	if decisionReplay.Code != http.StatusOK || decisionReplay.Header().Get("Idempotency-Replayed") != "true" || !bytes.Equal(decision.Body.Bytes(), decisionReplay.Body.Bytes()) {
 		t.Fatal("assembled decision did not replay its committed receipt")
+	}
+	pendingReplay := request("POST", exchangePath, pendingBody, "", pendingKey, peer, source)
+	if pendingReplay.Code != http.StatusOK || !bytes.Equal(pendingReplay.Body.Bytes(), firstPoll.Body.Bytes()) {
+		t.Fatal("assembled approval poll did not preserve the original pending snapshot")
+	}
+	approvedBody, approvedKey := exchangeBody(), requestKey()
+	exchanged := request("POST", exchangePath, approvedBody, "", approvedKey, peer, source)
+	var secondSuccess api.PhoneAuthSuccess
+	if exchanged.Code != http.StatusOK || json.Unmarshal(exchanged.Body.Bytes(), &secondSuccess) != nil || secondSuccess.Token == "" || secondSuccess.User.Id != success.User.Id {
+		t.Fatalf("assembled new-device exchange failed: %d", exchanged.Code)
+	}
+	exchangeReplay := request("POST", exchangePath, approvedBody, "", approvedKey, peer, source)
+	var replaySuccess api.PhoneAuthSuccess
+	if exchangeReplay.Code != http.StatusOK || json.Unmarshal(exchangeReplay.Body.Bytes(), &replaySuccess) != nil || replaySuccess.Token != secondSuccess.Token {
+		t.Fatal("assembled new-device exchange did not recover the same session")
 	}
 	age := request("POST", "/me/age-verify", []byte(`{"isAdult":true,"expectedVersion":1}`), token, "", peer, source)
 	if age.Code != http.StatusOK {
@@ -363,7 +426,11 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		t.Fatal("workout create replay changed result")
 	}
 	sets := []byte(`{"expectedVersion":1,"exerciseEntryKeys":["entry-001"],"sets":[{"recordKey":"record-001","exerciseEntryKey":"entry-001","exerciseName":"卧推","kind":"weight","setIndex":1,"weightKg":42.50,"reps":8,"completed":true}]}`)
-	saved := request("POST", "/me/sessions/"+record.ID+"/sets", sets, token, requestKey(), peer, source)
+	secondRead := request("GET", "/me/sessions/"+record.ID, nil, secondSuccess.Token, "", peer, source)
+	if secondRead.Code != http.StatusOK {
+		t.Fatalf("second device could not read the created workout: %d", secondRead.Code)
+	}
+	saved := request("POST", "/me/sessions/"+record.ID+"/sets", sets, secondSuccess.Token, requestKey(), peer, source)
 	if saved.Code != http.StatusOK {
 		t.Fatalf("set write status %d", saved.Code)
 	}
@@ -377,4 +444,5 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	}
 	t.Log("PASS: assembled handler challenge -> synthetic derived code login -> age -> workout create/set/read")
 	t.Log("PASS: assembled new-device decision uses trusted IP, shared idempotency epoch and authorized replay")
+	t.Log("PASS: assembled new-device exchange and shared workout through proxy boundary")
 }

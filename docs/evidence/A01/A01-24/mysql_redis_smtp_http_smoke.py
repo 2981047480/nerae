@@ -128,6 +128,8 @@ def run() -> int:
                     raise RuntimeError("business assembly test did not emit its PASS marker; it may have been skipped")
                 if "PASS: assembled new-device decision uses trusted IP, shared idempotency epoch and authorized replay" not in assembly.stdout:
                     raise RuntimeError("assembled approval decision was not exercised")
+                if "PASS: assembled new-device exchange and shared workout through proxy boundary" not in assembly.stdout:
+                    raise RuntimeError("assembled approval exchange was not exercised")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, timeout=10, check=False)
             redis_child.wait(timeout=15)
