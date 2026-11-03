@@ -50,6 +50,7 @@ export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expe
 
 // Android draft persistence needs a separately verified Keystore-backed slot.
 export function readTrainingDraft(_key: string): SecureVaultResult { return failure('unsupported_platform') }
+export function discoverTrainingDrafts(_subjectId: string, _cursor: string): SecureVaultResult { return failure('unsupported_platform') }
 export function createTrainingDraft(_key: string, _value: string): SecureVaultResult { return failure('unsupported_platform') }
 export function writeTrainingDraft(_key: string, _value: string): SecureVaultResult { return failure('unsupported_platform') }
 

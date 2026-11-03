@@ -11,6 +11,26 @@ const ids = {
   },
 }
 
+export type DiscoverAppTrainingDraftsResult =
+  | { ok: true; eventIds: string[]; nextCursor: string | null; hasUnclassifiedItems: boolean }
+  | { ok: false; reason: 'session_changed' | 'storage_unavailable' }
+
+/** Find the current subject's protected local drafts; no server sync is implied. */
+export async function discoverAppTrainingDrafts(session: AuthSessionCoordinator, cursor = ''): Promise<DiscoverAppTrainingDraftsResult> {
+  const snapshot = session?.snapshot()
+  const lease = session?.draftLease()
+  if (!snapshot || !lease || snapshot.generation !== lease.generation || !lease.isCurrent(snapshot.subjectId, lease.generation)) {
+    return { ok: false, reason: 'session_changed' }
+  }
+  try {
+    const result = await createNativeTrainingDraftStorage(snapshot.subjectId, lease).discover(cursor)
+    if (!lease.isCurrent(snapshot.subjectId, lease.generation)) return { ok: false, reason: 'session_changed' }
+    return { ok: true, ...result }
+  } catch {
+    return { ok: false, reason: lease.isCurrent(snapshot.subjectId, lease.generation) ? 'storage_unavailable' : 'session_changed' }
+  }
+}
+
 /** Local draft creation only; it does not claim a server write or sync. */
 export async function createAppTrainingEditor(session: AuthSessionCoordinator, date: string, timeZone: string): Promise<CreateTrainingEditorResult> {
   const snapshot = session?.snapshot()

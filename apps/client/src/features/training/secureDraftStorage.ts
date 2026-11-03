@@ -3,6 +3,7 @@ import type { AuthLease } from './draftStorage'
 
 /** Synchronous native operations on one protected draft slot. */
 export interface NativeDraftPort {
+  discoverTrainingDrafts(subjectId: string, cursor: string): unknown
   readTrainingDraft(key: string): unknown
   createTrainingDraft(key: string, value: string): unknown
   writeTrainingDraft(key: string, value: string): unknown
@@ -66,7 +67,7 @@ export class SecureDraftStorage implements InitialDraftStorage {
   #generation: string
 
   constructor(port: NativeDraftPort, subjectId: string, auth: AuthLease) {
-    if (!port || typeof port.readTrainingDraft !== 'function' || typeof port.createTrainingDraft !== 'function' ||
+    if (!port || typeof port.discoverTrainingDrafts !== 'function' || typeof port.readTrainingDraft !== 'function' || typeof port.createTrainingDraft !== 'function' ||
       typeof port.writeTrainingDraft !== 'function' || !/^[1-9]\d{0,19}$/.test(subjectId) ||
       !auth || typeof auth.isCurrent !== 'function' || typeof auth.generation !== 'string' || !auth.generation ||
       !auth.isCurrent(subjectId, auth.generation)) throw new Error('本机草稿暂不可用')
@@ -74,6 +75,33 @@ export class SecureDraftStorage implements InitialDraftStorage {
     this.#subjectId = subjectId
     this.#auth = auth
     this.#generation = auth.generation
+  }
+
+  async discover(cursor = ''): Promise<{ eventIds: string[]; nextCursor: string | null; hasUnclassifiedItems: boolean }> {
+    if (cursor) this.#key(`nerae.workout.draft.v1.${this.#subjectId}.${cursor}`)
+    this.#assertCurrent()
+    let discovered: NativeResult
+    try { discovered = result(this.#port.discoverTrainingDrafts(this.#subjectId, cursor)) } catch { throw new Error('查找本机草稿失败') }
+    this.#assertCurrent()
+    if (!discovered.ok || !discovered.found || !discovered.value || discovered.value.length > 128 * 1024) throw new Error('查找本机草稿失败')
+    let parsed: unknown
+    try { parsed = JSON.parse(discovered.value) } catch { throw new Error('查找本机草稿失败') }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('查找本机草稿失败')
+    const list = parsed as Record<string, unknown>
+    if (Object.keys(list).sort().join(',') !== 'eventIds,hasUnclassifiedItems,nextCursor' || !Array.isArray(list.eventIds) ||
+      list.eventIds.length > 100 || typeof list.hasUnclassifiedItems !== 'boolean' ||
+      !(list.nextCursor === null || typeof list.nextCursor === 'string')) throw new Error('查找本机草稿失败')
+    const eventIds: string[] = []
+    for (const event of list.eventIds) {
+      if (typeof event !== 'string') throw new Error('查找本机草稿失败')
+      this.#key(`nerae.workout.draft.v1.${this.#subjectId}.${event}`)
+      if (eventIds.includes(event)) throw new Error('查找本机草稿失败')
+      eventIds.push(event)
+    }
+    if (list.nextCursor !== null && (eventIds.length !== 100 || list.nextCursor !== eventIds[eventIds.length - 1])) {
+      throw new Error('查找本机草稿失败')
+    }
+    return { eventIds, nextCursor: list.nextCursor, hasUnclassifiedItems: list.hasUnclassifiedItems }
   }
 
   async read(key: string): Promise<unknown> {

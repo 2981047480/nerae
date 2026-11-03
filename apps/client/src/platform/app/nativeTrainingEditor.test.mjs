@@ -6,6 +6,12 @@ const state = { values: new Map(), available: true, id: 0, generation: 'login-1'
 const ok = (found = false, value = '') => ({ ok: true, errorCode: '', found, value })
 const fail = errorCode => ({ ok: false, errorCode, found: false, value: '' })
 globalThis.__neraeEditorTest = {
+  discover(subject, cursor) {
+    const prefix = `nerae.workout.draft.v1.${subject}.`
+    const all = [...state.values.keys()].filter(key => key.startsWith(prefix)).map(key => key.slice(prefix.length)).sort().filter(id => !cursor || id > cursor)
+    const eventIds = all.slice(0, 100)
+    return state.available ? ok(true, JSON.stringify({ eventIds, nextCursor: all.length > 100 ? eventIds.at(-1) : null, hasUnclassifiedItems: false })) : fail('unsupported_platform')
+  },
   read(key) { return state.available ? state.values.has(key) ? ok(true, state.values.get(key)) : ok() : fail('unsupported_platform') },
   create(key, value) { if (!state.available) return fail('unsupported_platform'); if (state.values.has(key)) return fail('conflict'); state.values.set(key, value); return ok() },
   write(key, value) { if (!state.available) return fail('unsupported_platform'); if (!state.values.has(key)) return fail('conflict'); state.values.set(key, value); return ok() },
@@ -13,7 +19,8 @@ globalThis.__neraeEditorTest = {
 }
 registerHooks({ resolve(specifier, context, nextResolve) {
   if (specifier === '@/uni_modules/nerae-secure-vault') {
-    const source = `export const readTrainingDraft = key => globalThis.__neraeEditorTest.read(key)
+    const source = `export const discoverTrainingDrafts = (subject, cursor) => globalThis.__neraeEditorTest.discover(subject, cursor)
+      export const readTrainingDraft = key => globalThis.__neraeEditorTest.read(key)
       export const createTrainingDraft = (key, value) => globalThis.__neraeEditorTest.create(key, value)
       export const writeTrainingDraft = (key, value) => globalThis.__neraeEditorTest.write(key, value)`
     return { url: `data:text/javascript,${encodeURIComponent(source)}`, shortCircuit: true }
@@ -23,7 +30,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
   }
   return nextResolve(specifier, context)
 } })
-const { createAppTrainingEditor, attachAppTrainingEditor } = await import('./nativeTrainingEditor.ts')
+const { createAppTrainingEditor, attachAppTrainingEditor, discoverAppTrainingDrafts } = await import('./nativeTrainingEditor.ts')
 const session = {
   snapshot() { return { subjectId: state.subject, generation: state.generation } },
   draftLease() { const generation = state.generation; return { generation, isCurrent: (id, gen) => id === state.subject && gen === generation && gen === state.generation } },
@@ -45,6 +52,7 @@ test('app editor factory writes and reopens one draft across both recording mode
   assert.equal((await editor.setMode('per_set')).ok, true)
   assert.equal((await editor.confirmGroup(entry, group)).ok, true)
   await editor.close()
+  assert.deepEqual(await discoverAppTrainingDrafts(session), { ok: true, eventIds: [clientEventId], nextCursor: null, hasUnclassifiedItems: false })
   const reopened = await attachAppTrainingEditor(session, clientEventId)
   assert.equal(reopened.ok, true, reopened.reason)
   assert.equal(reopened.controller.draft.mode, 'per_set')
@@ -59,13 +67,17 @@ test('unsupported storage and account changes do not present an editable saved d
   state.values.clear(); state.available = false; state.subject = '101'; state.generation = 'login-1'
   const made = await createAppTrainingEditor(session, new Date().toISOString().slice(0, 10), 'UTC')
   assert.equal(made.ok, false)
+  assert.deepEqual(await discoverAppTrainingDrafts(session), { ok: false, reason: 'storage_unavailable' })
   assert.equal(state.values.size, 0)
   state.available = true
   const first = await createAppTrainingEditor(session, new Date().toISOString().slice(0, 10), 'UTC')
   assert.equal(first.ok, true)
   const event = first.controller.draft.clientEventId
+  const discoveryInFlight = discoverAppTrainingDrafts(session)
   state.subject = '202'; state.generation = 'login-2'
+  assert.deepEqual(await discoveryInFlight, { ok: false, reason: 'session_changed' })
   assert.equal((await first.controller.setMode('per_set')).reason, 'session_changed')
+  assert.deepEqual(await discoverAppTrainingDrafts(session), { ok: true, eventIds: [], nextCursor: null, hasUnclassifiedItems: false })
   assert.equal((await attachAppTrainingEditor(session, event)).ok, false)
   await first.controller.close()
 })

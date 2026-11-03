@@ -12,6 +12,7 @@ export function readDeviceIdentityRegistry(): SecureVaultResult { return unsuppo
 export function compareAndSetDeviceIdentityRegistry(_expectedFound: boolean, _expectedValue: string, _value: string): SecureVaultResult { return unsupported() }
 
 export function readTrainingDraft(_key: string): SecureVaultResult { return unsupported() }
+export function discoverTrainingDrafts(_subjectId: string, _cursor: string): SecureVaultResult { return unsupported() }
 export function createTrainingDraft(_key: string, _value: string): SecureVaultResult { return unsupported() }
 export function writeTrainingDraft(_key: string, _value: string): SecureVaultResult { return unsupported() }
 

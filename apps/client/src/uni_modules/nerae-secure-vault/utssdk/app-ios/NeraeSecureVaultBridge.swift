@@ -91,6 +91,7 @@ final class NeraeKeychainBackend: NeraeVaultBackend {
 // Each draft is a separate Keychain item, so its 64 KiB bound is not shared
 // by every workout. The account is a digest rather than a user/event string.
 protocol NeraeDraftBackend {
+    func accounts() throws -> [String]
     func read(account: String) throws -> Data?
     func create(account: String, value: Data) throws -> Bool
     func update(account: String, value: Data) throws
@@ -103,6 +104,25 @@ final class NeraeKeychainDraftBackend: NeraeDraftBackend {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: service, kSecAttrAccount as String: account,
          kSecAttrSynchronizable as String: kCFBooleanFalse as Any]
+    }
+
+    func accounts() throws -> [String] {
+        let request: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any,
+            kSecReturnAttributes as String: kCFBooleanTrue as Any,
+            kSecMatchLimit as String: kSecMatchLimitAll
+        ]
+        var raw: CFTypeRef?
+        let status = SecItemCopyMatching(request as CFDictionary, &raw)
+        if status == errSecItemNotFound { return [] }
+        guard status == errSecSuccess else { throw NeraeVaultError.unavailable }
+        let items: [[String: Any]]
+        if let array = raw as? [[String: Any]] { items = array }
+        else if let single = raw as? [String: Any] { items = [single] }
+        else { throw NeraeVaultError.unavailable }
+        return items.map { $0[kSecAttrAccount as String] as? String ?? "" }
     }
 
     func read(account: String) throws -> Data? {
@@ -145,6 +165,7 @@ final class NeraeKeychainDraftBackend: NeraeDraftBackend {
 
 final class NeraeProtectedDraftStore {
     private static let lock = NSLock()
+    static let discoveryPageSize = 100
     private let backend: NeraeDraftBackend
     init(backend: NeraeDraftBackend) { self.backend = backend }
 
@@ -182,7 +203,47 @@ final class NeraeProtectedDraftStore {
         guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
     }
 
+    // The Keychain items themselves are the only source of truth. No second
+    // manifest can become detached from a successfully-created draft.
+    func discover(subject: String, after cursor: String) throws -> String {
+        guard Self.validSubject(subject) else { throw NeraeVaultError.invalidState }
+        if !cursor.isEmpty { _ = try Self.owner("nerae.workout.draft.v1.\(subject).\(cursor)") }
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        let accounts = try backend.accounts()
+        var seen = Set<String>()
+        var events = [String]()
+        var hasMore = false
+        var hasUnclassifiedItems = false
+        func before(_ first: String, _ second: String) -> Bool { first.utf8.lexicographicallyPrecedes(second.utf8) }
+        for account in accounts {
+            guard account.count == 64, account.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
+                  seen.insert(account).inserted else { hasUnclassifiedItems = true; continue }
+            guard let data = try backend.read(account: account) else { hasUnclassifiedItems = true; continue }
+            guard data.count <= NeraeCredentialVault.maxBytes,
+                  let value = String(data: data, encoding: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data), let envelope = parsed as? [String: Any],
+                  let itemSubject = envelope["subjectId"] as? String,
+                  let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String,
+                  let itemOwner = try? Self.owner("nerae.workout.draft.v1.\(itemSubject).\(event)"),
+                  itemOwner.account == account, Self.valid(value, owner: itemOwner) else { hasUnclassifiedItems = true; continue }
+            guard itemSubject == subject, cursor.isEmpty || before(cursor, event) else { continue }
+            events.append(event)
+            events.sort(by: before)
+            if events.count > Self.discoveryPageSize { events.removeLast(); hasMore = true }
+        }
+        let nextCursor: Any = hasMore ? events.last! : NSNull()
+        let result: [String: Any] = ["eventIds": events, "nextCursor": nextCursor, "hasUnclassifiedItems": hasUnclassifiedItems]
+        let data = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
+        guard let value = String(data: data, encoding: .utf8) else { throw NeraeVaultError.unavailable }
+        return value
+    }
+
     private struct Owner { let subject: String; let event: String; let account: String }
+    private static func validSubject(_ subject: String) -> Bool {
+        !subject.isEmpty && subject.utf8.count <= 20 && subject.first != "0" &&
+            subject.utf8.allSatisfy({ (48...57).contains($0) })
+    }
     private static func owner(_ key: String) throws -> Owner {
         let prefix = "nerae.workout.draft.v1."
         guard key.hasPrefix(prefix), key.utf8.count <= 1024 else { throw NeraeVaultError.invalidState }
@@ -190,8 +251,7 @@ final class NeraeProtectedDraftStore {
         guard let separator = rest.firstIndex(of: ".") else { throw NeraeVaultError.invalidState }
         let subject = String(rest[..<separator])
         let event = String(rest[rest.index(after: separator)...])
-        guard !subject.isEmpty, subject.utf8.count <= 20, subject.first != "0",
-              subject.utf8.allSatisfy({ (48...57).contains($0) }),
+        guard validSubject(subject),
               (8...64).contains(event.unicodeScalars.count),
               !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw NeraeVaultError.invalidState }
         let digest = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
@@ -732,6 +792,11 @@ public final class NeraeSecureVaultBridge: NSObject {
             let result = try trainingDrafts.read(key: key)
             return encode(ok: true, found: result.found, value: result.value)
         } catch { return encodeFailure(error) }
+    }
+
+    @objc public static func discoverTrainingDrafts(_ subject: String, _ cursor: String) -> String {
+        do { return encode(ok: true, found: true, value: try trainingDrafts.discover(subject: subject, after: cursor)) }
+        catch { return encodeFailure(error) }
     }
 
     @objc public static func createTrainingDraft(_ key: String, _ value: String) -> String {

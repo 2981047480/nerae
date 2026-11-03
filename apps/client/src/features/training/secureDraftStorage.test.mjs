@@ -14,6 +14,12 @@ function native() {
   const values = new Map()
   return {
     values, uncertain: false,
+    discoverTrainingDrafts(subject, cursor) {
+      const prefix = `nerae.workout.draft.v1.${subject}.`
+      const all = [...values.keys()].filter(key => key.startsWith(prefix)).map(key => key.slice(prefix.length)).sort().filter(id => !cursor || id > cursor)
+      const eventIds = all.slice(0, 100)
+      return ok(true, JSON.stringify({ eventIds, nextCursor: all.length > 100 ? eventIds.at(-1) : null, hasUnclassifiedItems: false }))
+    },
     readTrainingDraft(key) { return values.has(key) ? ok(true, values.get(key)) : ok() },
     createTrainingDraft(key, value) { if (values.has(key)) return fail('conflict'); values.set(key, value); return ok() },
     writeTrainingDraft(key, value) {
@@ -130,9 +136,49 @@ test('uncertain native write keeps the last input and never reports it saved', a
 })
 
 test('unsupported native slots fail without creating or pretending to save', async () => {
-  const port = { readTrainingDraft: () => fail('unsupported_platform'), createTrainingDraft: () => fail('unsupported_platform'),
+  const port = { discoverTrainingDrafts: () => fail('unsupported_platform'), readTrainingDraft: () => fail('unsupported_platform'), createTrainingDraft: () => fail('unsupported_platform'),
     writeTrainingDraft: () => fail('unsupported_platform') }
   const storage = new SecureDraftStorage(port, '101', { generation: 'one', isCurrent: () => true })
   await assert.rejects(storage.createIfAbsent(key, envelope(draft())), /未确认/)
   await assert.rejects(storage.read(key), /读取本机草稿失败/)
+  await assert.rejects(storage.discover(), /查找本机草稿失败/)
+})
+
+test('discovery filters by subject, preserves recovery warning and rejects malformed native results', async () => {
+  const port = native()
+  let active = '101'
+  const lease = { generation: 'one', isCurrent: subject => subject === active }
+  const storage = new SecureDraftStorage(port, '101', lease)
+  await storage.createIfAbsent(key, envelope(draft()))
+  port.values.set('nerae.workout.draft.v1.202.event-0002', 'foreign')
+  assert.deepEqual(await storage.discover(), { eventIds: ['event-0001'], nextCursor: null, hasUnclassifiedItems: false })
+  port.discoverTrainingDrafts = () => ok(true, JSON.stringify({ eventIds: ['event-0001'], nextCursor: null, hasUnclassifiedItems: true }))
+  assert.deepEqual(await storage.discover(), { eventIds: ['event-0001'], nextCursor: null, hasUnclassifiedItems: true })
+  for (const result of [
+    { eventIds: ['event-0001', 'event-0001'], nextCursor: null, hasUnclassifiedItems: false },
+    { eventIds: ['short'], nextCursor: null, hasUnclassifiedItems: false },
+    { eventIds: ['event-0001'], nextCursor: null, hasUnclassifiedItems: false, extra: 'private' },
+    { eventIds: Array(101).fill('event-0001'), nextCursor: null, hasUnclassifiedItems: false },
+    { eventIds: ['event-0001'], nextCursor: 'event-0001', hasUnclassifiedItems: false },
+  ]) {
+    port.discoverTrainingDrafts = () => ok(true, JSON.stringify(result))
+    await assert.rejects(storage.discover())
+  }
+  port.discoverTrainingDrafts = () => { active = '202'; return ok(true, JSON.stringify({ eventIds: ['event-0001'], nextCursor: null, hasUnclassifiedItems: false })) }
+  await assert.rejects(storage.discover(), /账号已变化/)
+})
+
+test('discovery cursor exposes every matching draft without mixing another subject', async () => {
+  const port = native()
+  for (let index = 0; index < 235; index++) {
+    port.values.set(`nerae.workout.draft.v1.101.event-${String(index).padStart(4, '0')}`, 'fixture')
+  }
+  port.values.set('nerae.workout.draft.v1.202.event-foreign', 'fixture')
+  const storage = new SecureDraftStorage(port, '101', { generation: 'one', isCurrent: () => true })
+  const first = await storage.discover()
+  const second = await storage.discover(first.nextCursor)
+  const third = await storage.discover(second.nextCursor)
+  assert.deepEqual([first.eventIds.length, second.eventIds.length, third.eventIds.length], [100, 100, 35])
+  assert.equal(third.nextCursor, null)
+  assert.equal(new Set([...first.eventIds, ...second.eventIds, ...third.eventIds]).size, 235)
 })

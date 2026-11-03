@@ -9,6 +9,12 @@ private final class FakeDraftBackend: NeraeDraftBackend {
     var values: [String: Data] = [:]
     var failAfterUpdate = false
     var corruptRead = false
+    var failEnumeration = false
+    var accountOverride: [String]?
+    func accounts() throws -> [String] {
+        if failEnumeration { throw NeraeVaultError.unavailable }
+        return accountOverride ?? values.keys.sorted()
+    }
     func read(account: String) throws -> Data? {
         if corruptRead { return Data("broken".utf8) }
         return values[account]
@@ -98,6 +104,65 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         }
         try check(winners == 1 && failures == 0 && racingBackend.values.count == 1)
         try check(try stores[1].read(key: raceKey).value == raceValue)
-        print("PASS: synthetic per-draft isolation, in-process create races, bounds and uncertain write preservation")
+
+        let discoveryBackend = FakeDraftBackend()
+        let discovery = NeraeProtectedDraftStore(backend: discoveryBackend)
+        try check(try discovery.create(key: "nerae.workout.draft.v1.101.event-first1", value: try payload("101", "event-first1")))
+        try check(try discovery.create(key: "nerae.workout.draft.v1.101.event-next01", value: try payload("101", "event-next01")))
+        try check(try discovery.create(key: "nerae.workout.draft.v1.202.event-other1", value: try payload("202", "event-other1")))
+        func listing(_ subject: String, _ cursor: String = "") throws -> [String: Any] {
+            let json = try discovery.discover(subject: subject, after: cursor)
+            guard let data = json.data(using: .utf8), let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw Failure.assertion }
+            return result
+        }
+        let forFirst = try listing("101")
+        try check(forFirst["eventIds"] as? [String] == ["event-first1", "event-next01"])
+        try check(forFirst["hasUnclassifiedItems"] as? Bool == false)
+        try check(forFirst["nextCursor"] is NSNull)
+        try check(try listing("202")["eventIds"] as? [String] == ["event-other1"])
+        try check(try listing("303")["eventIds"] as? [String] == [])
+        try expect(.invalidState) { _ = try discovery.discover(subject: "0101", after: "") }
+        try expect(.invalidState) { _ = try discovery.discover(subject: "101", after: "short") }
+        let corruptAccount = String(repeating: "f", count: 64)
+        discoveryBackend.values[corruptAccount] = Data("broken".utf8)
+        let withCorruption = try listing("101")
+        try check(withCorruption["eventIds"] as? [String] == ["event-first1", "event-next01"])
+        try check(withCorruption["hasUnclassifiedItems"] as? Bool == true)
+        try check(try listing("202")["hasUnclassifiedItems"] as? Bool == true)
+        try check(discoveryBackend.values[corruptAccount] == Data("broken".utf8))
+        discoveryBackend.values[corruptAccount] = try payload("101", "event-unmatched").data(using: .utf8)
+        try check(try listing("101")["hasUnclassifiedItems"] as? Bool == true)
+        discoveryBackend.failEnumeration = true
+        try expect(.unavailable) { _ = try discovery.discover(subject: "101", after: "") }
+        discoveryBackend.failEnumeration = false
+        discoveryBackend.accountOverride = Array(repeating: corruptAccount, count: 257)
+        try check(try listing("101")["hasUnclassifiedItems"] as? Bool == true)
+        let oversizedBackend = FakeDraftBackend()
+        let large = Data(repeating: 0xff, count: 64 * 1024)
+        for index in 0..<129 { oversizedBackend.values[String(format: "%064x", index)] = large }
+        let largeResult = try NeraeProtectedDraftStore(backend: oversizedBackend).discover(subject: "101", after: "")
+        let largeObject = try JSONSerialization.jsonObject(with: Data(largeResult.utf8)) as? [String: Any]
+        try check(largeObject?["hasUnclassifiedItems"] as? Bool == true)
+
+        let pagesBackend = FakeDraftBackend()
+        let pagesStore = NeraeProtectedDraftStore(backend: pagesBackend)
+        for index in 0..<280 {
+            let event = String(format: "event-page-%04d", index)
+            try check(try pagesStore.create(key: "nerae.workout.draft.v1.101.\(event)", value: try payload("101", event)))
+        }
+        func page(_ cursor: String) throws -> [String: Any] {
+            let json = try pagesStore.discover(subject: "101", after: cursor)
+            guard let value = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any] else { throw Failure.assertion }
+            return value
+        }
+        let page1 = try page("")
+        guard let ids1 = page1["eventIds"] as? [String], let cursor1 = page1["nextCursor"] as? String else { throw Failure.assertion }
+        let page2 = try page(cursor1)
+        guard let ids2 = page2["eventIds"] as? [String], let cursor2 = page2["nextCursor"] as? String else { throw Failure.assertion }
+        let page3 = try page(cursor2)
+        guard let ids3 = page3["eventIds"] as? [String] else { throw Failure.assertion }
+        try check(ids1.count == 100 && ids2.count == 100 && ids3.count == 80 && page3["nextCursor"] is NSNull)
+        try check(Set(ids1 + ids2 + ids3).count == 280)
+        print("PASS: synthetic draft isolation, in-process races, paged discovery and uncertain write preservation")
     }
 }

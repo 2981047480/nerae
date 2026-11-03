@@ -21,6 +21,7 @@ export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expec
 
 /** One independently protected draft per key; create never overwrites. */
 export type ReadTrainingDraft = (key: string) => SecureVaultResult
+export type DiscoverTrainingDrafts = (subjectId: string, cursor: string) => SecureVaultResult
 export type CreateTrainingDraft = (key: string, value: string) => SecureVaultResult
 export type WriteTrainingDraft = (key: string, value: string) => SecureVaultResult
 
