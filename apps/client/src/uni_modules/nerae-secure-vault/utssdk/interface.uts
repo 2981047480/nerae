@@ -19,6 +19,11 @@ export type ReadDeviceIdentityRegistry = () => SecureVaultResult
  */
 export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult
 
+/** One independently protected draft per key; create never overwrites. */
+export type ReadTrainingDraft = (key: string) => SecureVaultResult
+export type CreateTrainingDraft = (key: string, value: string) => SecureVaultResult
+export type WriteTrainingDraft = (key: string, value: string) => SecureVaultResult
+
 /** One bounded JSON journal for pending training operations; maximum 64 KiB UTF-8. */
 export type ReadTrainingOperationJournal = () => SecureVaultResult
 /** Atomic only within one App process. No unconditional overwrite or clear API is exposed. */

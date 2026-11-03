@@ -4,6 +4,8 @@ import { restoreDraft, type RecordingDraft } from './recording'
 export interface DraftStorage {
   read(key: string): Promise<unknown>
   write(key: string, value: string): Promise<void>
+  /** Capture an already-authorized write before it enters the per-key queue. */
+  prepareWrite?(key: string, value: string): () => Promise<void>
 }
 
 export interface AuthLease {
@@ -220,6 +222,15 @@ export class DraftController {
     const writeRevision = ++persistenceWriteRevision
     const envelope: DraftEnvelope = { schema: 1, subjectId: this.subjectId, draft: cloneDraft(this.currentDraft) }
     const snapshot = JSON.stringify(envelope)
+    let commit: () => Promise<void>
+    try {
+      commit = this.storage.prepareWrite ? this.storage.prepareWrite(this.key, snapshot) : () => this.storage.write(this.key, snapshot)
+      if (typeof commit !== 'function') throw new Error('本机草稿写入不可用')
+    } catch {
+      failedSnapshotsByKey.set(this.key, snapshot)
+      this.status = 'storage_error'
+      return { saved: false, proof: null }
+    }
     this.status = 'saving'
     // Authorization was checked before the snapshot was queued. Finishing an
     // accepted local write after expiry preserves the draft; it grants no read
@@ -227,7 +238,7 @@ export class DraftController {
     // from overwriting a later session's write.
     const operation = enqueueWrite(this.key, async () => {
       try {
-        await this.storage.write(this.key, snapshot)
+        await commit()
         failedSnapshotsByKey.delete(this.key)
       } catch (error) {
         failedSnapshotsByKey.set(this.key, snapshot)

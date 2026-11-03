@@ -45,6 +45,16 @@ export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expe
     return decode(NeraeSecureVaultBridge.compareAndSetDeviceIdentityRegistry(expectedFound, expectedValue, value), false)
 }
 
+export function readTrainingDraft(key: string): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.readTrainingDraft(key), true)
+}
+export function createTrainingDraft(key: string, value: string): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.createTrainingDraft(key, value), false)
+}
+export function writeTrainingDraft(key: string, value: string): SecureVaultResult {
+    return decode(NeraeSecureVaultBridge.writeTrainingDraft(key, value), false)
+}
+
 export function readTrainingOperationJournal(): SecureVaultResult {
     return decode(NeraeSecureVaultBridge.readTrainingOperationJournal(), true)
 }

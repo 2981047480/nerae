@@ -48,6 +48,11 @@ export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expe
 	return decode(NeraeAndroidSecureVaultBridge.compareAndSetDeviceIdentityRegistry(UTSAndroid.getAppContext(), expectedFound, expectedValue, value), false)
 }
 
+// Android draft persistence needs a separately verified Keystore-backed slot.
+export function readTrainingDraft(_key: string): SecureVaultResult { return failure('unsupported_platform') }
+export function createTrainingDraft(_key: string, _value: string): SecureVaultResult { return failure('unsupported_platform') }
+export function writeTrainingDraft(_key: string, _value: string): SecureVaultResult { return failure('unsupported_platform') }
+
 export function readTrainingOperationJournal(): SecureVaultResult {
 	return decode(NeraeAndroidSecureVaultBridge.readTrainingOperationJournal(UTSAndroid.getAppContext()), true)
 }
