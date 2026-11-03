@@ -89,7 +89,9 @@ registerHooks({ resolve(specifier, context, nextResolve) {
 const { createAppAuthRuntime } = await import('./nativeAuthRuntime.ts')
 
 test('App authentication assembly requires one explicit HTTPS origin', async () => {
-  assert.throws(() => createAppAuthRuntime('http://api.example.test/v1'))
+  for (const bad of ['', ' ', 'not-a-url', 'http://api.example.test/v1', 'https://user:pass@api.example.test/v1']) {
+    assert.throws(() => createAppAuthRuntime(bad))
+  }
   assert.equal(state.requests.length, 0)
   const runtime = createAppAuthRuntime('https://api.example.test/v1///')
   assert.equal(createAppAuthRuntime('https://api.example.test/v1'), runtime)

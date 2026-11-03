@@ -117,6 +117,9 @@ export class ApprovalOwnerApi {
           header: { Accept: 'application/json', Authorization: `Bearer ${accessToken}`, 'Cache-Control': 'no-store' } })
       } catch { return current() ? { status: 'unavailable' } : { status: 'session_changed' } }
       if (!current()) return { status: 'session_changed' }
+      // A protected 401 requests a fresh /me verification; it does not itself
+      // erase credentials or decide the outcome of any submitted operation.
+      if (protectedResponse(response) && response.statusCode === 401) return { status: 'not_authenticated' }
       if (!protectedResponse(response) || response.statusCode !== 200 || !object(response.data) ||
         !exactKeys(response.data, ['items']) || !Array.isArray(response.data.items) || response.data.items.length > 100 ||
         this.#revision >= Number.MAX_SAFE_INTEGER) return { status: 'unavailable' }

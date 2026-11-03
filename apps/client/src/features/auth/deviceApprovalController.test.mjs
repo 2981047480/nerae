@@ -87,6 +87,13 @@ test('logout or disposal clears visible codes and ignores a late response', asyn
   assert.equal(second.controller.state.items.length, 0)
 })
 
+test('a list requiring reauthentication clears visible approval codes', async () => {
+  const { controller } = fixture({ list: () => ({ status: 'not_authenticated' }) })
+  await controller.start()
+  assert.equal(controller.state.status, 'session_changed')
+  assert.deepEqual(controller.state.items, [])
+})
+
 test('panel exposes explicit compare, allow, reject and unresolved recovery actions', () => {
   const source = readFileSync(new URL('./DeviceApprovalPanel.vue', import.meta.url), 'utf8')
   assert.match(source, /匹配一致，允许登录/)

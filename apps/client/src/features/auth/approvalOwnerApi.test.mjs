@@ -88,6 +88,18 @@ test('malformed or cacheable lists fail closed and invalidate prior choices', as
   }
 })
 
+test('an authenticated list returning protected 401 requests a fresh session check without accepting 403 or cacheable 401', async () => {
+  for (const [reply, expected] of [
+    [response(401, { code: 'UNAUTHENTICATED' }), 'not_authenticated'],
+    [response(401, { code: 'UNAUTHENTICATED' }, { ...headers, 'cache-control': 'public' }), 'unavailable'],
+    [response(403, { code: 'FORBIDDEN' }), 'unavailable'],
+  ]) {
+    const context = await setup(async () => reply)
+    assert.equal((await context.api.list()).status, expected)
+    assert.ok(context.session.snapshot(), 'recheck must not erase the session itself')
+  }
+})
+
 test('a wrong or cacheable decision response cannot settle the pending request', async () => {
   let decisions = 0
   const context = await setup(async request => request.method === 'GET' ? response(200, { items: [item] })

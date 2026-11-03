@@ -1,6 +1,9 @@
-# Client shell
+# Client
 
-This is the uni-app Vue 3 / TypeScript build shell. The single route is intentionally blank; it does not implement sign-in, business data, product UI, or training/休息计时.
+The uni-app Vue 3 / TypeScript client has an App authentication entry and a
+device-approval panel. Its training page and reliable synchronization are not
+wired; the route reports that training records are unavailable. Weixin login
+is not implemented. There is no training or rest countdown.
 
 From the repository root, install with the committed workspace lock, then run:
 
@@ -9,4 +12,9 @@ From the repository root, install with the committed workspace lock, then run:
 - `pnpm --filter @nerae/client build:mp-weixin`
 - `pnpm --filter @nerae/client build:app`
 
-The App target produces uni-app resources only. Native signing, install packages, developer tools, devices, and business behavior are handled by later tasks.
+For an App build, `VITE_NERAE_API_BASE` must be set to the verified HTTPS API
+base including its path prefix. It is embedded in the client as public
+configuration: never put credentials or secrets in it. Missing or invalid
+configuration leaves login unavailable and does not select a fallback server.
+The App target produces uni-app resources only; it is not a signed installable
+package and has not established real-device login or synchronization.

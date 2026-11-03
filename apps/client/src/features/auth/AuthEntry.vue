@@ -4,7 +4,7 @@ import type { AppAuthRuntime } from '../../platform/app/nativeAuthRuntime'
 import type { PublicSession } from './sessionCoordinator'
 import { AuthEntryController, type AuthEntryState } from './authEntryController'
 
-const props = defineProps<{ runtime: AppAuthRuntime }>()
+const props = withDefaults(defineProps<{ runtime: AppAuthRuntime; allowCancel?: boolean }>(), { allowCancel: true })
 const emit = defineEmits<{ authenticated: [session: PublicSession]; cancel: [] }>()
 const controller = new AuthEntryController(props.runtime, session => emit('authenticated', session))
 const state = shallowRef<AuthEntryState>(controller.state)
@@ -114,7 +114,7 @@ onBeforeUnmount(() => controller.dispose())
       <button v-if="state.status === 'unavailable'" class="auth-entry__primary" @click="controller.retryRestore()">重新检查</button>
       <button v-else class="auth-entry__secondary" @click="controller.resetLogin()">重新开始登录</button>
     </view>
-    <button v-if="!['authenticated', 'cancel_failed', 'cancelling'].includes(state.status)"
+    <button v-if="allowCancel &amp;&amp; !['authenticated', 'cancel_failed', 'cancelling'].includes(state.status)"
       class="auth-entry__browse" @click="cancel">返回</button>
   </view>
 </template>

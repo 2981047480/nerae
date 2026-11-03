@@ -5,9 +5,17 @@ import { DeviceApprovalController } from './deviceApprovalController'
 import type { AuthSessionCoordinator } from './sessionCoordinator'
 
 const props = defineProps<{ approvals: ApprovalOwnerApi; session: AuthSessionCoordinator }>()
+const emit = defineEmits<{ 'session-changed': [] }>()
 const controller = new DeviceApprovalController(props.session, props.approvals)
 const state = shallowRef(controller.state)
-controller.subscribe(next => { state.value = next })
+let notified = false
+controller.subscribe(next => {
+  state.value = next
+  if (next.status === 'session_changed' && !notified) {
+    notified = true
+    emit('session-changed')
+  }
+})
 onMounted(() => { void controller.start() })
 onBeforeUnmount(() => controller.dispose())
 </script>
