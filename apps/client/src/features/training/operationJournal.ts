@@ -31,6 +31,13 @@ export interface JournalStorage {
   createIfAbsent(key: string, value: string): Promise<boolean>
   /** Atomically replace/delete only when current bytes equal expectedValue. */
   compareAndSwap(key: string, expectedValue: string, nextValue: string | null): Promise<boolean>
+  /**
+   * Atomically record a native-owned first-dispatch mark and perform the
+   * exact ready-to-in-flight transition. The mark must survive all legacy
+   * writes, deletion/recreation and process restart. Missing capability means
+   * a permit must not be issued.
+   */
+  claimFirstSend?(key: string, expectedValue: string, nextValue: string): Promise<boolean>
 }
 
 export type JournalErrorCode =
@@ -430,8 +437,12 @@ export class TrainingOperationJournal {
         attemptGeneration: lease.generation }
       if (!Number.isSafeInteger(next.revision)) throw new OperationJournalError('conflict')
       const nextBytes = encode(next)
+      // A byte-only CAS (even with a fresh slot revision) cannot prove that
+      // these ready bytes were never sent and then restored by an old writer.
+      // Do not issue a permit until the storage can preserve that history.
+      if (typeof this.#storage.claimFirstSend !== 'function') throw new OperationJournalError('unavailable')
       let changed: boolean
-      try { changed = await this.#storage.compareAndSwap(key, String(raw), nextBytes) }
+      try { changed = await this.#storage.claimFirstSend(key, String(raw), nextBytes) }
       catch (error) { throw storageFailure(error) }
       this.#assertLease(lease)
       if (!changed) throw new OperationJournalError('conflict')

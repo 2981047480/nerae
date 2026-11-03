@@ -5,6 +5,7 @@ import { TrainingOperationJournal } from './operationJournal.ts'
 
 class Storage {
   values = new Map()
+  dispatched = new Set()
   async read(key) { return this.values.get(key) }
   async createIfAbsent(key, value) {
     if (this.values.has(key)) return false
@@ -15,6 +16,13 @@ class Storage {
     if (this.values.get(key) !== before) return false
     if (after === null) this.values.delete(key); else this.values.set(key, after)
     return true
+  }
+  // Synthetic atomic claim used to set up an already-sent replay fixture.
+  async claimFirstSend(key, before, after) {
+    const identity = `${key}\0${JSON.parse(before).request.idempotencyKey}`
+    if (this.values.get(key) !== before || this.dispatched.has(identity)) return false
+    this.dispatched.add(identity)
+    return this.compareAndSwap(key, before, after)
   }
 }
 

@@ -23,6 +23,8 @@ function makeAuth(subjectId = '101', generation = 'gen-a') {
 function nativePort(initial = null) {
   return {
     value: initial,
+    revision: 0n,
+    dispatched: new Set(),
     history: [],
     nextMode: null,
     afterRead: null,
@@ -39,6 +41,7 @@ function nativePort(initial = null) {
       this.history.push({ expectedFound, expectedValue, nextValue, matched })
       if (!matched) return { ok: false, errorCode: 'conflict', found: false, value: '' }
       this.value = nextValue
+      this.revision++
       const afterCAS = this.afterCAS
       this.afterCAS = null
       afterCAS?.()
@@ -52,13 +55,27 @@ function nativePort(initial = null) {
       }
       return { ok: true, errorCode: '', found: false, value: '' }
     },
+    readVersionedTrainingOperationJournal() {
+      return { ...this.readTrainingOperationJournal(), revision: String(this.revision) }
+    },
+    claimTrainingOperationDispatch(revision, expectedValue, key, nextValue) {
+      if (String(this.revision) !== revision || this.value !== expectedValue) {
+        return { ok: false, errorCode: 'conflict', found: false, value: '', revision: '' }
+      }
+      const entry = JSON.parse(expectedValue).entries[key]
+      const identity = `${key}\0${JSON.parse(entry).request.idempotencyKey}`
+      if (this.dispatched.has(identity)) return { ok: false, errorCode: 'conflict', found: false, value: '', revision: '' }
+      this.dispatched.add(identity)
+      const result = this.compareAndSetTrainingOperationJournal(true, expectedValue, nextValue)
+      return { ...result, revision: result.ok ? String(this.revision) : '' }
+    },
   }
 }
 
 function makeStorage(native, auth) { return new SecureOperationJournalStorage(native, auth) }
 function isCode(code) { return error => error instanceof OperationJournalError && error.code === code }
 
-test('real adapter durably stages before in-flight CAS and only then returns a permit', async () => {
+test('adapter stages before the synthetic monotonic claim and only then returns a permit', async () => {
   const native = nativePort()
   const auth = makeAuth()
   const storage = makeStorage(native, auth)
@@ -79,6 +96,69 @@ test('real adapter durably stages before in-flight CAS and only then returns a p
   assert.deepEqual(permit.operation.request, request)
   assert.equal(native.history[1].expectedValue, native.history[0].nextValue)
   await journal.markUncertain(permit)
+})
+
+test('current native port without monotonic claim never issues a permit or changes a staged request', async () => {
+  const native = nativePort()
+  native.claimTrainingOperationDispatch = undefined
+  const auth = makeAuth()
+  const journal = journalFor(makeStorage(native, auth), auth)
+  await journal.stage(eventId, request)
+  const stored = native.value
+  await assert.rejects(journal.beginSend(eventId), isCode('unavailable'))
+  assert.equal(native.value, stored)
+  assert.equal((await journal.readPending(eventId)).state, 'ready')
+  assert.equal(native.history.length, 1)
+})
+
+test('synthetic native claim refuses restored ready bytes after an old CAS or delete/recreate', async () => {
+  const native = nativePort()
+  const auth = makeAuth()
+  const storage = makeStorage(native, auth)
+  const first = journalFor(storage, auth)
+  await first.stage(eventId, request)
+  const key = keyFor('101')
+  const ready = await storage.read(key)
+  await first.beginSend(eventId)
+  const inFlight = await storage.read(key)
+  assert.equal(await storage.compareAndSwap(key, inFlight, ready), true)
+  const restarted = journalFor(makeStorage(native, auth), auth)
+  await assert.rejects(restarted.beginSend(eventId), isCode('conflict'))
+  assert.equal(await storage.read(key), ready)
+  assert.equal(await storage.compareAndSwap(key, ready, null), true)
+  assert.equal(await storage.createIfAbsent(key, ready), true)
+  await assert.rejects(restarted.beginSend(eventId), isCode('conflict'))
+  assert.equal(await storage.read(key), ready)
+})
+
+test('competing adapters can obtain only one synthetic first-send permit', async () => {
+  const native = nativePort()
+  const auth = makeAuth()
+  const first = journalFor(makeStorage(native, auth), auth)
+  const second = journalFor(makeStorage(native, auth), auth)
+  await first.stage(eventId, request)
+  const outcomes = await Promise.allSettled([first.beginSend(eventId), second.beginSend(eventId)])
+  assert.equal(outcomes.filter(outcome => outcome.status === 'fulfilled').length, 1)
+  assert.equal(outcomes.filter(outcome => outcome.status === 'rejected').length, 1)
+  assert.equal(native.dispatched.size, 1)
+})
+
+test('adapter rejects a claim that changes request content or skips the expected transition', async () => {
+  const native = nativePort()
+  const auth = makeAuth()
+  const storage = makeStorage(native, auth)
+  const journal = journalFor(storage, auth)
+  await journal.stage(eventId, request)
+  const key = keyFor('101')
+  const ready = await storage.read(key)
+  const parsed = JSON.parse(ready)
+  const malformed = JSON.stringify({ ...parsed, revision: 2, state: 'in_flight',
+    request: { ...parsed.request, idempotencyKey: 'changed-key-001' }, attemptGeneration: 'gen-a' })
+  await assert.rejects(storage.claimFirstSend(key, ready, malformed), error => error.code === 'invalid_operation')
+  const wrongLease = JSON.stringify({ ...parsed, revision: 2, state: 'in_flight', attemptGeneration: 'other-session' })
+  await assert.rejects(storage.claimFirstSend(key, ready, wrongLease), error => error.code === 'invalid_operation')
+  assert.equal(native.dispatched.size, 0)
+  assert.equal(await storage.read(key), ready)
 })
 
 test('unknown native CAS outcome yields no permit and preserves the exact request for inspection', async () => {

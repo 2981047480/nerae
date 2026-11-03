@@ -8,6 +8,8 @@ This finding does not invalidate the existing read-only replay query: it never c
 
 ## Fresh-revision rollback counterexample
 
+补充（2026-11-03）：客户端发送入口已增加能力门禁；当前原生实现没有必需的逐操作标记，因此首次发送会失败关闭。旧基线的复现仍说明槽版本本身不够；它不会因为门禁而变成原生修复。详见 [保护接口与验证范围](dispatch-claim-guard.md)。
+
 The versioned-slot adapter also cannot prevent a legacy value-only writer from
 restoring the original full `ready` bytes after a first dispatch. A fresh
 `readSnapshot` then binds those same `ready` bytes to the *current*, larger

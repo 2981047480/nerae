@@ -9,6 +9,16 @@ export interface NativeTrainingJournalPort {
   compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): unknown
   readVersionedTrainingOperationJournal?(): unknown
   compareAndSetVersionedTrainingOperationJournal?(expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string): unknown
+  /**
+   * In one native atomic operation, compare the stored revision and registry
+   * bytes, derive the owner/event/request identity from the stored entry,
+   * verify that only that entry changes from ready to in-flight, and persist
+   * the changed registry together with a native-owned first-send mark. Old
+   * CAS, deletion/recreation and restart must not clear the mark. A migrated
+   * slot with unknown prior history must fail closed until reconciled. Caller
+   * supplied keys or next bytes alone are never proof of these properties.
+   */
+  claimTrainingOperationDispatch?(expectedRevision: string, expectedValue: string, operationKey: string, nextValue: string): unknown
 }
 
 /** Opaque, process-local handle; only the issuing adapter can consume it. */
@@ -18,6 +28,7 @@ export interface JournalStorage {
   read(key: string): Promise<unknown>
   createIfAbsent(key: string, value: string): Promise<boolean>
   compareAndSwap(key: string, expectedValue: string, nextValue: string | null): Promise<boolean>
+  claimFirstSend?(key: string, expectedValue: string, nextValue: string): Promise<boolean>
 }
 
 export interface JournalAuthCredential {
@@ -453,6 +464,39 @@ export class SecureOperationJournalStorage implements JournalStorage {
     validateOperation(key, expectedValue)
     if (nextValue !== null) validateOperation(key, nextValue)
     return this.#mutate(key, expectedValue, nextValue)
+  }
+
+  /** Fail closed until the native port can atomically retain dispatch history. */
+  async claimFirstSend(key: string, expectedValue: string, nextValue: string): Promise<boolean> {
+    this.#assertKeyOwner(key)
+    this.#assertCurrent()
+    validateOperation(key, expectedValue)
+    validateOperation(key, nextValue)
+    const previous = JSON.parse(expectedValue) as Record<string, unknown>
+    const next = JSON.parse(nextValue) as Record<string, unknown>
+    if (previous.state !== 'ready' || previous.revision !== 1 || next.state !== 'in_flight' || next.revision !== 2 ||
+      next.attemptGeneration !== this.#generation ||
+      JSON.stringify({ ...previous, revision: 2, state: 'in_flight', attemptGeneration: next.attemptGeneration }) !== nextValue) {
+      throw new SecureJournalStorageError('invalid_operation')
+    }
+    const read = this.#native.readVersionedTrainingOperationJournal
+    const claim = this.#native.claimTrainingOperationDispatch
+    if (typeof read !== 'function' || typeof claim !== 'function') throw new SecureJournalStorageError('unavailable')
+    let raw: unknown
+    try { raw = read.call(this.#native) }
+    catch { this.#assertCurrent(); throw new SecureJournalStorageError('unavailable') }
+    this.#assertCurrent()
+    const snapshot = validateVersionedResult(raw, 'read')
+    if (snapshot === false) throw new SecureJournalStorageError('unavailable')
+    if (!snapshot.found) return false
+    const registry = decodeRegistry(snapshot.value)
+    if (registry.entries[key] !== expectedValue) return false
+    const encoded = encodeRegistry({ ...registry.entries, [key]: nextValue })
+    this.#assertCurrent()
+    try { raw = claim.call(this.#native, snapshot.revision, snapshot.value, key, encoded) }
+    catch { this.#assertCurrent(); throw new SecureJournalStorageError('unavailable') }
+    this.#assertCurrent()
+    return validateVersionedResult(raw, 'cas', snapshot.revision) !== false
   }
 
   /** Capture one entry with the native slot version; never persists a receipt. */

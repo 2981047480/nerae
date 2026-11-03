@@ -10,6 +10,7 @@ class MemoryJournalStorage {
   failCas = false
   failCasAfterCommit = false
   writes = 0
+  dispatched = new Set()
 
   async read(key) { return this.values.get(key) }
   async createIfAbsent(key, value) {
@@ -30,6 +31,15 @@ class MemoryJournalStorage {
       throw new Error('native outcome unknown')
     }
     return true
+  }
+
+  // Synthetic implementation of the native monotonic claim contract.
+  async claimFirstSend(key, expected, next) {
+    if (this.failCas) throw new Error('private storage failure')
+    const identity = `${key}\0${JSON.parse(expected).request.idempotencyKey}`
+    if (this.values.get(key) !== expected || this.dispatched.has(identity)) return false
+    this.dispatched.add(identity)
+    return this.compareAndSwap(key, expected, next)
   }
 }
 
@@ -108,6 +118,18 @@ test('staging durably stores exact request before a dispatch permit and never st
   assert.equal([...storage.values.values()].some(value => value.includes('Authorization')), false)
   await journal.markUncertain(permit)
   assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+})
+
+test('storage without a monotonic first-send claim preserves the request and issues no permit', async () => {
+  const storage = new MemoryJournalStorage()
+  storage.claimFirstSend = undefined
+  const journal = makeJournal(storage, makeAuth())
+  await journal.stage('event-0001', createRequest())
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('unavailable'))
+  const pending = await journal.readPending('event-0001')
+  assert.equal(pending.state, 'ready')
+  assert.deepEqual(pending.request, createRequest())
+  assert.equal(storage.writes, 1)
 })
 
 test('same event and exact request is idempotent; any changed key, body or route conflicts', async () => {
