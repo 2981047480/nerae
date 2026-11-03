@@ -109,6 +109,8 @@ def run() -> int:
                 raise RuntimeError("same-subject two-device workout sharing was not exercised")
             if "PASS: actual client flow approved and replayed a lost response over isolated TLS, then read the shared workout" not in test.stdout:
                 raise RuntimeError("actual client approval flow was not exercised")
+            if "PASS: actual owner client replayed a lost approval decision over isolated TLS" not in test.stdout:
+                raise RuntimeError("actual owner approval flow was not exercised")
             if os.environ.get("NERAE_RUN_API_ASSEMBLY_TEST") == "1":
                 # A separate empty schema prevents the earlier fixture's
                 # synthetic key epochs and test data from contaminating this

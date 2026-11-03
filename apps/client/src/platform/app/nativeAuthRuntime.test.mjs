@@ -48,6 +48,13 @@ globalThis.__neraeRuntimeTest = {
     } else if (request.path === '/me') {
       assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
       body = user()
+    } else if (request.path === '/me/login-approvals' && request.method === 'GET') {
+      assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
+      body = { items: [{ id: 'a'.repeat(24), comparisonCode: '123456', createdAt: '2026-11-03T00:00:00Z', expiresAt: '2026-11-03T00:05:00Z' }] }
+    } else if (request.path === `/me/login-approvals/${'a'.repeat(24)}/decision` && request.method === 'POST') {
+      assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
+      assert.deepEqual(JSON.parse(request.body), { decision: 'approve', comparisonCode: '123456', confirmed: true })
+      body = { status: 'approved' }
     } else throw new Error('unexpected synthetic route')
     const requestId = `native-${state.requests.length}`
     callbacks.success({ requestId, status,
@@ -94,8 +101,12 @@ test('App authentication assembly requires one explicit HTTPS origin', async () 
   assert.equal(runtime.session.snapshot().user.ageVerified, false)
   assert.equal((await runtime.ageDeclaration.declare(true)).status, 'declared')
   assert.equal(runtime.session.snapshot().user.ageVerified, true)
+  const pending = await runtime.approvals.list()
+  assert.equal(pending.status, 'ready')
+  assert.equal((await runtime.approvals.decide(pending.items[0], 'approve', true)).status, 'approved')
   assert.deepEqual(state.requests.map(item => item.path), [
     '/auth/email/challenges', '/auth/email-login', '/me/age-verify', '/me',
+    '/me/login-approvals', `/me/login-approvals/${'a'.repeat(24)}/decision`,
   ])
   assert.ok(state.requests.every(item => item.baseUrl === 'https://api.example.test/v1'))
   assert.equal((await runtime.session.logout()).status, 'signed_out')

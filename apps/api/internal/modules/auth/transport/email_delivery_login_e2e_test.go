@@ -1175,9 +1175,11 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 			"NERAE_AUTH_INTEROP_SOURCE="+newDeviceSuccess.Token, "NERAE_AUTH_INTEROP_SUBJECT="+success.User.Id,
 			"NERAE_AUTH_INTEROP_WORKOUT="+createdDetail.ID)
 		output, err := command.CombinedOutput()
-		if err != nil || !bytes.Contains(output, []byte("PASS: actual client flow approved and replayed a lost response")) {
+		if err != nil || !bytes.Contains(output, []byte("PASS: actual client flow approved and replayed a lost response")) ||
+			!bytes.Contains(output, []byte("PASS: actual owner client replayed a lost approval decision over isolated TLS")) {
 			t.Fatal("isolated client approval interop failed")
 		}
+		t.Log("PASS: actual owner client replayed a lost approval decision over isolated TLS")
 		t.Log("PASS: actual client flow approved and replayed a lost response over isolated TLS, then read the shared workout")
 	}
 

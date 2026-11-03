@@ -1,4 +1,6 @@
 import { EmailAuthApi } from '../../api/auth/emailAuthApi'
+import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
+import { ApprovalOwnerApi } from '../../features/auth/approvalOwnerApi'
 import { AgeAttestationApi } from '../../features/auth/ageAttestationApi'
 import type { EmailLoginFlow } from '../../features/auth/emailLoginFlow'
 import type { AuthSessionCoordinator } from '../../features/auth/sessionCoordinator'
@@ -10,6 +12,7 @@ export interface AppAuthRuntime {
   readonly session: AuthSessionCoordinator
   readonly login: EmailLoginFlow
   readonly ageDeclaration: AgeAttestationApi
+  readonly approvals: ApprovalOwnerApi
 }
 
 let runtime: AppAuthRuntime | undefined
@@ -34,8 +37,13 @@ export function createAppAuthRuntime(baseUrl: string): AppAuthRuntime {
   const api = new EmailAuthApi(base, ports.authTransport)
   const session = createAppSessionCoordinator(ports.readCurrentUser)
   const ageDeclaration = new AgeAttestationApi(base, ports.authTransport, session)
+  const approvals = new ApprovalOwnerApi(base, ports.recordingRequest, session, () => {
+    const result = generateSecureRandomRequestKey()
+    if (!result || result.ok !== true || result.errorCode !== '') throw new Error('secure randomness unavailable')
+    return result.value
+  })
   const login = createAppEmailLoginFlow(api, session)
-  const result = Object.freeze({ session, login, ageDeclaration })
+  const result = Object.freeze({ session, login, ageDeclaration, approvals })
   configuredBase = base
   runtime = result
   return result

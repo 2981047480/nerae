@@ -16,6 +16,7 @@ CLIENT = ROOT / "apps/client"
 PROBE = """<script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import AuthEntry from '@/features/auth/AuthEntry.vue'
+import DeviceApprovalPanel from '@/features/auth/DeviceApprovalPanel.vue'
 import type { AppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
@@ -38,7 +39,8 @@ function probe() {
     String(readVersionedTrainingOperationJournal) + String(compareAndSetVersionedTrainingOperationJournal)
 }
 </script>
-<template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" /></template>
+<template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" />
+  <DeviceApprovalPanel v-if="authRuntime" :approvals="authRuntime.approvals" :session="authRuntime.session" /></template>
 """
 
 PLUGINS = {
@@ -71,7 +73,7 @@ def main() -> None:
 
     app = work / "dist/build/app"
     service = (app / "app-service.js").read_text(encoding="utf-8")
-    require("AuthEntry" in service and "请查看此邮箱" in service and "检查确认状态" in service,
+    require("AuthEntry" in service and "请查看此邮箱" in service and "检查确认状态" in service and "匹配一致，允许登录" in service,
             "App output is missing the referenced authentication entry")
     require("revokeCurrentSession" in service and "TrainingOperationJournal" in service,
             "App output is missing a referenced revocation or training journal entry")
@@ -89,6 +91,9 @@ def main() -> None:
     require(weixin_entry.is_file() and "AuthEntry" in weixin_entry.read_text(encoding="utf-8") and
             "检查确认状态" in weixin_entry.read_text(encoding="utf-8"),
             "Weixin output is missing the referenced authentication entry")
+    weixin_approval = work / "dist/build/mp-weixin/features/auth/DeviceApprovalPanel.wxml"
+    require(weixin_approval.is_file() and "匹配一致，允许登录" in weixin_approval.read_text(encoding="utf-8"),
+            "Weixin output is missing the referenced device approval panel")
     for plugin in PLUGINS:
         fallback = weixin / plugin / "utssdk/index.js"
         require(fallback.is_file() and "unsupported_platform" in fallback.read_text(encoding="utf-8"),
