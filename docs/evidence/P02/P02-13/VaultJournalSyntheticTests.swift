@@ -84,6 +84,187 @@ private func dispatchFixtures(event: String = "event-test-0001", idempotencyKey:
             try jsonString(["schema": 1, "entries": [key: try jsonString(inFlight)]]))
 }
 
+private func mutateRegistryEntry(_ registry: String, key: String, _ transform: (inout [String: Any]) throws -> Void) throws -> String {
+    guard var object = try JSONSerialization.jsonObject(with: Data(registry.utf8)) as? [String: Any],
+          var entries = object["entries"] as? [String: String], let raw = entries[key],
+          var entry = try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any] else { throw Failure.assertion }
+    try transform(&entry)
+    entries[key] = try jsonString(entry)
+    object["entries"] = entries
+    return try jsonString(object)
+}
+
+private func registryEntries(_ value: String) throws -> [String: String] {
+    guard let object = try JSONSerialization.jsonObject(with: Data(value.utf8)) as? [String: Any],
+          let entries = object["entries"] as? [String: String] else { throw Failure.assertion }
+    return entries
+}
+
+private func recoveryBindingTests() throws {
+    for (event, bodyEvent) in [("event-test-0001", "event-test-0002"),
+                               (String(repeating: "é", count: 8), String(repeating: "e\u{301}", count: 8))] {
+        let wrongBody = try jsonString(["source": "free", "date": "2026-11-03", "clientEventId": bodyEvent])
+        let (wrongKey, wrongReady, wrongInFlight) = try dispatchFixtures(event: event, bodyOverride: wrongBody)
+        let backend = SyntheticBackend()
+        let store = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: backend)
+        let staged = try store.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: wrongReady)
+        try expect(.invalidState) {
+            _ = try store.claimFirstSend(expectedRevision: staged.revision, expectedValue: wrongReady,
+                                         operationKey: wrongKey, nextValue: wrongInFlight)
+        }
+        try check(try store.read().value == wrongReady)
+    }
+    let body = "{\"expectedVersion\":1,\"note\":\"test\"}"
+    let (key, ready, inFlight) = try dispatchFixtures(bodyOverride: body, path: "/me/sessions/123/finish")
+    let legacy = SyntheticBackend(), current = SyntheticBackend()
+    let journal = NeraeVersionedTrainingJournal(legacy: legacy, current: current)
+    let staged = try journal.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: ready)
+    let sent = try journal.claimFirstSend(expectedRevision: staged.revision, expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let first = try journal.recoveryIntent(operationKey: key, subject: "101")
+    try check(first.body == body && first.idempotencyKey == "request-00000001" && first.revision == sent.revision)
+    try check(!String(describing: first).contains(body) && !String(reflecting: first).contains("request-00000001"))
+    let restarted = NeraeVersionedTrainingJournal(legacy: legacy, current: current)
+    try check(try restarted.recoveryIntent(operationKey: key, subject: "101").body == body)
+    try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "0101") }
+    try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "102") }
+    let uncertain = try mutateRegistryEntry(inFlight, key: key) { entry in
+        entry["state"] = "uncertain"; entry["revision"] = 3; entry.removeValue(forKey: "attemptGeneration")
+    }
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: uncertain)
+    try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: inFlight)
+
+    for (field, replacement) in [("body", "{ \"expectedVersion\":1,\"note\":\"test\" }"),
+                                 ("body", "{\"note\":\"test\",\"expectedVersion\":1}"),
+                                 ("idempotencyKey", "request-00000002"), ("path", "/me/sessions/124/finish")] {
+        let changed = try mutateRegistryEntry(inFlight, key: key) { entry in
+            guard var request = entry["request"] as? [String: Any] else { throw Failure.assertion }
+            request[field] = replacement
+            entry["request"] = request
+        }
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: changed)
+        try expect(.conflict) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changed, value: inFlight)
+    }
+    for (field, replacement) in [("subjectId", "102"), ("clientEventId", "event-test-0002")] {
+        let changed = try mutateRegistryEntry(inFlight, key: key) { $0[field] = replacement }
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: changed)
+        try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changed, value: inFlight)
+    }
+    let afterABA = try journal.recoveryIntent(operationKey: key, subject: "101")
+    try check(afterABA.revision != first.revision && afterABA.body == first.body)
+
+    // An active V3 record has no request binding. Keep it readable, preserve
+    // its marker history through compatibility writes, and refuse recovery.
+    guard let saved = current.data,
+          var v3 = try PropertyListSerialization.propertyList(from: saved, options: [], format: nil) as? [String: Any] else { throw Failure.assertion }
+    v3["version"] = 3
+    v3.removeValue(forKey: "activeBindingsKnown")
+    v3.removeValue(forKey: "activeDispatchBindings")
+    let oldCurrent = SyntheticBackend()
+    oldCurrent.data = try PropertyListSerialization.data(fromPropertyList: v3, format: .binary, options: 0)
+    let oldJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: oldCurrent)
+    let oldRead = try oldJournal.read()
+    try check(oldRead.value == inFlight)
+    try expect(.unavailable) { _ = try oldJournal.recoveryIntent(operationKey: key, subject: "101") }
+    try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: inFlight)
+    try expect(.unavailable) { _ = try oldJournal.recoveryIntent(operationKey: key, subject: "101") }
+    let migrated = try oldJournal.read()
+    try expect(.unavailable) { _ = try oldJournal.claimFirstSend(expectedRevision: migrated.revision, expectedValue: inFlight, operationKey: key, nextValue: inFlight) }
+    guard let migratedData = oldCurrent.data,
+          let migratedObject = try PropertyListSerialization.propertyList(from: migratedData, options: [], format: nil) as? [String: Any] else { throw Failure.assertion }
+    try check(migratedObject["activeDispatchEvents"] as? [String] == v3["activeDispatchEvents"] as? [String])
+    try check(migratedObject["dispatchMarkers"] as? [String] == v3["dispatchMarkers"] as? [String])
+    try check((migratedObject["version"] as? NSNumber)?.intValue == 4)
+
+    let raceCurrent = SyntheticBackend()
+    raceCurrent.data = try PropertyListSerialization.data(fromPropertyList: v3, format: .binary, options: 0)
+    let raceOne = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: raceCurrent)
+    let raceTwo = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: raceCurrent)
+    let observed = try raceOne.read()
+    _ = try raceOne.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: inFlight, newFound: true, newValue: inFlight)
+    try expect(.conflict) {
+        _ = try raceTwo.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: inFlight, newFound: true, newValue: inFlight)
+    }
+
+    // A V3 slot without active work can migrate and retains prior history.
+    let idleCurrent = SyntheticBackend()
+    idleCurrent.data = try encodedDispatchEnvelope(value: ready, historyCount: 2, activeCount: 0)
+    let idleJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: idleCurrent)
+    let idle = try idleJournal.read()
+    let newClaim = try idleJournal.claimFirstSend(expectedRevision: idle.revision, expectedValue: ready, operationKey: key, nextValue: inFlight)
+    try check(try idleJournal.recoveryIntent(operationKey: key, subject: "101").revision == newClaim.revision)
+    guard let idleData = idleCurrent.data,
+          let idleObject = try PropertyListSerialization.propertyList(from: idleData, options: [], format: nil) as? [String: Any],
+          let history = idleObject["dispatchMarkers"] as? [String] else { throw Failure.assertion }
+    try check(history.count == 4 && history.contains(String(format: "%064x", 0)) && history.contains(String(format: "%064x", 1)))
+
+    // Two active events may each have valid global history markers. Replacing
+    // A's request with B's cannot borrow B's markers as A's binding.
+    let (otherKey, otherReady, _) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002",
+                                                        bodyOverride: "{\"expectedVersion\":1,\"note\":\"other\"}", path: "/me/sessions/123/finish")
+    let joinedBackend = SyntheticBackend()
+    let joined = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: joinedBackend)
+    let start = try joined.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: ready)
+    let firstClaim = try joined.claimFirstSend(expectedRevision: start.revision, expectedValue: ready, operationKey: key, nextValue: inFlight)
+    var joinedEntries = try registryEntries(inFlight)
+    joinedEntries[otherKey] = try registryEntries(otherReady)[otherKey]
+    let bothReady = try jsonString(["schema": 1, "entries": joinedEntries])
+    let withOther = try joined.compareAndSet(expectedRevision: firstClaim.revision, expectedFound: true, expectedValue: inFlight, newFound: true, newValue: bothReady)
+    let bothSent = try mutateRegistryEntry(bothReady, key: otherKey) { entry in
+        entry["state"] = "in_flight"; entry["revision"] = 2; entry["attemptGeneration"] = "generation-1"
+    }
+    _ = try joined.claimFirstSend(expectedRevision: withOther.revision, expectedValue: bothReady, operationKey: otherKey, nextValue: bothSent)
+    try check(try joined.recoveryIntent(operationKey: key, subject: "101").idempotencyKey == "request-00000001")
+    try check(try joined.recoveryIntent(operationKey: otherKey, subject: "101").idempotencyKey == "request-00000002")
+    let otherEntryRaw = try registryEntries(bothSent)[otherKey]!
+    guard let otherEntry = try JSONSerialization.jsonObject(with: Data(otherEntryRaw.utf8)) as? [String: Any],
+          let otherRequest = otherEntry["request"] as? [String: Any] else { throw Failure.assertion }
+    let spliced = try mutateRegistryEntry(bothSent, key: key) { $0["request"] = otherRequest }
+    try joined.compareAndSetLegacy(expectedFound: true, expectedValue: bothSent, value: spliced)
+    try expect(.conflict) { _ = try joined.recoveryIntent(operationKey: key, subject: "101") }
+
+    // A malformed binding does not delete, replace, or silently trust the item.
+    guard var corrupt = try PropertyListSerialization.propertyList(from: saved, options: [], format: nil) as? [String: Any],
+          var bindings = corrupt["activeDispatchBindings"] as? [String: String], let marker = bindings.keys.first else { throw Failure.assertion }
+    bindings[marker] = "invalid"
+    corrupt["activeDispatchBindings"] = bindings
+    let damaged = try PropertyListSerialization.data(fromPropertyList: corrupt, format: .binary, options: 0)
+    let corruptCurrent = SyntheticBackend(); corruptCurrent.data = damaged
+    let corruptJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: corruptCurrent)
+    try expect(.unavailable) { _ = try corruptJournal.recoveryIntent(operationKey: key, subject: "101") }
+    try check(corruptCurrent.data == damaged)
+
+    // A maximal V4 envelope remains readable; full history/active capacity
+    // refuses new claims without evicting any existing marker or binding.
+    let maxMarkers = (0..<8192).map { String(format: "%064x", $0) }
+    let maxEvents = (0..<64).map { String(format: "%064x", $0) }
+    var maxBindings: [String: String] = [:]
+    for index in 0..<64 { maxBindings[maxEvents[index]] = String(format: "%064x", 10_000 + index) }
+    let prefix = "{\"payload\":\"", suffix = "\"}"
+    let maxValue = prefix + String(repeating: "a", count: 64 * 1024 - prefix.utf8.count - suffix.utf8.count) + suffix
+    try check(maxValue.utf8.count == 64 * 1024)
+    let maxObject: [String: Any] = ["format": "com.nerae.training-operation-journal", "version": 4, "revision": "1",
+        "found": true, "value": maxValue, "legacyFingerprint": "", "dispatchHistoryKnown": true,
+        "dispatchMarkers": maxMarkers, "activeDispatchEvents": maxEvents,
+        "activeBindingsKnown": true, "activeDispatchBindings": maxBindings]
+    let maxData = try PropertyListSerialization.data(fromPropertyList: maxObject, format: .binary, options: 0)
+    let maxCurrent = SyntheticBackend(); maxCurrent.data = maxData
+    let maxJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: maxCurrent)
+    try check(try maxJournal.read().value == maxValue)
+    var fullObject = maxObject
+    fullObject["value"] = ready
+    let fullData = try PropertyListSerialization.data(fromPropertyList: fullObject, format: .binary, options: 0)
+    let fullCurrent = SyntheticBackend(); fullCurrent.data = fullData
+    let fullJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: fullCurrent)
+    try expect(.unavailable) {
+        _ = try fullJournal.claimFirstSend(expectedRevision: "1", expectedValue: ready, operationKey: key, nextValue: inFlight)
+    }
+    try check(fullCurrent.data == fullData)
+    print("PASS: native recovery intent binds exact request and safely handles older active journals")
+}
+
 private func dispatchMarkerTests() throws {
     let (key, ready, inFlight) = try dispatchFixtures()
     let legacy = SyntheticBackend()
@@ -495,6 +676,7 @@ private func check(_ condition: @autoclosure () throws -> Bool,
 
         try versionedJournalTests()
         try dispatchMarkerTests()
+        try recoveryBindingTests()
 
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.deviceIdentityRegistry)
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.trainingOperationJournal)
