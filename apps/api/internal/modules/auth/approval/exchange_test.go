@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"nerae/api/internal/modules/auth/approvalledger"
+	"nerae/api/internal/modules/auth/approvalreceipt"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -352,6 +354,45 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `DELETE FROM trusted_device WHERE id = ?`, []byte(targetFixtureID)); err != nil {
 		t.Fatal("could not remove target lock fixture")
 	}
+	t.Run("caller-owned exchange rolls back all effects", func(t *testing.T) {
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not start caller-owned exchange")
+		}
+		candidate, err := exchanger.exchangeInTransaction(ctx, tx, input)
+		if err != nil || candidate.verifyForTransaction(ctx, tx) != nil {
+			_ = tx.Rollback()
+			t.Fatal("could not stage exchange in caller-owned transaction")
+		}
+		if encoded, err := json.Marshal(candidate); err == nil || len(encoded) != 0 ||
+			fmt.Sprint(candidate) != "ExchangeCandidate{redacted}" {
+			_ = tx.Rollback()
+			t.Fatal("staged candidate was serializable or unredacted")
+		}
+		var candidateSession []byte
+		if err := tx.QueryRowContext(ctx, `SELECT exchange_session_id FROM auth_login_approval WHERE id=?`, []byte(data.ID)).Scan(&candidateSession); err != nil || len(candidateSession) == 0 {
+			_ = tx.Rollback()
+			t.Fatal("staged exchange did not bind a session")
+		}
+		var stagedState, committedState string
+		var stagedSessions, visibleSessions int
+		if err := tx.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(data.ID)).Scan(&stagedState); err != nil || stagedState != "consumed" ||
+			tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE id=? AND user_id=?`, candidateSession, oldClaims.SubjectID).Scan(&stagedSessions) != nil || stagedSessions != 1 ||
+			db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(data.ID)).Scan(&committedState) != nil || committedState != "approved" ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE id=?`, candidateSession).Scan(&visibleSessions) != nil || visibleSessions != 0 {
+			_ = tx.Rollback()
+			t.Fatal("uncommitted exchange was externally visible or incomplete")
+		}
+		if err := tx.Rollback(); err != nil {
+			t.Fatal("caller-owned exchange rollback failed")
+		}
+		var count int
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(data.ID)).Scan(&committedState); err != nil || committedState != "approved" ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE id=?`, candidateSession).Scan(&count) != nil || count != 0 ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM trusted_device WHERE key_fingerprint=?`, newFingerprint[:]).Scan(&count) != nil || count != 0 {
+			t.Fatal("rolled-back exchange left a session, device or consumed approval")
+		}
+	})
 	newToken, err := exchanger.Exchange(ctx, db, input)
 	if err != nil || newToken.ForResponse() == "" {
 		t.Fatal("approved device could not obtain a session")
@@ -578,4 +619,219 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id = (SELECT challenge_id FROM auth_login_approval WHERE id = ?)`, []byte(raceApproval.ID)).Scan(&count); err != nil || count != 1 {
 		t.Fatal("concurrent exchange left multiple sessions")
 	}
+	t.Run("caller-owned exchange and encrypted receipt commit or roll back together", func(t *testing.T) {
+		crypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x71}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x72}, 32), AES256GCMKey: bytes.Repeat([]byte{0x73}, 32)})
+		if err != nil {
+			t.Fatal("could not set up exchange receipt crypto")
+		}
+		ledger, err := approvalledger.New(crypto, "exchange-seam-test-v1")
+		if err != nil {
+			t.Fatal("could not set up exchange receipt ledger")
+		}
+		init, err := db.BeginTx(ctx, nil)
+		if err != nil || ledger.Initialize(ctx, init) != nil || init.Commit() != nil {
+			if init != nil {
+				_ = init.Rollback()
+			}
+			t.Fatal("could not initialize exchange receipt epoch")
+		}
+		device, public := testDevice(t)
+		item := beginApproved(device, public)
+		exchangeInput := ExchangeInput{ApprovalID: item.ID, Secret: item.Secret, Proof: exchangeProof(t, device, item.ID, item.Nonce)}
+		binding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ",
+			ApprovalID: item.ID, ApprovalSecret: item.Secret, DeviceProof: exchangeInput.Proof})
+		if err != nil {
+			t.Fatal("could not bind exchange request")
+		}
+		approvalScope, err := crypto.ApprovalScope(item.ID)
+		if err != nil {
+			t.Fatal("could not derive approval scope")
+		}
+		approvalDigest := approvalScope.Digest()
+		expires := time.Now().UTC().Add(30 * time.Second).Truncate(time.Microsecond)
+		stage := func(tx *sql.Tx) (exchangeCandidate, string, *approvalledger.Handle, approvalreceipt.Sealed) {
+			t.Helper()
+			candidate, err := exchanger.exchangeInTransaction(ctx, tx, exchangeInput)
+			if err != nil {
+				t.Fatal("could not stage exchange")
+			}
+			var sessionID []byte
+			if err := tx.QueryRowContext(ctx, `SELECT exchange_session_id FROM auth_login_approval WHERE id=?`, []byte(item.ID)).Scan(&sessionID); err != nil || len(sessionID) == 0 {
+				t.Fatal("staged exchange session missing")
+			}
+			sealed, err := candidate.sealForReceipt(ctx, tx, crypto, "exchange-seam-test-v1", "AQEBAQEBAQEBAQEBAQEBAQ", expires, auth)
+			if err != nil || sealed.subjectID != oldClaims.SubjectID || sealed.reference != string(sessionID) ||
+				sealed.binding != binding || !sealed.expiresAt.Equal(expires) {
+				t.Fatal("could not seal the staged exchange with its original binding")
+			}
+			handle, err := ledger.Lock(ctx, tx, sealed.subjectID, sealed.binding)
+			if err != nil || handle.Exists() {
+				t.Fatal("could not reserve new exchange receipt")
+			}
+			return candidate, string(sessionID), handle, sealed.sealed
+		}
+		assertNoExchange := func(sessionID string) {
+			t.Helper()
+			var state string
+			var rows int
+			if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(item.ID)).Scan(&state); err != nil || state != "approved" ||
+				db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE id=?`, []byte(sessionID)).Scan(&rows) != nil || rows != 0 ||
+				db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_approval_exchange_receipt WHERE approval_scope=?`, approvalDigest[:]).Scan(&rows) != nil || rows != 0 {
+				t.Fatal("rolled-back exchange left a consumed approval, session or receipt")
+			}
+		}
+		rollback, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin exchange rollback")
+		}
+		rolledCandidate, rolledSession, rolledHandle, rolledSealed := stage(rollback)
+		if err := rolledHandle.Put(ctx, rollback, rolledSession, expires, rolledSealed, auth); err != nil || rolledCandidate.verifyForTransaction(ctx, rollback) != nil {
+			_ = rollback.Rollback()
+			t.Fatal("could not stage exchange receipt")
+		}
+		if err := rollback.Rollback(); err != nil {
+			t.Fatal("could not roll back exchange and receipt")
+		}
+		assertNoExchange(rolledSession)
+
+		mismatched, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin mismatched binding test")
+		}
+		_, mismatchedSession, _, correctCiphertext := stage(mismatched)
+		wrongBinding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: "AQEBAQEBAQEBAQEBAQEBAQ",
+			ApprovalID: item.ID, ApprovalSecret: base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x45}, 32)), DeviceProof: exchangeInput.Proof})
+		if err != nil {
+			_ = mismatched.Rollback()
+			t.Fatal("could not construct mismatched request binding")
+		}
+		wrongHandle, err := ledger.Lock(ctx, mismatched, oldClaims.SubjectID, wrongBinding)
+		if err != nil || wrongHandle.Put(ctx, mismatched, mismatchedSession, expires, correctCiphertext, auth) == nil {
+			_ = mismatched.Rollback()
+			t.Fatal("receipt accepted a binding from a different request")
+		}
+		if err := mismatched.Rollback(); err != nil {
+			t.Fatal("could not roll back mismatched binding")
+		}
+		assertNoExchange(mismatchedSession)
+
+		expiring, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin post-receipt expiry test")
+		}
+		approvalDeadline := time.Now().UTC().Add(5 * time.Second).Truncate(time.Microsecond)
+		if _, err := expiring.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, timestamp(approvalDeadline), []byte(item.ID)); err != nil {
+			_ = expiring.Rollback()
+			t.Fatal("could not set isolated approval deadline")
+		}
+		expiringCandidate, expiringSession, expiringHandle, expiringSealed := stage(expiring)
+		if err := expiringHandle.Put(ctx, expiring, expiringSession, expires, expiringSealed, auth); err != nil {
+			_ = expiring.Rollback()
+			t.Fatal("could not stage receipt before expiry")
+		}
+		if _, err := domain.VerifyDeviceProof(exchangeInput.Proof, public,
+			domain.ProofExpectation{Purpose: "approval_exchange", ResourceID: item.ID, Nonce: item.Nonce}, approvalDeadline, exchanger.policy); err != nil ||
+			!expiringCandidate.sourceExpiry.After(approvalDeadline) || !expiringCandidate.approvalExpiry.Equal(approvalDeadline) {
+			_ = expiring.Rollback()
+			t.Fatal("approval expiry fixture does not isolate approval lifetime")
+		}
+		exchanger.now = func() time.Time { return approvalDeadline }
+		err = expiringCandidate.verifyForTransaction(ctx, expiring)
+		exchanger.now = time.Now
+		if !errors.Is(err, ErrUnavailable) {
+			_ = expiring.Rollback()
+			t.Fatal("candidate remained valid after approval expiry")
+		}
+		if err := expiring.Rollback(); err != nil {
+			t.Fatal("could not roll back expired exchange")
+		}
+		assertNoExchange(expiringSession)
+
+		proofExpiring, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin post-receipt proof expiry test")
+		}
+		proofCandidate, proofSession, proofHandle, proofSealed := stage(proofExpiring)
+		if err := proofHandle.Put(ctx, proofExpiring, proofSession, expires, proofSealed, auth); err != nil {
+			_ = proofExpiring.Rollback()
+			t.Fatal("could not stage receipt before proof expiry")
+		}
+		verified, err := domain.VerifyDeviceProof(exchangeInput.Proof, public,
+			domain.ProofExpectation{Purpose: "approval_exchange", ResourceID: item.ID, Nonce: item.Nonce}, time.Now().UTC(), exchanger.policy)
+		proofDeadline := verified.ExpiresAt.Add(exchanger.policy.ClockSkew)
+		if err != nil || !item.ExpiresAt.After(proofDeadline) || !proofCandidate.sourceExpiry.After(proofDeadline) {
+			_ = proofExpiring.Rollback()
+			t.Fatal("proof expiry fixture does not isolate proof lifetime")
+		}
+		exchanger.now = func() time.Time { return proofDeadline }
+		err = proofCandidate.verifyForTransaction(ctx, proofExpiring)
+		exchanger.now = time.Now
+		if !errors.Is(err, ErrUnavailable) {
+			_ = proofExpiring.Rollback()
+			t.Fatal("candidate remained valid after proof expiry")
+		}
+		if err := proofExpiring.Rollback(); err != nil {
+			t.Fatal("could not roll back expired proof")
+		}
+		assertNoExchange(proofSession)
+
+		if _, err := db.ExecContext(ctx, `CREATE TRIGGER synthetic_exchange_receipt_failure BEFORE INSERT ON auth_approval_exchange_receipt FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic receipt failure'`); err != nil {
+			t.Fatal("could not install synthetic receipt failure")
+		}
+		defer func() {
+			_, _ = db.ExecContext(context.Background(), `DROP TRIGGER IF EXISTS synthetic_exchange_receipt_failure`)
+		}()
+		failed, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin failed receipt transaction")
+		}
+		_, failedSession, failedHandle, failedSealed := stage(failed)
+		if err := failedHandle.Put(ctx, failed, failedSession, expires, failedSealed, auth); err == nil {
+			_ = failed.Rollback()
+			t.Fatal("synthetic receipt failure returned success")
+		}
+		if err := failed.Rollback(); err != nil {
+			t.Fatal("could not roll back failed receipt transaction")
+		}
+		assertNoExchange(failedSession)
+		if _, err := db.ExecContext(ctx, `DROP TRIGGER synthetic_exchange_receipt_failure`); err != nil {
+			t.Fatal("could not remove synthetic receipt failure")
+		}
+
+		committing, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin successful exchange")
+		}
+		committedCandidate, committedSession, committedHandle, committedSealed := stage(committing)
+		if err := committedHandle.Put(ctx, committing, committedSession, expires, committedSealed, auth); err != nil || committedCandidate.verifyForTransaction(ctx, committing) != nil {
+			_ = committing.Rollback()
+			t.Fatal("could not store exchange receipt")
+		}
+		if err := committing.Commit(); err != nil {
+			t.Fatal("could not commit exchange and receipt")
+		}
+		var state string
+		var rows int
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(item.ID)).Scan(&state); err != nil || state != "consumed" ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE id=?`, []byte(committedSession)).Scan(&rows) != nil || rows != 1 ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_approval_exchange_receipt WHERE approval_scope=?`, approvalDigest[:]).Scan(&rows) != nil || rows != 1 {
+			t.Fatal("committed exchange did not retain one session and receipt")
+		}
+		replayTx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin receipt inspection")
+		}
+		defer replayTx.Rollback()
+		replayHandle, err := ledger.Lock(ctx, replayTx, oldClaims.SubjectID, binding)
+		if err != nil || !replayHandle.Exists() {
+			t.Fatal("committed receipt was not found")
+		}
+		opened, err := replayHandle.Open(ctx, replayTx, auth)
+		if err != nil || string(opened.Bytes()) != committedCandidate.token.ForResponse() {
+			t.Fatal("committed receipt did not match session")
+		}
+		// This low-level test does not prove the future coordinator revalidates
+		// the original proof/JTI or releases plaintext only after commit.
+	})
 }
