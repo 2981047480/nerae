@@ -22,6 +22,7 @@ import (
 	netmail "net/mail"
 	"net/netip"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -1152,6 +1153,32 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	logoutServer.Close()
 	if readErr != nil || logoutResp.StatusCode != http.StatusServiceUnavailable || logoutResp.Header.Get("Cache-Control") != "no-store" || bytes.Contains(logoutErrBody, []byte(otherSuccess.Token)) {
 		t.Fatal("unavailable logout did not fail closed without claiming success")
+	}
+	if os.Getenv("NERAE_AUTH_APPROVAL_CLIENT_INTEROP") == "1" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal("could not locate isolated client interop")
+		}
+		root, err := filepath.Abs(filepath.Join(cwd, "../../../../../.."))
+		if err != nil {
+			t.Fatal("could not locate isolated client root")
+		}
+		caFile := filepath.Join(t.TempDir(), "local-test-ca.pem")
+		if err := os.WriteFile(caFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw}), 0o600); err != nil {
+			t.Fatal("could not write isolated test trust")
+		}
+		loader := filepath.Join(root, "docs/evidence/P02/P02-11/node-ts-loader.mjs")
+		script := filepath.Join(root, "docs/evidence/A01/A01-24/client_approval_interop.mjs")
+		command := exec.CommandContext(ctx, "/opt/homebrew/bin/node", "--import", loader, script)
+		command.Env = append(os.Environ(), "NODE_EXTRA_CA_CERTS="+caFile, "NODE_TLS_REJECT_UNAUTHORIZED=1",
+			"NERAE_AUTH_INTEROP_URL="+server.URL, "NERAE_AUTH_INTEROP_ROOT="+root,
+			"NERAE_AUTH_INTEROP_SOURCE="+newDeviceSuccess.Token, "NERAE_AUTH_INTEROP_SUBJECT="+success.User.Id,
+			"NERAE_AUTH_INTEROP_WORKOUT="+createdDetail.ID)
+		output, err := command.CombinedOutput()
+		if err != nil || !bytes.Contains(output, []byte("PASS: actual client flow approved and replayed a lost response")) {
+			t.Fatal("isolated client approval interop failed")
+		}
+		t.Log("PASS: actual client flow approved and replayed a lost response over isolated TLS, then read the shared workout")
 	}
 
 	t.Log("PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP; synthetic test-only services")

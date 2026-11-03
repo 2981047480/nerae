@@ -3,7 +3,7 @@ import type { EmailLoginAttemptHandle } from './emailLoginFlow'
 import type { PublicSession } from './sessionCoordinator'
 
 export type AuthEntryStatus = 'restoring' | 'email' | 'sending_code' | 'waiting_code' | 'retry_challenge' |
-  'submitting_code' | 'retry_login' | 'approval_required' | 'confirm_age' | 'confirming_age' |
+  'submitting_code' | 'retry_login' | 'approval_required' | 'checking_approval' | 'confirm_age' | 'confirming_age' |
   'unavailable' | 'cancel_failed' | 'cancelling' | 'session_changed' | 'authenticated'
 
 export interface AuthEntryState {
@@ -257,6 +257,60 @@ export class AuthEntryController {
     }
   }
 
+  async checkApproval(): Promise<void> {
+    if (this.#disposed || this.#busy || this.#state.status !== 'approval_required') return
+    const handle = this.#attempt
+    const comparisonCode = this.#state.comparisonCode
+    if (!handle || typeof this.#runtime.login.checkApproval !== 'function') {
+      this.#set({ ...this.#state, message: '当前无法查询设备确认状态，请重新登录。' })
+      return
+    }
+    this.#sessionChangedDuringOperation = false
+    this.#busy = true
+    this.#set({ ...this.#state, status: 'checking_approval', message: '正在检查设备确认状态' })
+    try {
+      const result = await this.#runtime.login.checkApproval(handle)
+      if (this.#disposed || this.#cancelRequested) return
+      if (this.#sessionChangedDuringOperation) { this.#sessionChanged(); return }
+      if (result.status === 'authenticated') {
+        if (!this.#releaseAttempt(handle)) {
+          this.#set(initialState('unavailable', '登录结果已验证，但安全交接未完成。请重新检查登录状态。'))
+          return
+        }
+        const current = publicSession(this.#runtime, result.session.subjectId)
+        if (!current || current.generation !== result.session.generation) { this.#sessionChanged(); return }
+        this.#watchSession()
+        this.#acceptSession(current)
+      } else if (result.status === 'approval_denied' || result.status === 'approval_expired') {
+        if (!this.#releaseAttempt(handle)) {
+          this.#set(initialState('unavailable', '本次登录尝试暂时无法安全结束，请重新检查。'))
+          return
+        }
+        this.#stopWatching()
+        this.#set(initialState('email', result.status === 'approval_denied' ? '设备确认已拒绝，请重新登录。' : '设备确认已过期，请重新登录。'))
+      } else if (result.status === 'session_changed') {
+        this.#sessionChanged()
+      } else if (result.status === 'restart_required') {
+        await this.#cancelAttempt('restart')
+      } else {
+        const message = result.status === 'approval_pending' ? '尚未收到确认。请在已登录设备确认后再次检查。'
+          : result.status === 'rate_limited' ? '检查过于频繁，请稍后重试。'
+          : result.status === 'device_unavailable' || result.status === 'random_unavailable' ? '本机安全服务暂不可用，请稍后重试。'
+          : '暂时无法确认结果，请重试检查。'
+        this.#set({ status: 'approval_required', email: '', code: '', comparisonCode, message })
+      }
+    } catch {
+      if (!this.#disposed && !this.#cancelRequested) {
+        if (this.#sessionChangedDuringOperation) this.#sessionChanged()
+        else this.#set({ status: 'approval_required', email: '', code: '', comparisonCode, message: '暂时无法确认结果，请重试检查。' })
+      }
+    } finally {
+      this.#busy = false
+      if (!this.#disposed && this.state.status === 'session_changed' && this.#attempt && !this.#cancelRequested) this.#releaseAttempt(this.#attempt)
+      else if (this.#watchInvalidatedByInstall && !this.#unwatch && this.state.status !== 'session_changed') this.#watchSession()
+    }
+  }
+
   async confirmAdult(): Promise<void> {
     if (this.#disposed || this.#busy || this.#state.status !== 'confirm_age' || !this.#state.session) return
     const expected = this.#state.session
@@ -375,7 +429,7 @@ export class AuthEntryController {
 
   #approvalRequired(comparisonCode: string): void {
     this.#set({ status: 'approval_required', email: '', code: '', comparisonCode,
-      message: '此设备需要由已登录设备确认。当前暂不支持在这里完成批准，也不会创建登录会话。' })
+      message: '请在已登录设备核对并确认，然后回来检查。' })
   }
 
   #watchSession(): void {
@@ -391,7 +445,7 @@ export class AuthEntryController {
         // A guarded login install invalidates the UI's older guard. Keep its
         // input until the flow reports whether this was its own install or a
         // competing session operation; an install failure must remain retryable.
-        if (this.#busy && current.status === 'submitting_code' && this.#runtime.session.state === 'installing') {
+        if (this.#busy && (current.status === 'submitting_code' || current.status === 'checking_approval') && this.#runtime.session.state === 'installing') {
           this.#watchInvalidatedByInstall = true
           return
         }

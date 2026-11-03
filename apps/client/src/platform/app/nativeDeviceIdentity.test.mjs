@@ -58,7 +58,7 @@ registerHooks({
     return nextResolve(specifier, context)
   },
 })
-const { createAppDeviceIdentityCoordinator, signAppEmailLoginChallenge } = await import('./nativeDeviceIdentity.ts')
+const { createAppDeviceIdentityCoordinator, signAppApprovalExchange, signAppEmailLoginChallenge } = await import('./nativeDeviceIdentity.ts')
 const { EmailAuthApi } = await import('../../api/auth/emailAuthApi.ts')
 const { ProtectedDeviceIdentity, ReservedDeviceAlias } = await import('../../features/auth/deviceIdentityCoordinator.ts')
 const { AuthSessionCoordinator } = await import('../../features/auth/sessionCoordinator.ts')
@@ -196,6 +196,32 @@ test('email proof signs only an issued challenge using the existing device key a
   assert.equal(JSON.stringify(proof), '"<redacted>"')
   state.mode = 'sign-failure'
   assert.equal(signAppEmailLoginChallenge(ready.identity, challenge), null)
+  assert.equal(state.creates, 1)
+})
+
+test('approval proof signs only an issued approval with the existing device key', async () => {
+  reset()
+  const ready = await coordinator.initializeFirstForEmail('member@example.com')
+  assert.equal(ready.status, 'ready')
+  const approvalId = 'a'.repeat(24)
+  const nonce = 'N'.repeat(43)
+  const api = new EmailAuthApi('https://api.example.test', async () => ({
+    status: 200, headers: { 'cache-control': 'no-store' },
+    body: { status: 'approval_required', approvalId, approvalSecret: 'S'.repeat(43), nonce,
+      comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' },
+  }))
+  const approval = await api.login({ challengeId: 'c'.repeat(24), code: '012345',
+    deviceProof: `${'a'.repeat(15)}.${'b'.repeat(15)}.${'c'.repeat(15)}` }, 'A'.repeat(43))
+  const forged = new ProtectedDeviceIdentity(new ReservedDeviceAlias(ready.identity.aliasForProtocol), publicKey)
+  assert.equal(signAppApprovalExchange(forged, approval), null)
+  assert.equal(signAppApprovalExchange(ready.identity, { ...approval }), null)
+  assert.equal(state.signs.length, 0)
+  const proof = signAppApprovalExchange(ready.identity, approval)
+  assert.ok(proof)
+  assert.deepEqual(state.signs[0], { alias: ready.identity.aliasForProtocol, purpose: 'approval_exchange', resourceId: approvalId, nonce })
+  assert.equal(JSON.stringify(proof), '"<redacted>"')
+  state.mode = 'sign-failure'
+  assert.equal(signAppApprovalExchange(ready.identity, approval), null)
   assert.equal(state.creates, 1)
 })
 

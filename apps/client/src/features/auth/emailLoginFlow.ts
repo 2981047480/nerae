@@ -1,9 +1,10 @@
-import { AuthApiError, type ApprovalRequired, type Authenticated, type Challenge, type EmailAuthApi } from '../../api/auth/emailAuthApi'
+import { approvalSecretsForSecureStorage, AuthApiError, type ApprovalRequired, type Authenticated, type Challenge, type EmailAuthApi } from '../../api/auth/emailAuthApi'
 import type { DeviceIdentityCoordinator, ProtectedDeviceIdentity } from './deviceIdentityCoordinator'
 import type { AuthSessionCoordinator, PublicSession, SessionInstallGuard } from './sessionCoordinator'
 
 type ChallengeAttempt = { email: string; identity: ProtectedDeviceIdentity; key: string; guard: SessionInstallGuard }
 type LoginAttempt = { challengeId: string; code: string; deviceProof: string; key: string }
+type ApprovalAttempt = { approvalId: string; approvalSecret: string; deviceProof: string; key: string }
 type Proof = { forSubmission(): string }
 export type EmailLoginAttemptHandle = object
 
@@ -11,10 +12,11 @@ export type EmailLoginFlowResult =
   | Readonly<{ status: 'waiting_code'; expiresAt: string }>
   | Readonly<{ status: 'authenticated'; session: PublicSession }>
   | Readonly<{ status: 'approval_required'; comparisonCode: string; expiresAt: string }>
+  | Readonly<{ status: 'approval_pending' | 'approval_denied' | 'approval_expired' | 'retry_approval' }>
   | Readonly<{ status: 'busy' | 'invalid_email' | 'invalid_code' | 'device_unavailable' | 'random_unavailable' |
       'retry_challenge' | 'retry_login' | 'rate_limited' | 'verification_rejected' | 'session_changed' | 'restart_required' | 'not_ready' }>
 
-type AuthApiPort = Pick<EmailAuthApi, 'requestChallenge' | 'login'>
+type AuthApiPort = Pick<EmailAuthApi, 'requestChallenge' | 'login'> & Partial<Pick<EmailAuthApi, 'exchange'>>
 type DevicePort = Pick<DeviceIdentityCoordinator, 'initializeFirstForEmail'>
 type SessionPort = Pick<AuthSessionCoordinator, 'captureInstallGuard' | 'isInstallGuardCurrent' |
   'subscribeInstallGuardInvalidation' | 'cancelInstallGuard' | 'installAuthenticatedIfCurrent' | 'isCurrent'>
@@ -30,23 +32,27 @@ export class EmailLoginFlow {
   #session: SessionPort
   #random: () => string
   #sign: (identity: ProtectedDeviceIdentity, challenge: Challenge) => Proof | null
+  #signApproval: (identity: ProtectedDeviceIdentity, approval: ApprovalRequired) => Proof | null
   #busy = false
   #challengeAttempt: ChallengeAttempt | null = null
   #challenge: Challenge | null = null
   #loginAttempt: LoginAttempt | null = null
   #approval: ApprovalRequired | null = null
+  #approvalAttempt: ApprovalAttempt | null = null
   #unwatchGuard: (() => void) | null = null
   #scope: { handle: EmailLoginAttemptHandle; guard: SessionInstallGuard | null; cancelling?: boolean;
     cancelPending?: Promise<'cancelled' | 'superseded' | 'unavailable'> } | null = null
 
   constructor(api: AuthApiPort, devices: DevicePort, session: SessionPort, random: () => string,
-    sign: (identity: ProtectedDeviceIdentity, challenge: Challenge) => Proof | null) {
+    sign: (identity: ProtectedDeviceIdentity, challenge: Challenge) => Proof | null,
+    signApproval: (identity: ProtectedDeviceIdentity, approval: ApprovalRequired) => Proof | null = () => null) {
     if (!api || typeof api.requestChallenge !== 'function' || typeof api.login !== 'function' ||
       !devices || typeof devices.initializeFirstForEmail !== 'function' ||
       !session || typeof session.captureInstallGuard !== 'function' || typeof session.isInstallGuardCurrent !== 'function' ||
       typeof session.subscribeInstallGuardInvalidation !== 'function' || typeof session.cancelInstallGuard !== 'function' ||
       typeof session.installAuthenticatedIfCurrent !== 'function' ||
-      typeof session.isCurrent !== 'function' || typeof random !== 'function' || typeof sign !== 'function') {
+      typeof session.isCurrent !== 'function' || typeof random !== 'function' || typeof sign !== 'function' ||
+      typeof signApproval !== 'function') {
       throw new Error('email login dependencies unavailable')
     }
     this.#api = api
@@ -54,6 +60,7 @@ export class EmailLoginFlow {
     this.#session = session
     this.#random = random
     this.#sign = sign
+    this.#signApproval = signApproval
   }
 
   /** Reserve one caller-owned login attempt; handles contain no credentials. */
@@ -111,6 +118,7 @@ export class EmailLoginFlow {
     this.#challenge = null
     this.#loginAttempt = null
     this.#approval = null
+    this.#approvalAttempt = null
   }
 
   #sessionChanged(): EmailLoginFlowResult {
@@ -183,6 +191,35 @@ export class EmailLoginFlow {
     finally { this.#busy = false }
   }
 
+  /**
+   * A completed pending snapshot starts a new signed poll on the next call.
+   * An uncertain result keeps the original body and key for an exact retry.
+   */
+  async checkApproval(handle?: EmailLoginAttemptHandle): Promise<EmailLoginFlowResult> {
+    if (!this.#allows(handle)) return { status: 'not_ready' }
+    if (this.#busy) return { status: 'busy' }
+    const approval = this.#approval
+    const challengeAttempt = this.#challengeAttempt
+    if (!approval || !challengeAttempt || typeof this.#api.exchange !== 'function') return { status: 'not_ready' }
+    if (!this.#session.isInstallGuardCurrent(challengeAttempt.guard)) return this.#sessionChanged()
+    this.#busy = true
+    try {
+      if (!this.#approvalAttempt) {
+        const secrets = approvalSecretsForSecureStorage(approval)
+        const proof = this.#signApproval(challengeAttempt.identity, approval)
+        if (!proof || typeof proof.forSubmission !== 'function') return { status: 'device_unavailable' }
+        const deviceProof = proof.forSubmission()
+        if (typeof deviceProof !== 'string' || deviceProof.length < 32 || deviceProof.length > 4096 ||
+          !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(deviceProof)) return { status: 'device_unavailable' }
+        const key = this.#newRequestKey()
+        if (!key) return { status: 'random_unavailable' }
+        this.#approvalAttempt = { approvalId: approval.approvalId, approvalSecret: secrets.approvalSecret, deviceProof, key }
+      }
+      return await this.#sendApproval()
+    } catch { return this.#approvalAttempt ? { status: 'retry_approval' } : { status: 'device_unavailable' } }
+    finally { this.#busy = false }
+  }
+
   #newRequestKey(): string | null {
     try {
       const value = this.#random()
@@ -242,6 +279,44 @@ export class EmailLoginFlow {
       return { status: 'authenticated', session: installed.session }
     } catch {
       return this.#session.isInstallGuardCurrent(challengeAttempt.guard) ? { status: 'retry_login' } : this.#sessionChanged()
+    }
+  }
+
+  async #sendApproval(): Promise<EmailLoginFlowResult> {
+    const attempt = this.#approvalAttempt
+    const challengeAttempt = this.#challengeAttempt
+    if (!attempt || !challengeAttempt || !this.#approval || !this.#api.exchange) return { status: 'not_ready' }
+    if (!this.#session.isInstallGuardCurrent(challengeAttempt.guard)) return this.#sessionChanged()
+    let outcome: Awaited<ReturnType<EmailAuthApi['exchange']>>
+    try {
+      outcome = await this.#api.exchange({ approvalId: attempt.approvalId, approvalSecret: attempt.approvalSecret,
+        deviceProof: attempt.deviceProof }, attempt.key)
+    } catch (error) {
+      if (!this.#session.isInstallGuardCurrent(challengeAttempt.guard)) return this.#sessionChanged()
+      if (error instanceof AuthApiError && error.code === 'rate_limited') return { status: 'rate_limited' }
+      if (error instanceof AuthApiError && ['invalid_request', 'conflict', 'expired'].includes(error.code)) return { status: 'restart_required' }
+      return { status: 'retry_approval' }
+    }
+    if (!this.#session.isInstallGuardCurrent(challengeAttempt.guard)) return this.#sessionChanged()
+    if (outcome.status === 'pending') {
+      this.#approvalAttempt = null
+      return { status: 'approval_pending' }
+    }
+    if (outcome.status === 'denied' || outcome.status === 'expired') {
+      const status = outcome.status === 'denied' ? 'approval_denied' : 'approval_expired'
+      this.#clearTransient()
+      return { status }
+    }
+    if (outcome.status !== 'authenticated') return { status: 'retry_approval' }
+    try {
+      const installed = await this.#session.installAuthenticatedIfCurrent(outcome, challengeAttempt.guard)
+      if (installed.status === 'superseded') return this.#sessionChanged()
+      if (installed.status !== 'authenticated') return { status: 'retry_approval' }
+      if (!this.#session.isCurrent(installed.session.subjectId, installed.session.generation)) return this.#sessionChanged()
+      this.#clearTransient()
+      return { status: 'authenticated', session: installed.session }
+    } catch {
+      return this.#session.isInstallGuardCurrent(challengeAttempt.guard) ? { status: 'retry_approval' } : this.#sessionChanged()
     }
   }
 }

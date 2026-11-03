@@ -74,12 +74,15 @@ onBeforeUnmount(() => controller.dispose())
       <button v-if="state.status === 'waiting_code'" class="auth-entry__secondary" @click="controller.resetLogin()">更换邮箱</button>
     </view>
 
-    <view v-else-if="state.status === 'approval_required'" class="auth-entry__notice">
+    <view v-else-if="state.status === 'approval_required' || state.status === 'checking_approval'" class="auth-entry__notice">
       <text class="auth-entry__notice-title">需要已登录设备确认</text>
       <text class="auth-entry__comparison-label">请在已登录设备核对</text>
       <text class="auth-entry__comparison-code">{{ state.comparisonCode }}</text>
       <text>{{ state.message }}</text>
-      <button class="auth-entry__secondary" @click="controller.resetLogin()">返回登录</button>
+      <button class="auth-entry__primary" :disabled="state.status === 'checking_approval'" @click="controller.checkApproval()">
+        {{ state.status === 'checking_approval' ? '正在检查…' : '检查确认状态' }}
+      </button>
+      <button class="auth-entry__secondary" :disabled="state.status === 'checking_approval'" @click="controller.resetLogin()">返回登录</button>
     </view>
 
     <view v-else-if="state.status === 'confirm_age' || state.status === 'confirming_age'" class="auth-entry__notice">

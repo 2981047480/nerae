@@ -6,7 +6,7 @@ import {
   type ProtectedDeviceIdentity,
   type DeviceKeyPortResult, type EmailRegistryKey, type ProtectedDeviceIdentityRegistry,
 } from '../../features/auth/deviceIdentityCoordinator'
-import { challengeNonceForSigning, type Challenge } from '../../api/auth/emailAuthApi'
+import { approvalSecretsForSecureStorage, challengeNonceForSigning, type ApprovalRequired, type Challenge } from '../../api/auth/emailAuthApi'
 
 type Entry = { email: string; alias: string; status: 'reserved' | 'active' }
 type Registry = { schema: 1; entries: Entry[] }
@@ -142,8 +142,27 @@ export function signAppEmailLoginChallenge(identity: ProtectedDeviceIdentity, ch
   try {
     if (!coordinator || !identityWasIssuedBy(identity, coordinator) || !challenge || typeof challenge.challengeId !== 'string') return null
     const nonce = challengeNonceForSigning(challenge)
+    return signExisting(identity, 'email_login', challenge.challengeId, nonce)
+  } catch {
+    return null
+  }
+}
+
+/** Sign only an adapter-issued approval using the existing device identity. */
+export function signAppApprovalExchange(identity: ProtectedDeviceIdentity, approval: ApprovalRequired): AppEmailLoginProof | null {
+  try {
+    if (!coordinator || !identityWasIssuedBy(identity, coordinator) || !approval || typeof approval.approvalId !== 'string') return null
+    const { nonce } = approvalSecretsForSecureStorage(approval)
+    return signExisting(identity, 'approval_exchange', approval.approvalId, nonce)
+  } catch {
+    return null
+  }
+}
+
+function signExisting(identity: ProtectedDeviceIdentity, purpose: 'email_login' | 'approval_exchange', resource: string, nonce: string): AppEmailLoginProof | null {
+  try {
     const alias = identity.aliasForProtocol
-    const result = signExistingDeviceProof(alias, 'email_login', challenge.challengeId, nonce)
+    const result = signExistingDeviceProof(alias, purpose, resource, nonce)
     if (!result || result.ok !== true || result.errorCode !== '' || result.alias !== alias ||
       !result.publicKey || result.publicKey.kty !== 'EC' || result.publicKey.crv !== 'P-256' ||
       result.publicKey.x !== '' || result.publicKey.y !== '' || typeof result.proof !== 'string' ||

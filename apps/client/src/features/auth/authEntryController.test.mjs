@@ -23,14 +23,14 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
-function harness({ restore = { status: 'signed_out', reason: 'missing' }, challenge, login, age } = {}) {
+function harness({ restore = { status: 'signed_out', reason: 'missing' }, challenge, login, approvalCheck, age } = {}) {
   let current = null
   let revision = 0
   let guardId = 0
   const watches = new Map()
   const events = []
   const calls = { restore: 0, requestCode: [], retryChallenge: [], submitCode: [], retryLogin: [], declare: [], reset: 0,
-    openAttempt: 0, cancelAttempt: [], releaseAttempt: [] }
+    openAttempt: 0, cancelAttempt: [], releaseAttempt: [], checkApproval: [] }
   const activeHandles = new Set()
   const session = {
     async restore() {
@@ -104,6 +104,12 @@ function harness({ restore = { status: 'signed_out', reason: 'missing' }, challe
     async retryLogin(handle) {
       calls.retryLogin.push(handle)
       const result = login?.() ?? { status: 'authenticated', session: adultSession() }
+      if (result.status === 'authenticated') current = result.session
+      return result
+    },
+    async checkApproval(handle) {
+      calls.checkApproval.push(handle)
+      const result = approvalCheck?.() ?? { status: 'approval_pending' }
       if (result.status === 'authenticated') current = result.session
       return result
     },
@@ -244,8 +250,65 @@ test('new-device approval remains pending and never emits an authenticated sessi
   assert.equal(h.controller.state.status, 'approval_required')
   assert.equal(h.controller.state.comparisonCode, '4821')
   assert.match(h.controller.state.message, /已登录设备/)
-  assert.match(h.controller.state.message, /不会创建登录会话/)
+  assert.match(h.controller.state.message, /回来检查/)
   assert.equal(h.emitted.length, 0)
+})
+
+test('approval check keeps the comparison code while pending and accepts only an authenticated result', async () => {
+  let checks = 0
+  const h = harness({ login: () => ({ status: 'approval_required', comparisonCode: '4821', expiresAt: '2026-10-31T12:00:00Z' }),
+    approvalCheck: () => ++checks === 1 ? { status: 'approval_pending' } : { status: 'authenticated', session: adultSession() } })
+  await h.controller.start()
+  h.controller.setEmail('new-device@example.test')
+  await h.controller.requestCode()
+  h.controller.setCode('012345')
+  await h.controller.submitCode()
+  await h.controller.checkApproval()
+  assert.equal(h.controller.state.status, 'approval_required')
+  assert.equal(h.controller.state.comparisonCode, '4821')
+  assert.match(h.controller.state.message, /尚未收到确认/)
+  assert.equal(h.emitted.length, 0)
+  await h.controller.checkApproval()
+  assert.equal(h.controller.state.status, 'authenticated')
+  assert.equal(h.emitted.length, 1)
+  assert.equal(h.calls.checkApproval.length, 2)
+  assert.equal(h.calls.releaseAttempt.length, 1)
+})
+
+test('real approval exchange restores the existing age-confirmation gate', async () => {
+  let vaultValue = ''
+  const session = new AuthSessionCoordinator({
+    readAuthenticationState: () => ({ ok: true, errorCode: '', found: !!vaultValue, value: vaultValue }),
+    writeAuthenticationState: value => { vaultValue = value; return { ok: true, errorCode: '', found: false, value: '' } },
+    clearAuthenticationState: () => { vaultValue = ''; return { ok: true, errorCode: '', found: false, value: '' } },
+  }, async () => ({ status: 'unavailable' }))
+  const api = new EmailAuthApi('https://auth.example.test', async request => ({
+    status: request.url.endsWith('/auth/email/challenges') ? 202 : 200,
+    headers: { 'cache-control': 'no-store' },
+    body: request.url.endsWith('/auth/email/challenges')
+      ? { challengeId: 'c'.repeat(24), nonce: 'N'.repeat(43), expiresAt: '2026-11-01T00:00:00Z' }
+      : request.url.endsWith('/auth/email-login')
+        ? { status: 'approval_required', approvalId: 'a'.repeat(24), approvalSecret: 'S'.repeat(43), nonce: 'N'.repeat(43), comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' }
+        : { status: 'authenticated', token: 'synthetic-token', expiresIn: 300,
+            user: { id: '73', nickname: '', roles: ['student'], ageVerified: false, ageDeclarationVersion: 1 } },
+  }))
+  const publicKey = { kty: 'EC', crv: 'P-256', x: 'A'.repeat(43), y: 'Q'.repeat(43) }
+  const proof = () => ({ forSubmission: () => `${'a'.repeat(15)}.${'b'.repeat(15)}.${'c'.repeat(15)}` })
+  const login = new EmailLoginFlow(api, { async initializeFirstForEmail() { return { status: 'ready', identity: { publicKeyForProtocol: publicKey } } } },
+    session, () => 'A'.repeat(43), proof, proof)
+  const emitted = []
+  const controller = new AuthEntryController({ session, login, ageDeclaration: { async declare() { return { status: 'declared' } } } }, value => emitted.push(value))
+  await controller.start()
+  controller.setEmail('member@example.test')
+  await controller.requestCode()
+  controller.setCode('012345')
+  await controller.submitCode()
+  assert.equal(controller.state.status, 'approval_required')
+  await controller.checkApproval()
+  assert.equal(controller.state.status, 'confirm_age')
+  assert.equal(session.snapshot().subjectId, '73')
+  assert.equal(emitted.length, 0)
+  assert.equal(JSON.parse(vaultValue).accessToken, 'synthetic-token')
 })
 
 test('actual EmailLoginFlow keeps rate-limited challenge and login retries on their original request', async () => {
@@ -652,7 +715,8 @@ test('uni-app surface exposes a parent-handled return, safe cancel retry, and se
   assert.match(source, /cancel:\s*\[\]/)
   assert.match(source, /@click="cancel"/)
   assert.match(source, /{{\s*state\.comparisonCode\s*}}/)
-  assert.match(controllerSource, /当前暂不支持在这里完成批准/)
+  assert.match(controllerSource, /请在已登录设备核对并确认/)
+  assert.match(source, /@click="controller\.checkApproval\(\)"/)
   assert.match(source, /重试安全取消/)
   assert.match(source, /重新验证/)
   assert.doesNotMatch(source, /请求编号|同一请求|同一登录请求/)

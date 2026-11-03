@@ -71,7 +71,7 @@ def main() -> None:
 
     app = work / "dist/build/app"
     service = (app / "app-service.js").read_text(encoding="utf-8")
-    require("AuthEntry" in service and "请查看此邮箱" in service,
+    require("AuthEntry" in service and "请查看此邮箱" in service and "检查确认状态" in service,
             "App output is missing the referenced authentication entry")
     require("revokeCurrentSession" in service and "TrainingOperationJournal" in service,
             "App output is missing a referenced revocation or training journal entry")
@@ -86,7 +86,8 @@ def main() -> None:
     # Weixin must fail closed for these App-only bridges, not ship App proxies.
     weixin = work / "dist/build/mp-weixin/uni_modules"
     weixin_entry = work / "dist/build/mp-weixin/features/auth/AuthEntry.js"
-    require(weixin_entry.is_file() and "AuthEntry" in weixin_entry.read_text(encoding="utf-8"),
+    require(weixin_entry.is_file() and "AuthEntry" in weixin_entry.read_text(encoding="utf-8") and
+            "检查确认状态" in weixin_entry.read_text(encoding="utf-8"),
             "Weixin output is missing the referenced authentication entry")
     for plugin in PLUGINS:
         fallback = weixin / plugin / "utssdk/index.js"

@@ -2,7 +2,7 @@ import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
 import type { EmailAuthApi } from '../../api/auth/emailAuthApi'
 import { EmailLoginFlow } from '../../features/auth/emailLoginFlow'
 import type { AuthSessionCoordinator } from '../../features/auth/sessionCoordinator'
-import { createAppDeviceIdentityCoordinator, signAppEmailLoginChallenge } from './nativeDeviceIdentity'
+import { createAppDeviceIdentityCoordinator, signAppApprovalExchange, signAppEmailLoginChallenge } from './nativeDeviceIdentity'
 
 let flow: EmailLoginFlow | undefined
 let boundApi: EmailAuthApi | undefined
@@ -18,7 +18,7 @@ export function createAppEmailLoginFlow(api: EmailAuthApi, session: AuthSessionC
     const result = generateSecureRandomRequestKey()
     if (!result || result.ok !== true || result.errorCode !== '') throw new Error('secure randomness unavailable')
     return result.value
-  }, signAppEmailLoginChallenge)
+  }, signAppEmailLoginChallenge, signAppApprovalExchange)
   boundApi = api
   boundSession = session
   flow = created

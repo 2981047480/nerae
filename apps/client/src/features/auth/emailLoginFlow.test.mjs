@@ -33,6 +33,7 @@ function setup(transport, options = {}) {
   const requests = []
   let serial = 0
   let signs = 0
+  let approvalSigns = 0
   const storage = vault()
   const api = new EmailAuthApi('https://api.example.test', async request => {
     requests.push({ ...request, headers: { ...request.headers } })
@@ -44,8 +45,9 @@ function setup(transport, options = {}) {
     { async initializeFirstForEmail() { return { status: 'ready', identity: device } } },
     options.session ?? session,
     options.random ?? (() => Buffer.alloc(32, ++serial).toString('base64url')),
-    options.sign ?? (() => { signs++; return { forSubmission: () => deviceProof } }))
-  return { flow, requests, storage, session, get signs() { return signs } }
+    options.sign ?? (() => { signs++; return { forSubmission: () => deviceProof } }),
+    options.signApproval ?? (() => { approvalSigns++; return { forSubmission: () => `${deviceProof}${approvalSigns}` } }))
+  return { flow, requests, storage, session, get signs() { return signs }, get approvalSigns() { return approvalSigns } }
 }
 
 test('challenge and login retries reuse the exact key and body, then install the verified session', async () => {
@@ -113,6 +115,100 @@ test('approval result never installs a session or exposes its secret', async () 
   assert.equal(context.storage.value, '')
   assert.equal((await context.flow.retryLogin()).status, 'not_ready')
   assert.equal(JSON.stringify(result).includes(approval.approvalSecret), false)
+})
+
+test('approval polling signs fresh requests after pending and exactly retries an uncertain exchange', async () => {
+  const approval = { status: 'approval_required', approvalId: 'a'.repeat(24), approvalSecret: 'S'.repeat(43),
+    nonce: 'N'.repeat(43), comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' }
+  let polls = 0
+  const context = setup(async request => {
+    if (request.url.endsWith('/auth/email/challenges')) return reply(202, challenge)
+    if (request.url.endsWith('/auth/email-login')) return reply(200, approval)
+    if (++polls === 1) return reply(200, { status: 'pending' })
+    if (polls === 2) throw new Error('synthetic unknown exchange outcome')
+    return reply(200, authenticated)
+  })
+  assert.equal((await context.flow.requestCode(email)).status, 'waiting_code')
+  assert.equal((await context.flow.submitCode('012345')).status, 'approval_required')
+  assert.equal((await context.flow.checkApproval()).status, 'approval_pending')
+  assert.equal(context.storage.value, '')
+  assert.equal((await context.flow.checkApproval()).status, 'retry_approval')
+  const result = await context.flow.checkApproval()
+  assert.equal(result.status, 'authenticated')
+  assert.equal(result.session.subjectId, '101')
+  assert.equal(JSON.parse(context.storage.value).accessToken, token)
+  assert.equal(context.approvalSigns, 2)
+  assert.notEqual(context.requests[2].headers['Idempotency-Key'], context.requests[3].headers['Idempotency-Key'])
+  assert.notEqual(JSON.parse(context.requests[2].body).deviceProof, JSON.parse(context.requests[3].body).deviceProof)
+  assert.deepEqual(context.requests[3], context.requests[4])
+  for (const value of [JSON.stringify(context.flow), inspect(context.flow), JSON.stringify(result)]) {
+    assert.equal(value.includes(approval.approvalSecret), false)
+    assert.equal(value.includes(approval.nonce), false)
+    assert.equal(value.includes(token), false)
+  }
+  assert.equal((await context.flow.checkApproval()).status, 'not_ready')
+})
+
+test('rate limits and vault failures retain the exact approval exchange for safe retry', async () => {
+  const approval = { status: 'approval_required', approvalId: 'a'.repeat(24), approvalSecret: 'S'.repeat(43),
+    nonce: 'N'.repeat(43), comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' }
+  let polls = 0
+  const storage = vault()
+  const write = storage.writeAuthenticationState.bind(storage)
+  let fail = true
+  storage.writeAuthenticationState = value => {
+    if (fail && value.includes('accessToken')) { fail = false; return { ok: false, errorCode: 'unavailable', found: false, value: '' } }
+    return write(value)
+  }
+  const session = new AuthSessionCoordinator(storage, async () => ({ status: 'unavailable' }))
+  const context = setup(async request => {
+    if (request.url.endsWith('/auth/email/challenges')) return reply(202, challenge)
+    if (request.url.endsWith('/auth/email-login')) return reply(200, approval)
+    return ++polls === 1 ? reply(429, { code: 'RATE_LIMITED' }) : reply(200, authenticated)
+  }, { session })
+  await context.flow.requestCode(email)
+  await context.flow.submitCode('012345')
+  assert.equal((await context.flow.checkApproval()).status, 'rate_limited')
+  assert.equal((await context.flow.checkApproval()).status, 'retry_approval')
+  assert.equal((await context.flow.checkApproval()).status, 'authenticated')
+  assert.equal(context.approvalSigns, 1)
+  assert.deepEqual(context.requests[2], context.requests[3])
+  assert.deepEqual(context.requests[3], context.requests[4])
+})
+
+test('denied or expired approval never installs a session and permits a new login', async () => {
+  for (const status of ['denied', 'expired']) {
+    const approval = { status: 'approval_required', approvalId: 'a'.repeat(24), approvalSecret: 'S'.repeat(43),
+      nonce: 'N'.repeat(43), comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' }
+    const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge)
+      : request.url.endsWith('/auth/email-login') ? reply(200, approval) : reply(200, { status }))
+    await context.flow.requestCode(email)
+    await context.flow.submitCode('012345')
+    assert.equal((await context.flow.checkApproval()).status, `approval_${status}`)
+    assert.equal(context.session.current(), null)
+    assert.equal(context.storage.value, '')
+    assert.equal((await context.flow.checkApproval()).status, 'not_ready')
+    assert.equal((await context.flow.requestCode('new@example.test')).status, 'waiting_code')
+  }
+})
+
+test('logout during approval polling prevents a late successful exchange from installing a session', async () => {
+  const approval = { status: 'approval_required', approvalId: 'a'.repeat(24), approvalSecret: 'S'.repeat(43),
+    nonce: 'N'.repeat(43), comparisonCode: '123456', expiresAt: '2026-11-01T00:00:00Z' }
+  let finish
+  const response = new Promise(resolve => { finish = resolve })
+  const context = setup(async request => request.url.endsWith('/auth/email/challenges') ? reply(202, challenge)
+    : request.url.endsWith('/auth/email-login') ? reply(200, approval) : response)
+  await context.flow.requestCode(email)
+  await context.flow.submitCode('012345')
+  const pending = context.flow.checkApproval()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal((await context.session.logout()).status, 'signed_out')
+  finish(reply(200, authenticated))
+  assert.equal((await pending).status, 'session_changed')
+  assert.equal(context.session.current(), null)
+  assert.equal(context.storage.value, '')
+  assert.equal((await context.flow.checkApproval()).status, 'not_ready')
 })
 
 test('a failed vault install keeps the exact login attempt available for explicit retry', async () => {

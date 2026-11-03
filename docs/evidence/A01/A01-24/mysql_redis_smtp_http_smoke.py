@@ -88,6 +88,7 @@ def run() -> int:
                 raise RuntimeError(f"private migrations failed ({apply.returncode})")
             test_env = {**env, "GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off",
                         "GOCACHE": "/private/tmp/nerae-go-api-cache", "GOMODCACHE": "/private/tmp/nerae-go-api-mod",
+                        "NERAE_AUTH_APPROVAL_CLIENT_INTEROP": "1",
                         "NERAE_EMAIL_DELIVERY_E2E_TEST_DSN": f"root@unix({mysql_socket})/nerae_a01_24_test?parseTime=true&loc=UTC",
                         "NERAE_EMAIL_DELIVERY_E2E_REDIS_SOCKET": str(redis_socket)}
             test = subprocess.run([str(GO), "test", "-mod=readonly", "-race", "-count=1", "-v",
@@ -106,6 +107,8 @@ def run() -> int:
                 raise RuntimeError("new-device status and exchange were not exercised")
             if "PASS: two synthetic devices share create/read/set and same-subject idempotent replay" not in test.stdout:
                 raise RuntimeError("same-subject two-device workout sharing was not exercised")
+            if "PASS: actual client flow approved and replayed a lost response over isolated TLS, then read the shared workout" not in test.stdout:
+                raise RuntimeError("actual client approval flow was not exercised")
             if os.environ.get("NERAE_RUN_API_ASSEMBLY_TEST") == "1":
                 # A separate empty schema prevents the earlier fixture's
                 # synthetic key epochs and test data from contaminating this
