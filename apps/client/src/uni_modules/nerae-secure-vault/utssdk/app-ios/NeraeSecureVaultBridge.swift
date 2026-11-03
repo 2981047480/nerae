@@ -491,7 +491,7 @@ final class NeraeVersionedTrainingJournal {
               request["method"] as? String == "POST", let path = request["path"] as? String, Self.validWorkoutPath(path),
               let key = request["idempotencyKey"] as? String, (8...128).contains(key.utf8.count), key.utf8.allSatisfy(Self.isIdempotencyByte),
               let body = request["body"] as? String, Self.validPayload(found: true, value: body),
-              let normalized = try? Self.normalizedBody(body), Self.validRequestEvent(path: path, body: body, event: event) else {
+              let normalized = try? Self.normalizedBody(body), Self.validRequestBody(path: path, body: body, event: event) else {
             throw NeraeVaultError.invalidState
         }
         let eventMarker = Self.dispatchMarker("event", [operationKey])
@@ -761,11 +761,18 @@ final class NeraeVersionedTrainingJournal {
         return number.intValue == expected
     }
 
-    private static func safeInteger(_ value: Any?) -> Int64? {
+    private static func signedSafeInteger(_ value: Any?) -> Int64? {
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
               !CFNumberIsFloatType(number as CFNumber) else { return nil }
-        let result = number.int64Value
-        guard result >= 0, result <= 9_007_199_254_740_991 else { return nil }
+        // Compare before conversion: an unsigned NSNumber above Int64.max
+        // wraps via int64Value and can otherwise masquerade as a small integer.
+        guard number.compare(NSNumber(value: -9_007_199_254_740_991 as Int64)) != .orderedAscending,
+              number.compare(NSNumber(value: 9_007_199_254_740_991 as Int64)) != .orderedDescending else { return nil }
+        return number.int64Value
+    }
+
+    private static func safeInteger(_ value: Any?) -> Int64? {
+        guard let result = signedSafeInteger(value), result >= 0 else { return nil }
         return result
     }
 
@@ -815,7 +822,7 @@ final class NeraeVersionedTrainingJournal {
               idempotencyKey.utf8.allSatisfy(Self.isIdempotencyByte),
               let path = request["path"] as? String, validWorkoutPath(path),
               let body = request["body"] as? String,
-              let normalizedBody = try? normalizedBody(body), validRequestEvent(path: path, body: body, event: event) else {
+              let normalizedBody = try? normalizedBody(body), validRequestBody(path: path, body: body, event: event) else {
             throw NeraeVaultError.invalidState
         }
         oldOperation["state"] = "in_flight"
@@ -846,19 +853,79 @@ final class NeraeVersionedTrainingJournal {
     }
 
     private static func normalizedBody(_ value: String) throws -> String {
+        guard NeraeStrictJSON.isCanonicalJournalObject(value) else { throw NeraeVaultError.invalidState }
         let object = try jsonObject(value)
         let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
         guard let normalized = String(data: data, encoding: .utf8) else { throw NeraeVaultError.invalidState }
         return normalized
     }
 
-    private static func validRequestEvent(path: String, body: String, event: String) -> Bool {
-        if path != "/me/sessions" { return true }
-        guard let fields = try? jsonObject(body), let source = fields["source"] as? String,
-              source == "free" || source == "plan", let submitted = fields["clientEventId"] as? String else { return false }
-        // Swift String equality is canonically equivalent; the server binds
-        // request bytes, so distinct UTF-8 spellings must not be conflated.
-        return submitted.utf8.elementsEqual(event.utf8)
+    // Call only after normalizedBody has rejected duplicate/non-ASCII keys.
+    // The native shape mirrors the shared journal contract; the service still
+    // performs its own full business validation and authorization.
+    private static func validRequestBody(path: String, body: String, event: String) -> Bool {
+        guard let fields = try? jsonObject(body) else { return false }
+        func keys(_ object: [String: Any], allowed: Set<String>, required: Set<String>) -> Bool {
+            let present = Set(object.keys)
+            return present.isSubset(of: allowed) && required.isSubset(of: present)
+        }
+        func optional(_ object: [String: Any], _ key: String, _ check: (Any) -> Bool) -> Bool {
+            guard let value = object[key] else { return true }
+            return check(value)
+        }
+        func strings(_ value: Any) -> Bool { (value as? [Any])?.allSatisfy({ $0 is String }) ?? false }
+        func number(_ value: Any) -> Bool {
+            guard let item = value as? NSNumber, CFGetTypeID(item) != CFBooleanGetTypeID() else { return false }
+            return item.doubleValue.isFinite
+        }
+        func trueBoolean(_ value: Any) -> Bool {
+            guard let item = value as? NSNumber, CFGetTypeID(item) == CFBooleanGetTypeID() else { return false }
+            return item.boolValue
+        }
+        func validSet(_ raw: Any) -> Bool {
+            guard let item = raw as? [String: Any],
+                  keys(item, allowed: Set(["recordKey", "exerciseEntryKey", "setIndex", "kind", "exerciseId", "exerciseName", "weightKg", "reps", "seconds", "rpe", "completed"]),
+                       required: Set(["recordKey", "exerciseEntryKey", "setIndex", "kind"])),
+                  item["recordKey"] is String, item["exerciseEntryKey"] is String, item["kind"] is String,
+                  let index = safeInteger(item["setIndex"]), index >= 1,
+                  (item["exerciseId"] != nil) != (item["exerciseName"] != nil),
+                  optional(item, "exerciseId", { $0 is String }), optional(item, "exerciseName", { $0 is String }),
+                  optional(item, "weightKg", number), optional(item, "reps", { signedSafeInteger($0) != nil }),
+                  optional(item, "seconds", { signedSafeInteger($0) != nil }),
+                  optional(item, "rpe", { $0 is NSNull || number($0) }), optional(item, "completed", trueBoolean) else { return false }
+            return true
+        }
+        if path == "/me/sessions" {
+            guard let source = fields["source"] as? String, let submitted = fields["clientEventId"] as? String,
+                  submitted.utf8.elementsEqual(event.utf8), fields["date"] is String,
+                  optional(fields, "timeZone", { $0 is String }) else { return false }
+            if source.utf8.elementsEqual("free".utf8) {
+                return keys(fields, allowed: Set(["source", "date", "timeZone", "clientEventId"]),
+                            required: Set(["source", "date", "clientEventId"]))
+            }
+            if source.utf8.elementsEqual("plan".utf8) {
+                return keys(fields, allowed: Set(["source", "date", "timeZone", "planId", "planVersion", "planDayId", "clientEventId", "occurrenceId"]),
+                            required: Set(["source", "date", "planId", "planVersion", "planDayId", "clientEventId"])) &&
+                    fields["planId"] is String && fields["planDayId"] is String &&
+                    (safeInteger(fields["planVersion"]) ?? 0) >= 1 && optional(fields, "occurrenceId", { $0 is String })
+            }
+            return false
+        }
+        guard (safeInteger(fields["expectedVersion"]) ?? 0) >= 1 else { return false }
+        if path.hasSuffix("/sets") {
+            return keys(fields, allowed: Set(["expectedVersion", "exerciseEntryKeys", "sets", "deleteRecordKeys", "restoreRecordKeys"]),
+                        required: Set(["expectedVersion", "exerciseEntryKeys"])) &&
+                fields["exerciseEntryKeys"].map(strings) == true &&
+                optional(fields, "sets", { ($0 as? [Any])?.allSatisfy(validSet) ?? false }) &&
+                optional(fields, "deleteRecordKeys", strings) && optional(fields, "restoreRecordKeys", strings)
+        }
+        if path.hasSuffix("/finish") {
+            return keys(fields, allowed: Set(["expectedVersion", "durationMin", "date", "rpe", "note"]), required: Set(["expectedVersion"])) &&
+                optional(fields, "durationMin", { $0 is NSNull || signedSafeInteger($0) != nil }) &&
+                optional(fields, "date", { $0 is String }) && optional(fields, "rpe", { $0 is NSNull || number($0) }) &&
+                optional(fields, "note", { $0 is NSNull || $0 is String })
+        }
+        return false
     }
 
     private static func validWorkoutPath(_ path: String) -> Bool {

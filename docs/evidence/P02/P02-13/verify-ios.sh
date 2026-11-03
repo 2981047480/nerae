@@ -13,6 +13,7 @@ cleanup() {
 trap cleanup EXIT
 mkdir -p "$work_dir/cache"
 xcrun swiftc -module-cache-path "$work_dir/cache" \
+  "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-ios/NeraeStrictJSON.swift" \
   "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-ios/NeraeSecureVaultBridge.swift" \
   "$repo_root/docs/evidence/P02/P02-13/VaultJournalSyntheticTests.swift" \
   -o "$work_dir/vault-journal-tests"

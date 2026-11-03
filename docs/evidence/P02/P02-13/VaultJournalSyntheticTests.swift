@@ -56,7 +56,7 @@ private func encodedDispatchEnvelope(value: String, historyCount: Int, activeCou
 }
 
 private func jsonString(_ object: [String: Any]) throws -> String {
-    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes])
     guard let value = String(data: data, encoding: .utf8) else { throw Failure.assertion }
     return value
 }
@@ -100,7 +100,124 @@ private func registryEntries(_ value: String) throws -> [String: String] {
     return entries
 }
 
+private func strictRequestJSONTests() throws {
+    let valid = [
+        "{}",
+        "{\"name\":\"quote \\\" slash \\\\ and 🏋️\",\"items\":[true,false,null,-1,1.5,1e3]}",
+        "{\"first\":{\"x\":1},\"second\":{\"x\":2}}",
+        "{\"é\":1,\"e\\u0301\":2}",
+    ]
+    for body in valid { try check(NeraeStrictJSON.isObjectWithoutDuplicateKeys(body)) }
+    let invalid = [
+        "[]", "{\"x\":1,\"x\":2}", "{\"a\":1,\"\\u0061\":2}",
+        "{\"outer\":[{\"x\":1,\"x\":2}]}", "{\"x\":01}", "{\"x\":truefalse}",
+        "{\"x\":\"unterminated}", "{\"x\":\"bad\nline\"}",
+    ]
+    for body in invalid { try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys(body)) }
+    let atDepth = "{\"x\":" + String(repeating: "[", count: 31) + "0" + String(repeating: "]", count: 31) + "}"
+    let tooDeep = "{\"x\":" + String(repeating: "[", count: 32) + "0" + String(repeating: "]", count: 32) + "}"
+    try check(NeraeStrictJSON.isObjectWithoutDuplicateKeys(atDepth))
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys(tooDeep))
+    let atCount = "{\"x\":[" + Array(repeating: "0", count: 5000).joined(separator: ",") + "]}"
+    let tooMany = "{\"x\":[" + Array(repeating: "0", count: 5001).joined(separator: ",") + "]}"
+    try check(NeraeStrictJSON.isObjectWithoutDuplicateKeys(atCount))
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys(tooMany))
+    let atNodes = "{\"a\":[" + Array(repeating: "0", count: 4999).joined(separator: ",") + "],\"b\":[" + Array(repeating: "0", count: 4999).joined(separator: ",") + "],\"c\":[" + Array(repeating: "0", count: 1998).joined(separator: ",") + "]}"
+    let tooManyNodes = "{\"a\":[" + Array(repeating: "0", count: 4999).joined(separator: ",") + "],\"b\":[" + Array(repeating: "0", count: 4999).joined(separator: ",") + "],\"c\":[" + Array(repeating: "0", count: 1999).joined(separator: ",") + "]}"
+    try check(NeraeStrictJSON.isObjectWithoutDuplicateKeys(atNodes))
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys(tooManyNodes))
+    let hostileDepth = "{\"x\":" + String(repeating: "[", count: 1000) + "0" + String(repeating: "]", count: 1000) + "}"
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys(hostileDepth))
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys("{\"recordKey\":1}", asciiKeysOnly: true))
+    try check(NeraeStrictJSON.isObjectWithoutDuplicateKeys("{\"name\":\"深蹲 🏋️\"}", asciiKeysOnly: true))
+    for canonical in ["{\"x\":1e-7}", "{\"x\":1e+21}", "{\"x\":\"a/b\\n🏋️\"}", "{\"x\":0}"] {
+        try check(NeraeStrictJSON.isCanonicalJournalObject(canonical))
+    }
+    for nonCanonical in ["{\"x\": 1}", "{\"x\":-0}", "{\"x\":1.0}", "{\"x\":1e0}", "{\"\\u0078\":1}"] {
+        try check(!NeraeStrictJSON.isCanonicalJournalObject(nonCanonical))
+    }
+    try check(!NeraeStrictJSON.isObjectWithoutDuplicateKeys("{\"x\":\"" + String(repeating: "a", count: 65_536) + "\"}"))
+    print("PASS: strict request JSON rejects duplicate keys, invalid syntax and resource bounds")
+}
+
 private func recoveryBindingTests() throws {
+    let duplicateBodies = [
+        "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\",\"clientEventId\":\"event-test-0001\"}",
+        "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\",\"client\\u0045ventId\":\"event-test-0001\"}",
+        "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\",\"extra\":[{\"x\":1,\"x\":2}]}",
+    ]
+    for body in duplicateBodies {
+        let (duplicateKey, duplicateReady, duplicateInFlight) = try dispatchFixtures(bodyOverride: body)
+        let backend = SyntheticBackend()
+        let store = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: backend)
+        let staged = try store.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: duplicateReady)
+        try expect(.invalidState) {
+            _ = try store.claimFirstSend(expectedRevision: staged.revision, expectedValue: duplicateReady,
+                                         operationKey: duplicateKey, nextValue: duplicateInFlight)
+        }
+        try check(try store.read().value == duplicateReady)
+    }
+    let invalidContracts: [(String, String)] = [
+        ("/me/sessions", "{\"source\":\"free\",\"clientEventId\":\"event-test-0001\"}"),
+        ("/me/sessions", "{\"source\":\"other\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\"}"),
+        ("/me/sessions", "{\"source\":\"free\",\"date\":0,\"clientEventId\":\"event-test-0001\"}"),
+        ("/me/sessions", "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\",\"extra\":true}"),
+        ("/me/sessions", "{\"source\":\"plan\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\"}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":true,\"exerciseEntryKeys\":[]}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[7]}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[],\"sets\":[{\"recordKey\":\"r\",\"exerciseEntryKey\":\"e\",\"setIndex\":1,\"kind\":\"weight\",\"exerciseName\":\"x\",\"weightKg\":true}]}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[],\"sets\":[{\"recordKey\":\"r\",\"exerciseEntryKey\":\"e\",\"setIndex\":1,\"kind\":\"weight\",\"exerciseId\":\"1\",\"exerciseName\":\"x\"}]}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[],\"sets\":[{\"recordKey\":\"r\",\"exerciseEntryKey\":\"e\",\"setIndex\":1,\"kind\":\"weight\",\"exerciseName\":\"x\"}]}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[],\"sets\":[{\"recordKey\":\"r\",\"exerciseEntryKey\":\"e\",\"setIndex\":1,\"kind\":\"weight\",\"exerciseName\":\"x\",\"completed\":false}]}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":\"1\"}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"note\":7}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"unexpected\":1}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":18446744073709551615}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":9223372036854775808}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":9007199254740992}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":-9007199254740992}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":true}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\": 1}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"durationMin\":-0}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"rpe\":1.0}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"rpe\":1e0}"),
+        ("/me/sessions/123/finish", "{\"expected\\u0056ersion\":1}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":1,\"note\":\"a\\/b\"}"),
+    ]
+    for (path, body) in invalidContracts {
+        let (invalidKey, invalidReady, invalidNext) = try dispatchFixtures(bodyOverride: body, path: path)
+        let store = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: SyntheticBackend())
+        let before = try store.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: invalidReady)
+        try expect(.invalidState) {
+            _ = try store.claimFirstSend(expectedRevision: before.revision, expectedValue: invalidReady, operationKey: invalidKey, nextValue: invalidNext)
+        }
+        try check(try store.read().value == invalidReady)
+    }
+    let validContracts: [(String, String)] = [
+        ("/me/sessions", "{\"source\":\"free\",\"date\":\"2026-11-03\",\"timeZone\":\"Asia/Shanghai\",\"clientEventId\":\"event-test-0001\"}"),
+        ("/me/sessions", "{\"source\":\"plan\",\"date\":\"2026-11-03\",\"planId\":\"1\",\"planVersion\":1,\"planDayId\":\"2\",\"clientEventId\":\"event-test-0001\",\"occurrenceId\":\"3\"}"),
+        ("/me/sessions/123/sets", "{\"expectedVersion\":1,\"exerciseEntryKeys\":[\"entry-001\"],\"sets\":[{\"recordKey\":\"record-001\",\"exerciseEntryKey\":\"entry-001\",\"setIndex\":1,\"kind\":\"weight\",\"exerciseName\":\"深蹲\",\"weightKg\":42.5,\"reps\":8,\"rpe\":null,\"completed\":true}]}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":2,\"durationMin\":null,\"date\":\"2026-11-03\",\"rpe\":8.5,\"note\":\"完成 🏋️\"}"),
+        ("/me/sessions/123/finish", "{\"expectedVersion\":9007199254740991,\"durationMin\":-9007199254740991}"),
+    ]
+    for (path, body) in validContracts {
+        let (validKey, validReady, validNext) = try dispatchFixtures(bodyOverride: body, path: path)
+        let store = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: SyntheticBackend())
+        let before = try store.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: validReady)
+        _ = try store.claimFirstSend(expectedRevision: before.revision, expectedValue: validReady, operationKey: validKey, nextValue: validNext)
+        try check(try store.recoveryIntent(operationKey: validKey, subject: "101").body == body)
+    }
+    // A realistic larger batch must stay usable under the scanner's node bound.
+    let batchSets: [[String: Any]] = (1...200).map { index in
+        ["recordKey": "r\(index)", "exerciseEntryKey": "e\(index)", "setIndex": 1,
+         "kind": "weight", "exerciseName": "深蹲", "weightKg": 42.5, "reps": 8]
+    }
+    let batch = try jsonString(["expectedVersion": 1, "exerciseEntryKeys": (1...2000).map { "e\($0)" }, "sets": batchSets])
+    let (batchKey, batchReady, batchNext) = try dispatchFixtures(bodyOverride: batch, path: "/me/sessions/123/sets")
+    let batchStore = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: SyntheticBackend())
+    let batchBefore = try batchStore.compareAndSet(expectedRevision: "0", expectedFound: false, expectedValue: "", newFound: true, newValue: batchReady)
+    _ = try batchStore.claimFirstSend(expectedRevision: batchBefore.revision, expectedValue: batchReady, operationKey: batchKey, nextValue: batchNext)
+    try check(try batchStore.recoveryIntent(operationKey: batchKey, subject: "101").body == batch)
     for (event, bodyEvent) in [("event-test-0001", "event-test-0002"),
                                (String(repeating: "é", count: 8), String(repeating: "e\u{301}", count: 8))] {
         let wrongBody = try jsonString(["source": "free", "date": "2026-11-03", "clientEventId": bodyEvent])
@@ -134,8 +251,15 @@ private func recoveryBindingTests() throws {
     try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
     try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: inFlight)
 
-    for (field, replacement) in [("body", "{ \"expectedVersion\":1,\"note\":\"test\" }"),
-                                 ("body", "{\"note\":\"test\",\"expectedVersion\":1}"),
+    let nonCanonical = try mutateRegistryEntry(inFlight, key: key) { entry in
+        guard var request = entry["request"] as? [String: Any] else { throw Failure.assertion }
+        request["body"] = "{ \"expectedVersion\":1,\"note\":\"test\" }"
+        entry["request"] = request
+    }
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: nonCanonical)
+    try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: nonCanonical, value: inFlight)
+    for (field, replacement) in [("body", "{\"note\":\"test\",\"expectedVersion\":1}"),
                                  ("idempotencyKey", "request-00000002"), ("path", "/me/sessions/124/finish")] {
         let changed = try mutateRegistryEntry(inFlight, key: key) { entry in
             guard var request = entry["request"] as? [String: Any] else { throw Failure.assertion }
@@ -297,7 +421,8 @@ private func dispatchMarkerTests() throws {
         _ = try journal.claimFirstSend(expectedRevision: changedKeyState.revision, expectedValue: changedKeyReady,
                                        operationKey: key, nextValue: changedKeyInFlight)
     }
-    let (_, changedPathReady, changedPathInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003", path: "/me/sessions/123/finish")
+    let (_, changedPathReady, changedPathInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003",
+        bodyOverride: "{\"expectedVersion\":1}", path: "/me/sessions/123/finish")
     try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changedKeyReady, value: changedPathReady)
     let changedPathState = try journal.read()
     try expect(.conflict) {
@@ -311,7 +436,7 @@ private func dispatchMarkerTests() throws {
         _ = try journal.claimFirstSend(expectedRevision: sameKeyState.revision, expectedValue: sameKeyReady,
                                        operationKey: sameKeyOtherEvent, nextValue: sameKeyInFlight)
     }
-    let reorderedBody = "{ \"clientEventId\": \"event-test-0001\", \"date\": \"2026-11-03\", \"source\": \"free\" }"
+    let reorderedBody = "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\"}"
     let (_, reorderedReady, reorderedInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003", bodyOverride: reorderedBody)
     try journal.compareAndSetLegacy(expectedFound: true, expectedValue: sameKeyReady, value: reorderedReady)
     let reorderedState = try journal.read()
@@ -676,6 +801,7 @@ private func check(_ condition: @autoclosure () throws -> Bool,
 
         try versionedJournalTests()
         try dispatchMarkerTests()
+        try strictRequestJSONTests()
         try recoveryBindingTests()
 
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.deviceIdentityRegistry)

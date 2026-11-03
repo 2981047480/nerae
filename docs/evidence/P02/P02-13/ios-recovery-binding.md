@@ -43,4 +43,7 @@ entry, does not verify the current authenticated session, does not query the
 server, does not clear an active marker and cannot settle or sync a draft.
 Before exposing it, native request validation must also cover the full request
 contract and duplicate JSON keys; the current identity check is not a complete
-replacement for the TypeScript validator.
+replacement for the TypeScript validator. A subsequent native shape and
+duplicate-key validation step is recorded in
+[ios-recovery-request-validation.md](ios-recovery-request-validation.md); it
+still does not establish the missing authenticated replay or settlement.
