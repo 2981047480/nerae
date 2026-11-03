@@ -138,6 +138,44 @@ test('session changes during replay cannot return a receipt', async () => {
   await assert.rejects(api.replayPending(journal, eventId), error => error instanceof RecordingApiError && error.code === 'session_changed')
 })
 
+test('a replay result does not confirm a pending operation that changed during the request', async () => {
+  for (const change of ['deleted', 'request', 'revision', 'state', 'corrupt']) {
+    const { journal, store, identity } = await pending('/me/sessions', createBody)
+    const key = [...store.values.keys()][0]
+    const api = new RecordingApi('https://api.example.org', identity, async () => {
+      if (change === 'deleted') store.values.delete(key)
+      else if (change === 'corrupt') store.values.set(key, '{damaged')
+      else {
+        const value = JSON.parse(store.values.get(key))
+        if (change === 'request') value.request.idempotencyKey = 'another-key-001'
+        if (change === 'revision') value.revision++
+        if (change === 'state') { value.state = 'in_flight'; value.attemptGeneration = 'session-1'; value.revision++ }
+        store.values.set(key, JSON.stringify(value))
+      }
+      return { statusCode: 201, headers: headers(), data: detail() }
+    }, { subjectId: '101', generation: 'session-1' })
+    assert.equal((await api.replayPending(journal, eventId)).state, 'unresolved', change)
+  }
+})
+
+test('replay does not return a receipt when the second journal read fails or the session changes', async () => {
+  for (const scenario of ['unavailable', 'session_changed']) {
+    const { journal, store, identity } = await pending('/me/sessions', createBody)
+    const originalRead = store.read.bind(store)
+    let reads = 0
+    store.read = async key => {
+      reads++
+      if (reads === 2 && scenario === 'unavailable') throw new Error('storage unavailable')
+      if (reads === 2 && scenario === 'session_changed') identity.set({ subjectId: '202', generation: 'session-2', accessToken: 'other-token' })
+      return originalRead(key)
+    }
+    const api = new RecordingApi('https://api.example.org', identity, async () => ({ statusCode: 201, headers: headers(), data: detail() }),
+      { subjectId: '101', generation: 'session-1' })
+    if (scenario === 'unavailable') assert.equal((await api.replayPending(journal, eventId)).state, 'unresolved')
+    else await assert.rejects(api.replayPending(journal, eventId), error => error instanceof RecordingApiError && error.code === 'session_changed')
+  }
+})
+
 test('a restore receipt must contain every restored key and its submitted values', async () => {
   const { journal, identity } = await pending('/me/sessions/42/sets', {
     expectedVersion: 1, exerciseEntryKeys: ['entry-0001'], restoreRecordKeys: ['record-001'],

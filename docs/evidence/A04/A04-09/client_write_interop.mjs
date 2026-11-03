@@ -114,11 +114,21 @@ await assert.rejects(other.api.readSession(after.detail.id), error => error.code
 // then use a second session of the same subject for replay-only recovery.
 const storage = {
   values: new Map(),
+  // This test-only in-memory claim establishes the fixture's sent state. It
+  // does not implement or verify the native durable dispatch marker.
+  dispatched: new Set(),
   async read(key) { return this.values.get(key) },
   async createIfAbsent(key, value) { if (this.values.has(key)) return false; this.values.set(key, value); return true },
   async compareAndSwap(key, before, after) {
     if (this.values.get(key) !== before) return false
     if (after === null) this.values.delete(key); else this.values.set(key, after)
+    return true
+  },
+  async claimFirstSend(key, before, after) {
+    const marker = `${key}\0${JSON.parse(before).request.idempotencyKey}`
+    if (this.values.get(key) !== before || this.dispatched.has(marker)) return false
+    this.values.set(key, after)
+    this.dispatched.add(marker)
     return true
   },
 }
@@ -142,5 +152,15 @@ assert.equal(receipt.state, 'committed')
 assert.equal(receipt.detail.clientEventId, lostInput.clientEventId)
 assert.equal([...storage.values.values()][0], beforeReplay)
 assert.equal((await secondJournal.readPending(lostInput.clientEventId)).state, 'uncertain')
+const changedDuringReplay = new RecordingApi(process.env.NERAE_INTEROP_URL, again.auth, async options => {
+  const response = await request(options)
+  const key = [...storage.values.keys()][0]
+  const current = JSON.parse(storage.values.get(key))
+  current.revision++
+  storage.values.set(key, JSON.stringify(current))
+  return response
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-again' })
+assert.equal((await changedDuringReplay.replayPending(secondJournal, lostInput.clientEventId)).state, 'unresolved')
 console.log('PASS: lost create response recovered as a read-only receipt using a second synthetic session; journal retained')
+console.log('PASS: changed pending operation rejects an otherwise valid local TLS replay receipt')
 console.log('PASS: actual client adapter created, saved, replayed, finished and restored both recording modes over isolated TLS HTTP')

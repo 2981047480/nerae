@@ -1,5 +1,5 @@
 import type { SetKind, SetWrite } from './recording'
-import { TrainingOperationJournal } from './operationJournal'
+import { samePendingSnapshot, TrainingOperationJournal } from './operationJournal'
 
 /** Credentials come from the real identity module and are never stored here. */
 export interface RecordingCredential {
@@ -660,6 +660,17 @@ export class RecordingApi {
       if (!replayMatches(detail, pending.clientEventId, submitted, match)) return { state: 'unresolved' }
     } catch { return { state: 'unresolved' } }
     if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    // The original request can have changed while the replay HTTP call was in
+    // flight. This point-in-time recheck cannot authorize settlement or prove
+    // that an intermediate ABA did not occur.
+    let latest
+    try { latest = await journal.readPending(clientEventId) }
+    catch {
+      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+      return { state: 'unresolved' }
+    }
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    if (!samePendingSnapshot(pending, latest)) return { state: 'unresolved' }
     const immutable = { ...detail, sets: detail.sets.map(set => Object.freeze({ ...set })),
       exerciseEntryKeys: [...detail.exerciseEntryKeys] }
     Object.freeze(immutable.sets)

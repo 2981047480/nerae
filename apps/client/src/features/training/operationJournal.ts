@@ -87,6 +87,15 @@ type StoredOperation = {
 
 type PermitProof = { key: string; storedBytes: string; subjectId: string; generation: string; eventId: string; active: boolean }
 const permits = new WeakMap<object, PermitProof>()
+// Used only to reject a replay result if the operation changed while the
+// network request was in progress. This is not an authorization to settle.
+const pendingSnapshots = new WeakMap<object, string>()
+
+export function samePendingSnapshot(first: unknown, second: unknown): boolean {
+  if (!first || typeof first !== 'object' || !second || typeof second !== 'object') return false
+  const original = pendingSnapshots.get(first)
+  return original !== undefined && original === pendingSnapshots.get(second)
+}
 
 export interface DispatchPermit {
   readonly operation: PendingOperation
@@ -319,6 +328,7 @@ function freezeOperation(value: StoredOperation): PendingOperation {
     expiresAt: value.expiresAt } as unknown as PendingOperation
   Object.defineProperty(operation, 'request', { value: Object.freeze({ ...value.request }), enumerable: false,
     writable: false, configurable: false })
+  pendingSnapshots.set(operation, JSON.stringify(value))
   return Object.freeze(operation)
 }
 
