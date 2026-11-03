@@ -176,13 +176,22 @@ final class NeraeVersionedTrainingJournal {
         let value: String
         let revision: Int64
         let legacyFingerprint: String?
+        // This metadata belongs to the native envelope, not to the caller's
+        // replaceable registry payload. Unknown history never permits a claim.
+        let dispatchHistoryKnown: Bool
+        let dispatchMarkers: [String]
+        let activeDispatchEvents: [String]
     }
 
     private static let processLock = NSRecursiveLock()
     private static let format = "com.nerae.training-operation-journal"
     // Binary plist may represent a Unicode String as UTF-16, while the
     // existing public payload limit is measured in UTF-8 bytes.
-    private static let maxEnvelopeBytes = (NeraeCredentialVault.maxBytes * 2) + 2048
+    // Request markers remain after settlement. Active events cannot advance
+    // until a future trusted settlement operation explicitly clears them.
+    private static let maxDispatchMarkers = 8192
+    private static let maxActiveDispatchEvents = 64
+    private static let maxEnvelopeBytes = (NeraeCredentialVault.maxBytes * 2) + ((maxDispatchMarkers + maxActiveDispatchEvents) * 80) + 2048
 
     private let legacy: NeraeVaultBackend
     private let current: NeraeVaultBackend
@@ -222,6 +231,30 @@ final class NeraeVersionedTrainingJournal {
         return try commitLocked(state, found: newFound, value: newValue)
     }
 
+    /// Records a first-send marker and the ready -> in-flight registry change
+    /// in one native item update. A return is a permit only when the write and
+    /// read-back both succeed. Legacy histories are intentionally unavailable.
+    func claimFirstSend(expectedRevision: String, expectedValue: String,
+                        operationKey: String, nextValue: String) throws -> NeraeVersionedJournalRead {
+        guard let expected = Self.parseRevision(expectedRevision),
+              Self.validPayload(found: true, value: expectedValue),
+              Self.validPayload(found: true, value: nextValue) else {
+            throw NeraeVaultError.invalidState
+        }
+        Self.processLock.lock()
+        defer { Self.processLock.unlock() }
+        let state = try loadLocked()
+        guard state.dispatchHistoryKnown else { throw NeraeVaultError.unavailable }
+        guard state.revision == expected, state.found, state.value == expectedValue else {
+            throw NeraeVaultError.conflict
+        }
+        let identity = try Self.dispatchIdentity(before: expectedValue, after: nextValue, operationKey: operationKey)
+        guard !state.activeDispatchEvents.contains(identity.event),
+              identity.history.allSatisfy({ !state.dispatchMarkers.contains($0) }) else { throw NeraeVaultError.conflict }
+        return try commitLocked(state, found: true, value: nextValue,
+                                addDispatchMarkers: identity.history, addActiveEvent: identity.event)
+    }
+
     /// Compatibility entry for the existing UTS API. It still commits only
     /// to v2 and increments the native revision, but cannot validate a
     /// caller-held revision because the old UTS signature has no such field.
@@ -252,7 +285,8 @@ final class NeraeVersionedTrainingJournal {
         }
 
         guard let legacyData = try legacy.read() else {
-            return State(found: false, value: "", revision: 0, legacyFingerprint: nil)
+            return State(found: false, value: "", revision: 0, legacyFingerprint: nil,
+                         dispatchHistoryKnown: true, dispatchMarkers: [], activeDispatchEvents: [])
         }
         guard Self.validPayloadData(legacyData),
               let legacyValue = String(data: legacyData, encoding: .utf8) else {
@@ -261,7 +295,8 @@ final class NeraeVersionedTrainingJournal {
         }
 
         let migrated = State(found: true, value: legacyValue, revision: 1,
-                             legacyFingerprint: Self.fingerprint(legacyData))
+                             legacyFingerprint: Self.fingerprint(legacyData),
+                             dispatchHistoryKnown: false, dispatchMarkers: [], activeDispatchEvents: [])
         let encoded = try Self.encode(migrated)
         do {
             try current.write(encoded)
@@ -277,11 +312,31 @@ final class NeraeVersionedTrainingJournal {
         return migrated
     }
 
-    private func commitLocked(_ state: State, found: Bool, value: String) throws -> NeraeVersionedJournalRead {
+    private func commitLocked(_ state: State, found: Bool, value: String,
+                              addDispatchMarkers: [String] = [], addActiveEvent: String? = nil) throws -> NeraeVersionedJournalRead {
         let (nextRevision, overflow) = state.revision.addingReportingOverflow(1)
         guard !overflow else { throw NeraeVaultError.unavailable }
+        var markers = state.dispatchMarkers
+        var activeEvents = state.activeDispatchEvents
+        if !addDispatchMarkers.isEmpty || addActiveEvent != nil {
+            guard state.dispatchHistoryKnown, addDispatchMarkers.count == 2,
+                  Set(addDispatchMarkers).count == addDispatchMarkers.count,
+                  addDispatchMarkers.allSatisfy(Self.isSHA256Hex),
+                  addDispatchMarkers.allSatisfy({ !markers.contains($0) }),
+                  let event = addActiveEvent, Self.isSHA256Hex(event), !activeEvents.contains(event),
+                  activeEvents.count < Self.maxActiveDispatchEvents,
+                  markers.count <= Self.maxDispatchMarkers - addDispatchMarkers.count else {
+                throw NeraeVaultError.unavailable
+            }
+            markers.append(contentsOf: addDispatchMarkers)
+            markers.sort()
+            activeEvents.append(event)
+            activeEvents.sort()
+        }
         let next = State(found: found, value: found ? value : "", revision: nextRevision,
-                         legacyFingerprint: state.legacyFingerprint)
+                         legacyFingerprint: state.legacyFingerprint,
+                         dispatchHistoryKnown: state.dispatchHistoryKnown, dispatchMarkers: markers,
+                         activeDispatchEvents: activeEvents)
         let encoded = try Self.encode(next)
         do {
             try current.write(encoded)
@@ -301,11 +356,14 @@ final class NeraeVersionedTrainingJournal {
     private static func encode(_ state: State) throws -> Data {
         let object: [String: Any] = [
             "format": format,
-            "version": 2,
+            "version": 3,
             "revision": String(state.revision),
             "found": state.found,
             "value": state.value,
-            "legacyFingerprint": state.legacyFingerprint ?? ""
+            "legacyFingerprint": state.legacyFingerprint ?? "",
+            "dispatchHistoryKnown": state.dispatchHistoryKnown,
+            "dispatchMarkers": state.dispatchMarkers,
+            "activeDispatchEvents": state.activeDispatchEvents
         ]
         let data = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
         guard data.count <= maxEnvelopeBytes else { throw NeraeVaultError.invalidState }
@@ -316,11 +374,10 @@ final class NeraeVersionedTrainingJournal {
         guard !data.isEmpty, data.count <= maxEnvelopeBytes,
               let object = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
               let fields = object as? [String: Any],
-              Set(fields.keys) == Set(["format", "version", "revision", "found", "value", "legacyFingerprint"]),
               fields["format"] as? String == format,
               let version = fields["version"] as? NSNumber,
               CFGetTypeID(version) != CFBooleanGetTypeID(),
-              !CFNumberIsFloatType(version as CFNumber), version.intValue == 2,
+              !CFNumberIsFloatType(version as CFNumber),
               let revisionText = fields["revision"] as? String,
               let revision = parseRevision(revisionText), revision > 0,
               let foundValue = fields["found"] as? NSNumber,
@@ -337,8 +394,42 @@ final class NeraeVersionedTrainingJournal {
         }
         let found = foundValue.boolValue
         guard validPayload(found: found, value: value) else { throw NeraeVaultError.unavailable }
+        let dispatchHistoryKnown: Bool
+        let dispatchMarkers: [String]
+        let activeDispatchEvents: [String]
+        if version.intValue == 2 {
+            guard Set(fields.keys) == Set(["format", "version", "revision", "found", "value", "legacyFingerprint"]) else {
+                throw NeraeVaultError.unavailable
+            }
+            // V2 did not track per-operation dispatch. Keep its payload but
+            // do not infer that any operation was never sent.
+            dispatchHistoryKnown = false
+            dispatchMarkers = []
+            activeDispatchEvents = []
+        } else if version.intValue == 3 {
+            guard Set(fields.keys) == Set(["format", "version", "revision", "found", "value", "legacyFingerprint", "dispatchHistoryKnown", "dispatchMarkers", "activeDispatchEvents"]),
+                  let history = fields["dispatchHistoryKnown"] as? NSNumber,
+                  CFGetTypeID(history) == CFBooleanGetTypeID(),
+                  let markers = fields["dispatchMarkers"] as? [String],
+                  let active = fields["activeDispatchEvents"] as? [String],
+                  markers.count <= maxDispatchMarkers,
+                  markers.allSatisfy(isSHA256Hex), markers == markers.sorted(),
+                  Set(markers).count == markers.count,
+                  active.count <= maxActiveDispatchEvents, active.allSatisfy(isSHA256Hex),
+                  active == active.sorted(), Set(active).count == active.count,
+                  (history.boolValue ? markers.count % 2 == 0 && active.count <= markers.count / 2 : markers.isEmpty && active.isEmpty) else {
+                throw NeraeVaultError.unavailable
+            }
+            dispatchHistoryKnown = history.boolValue
+            dispatchMarkers = markers
+            activeDispatchEvents = active
+        } else {
+            throw NeraeVaultError.unavailable
+        }
         return State(found: found, value: value, revision: revision,
-                     legacyFingerprint: legacyFingerprint)
+                     legacyFingerprint: legacyFingerprint,
+                     dispatchHistoryKnown: dispatchHistoryKnown, dispatchMarkers: dispatchMarkers,
+                     activeDispatchEvents: activeDispatchEvents)
     }
 
     private static func validPayloadData(_ data: Data) -> Bool {
@@ -366,6 +457,118 @@ final class NeraeVersionedTrainingJournal {
         return Int64(value)
     }
 
+    private static func jsonObject(_ value: String) throws -> [String: Any] {
+        guard let data = value.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let fields = object as? [String: Any] else {
+            throw NeraeVaultError.invalidState
+        }
+        return fields
+    }
+
+    private static func equalJSON(_ first: Any, _ second: Any) -> Bool {
+        guard JSONSerialization.isValidJSONObject(first), JSONSerialization.isValidJSONObject(second),
+              let lhs = try? JSONSerialization.data(withJSONObject: first, options: [.sortedKeys]),
+              let rhs = try? JSONSerialization.data(withJSONObject: second, options: [.sortedKeys]) else {
+            return false
+        }
+        return lhs == rhs
+    }
+
+    private static func exactInteger(_ value: Any?, _ expected: Int) -> Bool {
+        guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+              !CFNumberIsFloatType(number as CFNumber) else { return false }
+        return number.intValue == expected
+    }
+
+    private static func dispatchIdentity(before: String, after: String, operationKey: String) throws -> (event: String, history: [String]) {
+        let previous = try jsonObject(before)
+        let next = try jsonObject(after)
+        guard Set(previous.keys) == Set(["schema", "entries"]), Set(next.keys) == Set(previous.keys),
+              exactInteger(previous["schema"], 1), exactInteger(next["schema"], 1),
+              var oldEntries = previous["entries"] as? [String: String],
+              var newEntries = next["entries"] as? [String: String],
+              oldEntries.count <= 64, newEntries.count <= 64,
+              let oldValue = oldEntries.removeValue(forKey: operationKey),
+              let newValue = newEntries.removeValue(forKey: operationKey), oldEntries == newEntries else {
+            throw NeraeVaultError.invalidState
+        }
+        var oldOperation = try jsonObject(oldValue)
+        let newOperation = try jsonObject(newValue)
+        guard oldOperation["state"] as? String == "ready", exactInteger(oldOperation["revision"], 1),
+              newOperation["state"] as? String == "in_flight", exactInteger(newOperation["revision"], 2),
+              oldOperation["attemptGeneration"] == nil,
+              let attempt = newOperation["attemptGeneration"] as? String,
+              !attempt.isEmpty, attempt.utf8.count <= 128,
+              attempt.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
+              let subject = oldOperation["subjectId"] as? String,
+              !subject.isEmpty, subject.utf8.count <= 20, subject.first != "0",
+              subject.utf8.allSatisfy({ (48...57).contains($0) }),
+              let event = oldOperation["clientEventId"] as? String,
+              event.unicodeScalars.count >= 8, event.unicodeScalars.count <= 64,
+              !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let encodedEvent = event.addingPercentEncoding(withAllowedCharacters: Self.componentCharacters),
+              operationKey == "nerae.workout.operation.v1.\(subject).\(encodedEvent)",
+              let request = oldOperation["request"] as? [String: Any],
+              Set(request.keys) == Set(["method", "path", "idempotencyKey", "body"]),
+              request["method"] as? String == "POST",
+              let idempotencyKey = request["idempotencyKey"] as? String,
+              idempotencyKey.utf8.count >= 8, idempotencyKey.utf8.count <= 128,
+              idempotencyKey.utf8.allSatisfy(Self.isIdempotencyByte),
+              let path = request["path"] as? String, validWorkoutPath(path),
+              let body = request["body"] as? String,
+              let normalizedBody = try? normalizedBody(body) else {
+            throw NeraeVaultError.invalidState
+        }
+        oldOperation["state"] = "in_flight"
+        oldOperation["revision"] = 2
+        oldOperation["attemptGeneration"] = attempt
+        guard equalJSON(oldOperation, newOperation) else { throw NeraeVaultError.invalidState }
+        // Length prefixes make the identity unambiguous without relying on a
+        // separator that could occur inside an application identifier.
+        func marker(_ kind: String, _ parts: [String]) -> String {
+            var markerInput = Data("nerae.ios.training-dispatch.v1\0\(kind)\0".utf8)
+            for part in parts {
+                let bytes = Data(part.utf8)
+                var length = UInt32(bytes.count).bigEndian
+                withUnsafeBytes(of: &length) { markerInput.append(contentsOf: $0) }
+                markerInput.append(bytes)
+            }
+            return SHA256.hash(data: markerInput).map { String(format: "%02x", $0) }.joined()
+        }
+        // The server scopes an idempotency key by subject and request path.
+        // The body marker also omits the local event key so changing that key
+        // cannot disguise the same HTTP write as a fresh operation.
+        // Until a trusted settlement protocol advances this event, a second
+        // claim is refused even if old CAS rewrites its request and path.
+        return (marker("event", [operationKey]),
+                [marker("key", [subject, path, idempotencyKey]), marker("body", [subject, path, normalizedBody])])
+    }
+
+    private static func normalizedBody(_ value: String) throws -> String {
+        let object = try jsonObject(value)
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        guard let normalized = String(data: data, encoding: .utf8) else { throw NeraeVaultError.invalidState }
+        return normalized
+    }
+
+    private static func validWorkoutPath(_ path: String) -> Bool {
+        if path == "/me/sessions" { return true }
+        guard let match = path.range(of: #"^/me/sessions/[1-9][0-9]{0,19}/(sets|finish)$"#, options: .regularExpression) else {
+            return false
+        }
+        return match.lowerBound == path.startIndex && match.upperBound == path.endIndex
+    }
+
+    private static let componentCharacters: CharacterSet = {
+        CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()")
+    }()
+
+    private static func isIdempotencyByte(_ byte: UInt8) -> Bool {
+        (48...57).contains(byte) || (65...90).contains(byte) || (97...122).contains(byte) ||
+            byte == 45 || byte == 46 || byte == 95 || byte == 126
+    }
+
     private static func fingerprint(_ data: Data?) -> String? {
         guard let data else { return nil }
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
@@ -377,7 +580,9 @@ final class NeraeVersionedTrainingJournal {
 
     private static func same(_ lhs: State, _ rhs: State) -> Bool {
         lhs.found == rhs.found && lhs.value == rhs.value && lhs.revision == rhs.revision &&
-            lhs.legacyFingerprint == rhs.legacyFingerprint
+            lhs.legacyFingerprint == rhs.legacyFingerprint &&
+            lhs.dispatchHistoryKnown == rhs.dispatchHistoryKnown && lhs.dispatchMarkers == rhs.dispatchMarkers &&
+            lhs.activeDispatchEvents == rhs.activeDispatchEvents
     }
 
     private static func readResult(_ state: State) -> NeraeVersionedJournalRead {

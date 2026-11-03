@@ -44,6 +44,233 @@ private func encodedEnvelope(revision: String, found: Bool, value: String,
     return try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
 }
 
+private func encodedDispatchEnvelope(value: String, historyCount: Int, activeCount: Int) throws -> Data {
+    let markers = (0..<historyCount).map { String(format: "%064x", $0) }
+    let active = (0..<activeCount).map { String(format: "%064x", $0) }
+    let object: [String: Any] = [
+        "format": "com.nerae.training-operation-journal", "version": 3, "revision": "1",
+        "found": true, "value": value, "legacyFingerprint": "",
+        "dispatchHistoryKnown": true, "dispatchMarkers": markers, "activeDispatchEvents": active
+    ]
+    return try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+}
+
+private func jsonString(_ object: [String: Any]) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    guard let value = String(data: data, encoding: .utf8) else { throw Failure.assertion }
+    return value
+}
+
+private func dispatchFixtures(event: String = "event-test-0001", idempotencyKey: String = "request-00000001",
+                              subject: String = "101", bodyOverride: String? = nil,
+                              path: String = "/me/sessions") throws -> (String, String, String) {
+    let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()")
+    guard let encodedEvent = event.addingPercentEncoding(withAllowedCharacters: allowed) else { throw Failure.assertion }
+    let key = "nerae.workout.operation.v1.\(subject).\(encodedEvent)"
+    let body: String
+    if let bodyOverride { body = bodyOverride }
+    else { body = try jsonString(["source": "free", "date": "2026-11-03", "clientEventId": event]) }
+    let ready: [String: Any] = [
+        "schema": 1, "subjectId": subject, "clientEventId": event, "revision": 1,
+        "state": "ready", "createdGeneration": "generation-1", "createdAt": 1, "expiresAt": 999999,
+        "request": ["method": "POST", "path": path, "idempotencyKey": idempotencyKey, "body": body]
+    ]
+    var inFlight = ready
+    inFlight["state"] = "in_flight"
+    inFlight["revision"] = 2
+    inFlight["attemptGeneration"] = "generation-1"
+    return (key,
+            try jsonString(["schema": 1, "entries": [key: try jsonString(ready)]]),
+            try jsonString(["schema": 1, "entries": [key: try jsonString(inFlight)]]))
+}
+
+private func dispatchMarkerTests() throws {
+    let (key, ready, inFlight) = try dispatchFixtures()
+    let legacy = SyntheticBackend()
+    let current = SyntheticBackend()
+    let journal = NeraeVersionedTrainingJournal(legacy: legacy, current: current)
+    let initial = try journal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                            expectedValue: "", newFound: true, newValue: ready)
+    let claimed = try journal.claimFirstSend(expectedRevision: initial.revision, expectedValue: ready,
+                                             operationKey: key, nextValue: inFlight)
+    try check(claimed.value == inFlight && claimed.revision == "2")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready)
+    let restored = try journal.read()
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: restored.revision, expectedValue: ready,
+                                       operationKey: key, nextValue: inFlight)
+    }
+    let deleted = try journal.compareAndSet(expectedRevision: restored.revision, expectedFound: true,
+                                            expectedValue: ready, newFound: false, newValue: "")
+    let recreated = try journal.compareAndSet(expectedRevision: deleted.revision, expectedFound: false,
+                                              expectedValue: "", newFound: true, newValue: ready)
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: recreated.revision, expectedValue: ready,
+                                       operationKey: key, nextValue: inFlight)
+    }
+    let changedKeyReady = ready.replacingOccurrences(of: "request-00000001", with: "request-00000002")
+    let changedKeyInFlight = inFlight.replacingOccurrences(of: "request-00000001", with: "request-00000002")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: changedKeyReady)
+    let changedKeyState = try journal.read()
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: changedKeyState.revision, expectedValue: changedKeyReady,
+                                       operationKey: key, nextValue: changedKeyInFlight)
+    }
+    let (_, changedPathReady, changedPathInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003", path: "/me/sessions/123/finish")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changedKeyReady, value: changedPathReady)
+    let changedPathState = try journal.read()
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: changedPathState.revision, expectedValue: changedPathReady,
+                                       operationKey: key, nextValue: changedPathInFlight)
+    }
+    let (sameKeyOtherEvent, sameKeyReady, sameKeyInFlight) = try dispatchFixtures(event: "event-test-0002")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changedPathReady, value: sameKeyReady)
+    let sameKeyState = try journal.read()
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: sameKeyState.revision, expectedValue: sameKeyReady,
+                                       operationKey: sameKeyOtherEvent, nextValue: sameKeyInFlight)
+    }
+    let reorderedBody = "{ \"clientEventId\": \"event-test-0001\", \"date\": \"2026-11-03\", \"source\": \"free\" }"
+    let (_, reorderedReady, reorderedInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003", bodyOverride: reorderedBody)
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: sameKeyReady, value: reorderedReady)
+    let reorderedState = try journal.read()
+    try expect(.conflict) {
+        _ = try journal.claimFirstSend(expectedRevision: reorderedState.revision, expectedValue: reorderedReady,
+                                       operationKey: key, nextValue: reorderedInFlight)
+    }
+    let (otherKey, otherReady, otherInFlight) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: reorderedReady, value: otherReady)
+    let otherState = try journal.read()
+    let otherClaim = try journal.claimFirstSend(expectedRevision: otherState.revision, expectedValue: otherReady,
+                                                operationKey: otherKey, nextValue: otherInFlight)
+    try check(otherClaim.value == otherInFlight)
+    let (otherSubjectKey, otherSubjectReady, otherSubjectInFlight) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002", subject: "102")
+    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: otherInFlight, value: otherSubjectReady)
+    let otherSubjectState = try journal.read()
+    let otherSubjectClaim = try journal.claimFirstSend(expectedRevision: otherSubjectState.revision, expectedValue: otherSubjectReady,
+                                                       operationKey: otherSubjectKey, nextValue: otherSubjectInFlight)
+    try check(otherSubjectClaim.value == otherSubjectInFlight)
+
+    let oldCurrent = SyntheticBackend()
+    oldCurrent.data = try encodedEnvelope(revision: "5", found: true, value: ready)
+    let oldJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: oldCurrent)
+    let old = try oldJournal.read()
+    try check(old.value == ready && old.revision == "5")
+    try expect(.unavailable) {
+        _ = try oldJournal.claimFirstSend(expectedRevision: old.revision, expectedValue: ready,
+                                          operationKey: key, nextValue: inFlight)
+    }
+    try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: ready)
+    let migrated = try oldJournal.read()
+    try expect(.unavailable) {
+        _ = try oldJournal.claimFirstSend(expectedRevision: migrated.revision, expectedValue: ready,
+                                          operationKey: key, nextValue: inFlight)
+    }
+    let v1Legacy = SyntheticBackend()
+    v1Legacy.data = Data(ready.utf8)
+    let v1Journal = NeraeVersionedTrainingJournal(legacy: v1Legacy, current: SyntheticBackend())
+    let v1 = try v1Journal.read()
+    try expect(.unavailable) {
+        _ = try v1Journal.claimFirstSend(expectedRevision: v1.revision, expectedValue: ready,
+                                         operationKey: key, nextValue: inFlight)
+    }
+
+    let invalidCurrent = SyntheticBackend()
+    let invalidJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: invalidCurrent)
+    let base = try invalidJournal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                                 expectedValue: "", newFound: true, newValue: ready)
+    let changedBody = inFlight.replacingOccurrences(of: "request-00000001", with: "request-00000002")
+    try expect(.invalidState) {
+        _ = try invalidJournal.claimFirstSend(expectedRevision: base.revision, expectedValue: ready,
+                                              operationKey: key, nextValue: changedBody)
+    }
+    try expect(.invalidState) {
+        _ = try invalidJournal.claimFirstSend(expectedRevision: base.revision, expectedValue: ready,
+                                              operationKey: key + "x", nextValue: inFlight)
+    }
+    try check(try invalidJournal.read().value == ready)
+    let (invalidPathKey, invalidPathReady, invalidPathNext) = try dispatchFixtures(path: "/me/sessions/1/sets\n")
+    try invalidJournal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: invalidPathReady)
+    let invalidPathState = try invalidJournal.read()
+    try expect(.invalidState) {
+        _ = try invalidJournal.claimFirstSend(expectedRevision: invalidPathState.revision, expectedValue: invalidPathReady,
+                                             operationKey: invalidPathKey, nextValue: invalidPathNext)
+    }
+    let (unicodeKey, unicodeReady, unicodeNext) = try dispatchFixtures(event: "动作-卧推/001")
+    try check(unicodeKey.contains("%2F"))
+    try invalidJournal.compareAndSetLegacy(expectedFound: true, expectedValue: invalidPathReady, value: unicodeReady)
+    let unicodeState = try invalidJournal.read()
+    let unicodeClaim = try invalidJournal.claimFirstSend(expectedRevision: unicodeState.revision, expectedValue: unicodeReady,
+                                                        operationKey: unicodeKey, nextValue: unicodeNext)
+    try check(unicodeClaim.value == unicodeNext)
+
+    let uncertainCurrent = SyntheticBackend()
+    let uncertainJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: uncertainCurrent)
+    let staged = try uncertainJournal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                                     expectedValue: "", newFound: true, newValue: ready)
+    uncertainCurrent.applyThenFail = true
+    try expect(.unavailable) {
+        _ = try uncertainJournal.claimFirstSend(expectedRevision: staged.revision, expectedValue: ready,
+                                                operationKey: key, nextValue: inFlight)
+    }
+    uncertainCurrent.applyThenFail = false
+    let uncertain = try uncertainJournal.read()
+    try check(uncertain.value == inFlight)
+    try uncertainJournal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready)
+    let rewound = try uncertainJournal.read()
+    try expect(.conflict) {
+        _ = try uncertainJournal.claimFirstSend(expectedRevision: rewound.revision, expectedValue: ready,
+                                                operationKey: key, nextValue: inFlight)
+    }
+
+    let fullCurrent = SyntheticBackend()
+    fullCurrent.data = try encodedDispatchEnvelope(value: ready, historyCount: 8192, activeCount: 0)
+    let fullJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: fullCurrent)
+    let fullBefore = fullCurrent.data
+    try expect(.unavailable) {
+        _ = try fullJournal.claimFirstSend(expectedRevision: "1", expectedValue: ready,
+                                         operationKey: key, nextValue: inFlight)
+    }
+    try check(fullCurrent.data == fullBefore)
+    let activeFullCurrent = SyntheticBackend()
+    activeFullCurrent.data = try encodedDispatchEnvelope(value: ready, historyCount: 128, activeCount: 64)
+    let activeFullJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: activeFullCurrent)
+    let activeFullBefore = activeFullCurrent.data
+    try expect(.unavailable) {
+        _ = try activeFullJournal.claimFirstSend(expectedRevision: "1", expectedValue: ready,
+                                                operationKey: key, nextValue: inFlight)
+    }
+    try check(activeFullCurrent.data == activeFullBefore)
+
+    let concurrentLegacy = SyntheticBackend()
+    let concurrentCurrent = SyntheticBackend()
+    let first = NeraeVersionedTrainingJournal(legacy: concurrentLegacy, current: concurrentCurrent)
+    let second = NeraeVersionedTrainingJournal(legacy: concurrentLegacy, current: concurrentCurrent)
+    let pending = try first.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                          expectedValue: "", newFound: true, newValue: ready)
+    let group = DispatchGroup()
+    let queue = DispatchQueue(label: "native-dispatch-claim", attributes: .concurrent)
+    let resultLock = NSLock()
+    var success = 0
+    var conflict = 0
+    for store in [first, second] {
+        group.enter()
+        queue.async {
+            defer { group.leave() }
+            do {
+                _ = try store.claimFirstSend(expectedRevision: pending.revision, expectedValue: ready,
+                                             operationKey: key, nextValue: inFlight)
+                resultLock.lock(); success += 1; resultLock.unlock()
+            } catch NeraeVaultError.conflict {
+                resultLock.lock(); conflict += 1; resultLock.unlock()
+            } catch { }
+        }
+    }
+    group.wait()
+    try check(success == 1 && conflict == 1)
+    print("PASS: native dispatch claim survives CAS rewind, recreate, unknown write and concurrency; old history fails closed")
+}
+
 private func versionedJournalTests() throws {
     let readWire = NeraeSecureVaultBridge.encodeVersioned(ok: true, found: true,
                                                          value: "{\"op\":\"visible-only-on-read\"}", revision: "7")
@@ -267,6 +494,7 @@ private func check(_ condition: @autoclosure () throws -> Bool,
         let journal = NeraeCredentialVault(backend: journalBackend)
 
         try versionedJournalTests()
+        try dispatchMarkerTests()
 
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.deviceIdentityRegistry)
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.trainingOperationJournal)
