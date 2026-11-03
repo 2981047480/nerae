@@ -11,7 +11,7 @@
 - App 登录协调器及未挂载的登录组件已支持显式检查新设备确认状态；同一不确定请求保留原签名和幂等键重试。真实客户端逻辑使用合成设备签名及 vault，在本机 TLS／私有数据库上完成批准、模拟丢响应后恢复会话并读取同主体训练记录。已登录设备的确认组件也已实现，但两侧组件均未接入正式入口，线上服务及真机仍未完成。[新设备](evidence/A01/approval-client-flow.md) · [已登录设备](evidence/A01/approval-owner-client.md)
 - 训练待发日志已加入首次发送门禁。iOS 已有保守的原生标记候选并通过合成存储测试：未结算的同一训练不得再次发送；可信结算、UTS 接线和真机验证尚缺。Android 与小程序也未实现该标记，实际发送仍失败关闭并保留记录，不能称为跨设备同步已完成。[门禁](evidence/U02/U02-02/dispatch-claim-guard.md) · [iOS 候选](evidence/P02/P02-13/ios-first-dispatch-candidate.md)
 
-- 用户提供的 iOS 离线 SDK 实际为 5.33；隔离夹具可直接调用 HBuilderX 自带编译器生成 App/小程序资源，并已把四个原生插件与编译夹具一起链接成未签名的 iPhoneOS arm64 测试工程。小程序仅验证 App 接口的不可用回退，微信登录尚未实现；项目依赖锁仍为 5.26。临时 Podspec/公共辅助代码修正未成为正式打包配置，HBuilderX GUI 插件宿主异常、正式页面、AppKey、签名及手机运行仍未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
+- 项目 npm 编译器已切至 5.33，同用户提供的 5.33 iOS 离线 SDK 属同一版本系列；隔离资源探针、四个插件单独链接和 SDK 示例工程内的四插件组合链接通过。组合产物未签名且入口为探针，不是 Nerae 安装包；正式页面、AppKey、签名、手机运行及小程序微信登录仍未验证。[版本与证据](evidence/P02/P02-15/ios-sdk-533-npm-compiler.md)
 - App 端已组合原生 HTTPS、设备身份与签名、邮箱登录、会话和版本化成年声明；合成端口测试与 5.26 原生源码生成通过，账号切换/退出时清理登录临时状态。正式入口页面、线上路由、部署环境真实邮件和真机仍未接通；新设备确认的客户端进度见上。[证据](evidence/A01/app-auth-runtime.md)
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录与已登录设备确认组件已编译通过 App／小程序源码探针；正式首页尚未挂载，线上真实邮箱与真机未验收，小程序实际微信登录仍未接入。[登录组件历史证据](evidence/A01/auth-entry-component.md) · [设备确认](evidence/A01/approval-owner-client.md)
@@ -32,7 +32,7 @@
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 此测试的接收器与账号均为合成数据；另有 QQ 邮件独立测试，生产服务尚未连接。
 - 设备身份注册表已使用独立安全存储和同一 App 进程内 CAS；隔离账号与竞争写入的 Swift/Kotlin 合成检查、5.26 原生源码生成检查通过。iOS 的 UTS/Swift 参数标签错误修复后，HBuilderX 5.33 已编出未签名 iPhoneOS framework。[证据](evidence/P02/P02-12/report.md) 同时修正了 Android 拒绝部分合法设备别名的问题，新增完整尾字符回归。[证据](evidence/P02/P02-05/report.md) 原生 vault 真机及上层账号映射仍待完成。
 - App 会话工厂现绑定原生安全 vault 与 `/me` 验证端口，并限制同一 JS 进程仅有一个会话协调器；合成接线测试与 5.26 原生源码生成检查通过。设备密钥新增先持久预留 alias、再创建一次的接口，集成源码的 Swift/Kotlin 合成校验通过。[证据](evidence/A01/app-session-binding.md) 可信服务配置、App 入口、设备映射、真实手机和登录仍未接通。
-- 锁定 5.26 的客户端 UTS 编译依赖已补齐，HTTPS 原生插件改为从插件根目录导入；隔离夹具检查四个插件的 iOS/Android 原生代理和源码及小程序回退通过。此前内部目录导入会被错误编译为不支持平台回退。[证据](evidence/P02/P02-05/uts-import-resolution.md) 这不是原生链接、安装或真机验证，当前正式入口仍为空。
+- 早期 5.26 客户端 UTS 编译依赖补齐后，HTTPS 原生插件改为从插件根目录导入；此前内部目录导入会被错误编译为不支持平台回退。[历史证据](evidence/P02/P02-05/uts-import-resolution.md) 当前 5.33 的原生链接进度见文首，正式入口仍为空。
 - 集成代码 `7c75dbd` 已将邮箱登录的限流、事务、回执重放和当前用户读取接成未挂载 HTTP handler；真实组件在本机 TLS、隔离 MySQL/Redis 与 Go race 下验证了成功、失败、同键重试、账号禁用和新设备待批准。[证据](evidence/A01/A01-23/report.md) 客户端新增安全会话协调器及原生 HTTPS `/me` 恢复适配，集成树 137 项相关合成测试与完整客户端类型检查通过；尚未接原生 vault 或页面，也未与真实服务、邮箱或手机联调。[客户端](evidence/A01/me-verifier-progress.md)
 - 未完成项仍包括生产代理与部署、真实 QQ 邮件接入部署环境、新设备批准兑换的客户端接线、18+ 声明页面、待发操作回执结算、记录页面、iOS 可安装包及三端真机验收。设备签名别名必须独立持久保存，不能随会话清理，否则重登可能丢失原设备身份。以下较早条目是对应阶段的历史证据，其“尚未接通”不覆盖上方最新状态。
 - 邮箱挑战的内部签发已连接四维限流、短期加密幂等回执与发信队列；集成树私有 MySQL/Redis 测试覆盖同键并发、改变有效请求冲突、锁等待跨过到期、撤销状态、提交成功后确认丢失模拟及失败回滚。[A01-16](evidence/A01/A01-16/report.md) 仍未挂 HTTP、真实邮箱或生产 worker；设备提示仅参与请求摘要，尚未存储展示。
@@ -51,7 +51,7 @@
 - 集成版本 `03a0411` 已在隔离 MySQL 中接通邮箱挑战、验证码派生和发送队列，并由实际 SMTP 传输类向本机 TLS 接收器提交合成邮件，验证 SMTP 接受与结果未知。[A01-13](evidence/A01/A01-13/report.md) 这不是用户邮箱投递：QQ 邮箱 SMTP 尚待用户开启，登录 HTTP、生产 worker 与匿名认证幂等尚未接线。
 - `32fce75` 将邮箱身份密钥改为显式安全初始化，已有身份或挑战时丢失 epoch 不可重建；认证事务、训练写入和多项私有 MySQL 回归通过。[初始化](evidence/A01/A01-15/report.md) / [挑战回归](evidence/A01/A01-04/strict-epoch-report.md) 邮箱/IP/设备/全局 Redis 限流基础已在隔离实例验证，但尚未接入认证入口。[A01-14](evidence/A01/A01-14/report.md)
 - `aa01f47` / `2419d2e` 分别加入 iOS Keychain 与 Android Keystore 认证状态存储基础；iOS 编译为未签名 framework，Android Kotlin/UTS 转换及合成加密测试通过。[iOS](evidence/P02/P02-07/report.md) / [Android](evidence/P02/P02-08/report.md) 两者尚未接登录，未证明手机硬件或安装包行为；小程序采用独立微信登录，仍缺账号。
-- HBuilderX 5.33 在隔离源码夹具中成功生成包含 iOS 与 Android UTS 原生源码的本地 App 资源；项目 CLI 5.26 与 HBuilderX 的编译器版本不同，资源不是原生安装包。iPhone 标准基座缺有效签名，Mac 现有一个代码签名身份但未发现描述文件；仍需正式项目资源、匹配 SDK、签名包和真机验证。 用户确认只有免费 Apple ID；[Apple 官方说明](https://developer.apple.com/help/account/basics/about-your-developer-account)个人团队可在 Xcode 安装自用测试版，描述文件 7 天后需重新构建安装；本项目是否能使用该签名路径尚未验证。[编译探针](evidence/P02/P02-05/report.md)
+- HBuilderX 5.33 的历史隔离探针生成过 iOS 与 Android UTS 源码，当时项目 CLI 仍为 5.26；当前版本对齐及组合链接见文首。Mac 可见一个开发签名身份，但未发现描述文件；仍需正式项目资源、签名包和真机验证。用户确认只有免费 Apple ID；[Apple 官方说明](https://developer.apple.com/help/account/basics/about-your-developer-account)个人团队可在 Xcode 安装自用测试版，描述文件 7 天后需重新构建安装；本项目是否能使用该签名路径尚未验证。[历史探针](evidence/P02/P02-05/report.md)
 - 2026-10-30 集成版本 `ed94789`：自由记录创建、实际组及顺序保存、完成确认已接入同一认证与幂等数据库事务；在隔离 MySQL 测试了同键并发与重放、旧版本、响应归属、错误回执、跨主体和撤回成年声明。[A04-08](evidence/A04/A04-08/README.md) 后续 HTTP 接线进度见上；真实跨设备登录和页面接线仍未完成。
 - iOS 正式 UTS 设备密钥桥与 Android Keystore 桥已合入。iOS 在 HBuilderX 5.33 编译为未签名 iPhoneOS arm64 framework；Android Kotlin 使用 Corretto 17、Kotlin 1.9.24 和 API 35 编译并通过合成 DER 正反例。[iOS](evidence/P02/P02-05/report.md) / [Android](evidence/P02/P02-06/report.md) 均未完成 UTS 全工程兼容、原生安装包、真机密钥及登录验证；Android 无真机，服务端也尚不验证 Android attestation。
 - 在 `ed94789` 复跑完整 Go race 套件（无测试数据库配置的 DB 用例按设计跳过）、A04-08 隔离 MySQL 测试、94 项训练客户端测试、客户端类型检查、小程序资源编译和任务图检查均通过。小程序资源不是可安装 App；接入正式 UTS 模块后的 App 资源构建仍缺项目锁定版本的 `@dcloudio/uni-uts-v1`，尚未通过。
@@ -76,7 +76,7 @@
 - F01-05 的 Make、静态分层检查和 CI 配置已合入；在集成提交 `31c174d` 完整跑通基础检查、三端资源及后台构建。GitHub 托管 CI 和 F01-04 的真实 Compose 清理隔离尚未验证，本卡继续 active，不表示业务和原生应用完成。见 [F01-05 进度](evidence/F01/F01-05/report.md)。
 - F02-00 已在集成提交 `077c728` 加入 Go nullable 安全编码与完整字段清单；正式配置双生成和模型/schema 反例经独立复核通过。F02-00/01 仍为 active，真实 HTTP 响应校验、正式生成流水线和 K01 最终合同验收尚未完成，见 [F02-00 进度](evidence/F02/F02-00/report.md)。
 - Docker、Compose、Colima 和 Lima 的官方工具已校验并保存在独立临时目录；本机剩余空间约 2.5 GiB，未启动虚拟机或清理任何既有卷。F01-04 的 Compose 隔离仍未验证。
-- 用户更正：有免费 DCloud 开发者账号；有 iPhone、没有 Android 真机。HBuilderX 官方工具已下载并完成 macOS 签名和公证检查，用户已登录并获取 DCloud AppID；与项目编译器匹配的原生 SDK、AppKey、可安装包和 Android 真机验收仍未完成。
+- 用户更正：有免费 DCloud 开发者账号；有 iPhone、没有 Android 真机。此前 HBuilderX 官方工具通过 macOS 签名和公证检查，用户已登录并获取 DCloud AppID；当前 SDK 与 npm 编译器版本系列对齐，AppKey、可安装包和 Android 真机验收仍未完成。
 - 用户要求首个可安装测试版就具备真实登录与跨设备同步，不接受仅本机记录或网页样机。用户无可授权短信主体资质，选择测试版先用真实邮箱验证码，并有可开启 SMTP 的 QQ 邮箱；实际发送、凭据和服务端 HTTPS 地址仍待验证。用户改选腾讯云 T_SERVER，使用其指定密钥已只读验证 Ubuntu 24.04、约 8 GB 内存和 31 GB 根分区剩余，Docker 可用，现有 Caddy 占用 80/443；服务器到 QQ SMTP 的 TLS 握手通过，但还没有验证发信或更改服务器。也尚无微信小程序账号和域名。
 - App 测试可评估直接使用服务器公网 IP 的受信任 HTTPS：2026-10-30 只读确认服务器 Caddy v2.11.4，离线配置适配能解析 `shortlived` ACME profile；[Let's Encrypt](https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability) 支持约 6 天有效期的 IP 证书，[Caddy](https://caddyserver.com/docs/caddyfile/directives/tls) 支持指定该 profile。尚未申请证书、检查既有路由冲突、测试续期或 iPhone 信任，不能宣称 HTTPS 可用。正式微信小程序的公网请求仍需配置合法域名，[微信支付开发文档](https://pay.wechatpay.cn/doc/v3/partner/4012088031) 不允许将公网 IP 配作服务器域名。
 - 记录组件、草稿控制器和服务端训练组纯领域规则已进入集成提交 `0fd58b8`；客户端测试与 Go race 测试通过，App/小程序资源在临时夹具编译通过。真实页面接线、鉴权、HTTP/数据库、同步及真机尚未完成，详见 [客户端进度](evidence/U02/U02-01/report.md) 与 [领域规则进度](evidence/A04/A04-01/report.md)。
@@ -102,7 +102,7 @@
 - 集成版本 `e305bd2`、`894a078` 与 `68c9a19` 分别为会话存储、未挂载请求边界和训练事务区分明确失效与服务不可用；事务内复核故障保守回滚并返回不可用。会话、请求边界及训练事务的私有 MySQL 测试在各集成版本通过，完整 Go race 套件在 `894a078` 通过、随后训练事务定向回归在 `68c9a19` 通过；真实 HTTP 路由、客户端提示与登录尚未连接。见 [会话](evidence/A01/A01-07/errors-report.md)、[请求边界](evidence/F02/F02-02/report.md) 和 [训练事务](evidence/A04/A04-04/errors-report.md)。
 - 可靠重试核对曾发现 OpenAPI 幂等键允许 8–128 字符，而 ER 原定义仅 64 字符；现已将 ER 的两个键改为按 UTF-8 原始字节保存并完成 F02-04 独立数据库基础。训练服务仍自行提交事务，不能由外层独立 middleware 与业务结果原子提交；F02-03、匿名登录的重放和保留期运营决策尚未完成。
 - 18+ 本人声明已在内部认证事务和隔离 MySQL 两设备会话中验证；它不是证件或精确年龄核验。撤回并发版本保护、HTTP 与页面尚未实现，不应对外开放未完成的撤回路径。见 [声明证据](evidence/A01/A01-10/report.md)。
-- iOS UTS 探针在独立夹具使用 HBuilderX 5.33：图形界面显示官方 iOS 扩展已安装，但 CLI 包括重启后仍报告编译扩展不可用，未产生成功编译证据。项目锁定编译器为 5.26，版本匹配、原生桥及签名真机仍未完成，见 [iOS 进度](evidence/P02/P02-04/report.md)。
+- iOS UTS 早期探针使用 HBuilderX 5.33：图形界面显示官方 iOS 扩展已安装，但 CLI 包括重启后仍报告编译扩展不可用，未产生成功编译证据；当时项目锁定编译器为 5.26。后续 5.33 版本对齐见文首，见 [历史进度](evidence/P02/P02-04/report.md)。
 - 后续 iOS 探针从 HBuilderX 5.33 自带插件和 iPhone 基座显式加载工具，已将项目的设备签名 Swift 源码连同测试 UTS 桥编译为未签名 iOS arm64 framework；测试夹具不执行密钥操作，也不是 App。授权环境下 iPhone 显示已配对且可用，存在 1 个有效签名身份，但两个标准目录没有描述文件。项目锁定编译器 5.26 与该探针版本不同，可复验探针脚本在集成版本 `e004d56` 运行成功；当时正式桥、工具链匹配、签名安装与真机均未验证，正式桥的后续进度见文首，见 [iOS 编译证据](evidence/P02/P02-04/report.md)。
 - 用户已选择小程序微信登录、App 手机验证码登录与按需本人关联；可信途径均不可用时采用已保存的备用恢复码，并保留人工申诉兜底。身份合同已集成并完成静态检查，K01-02 仍为 active；短信供应商、真实设备安全存储、人工申诉流程与服务端行为均未实现或验收。见 [K01-02 进度](evidence/K01/K01-02/partial-report.md)。
 - Q02-01 的历史证据校验修复在集成版本 `eb5ad03` 独立复核并接受；受验证版本与证据归档来源分别记录，后续共享合同演进不会覆盖旧验收摘要。该修复不表示 App 功能已完成。见 [Q02-01 报告](evidence/Q02/Q02-01/report.md)。
