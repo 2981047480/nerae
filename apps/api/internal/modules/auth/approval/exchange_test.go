@@ -1147,4 +1147,361 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			t.Fatal("receipt outlived its issued session")
 		}
 	})
+	t.Run("poll status snapshots and approved exchange", func(t *testing.T) {
+		crypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x71}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x72}, 32), AES256GCMKey: bytes.Repeat([]byte{0x73}, 32)})
+		if err != nil {
+			t.Fatal("could not initialize poll cryptography")
+		}
+		ledger, err := approvalledger.New(crypto, "exchange-seam-test-v1")
+		if err != nil {
+			t.Fatal("could not initialize exchange ledger")
+		}
+		approved, err := NewReceiptExchanger(exchanger, ledger, crypto, auth, "exchange-seam-test-v1", 3*time.Minute)
+		if err != nil {
+			t.Fatal("could not initialize approved exchanger")
+		}
+		poll, err := NewPollExchanger(approved, "exchange-seam-test-v1", 3*time.Minute)
+		if err != nil {
+			t.Fatal("could not initialize poll exchanger")
+		}
+		init, err := db.BeginTx(ctx, nil)
+		if err != nil || poll.Initialize(ctx, init) != nil || init.Commit() != nil {
+			if init != nil {
+				_ = init.Rollback()
+			}
+			t.Fatal("could not initialize poll epoch")
+		}
+		beginPending := func(key *ecdsa.PrivateKey, public domain.DevicePublicJWK) Data {
+			t.Helper()
+			tx, proof := issueChallenge("owner@example.test", key, public)
+			item, err := approvals.BeginEmail(ctx, tx, proof)
+			if err != nil || tx.Commit() != nil {
+				t.Fatal("could not commit pending approval")
+			}
+			data, err := item.AfterCommit(ctx, db)
+			if err != nil {
+				t.Fatal("could not release pending approval capability")
+			}
+			return data
+		}
+		decide := func(data Data, decision Decision) {
+			t.Helper()
+			tx, err := db.BeginTx(ctx, nil)
+			if err != nil {
+				t.Fatal("could not start approval decision")
+			}
+			principal, err := auth.Authenticate(ctx, tx, oldToken)
+			code, confirmed := "", false
+			if decision == Approve {
+				code, confirmed = data.ComparisonCode, true
+			}
+			if err != nil || approvals.Decide(ctx, tx, principal, data.ID, decision, code, confirmed) != nil || tx.Commit() != nil {
+				_ = tx.Rollback()
+				t.Fatal("could not commit approval decision")
+			}
+		}
+		const firstKey = "AQEBAQEBAQEBAQEBAQEBAQ"
+		const secondKey = "AgICAgICAgICAgICAgICAg"
+		device, public := testDevice(t)
+		pending := beginPending(device, public)
+		input := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
+		outcome, err := poll.Exchange(ctx, db, firstKey, input)
+		if err != nil || outcome.Status() != PollPending {
+			t.Fatal("new request did not return pending")
+		}
+		if token, ok := outcome.TokenForResponse(); ok || token != "" {
+			t.Fatal("pending request returned a session")
+		}
+		if encoded, err := json.Marshal(outcome); err == nil || len(encoded) != 0 {
+			t.Fatal("poll outcome was directly serializable")
+		}
+		if again, err := poll.Exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
+			t.Fatal("exact pending retry did not return its snapshot")
+		}
+		if replay, err := poll.Exchange(ctx, db, secondKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("consumed proof was accepted under another key")
+		}
+		changed := input
+		changed.Proof = exchangeProof(t, device, pending.ID, pending.Nonce)
+		if replay, err := poll.Exchange(ctx, db, firstKey, changed); replay.Status() != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+			t.Fatal("same key with a different valid proof did not conflict")
+		}
+		wrong := input
+		wrong.Secret = base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x45}, 32))
+		if replay, err := poll.Exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("wrong secret returned a poll status")
+		}
+		wrong = input
+		wrong.Proof = exchangeProof(t, oldKey, pending.ID, pending.Nonce)
+		if replay, err := poll.Exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("wrong device returned a poll status")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE user SET status='disabled' WHERE id=?`, oldClaims.SubjectID); err != nil {
+			t.Fatal("could not disable synthetic user")
+		}
+		if replay, err := poll.Exchange(ctx, db, firstKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("disabled user received a stored poll status")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE user SET status='active' WHERE id=?`, oldClaims.SubjectID); err != nil {
+			t.Fatal("could not restore synthetic user")
+		}
+		var count int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(pending.ID)).Scan(&count); err != nil || count != 0 {
+			t.Fatal("pending poll created a session")
+		}
+		decide(pending, Approve)
+		if again, err := poll.Exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
+			t.Fatal("retry did not preserve the original pending snapshot")
+		}
+		nextInput := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
+		authenticated, err := poll.Exchange(ctx, db, secondKey, nextInput)
+		if err != nil || authenticated.Status() != PollAuthenticated {
+			t.Fatal("fresh approved poll did not exchange the session")
+		}
+		token, ok := authenticated.TokenForResponse()
+		if !ok || token == "" {
+			t.Fatal("approved poll did not return committed credential")
+		}
+		if retried, err := poll.Exchange(ctx, db, secondKey, nextInput); err != nil || retried.Status() != PollAuthenticated {
+			t.Fatal("approved exact retry failed")
+		} else if again, ok := retried.TokenForResponse(); !ok || again != token {
+			t.Fatal("approved retry returned a different session")
+		}
+		consumedDeadline := time.Now().UTC().Add(2 * time.Second).Truncate(time.Microsecond)
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, timestamp(consumedDeadline), []byte(pending.ID)); err != nil {
+			t.Fatal("could not set consumed approval deadline")
+		}
+		changedAfterSuccess := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
+		exchanger.now = func() time.Time { return consumedDeadline }
+		late, err := poll.Exchange(ctx, db, secondKey, changedAfterSuccess)
+		exchanger.now = time.Now
+		if late.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("expired consumed approval created a competing status result")
+		}
+		lateBinding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: secondKey, ApprovalID: pending.ID, ApprovalSecret: pending.Secret, DeviceProof: changedAfterSuccess.Proof})
+		lateScope, scopeErr := crypto.ApprovalScope(pending.ID)
+		lateDigest, lateKey := lateScope.Digest(), lateBinding.IdempotencyDigest()
+		if err != nil || scopeErr != nil || db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_approval_poll_receipt WHERE approval_scope=? AND request_key_hmac=?`, lateDigest[:], lateKey[:]).Scan(&count) != nil || count != 0 {
+			t.Fatal("consumed approval left a competing status receipt")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, timestamp(pending.ExpiresAt), []byte(pending.ID)); err != nil {
+			t.Fatal("could not restore synthetic approval deadline")
+		}
+
+		deniedDevice, deniedPublic := testDevice(t)
+		denied := beginPending(deniedDevice, deniedPublic)
+		decide(denied, Deny)
+		deniedInput := ExchangeInput{ApprovalID: denied.ID, Secret: denied.Secret, Proof: exchangeProof(t, deniedDevice, denied.ID, denied.Nonce)}
+		if result, err := poll.Exchange(ctx, db, firstKey, deniedInput); err != nil || result.Status() != PollDenied {
+			t.Fatal("denied approval did not return denied")
+		} else if token, ok := result.TokenForResponse(); ok || token != "" {
+			t.Fatal("denied approval returned a credential")
+		}
+
+		expiredDevice, expiredPublic := testDevice(t)
+		expired := beginPending(expiredDevice, expiredPublic)
+		expiredInput := ExchangeInput{ApprovalID: expired.ID, Secret: expired.Secret, Proof: exchangeProof(t, expiredDevice, expired.ID, expired.Nonce)}
+		deadline := time.Now().UTC().Add(2 * time.Second).Truncate(time.Microsecond)
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, timestamp(deadline), []byte(expired.ID)); err != nil {
+			t.Fatal("could not set synthetic approval deadline")
+		}
+		exchanger.now = func() time.Time { return deadline }
+		expiredResult, err := poll.Exchange(ctx, db, firstKey, expiredInput)
+		exchanger.now = time.Now
+		if err != nil || expiredResult.Status() != PollExpired {
+			t.Fatal("expired approval did not return expired")
+		}
+		if token, ok := expiredResult.TokenForResponse(); ok || token != "" {
+			t.Fatal("expired approval returned a credential")
+		}
+
+		concurrentDevice, concurrentPublic := testDevice(t)
+		concurrent := beginPending(concurrentDevice, concurrentPublic)
+		concurrentInput := ExchangeInput{ApprovalID: concurrent.ID, Secret: concurrent.Secret, Proof: exchangeProof(t, concurrentDevice, concurrent.ID, concurrent.Nonce)}
+		type pollResult struct {
+			value PollOutcome
+			err   error
+		}
+		results := make(chan pollResult, 2)
+		for range 2 {
+			go func() {
+				result, err := poll.Exchange(ctx, db, firstKey, concurrentInput)
+				results <- pollResult{result, err}
+			}()
+		}
+		a, b := <-results, <-results
+		if a.err != nil || b.err != nil || a.value.Status() != PollPending || b.value.Status() != PollPending {
+			t.Fatal("concurrent pending retries did not converge")
+		}
+
+		waitingDevice, waitingPublic := testDevice(t)
+		waiting := beginPending(waitingDevice, waitingPublic)
+		waitingInput := ExchangeInput{ApprovalID: waiting.ID, Secret: waiting.Secret, Proof: exchangeProof(t, waitingDevice, waiting.ID, waiting.Nonce)}
+		waitingDeadline := time.Now().UTC().Add(20 * time.Second).Truncate(time.Microsecond)
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, timestamp(waitingDeadline), []byte(waiting.ID)); err != nil {
+			t.Fatal("could not set lock-wait approval deadline")
+		}
+		gate, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not start proof epoch lock")
+		}
+		var epoch []byte
+		if err := gate.QueryRowContext(ctx, `SELECT key_tag FROM auth_device_proof_key_epoch WHERE slot=1 FOR UPDATE`).Scan(&epoch); err != nil {
+			_ = gate.Rollback()
+			t.Fatal("could not hold proof epoch lock")
+		}
+		var pollClock atomic.Int64
+		pollClock.Store(time.Now().UnixNano())
+		exchanger.now = func() time.Time { return time.Unix(0, pollClock.Load()) }
+		waitingResult := make(chan pollResult, 1)
+		go func() {
+			result, err := poll.Exchange(ctx, db, firstKey, waitingInput)
+			waitingResult <- pollResult{result, err}
+		}()
+		waitUntil := time.Now().Add(5 * time.Second)
+		blocked := 0
+		for time.Now().Before(waitUntil) {
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID)
+				FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+				WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='auth_device_proof_key_epoch'`).Scan(&blocked); err != nil {
+				_ = gate.Rollback()
+				t.Fatal("could not observe poll proof lock wait")
+			}
+			if blocked > 0 {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if blocked == 0 {
+			_ = gate.Rollback()
+			t.Fatal("poll did not reach proof epoch lock")
+		}
+		pollClock.Store(waitingDeadline.UnixNano())
+		if err := gate.Rollback(); err != nil {
+			t.Fatal("could not release proof epoch lock")
+		}
+		waitResult := <-waitingResult
+		exchanger.now = time.Now
+		if waitResult.value.Status() != "" || !errors.Is(waitResult.err, ErrUnavailable) {
+			t.Fatal("poll committed pending after approval expired during lock wait")
+		}
+		if retry, err := poll.Exchange(ctx, db, firstKey, waitingInput); err != nil || retry.Status() != PollPending {
+			t.Fatal("expired lock-wait transaction consumed the original proof")
+		}
+
+		proofDevice, proofPublic := testDevice(t)
+		proofPending := beginPending(proofDevice, proofPublic)
+		proofInput := ExchangeInput{ApprovalID: proofPending.ID, Secret: proofPending.Secret, Proof: exchangeProof(t, proofDevice, proofPending.ID, proofPending.Nonce)}
+		verified, err := domain.VerifyDeviceProof(proofInput.Proof, proofPublic,
+			domain.ProofExpectation{Purpose: "approval_exchange", ResourceID: proofPending.ID, Nonce: proofPending.Nonce}, time.Now().UTC(), exchanger.policy)
+		proofDeadline := verified.ExpiresAt.Add(exchanger.policy.ClockSkew)
+		if err != nil || !proofPending.ExpiresAt.After(proofDeadline) {
+			t.Fatal("poll proof deadline is not isolated from approval expiry")
+		}
+		proofGate, err := db.BeginTx(ctx, nil)
+		if err != nil || proofGate.QueryRowContext(ctx, `SELECT key_tag FROM auth_device_proof_key_epoch WHERE slot=1 FOR UPDATE`).Scan(&epoch) != nil {
+			if proofGate != nil {
+				_ = proofGate.Rollback()
+			}
+			t.Fatal("could not hold proof-expiry gate")
+		}
+		pollClock.Store(time.Now().UnixNano())
+		exchanger.now = func() time.Time { return time.Unix(0, pollClock.Load()) }
+		proofResult := make(chan pollResult, 1)
+		go func() {
+			result, err := poll.Exchange(ctx, db, firstKey, proofInput)
+			proofResult <- pollResult{result, err}
+		}()
+		waitUntil = time.Now().Add(5 * time.Second)
+		blocked = 0
+		for time.Now().Before(waitUntil) {
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID)
+				FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+				WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='auth_device_proof_key_epoch'`).Scan(&blocked); err != nil {
+				_ = proofGate.Rollback()
+				t.Fatal("could not observe poll proof-expiry wait")
+			}
+			if blocked > 0 {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if blocked == 0 {
+			_ = proofGate.Rollback()
+			t.Fatal("poll did not reach proof-expiry gate")
+		}
+		pollClock.Store(proofDeadline.UnixNano())
+		if err := proofGate.Rollback(); err != nil {
+			t.Fatal("could not release proof-expiry gate")
+		}
+		proofWaitResult := <-proofResult
+		exchanger.now = time.Now
+		if proofWaitResult.value.Status() != "" || !errors.Is(proofWaitResult.err, ErrUnavailable) {
+			t.Fatal("poll accepted proof expired during lock wait")
+		}
+		if retry, err := poll.Exchange(ctx, db, firstKey, proofInput); err != nil || retry.Status() != PollPending {
+			t.Fatal("proof-expiry rollback consumed the original proof")
+		}
+
+		uncertainDevice, uncertainPublic := testDevice(t)
+		uncertain := beginPending(uncertainDevice, uncertainPublic)
+		uncertainInput := ExchangeInput{ApprovalID: uncertain.ID, Secret: uncertain.Secret, Proof: exchangeProof(t, uncertainDevice, uncertain.ID, uncertain.Nonce)}
+		uncertainDB, ackFailure := isolatedDBWithCommitAckFailure(t)
+		if result, err := poll.Exchange(ctx, uncertainDB, firstKey, uncertainInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) || ackFailure.Load() {
+			t.Fatal("lost status commit acknowledgement did not fail closed")
+		}
+		if retry, err := poll.Exchange(ctx, db, firstKey, uncertainInput); err != nil || retry.Status() != PollPending {
+			t.Fatal("status receipt could not recover after lost commit acknowledgement")
+		}
+
+		failedDevice, failedPublic := testDevice(t)
+		failed := beginPending(failedDevice, failedPublic)
+		failedInput := ExchangeInput{ApprovalID: failed.ID, Secret: failed.Secret, Proof: exchangeProof(t, failedDevice, failed.ID, failed.Nonce)}
+		if _, err := db.ExecContext(ctx, `CREATE TRIGGER synthetic_poll_receipt_failure BEFORE INSERT ON auth_approval_poll_receipt FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic poll failure'`); err != nil {
+			t.Fatal("could not install synthetic poll failure")
+		}
+		defer func() {
+			_, _ = db.ExecContext(context.Background(), `DROP TRIGGER IF EXISTS synthetic_poll_receipt_failure`)
+		}()
+		if result, err := poll.Exchange(ctx, db, firstKey, failedInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("failed poll receipt write returned status")
+		}
+		if _, err := db.ExecContext(ctx, `DROP TRIGGER synthetic_poll_receipt_failure`); err != nil {
+			t.Fatal("could not remove synthetic poll failure")
+		}
+		if result, err := poll.Exchange(ctx, db, firstKey, failedInput); err != nil || result.Status() != PollPending {
+			t.Fatal("failed status write consumed the original proof")
+		}
+
+		lostEpoch, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin missing epoch test")
+		}
+		if _, err := lostEpoch.ExecContext(ctx, `DELETE FROM auth_approval_poll_key_epoch WHERE slot=1`); err != nil || poll.Initialize(ctx, lostEpoch) == nil {
+			_ = lostEpoch.Rollback()
+			t.Fatal("poll epoch was silently recreated with history")
+		}
+		if err := lostEpoch.Rollback(); err != nil {
+			t.Fatal("could not restore synthetic poll epoch")
+		}
+		wrongCrypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x41}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x42}, 32), AES256GCMKey: bytes.Repeat([]byte{0x43}, 32)})
+		if err != nil {
+			t.Fatal("could not construct mismatched receipt keys")
+		}
+		wrongLedger, _ := approvalledger.New(wrongCrypto, "exchange-seam-test-v1")
+		wrongApproved, _ := NewReceiptExchanger(exchanger, wrongLedger, wrongCrypto, auth, "exchange-seam-test-v1", 3*time.Minute)
+		wrongPoll, _ := NewPollExchanger(wrongApproved, "exchange-seam-test-v1", 3*time.Minute)
+		wrongEpoch, err := db.BeginTx(ctx, nil)
+		if err != nil || wrongPoll.Initialize(ctx, wrongEpoch) == nil {
+			if wrongEpoch != nil {
+				_ = wrongEpoch.Rollback()
+			}
+			t.Fatal("mismatched poll/exchange receipt keys initialized")
+		}
+		if err := wrongEpoch.Rollback(); err != nil {
+			t.Fatal("could not end mismatched epoch test")
+		}
+	})
 }

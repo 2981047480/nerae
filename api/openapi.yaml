@@ -1042,8 +1042,7 @@ paths:
       - Auth
       operationId: postAuthLoginApprovalExchange
       summary: 查询并领取新设备登录结果
-      description: 匿名端必须同时提交仅由原登录尝试获得的 approvalSecret 与同一设备私钥签名；签名含服务端 nonce、审批 ID 和单次 jti，校验时效、防重、设备归属和批准状态。批准端的会话权限不能由此轮询凭据替代。未批准、拒绝和过期不返回用户资料或会话；已批准且凭据未吊销时原子发放/幂等重放结果，机密不进入日志或
-        URL。
+      description: 匿名端必须同时提交仅由原登录尝试获得的 approvalSecret 与同一设备私钥签名；签名含服务端 nonce、审批 ID 和单次 jti，校验时效、防重、设备归属和批准状态。批准端的会话权限不能由此轮询凭据替代。未批准、拒绝和过期不返回用户资料或会话；已批准且凭据未吊销时原子发放/幂等重放结果。网络重试保留原键和原证明，返回首次非认证状态快照；要获取更新的审批状态，客户端发起新的轮询，使用新随机键和新 jti。每次重试仍须满足证明时效及当前授权；机密不进入日志或 URL。
       security: []
       parameters:
       - name: id
@@ -1058,7 +1057,7 @@ paths:
           type: string
           minLength: 22
           maxLength: 128
-        description: 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
+        description: 客户端以安全随机数生成至少128位不可预测键。此接口按服务端确认的申请、主体及请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。
       requestBody:
         required: true
         content:

@@ -119,6 +119,13 @@
       "module": "auth",
       "file": "0011_approval_exchange_receipt.up.sql",
       "sha256": "944253d08c0be3a27381cecb430ed3a881e71bddb982ce943b774b2ab36999a1"
+    },
+    {
+      "order": 18,
+      "id": "auth/0012_approval_poll_receipt.up.sql",
+      "module": "auth",
+      "file": "0012_approval_poll_receipt.up.sql",
+      "sha256": "0d8dcc72c60354375287473a4d26c665eded75a5b1440c024cdf458f42b050e5"
     }
   ]
 }
