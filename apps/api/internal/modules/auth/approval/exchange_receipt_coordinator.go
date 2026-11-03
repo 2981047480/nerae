@@ -55,11 +55,11 @@ func (c *ReceiptExchanger) Initialize(ctx context.Context, tx *sql.Tx) error {
 	return nil
 }
 
-// Exchange either atomically creates a device session and encrypted receipt or
+// exchange either atomically creates a device session and encrypted receipt or
 // replays the exact original request. On first success it re-reads the receipt
 // in a fresh transaction before releasing anything. Any commit uncertainty
 // returns no credential: the caller can retry the identical request and key.
-func (c *ReceiptExchanger) Exchange(ctx context.Context, db *sql.DB, key string, input ExchangeInput) (string, error) {
+func (c *ReceiptExchanger) exchange(ctx context.Context, db *sql.DB, key string, input ExchangeInput) (string, error) {
 	if !c.valid() || ctx == nil || db == nil {
 		return "", ErrUnavailable
 	}

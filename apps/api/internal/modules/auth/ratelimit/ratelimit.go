@@ -29,6 +29,7 @@ const (
 	EmailChallenge   Purpose = "email_challenge"
 	EmailLogin       Purpose = "email_login"
 	ApprovalDecision Purpose = "approval_decision"
+	ApprovalExchange Purpose = "approval_exchange"
 
 	maxLimit        = uint64(1_000_000)
 	minWindow       = 100 * time.Millisecond
@@ -296,7 +297,7 @@ func (l *Limiter) redisKeys(purpose Purpose, input Input) ([]string, Policy, err
 }
 
 func (l *Limiter) ipGlobalRedisKeys(purpose Purpose, sourceIP netip.Addr) ([]string, error) {
-	if l == nil || purpose != EmailChallenge && purpose != EmailLogin && purpose != ApprovalDecision ||
+	if l == nil || purpose != EmailChallenge && purpose != EmailLogin && purpose != ApprovalDecision && purpose != ApprovalExchange ||
 		!sourceIP.IsValid() || sourceIP.IsUnspecified() || sourceIP.IsMulticast() || sourceIP.Zone() != "" {
 		return nil, ErrInvalid
 	}

@@ -111,10 +111,10 @@ func (p *PollExchanger) Initialize(ctx context.Context, tx *sql.Tx) error {
 	return nil
 }
 
-// Exchange commits status snapshots and consumes their device JTI in one
+// exchange commits status snapshots and consumes their device JTI in one
 // transaction. A session is only returned through the existing receipt
 // coordinator after its own commit and post-commit authorization checks.
-func (p *PollExchanger) Exchange(ctx context.Context, db *sql.DB, key string, input ExchangeInput) (PollOutcome, error) {
+func (p *PollExchanger) exchange(ctx context.Context, db *sql.DB, key string, input ExchangeInput) (PollOutcome, error) {
 	if !p.valid() || ctx == nil || db == nil {
 		return PollOutcome{}, ErrUnavailable
 	}
@@ -183,7 +183,7 @@ func (p *PollExchanger) Exchange(ctx context.Context, db *sql.DB, key string, in
 		if err := tx.Commit(); err != nil {
 			return PollOutcome{}, ErrUnavailable
 		}
-		token, err := p.approved.Exchange(ctx, db, key, input)
+		token, err := p.approved.exchange(ctx, db, key, input)
 		if err != nil {
 			return PollOutcome{}, err
 		}

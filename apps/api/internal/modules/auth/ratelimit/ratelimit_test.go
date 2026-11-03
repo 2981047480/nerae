@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -91,6 +92,74 @@ func TestApprovalDecisionKeyIsolationAndValidation(t *testing.T) {
 	}
 	if err := decisionLimiter.AllowApprovalDecisionEntry(context.Background(), netip.Addr{}); !errors.Is(err, ErrInvalid) {
 		t.Fatal("missing trusted source IP was accepted")
+	}
+}
+
+func TestApprovalExchangeKeyIsolationAndValidation(t *testing.T) {
+	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1"})
+	defer client.Close()
+	base, err := New(client, validConfig(t))
+	if err != nil {
+		t.Fatal("limiter construction failed")
+	}
+	if _, err := NewApprovalExchangeLimiter(base, ApprovalExchangePolicy{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("missing exchange-specific policy was accepted")
+	}
+	limit, err := NewApprovalExchangeLimiter(base, ApprovalExchangePolicy{Capability: DimensionPolicy{2, time.Second}, IP: DimensionPolicy{3, time.Second}, Global: DimensionPolicy{4, time.Second}})
+	if err != nil {
+		t.Fatal("exchange limiter construction failed")
+	}
+	id := "private-approval-id-001"
+	secret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("s", 32)))
+	key, err := base.approvalExchangeCapabilityKey(id, secret)
+	if err != nil || !contains(key, redisClusterTag) || contains(key, id) || contains(key, secret) {
+		t.Fatal("capability counter did not protect its identifiers")
+	}
+	otherSecret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("t", 32)))
+	otherKey, err := base.approvalExchangeCapabilityKey(id, otherSecret)
+	if err != nil || otherKey == key {
+		t.Fatal("different approval secret shared a capability counter")
+	}
+	ip := netip.MustParseAddr("198.51.100.9")
+	exchangeKeys, err := base.ipGlobalRedisKeys(ApprovalExchange, ip)
+	decisionKeys, otherErr := base.ipGlobalRedisKeys(ApprovalDecision, ip)
+	if err != nil || otherErr != nil || exchangeKeys[0] == decisionKeys[0] || exchangeKeys[1] == decisionKeys[1] {
+		t.Fatal("exchange shared approval-decision entry counters")
+	}
+	for _, item := range []struct{ id, secret string }{
+		{"short", secret}, {id + "/", secret}, {id, "short"}, {id, secret + "="}, {id, strings.Repeat("_", 43)},
+	} {
+		if _, err := base.approvalExchangeCapabilityKey(item.id, item.secret); !errors.Is(err, ErrInvalid) {
+			t.Fatal("invalid approval capability was accepted")
+		}
+	}
+	if err := limit.AllowEntry(context.Background(), netip.Addr{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("invalid trusted source IP was accepted")
+	}
+	if text := fmt.Sprintf("%v %#v", limit, limit); contains(text, id) || contains(text, secret) {
+		t.Fatal("limiter formatting exposed capability data")
+	}
+}
+
+func TestApprovalExchangeUnavailableFailsClosed(t *testing.T) {
+	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1", MaxRetries: -1})
+	base, err := New(client, validConfig(t))
+	if err != nil {
+		t.Fatal("limiter construction failed")
+	}
+	limit, err := NewApprovalExchangeLimiter(base, ApprovalExchangePolicy{Capability: DimensionPolicy{2, time.Second}, IP: DimensionPolicy{3, time.Second}, Global: DimensionPolicy{4, time.Second}})
+	if err != nil {
+		t.Fatal("exchange limiter construction failed")
+	}
+	if err := client.Close(); err != nil {
+		t.Fatal("could not close synthetic limiter dependency")
+	}
+	secret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("s", 32)))
+	if err := limit.AllowEntry(context.Background(), netip.MustParseAddr("198.51.100.9")); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("unavailable rate store did not block exchange entry")
+	}
+	if err := limit.AllowCapability(context.Background(), "private-approval-id-001", secret); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("unavailable rate store did not block approval capability")
 	}
 }
 
@@ -195,6 +264,75 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		t.Fatal("private Redis ping failed")
 	}
 	t.Cleanup(func() { _ = client.Close() })
+
+	t.Run("approval exchange entry and capability budgets", func(t *testing.T) {
+		ctx := context.Background()
+		base := newTestLimiter(t, client, policy(9, 9, 9, 9, 5*time.Second), policy(9, 9, 9, 9, 5*time.Second))
+		limiter, err := NewApprovalExchangeLimiter(base, ApprovalExchangePolicy{Capability: DimensionPolicy{2, 5 * time.Second}, IP: DimensionPolicy{3, 5 * time.Second}, Global: DimensionPolicy{10, 5 * time.Second}})
+		if err != nil {
+			t.Fatal("could not construct isolated exchange limiter")
+		}
+		ip := netip.MustParseAddr("198.51.100.42")
+		for range 3 {
+			if err := limiter.AllowEntry(ctx, ip); err != nil {
+				t.Fatal("valid exchange entry was limited early")
+			}
+		}
+		if err := limiter.AllowEntry(ctx, ip); !errors.Is(err, ErrLimited) {
+			t.Fatal("exchange IP budget was not enforced")
+		}
+		id := "private-approval-id-001"
+		secret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("s", 32)))
+		otherSecret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("t", 32)))
+		for range 2 {
+			if err := limiter.AllowCapability(ctx, id, secret); err != nil {
+				t.Fatal("valid capability was limited early")
+			}
+		}
+		if err := limiter.AllowCapability(ctx, id, secret); !errors.Is(err, ErrLimited) {
+			t.Fatal("capability budget was not enforced")
+		}
+		if err := limiter.AllowCapability(ctx, id, otherSecret); err != nil {
+			t.Fatal("knowing an approval ID exhausted a different capability")
+		}
+		global, err := NewApprovalExchangeLimiter(newTestLimiter(t, client, policy(9, 9, 9, 9, 5*time.Second), policy(9, 9, 9, 9, 5*time.Second)),
+			ApprovalExchangePolicy{Capability: DimensionPolicy{9, 5 * time.Second}, IP: DimensionPolicy{9, 5 * time.Second}, Global: DimensionPolicy{2, 5 * time.Second}})
+		if err != nil {
+			t.Fatal("could not construct global exchange limiter")
+		}
+		if global.AllowEntry(ctx, netip.MustParseAddr("198.51.100.1")) != nil || global.AllowEntry(ctx, netip.MustParseAddr("198.51.100.2")) != nil ||
+			!errors.Is(global.AllowEntry(ctx, netip.MustParseAddr("198.51.100.3")), ErrLimited) {
+			t.Fatal("exchange global budget did not span IP addresses")
+		}
+	})
+
+	t.Run("approval exchange capability concurrency", func(t *testing.T) {
+		ctx := context.Background()
+		base := newTestLimiter(t, client, policy(9, 9, 9, 9, 5*time.Second), policy(9, 9, 9, 9, 5*time.Second))
+		limiter, err := NewApprovalExchangeLimiter(base, ApprovalExchangePolicy{Capability: DimensionPolicy{3, 5 * time.Second}, IP: DimensionPolicy{9, 5 * time.Second}, Global: DimensionPolicy{9, 5 * time.Second}})
+		if err != nil {
+			t.Fatal("could not construct concurrent limiter")
+		}
+		secret := base64.RawURLEncoding.EncodeToString([]byte(strings.Repeat("x", 32)))
+		results := make(chan error, 20)
+		for range 20 {
+			go func() { results <- limiter.AllowCapability(ctx, "concurrent-approval-001", secret) }()
+		}
+		allowed, denied := 0, 0
+		for range 20 {
+			err := <-results
+			if err == nil {
+				allowed++
+			} else if errors.Is(err, ErrLimited) {
+				denied++
+			} else {
+				t.Fatal("unexpected capability limiter error")
+			}
+		}
+		if allowed != 3 || denied != 17 {
+			t.Fatal("concurrent capability budget was exceeded")
+		}
+	})
 
 	t.Run("approval decision dimensions and concurrent bound", func(t *testing.T) {
 		ctx := context.Background()

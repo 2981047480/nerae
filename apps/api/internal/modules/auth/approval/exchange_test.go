@@ -154,7 +154,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	}
 	blockedInput := ExchangeInput{ApprovalID: blockedData.ID, Secret: blockedData.Secret,
 		Proof: exchangeProof(t, blockedKey, blockedData.ID, blockedData.Nonce)}
-	if _, err := exchanger.Exchange(ctx, db, blockedInput); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, blockedInput); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("pending approval issued a device session")
 	}
 	denyTx, err := db.BeginTx(ctx, nil)
@@ -166,24 +166,24 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		_ = denyTx.Rollback()
 		t.Fatal("could not deny isolated approval")
 	}
-	if _, err := exchanger.Exchange(ctx, db, blockedInput); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, blockedInput); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("denied approval issued a device session")
 	}
 	data := beginApproved(newKey, newPublic)
 	proof := exchangeProof(t, newKey, data.ID, data.Nonce)
 	input := ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: proof}
 	wrongSecret, _ := domain.GenerateChallengeNonce()
-	if _, err := exchanger.Exchange(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: wrongSecret, Proof: proof}); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: wrongSecret, Proof: proof}); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("wrong polling secret was accepted")
 	}
-	if _, err := exchanger.Exchange(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, oldKey, data.ID, data.Nonce)}); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, oldKey, data.ID, data.Nonce)}); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("wrong device key was accepted")
 	}
-	if _, err := exchanger.Exchange(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, newKey, data.ID, "different-nonce")}); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, newKey, data.ID, "different-nonce")}); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("wrong approval nonce was accepted")
 	}
 	exchanger.now = func() time.Time { return data.ExpiresAt }
-	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("expired approval was exchanged")
 	}
 	exchanger.now = time.Now
@@ -197,7 +197,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		t.Fatal("approval fixture expired before source-session check")
 	}
 	exchanger.now = func() time.Time { return fakeSourceTime }
-	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("expired source session allowed an otherwise valid exchange")
 	}
 	exchanger.now = time.Now
@@ -210,7 +210,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
         VALUES (?, ?, ?, ?, ?, 'revoked', UTC_TIMESTAMP(6))`, []byte(revokedID), oldClaims.SubjectID, newFingerprint[:], newPublic.X, newPublic.Y); err != nil {
 		t.Fatal("could not create isolated revoked-device fixture")
 	}
-	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("revoked target device was silently re-trusted")
 	}
 	if _, err := db.ExecContext(ctx, `DELETE FROM trusted_device WHERE id = ?`, []byte(revokedID)); err != nil {
@@ -231,7 +231,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, item.change, item.args...); err != nil {
 			t.Fatal("could not alter isolated authority")
 		}
-		if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
+		if _, err := exchanger.exchangeWithoutReceipt(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 			t.Fatal("revoked original authority allowed exchange")
 		}
 		if _, err := db.ExecContext(ctx, item.restore, item.args...); err != nil {
@@ -254,7 +254,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	exchanger.now = func() time.Time { return time.Unix(0, fakeNow.Load()) }
 	expiredResult := make(chan error, 1)
 	go func() {
-		_, err := exchanger.Exchange(ctx, db, input)
+		_, err := exchanger.exchangeWithoutReceipt(ctx, db, input)
 		expiredResult <- err
 	}()
 	deadline := time.Now().Add(5 * time.Second)
@@ -322,7 +322,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	exchanger.now = func() time.Time { return time.Unix(0, fakeNow.Load()) }
 	targetResult := make(chan error, 1)
 	go func() {
-		_, err := exchanger.Exchange(ctx, db, input)
+		_, err := exchanger.exchangeWithoutReceipt(ctx, db, input)
 		targetResult <- err
 	}()
 	deadline = time.Now().Add(5 * time.Second)
@@ -393,7 +393,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			t.Fatal("rolled-back exchange left a session, device or consumed approval")
 		}
 	})
-	newToken, err := exchanger.Exchange(ctx, db, input)
+	newToken, err := exchanger.exchangeWithoutReceipt(ctx, db, input)
 	if err != nil || newToken.ForResponse() == "" {
 		t.Fatal("approved device could not obtain a session")
 	}
@@ -476,10 +476,10 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		snapshot.Version != 3 || !reflect.DeepEqual(snapshot.ExerciseEntryKeys, updatedOrder) {
 		t.Fatal("explicit re-declaration did not restore approved device access")
 	}
-	if _, err := exchanger.Exchange(ctx, db, input); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, input); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("consumed approval was exchanged again")
 	}
-	if _, err := exchanger.Exchange(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, newKey, data.ID, data.Nonce)}); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, ExchangeInput{ApprovalID: data.ID, Secret: data.Secret, Proof: exchangeProof(t, newKey, data.ID, data.Nonce)}); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("consumed approval accepted a new proof")
 	}
 	var count int
@@ -515,7 +515,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `CREATE TRIGGER fail_exchange_session BEFORE INSERT ON auth_session FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'isolated test failure'`); err != nil {
 		t.Fatal("could not install isolated failure trigger")
 	}
-	if _, err := exchanger.Exchange(ctx, db, rollbackInput); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, rollbackInput); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("injected exchange failure was not returned")
 	}
 	if _, err := db.ExecContext(ctx, `DROP TRIGGER fail_exchange_session`); err != nil {
@@ -529,7 +529,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM trusted_device WHERE key_fingerprint = ?`, rollbackFingerprint[:]).Scan(&count); err != nil || count != 0 {
 		t.Fatal("failed exchange left a trusted device")
 	}
-	if retry, err := exchanger.Exchange(ctx, db, rollbackInput); err != nil || retry.ForResponse() == "" {
+	if retry, err := exchanger.exchangeWithoutReceipt(ctx, db, rollbackInput); err != nil || retry.ForResponse() == "" {
 		t.Fatal("rolled-back proof could not be retried")
 	}
 	// A key claimed by a different subject after approval must never be merged.
@@ -545,7 +545,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	}
 	collisionInput := ExchangeInput{ApprovalID: collisionApproval.ID, Secret: collisionApproval.Secret,
 		Proof: exchangeProof(t, collisionKey, collisionApproval.ID, collisionApproval.Nonce)}
-	if _, err := exchanger.Exchange(ctx, db, collisionInput); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, collisionInput); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("device key belonging to another subject was merged")
 	}
 	// Distinct approval challenges cannot reuse the same device-key/JTI pair.
@@ -557,10 +557,10 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		Proof: exchangeProofWithJTI(t, replayKey, replayApprovalA.ID, replayApprovalA.Nonce, sharedJTI)}
 	replayInputB := ExchangeInput{ApprovalID: replayApprovalB.ID, Secret: replayApprovalB.Secret,
 		Proof: exchangeProofWithJTI(t, replayKey, replayApprovalB.ID, replayApprovalB.Nonce, sharedJTI)}
-	if token, err := exchanger.Exchange(ctx, db, replayInputA); err != nil || token.ForResponse() == "" {
+	if token, err := exchanger.exchangeWithoutReceipt(ctx, db, replayInputA); err != nil || token.ForResponse() == "" {
 		t.Fatal("first distinct approval could not be exchanged")
 	}
-	if _, err := exchanger.Exchange(ctx, db, replayInputB); !errors.Is(err, ErrUnavailable) {
+	if _, err := exchanger.exchangeWithoutReceipt(ctx, db, replayInputB); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("same device-key and proof ID were reused across approvals")
 	}
 	if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id = ?`, []byte(replayApprovalB.ID)).Scan(&state); err != nil || state != "approved" {
@@ -586,7 +586,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 	results := make(chan outcome, 2)
 	for _, signed := range proofs {
 		go func(signed string) {
-			token, err := exchanger.Exchange(ctx, db, ExchangeInput{ApprovalID: raceApproval.ID, Secret: raceApproval.Secret, Proof: signed})
+			token, err := exchanger.exchangeWithoutReceipt(ctx, db, ExchangeInput{ApprovalID: raceApproval.ID, Secret: raceApproval.Secret, Proof: signed})
 			results <- outcome{token, err}
 		}(signed)
 	}
@@ -860,11 +860,11 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		device, public := testDevice(t)
 		item := beginApproved(device, public)
 		input := ExchangeInput{ApprovalID: item.ID, Secret: item.Secret, Proof: exchangeProof(t, device, item.ID, item.Nonce)}
-		first, err := coordinator.Exchange(ctx, db, idem, input)
+		first, err := coordinator.exchange(ctx, db, idem, input)
 		if err != nil || first == "" {
 			t.Fatal("first authorized exchange did not return a committed session")
 		}
-		replayed, err := coordinator.Exchange(ctx, db, idem, input)
+		replayed, err := coordinator.exchange(ctx, db, idem, input)
 		if err != nil || replayed != first {
 			t.Fatal("exact retry did not recover the same session")
 		}
@@ -876,28 +876,28 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(item.ID)).Scan(&count); err != nil || count != 1 {
 			t.Fatal("exact retry created more than one session")
 		}
-		if token, err := coordinator.Exchange(ctx, db, otherIdem, input); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+		if token, err := coordinator.exchange(ctx, db, otherIdem, input); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
 			t.Fatal("different idempotency key did not conflict")
 		}
 		changedProof := input
 		changedProof.Proof = exchangeProof(t, device, item.ID, item.Nonce)
-		if token, err := coordinator.Exchange(ctx, db, idem, changedProof); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+		if token, err := coordinator.exchange(ctx, db, idem, changedProof); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
 			t.Fatal("different valid device proof did not conflict")
 		}
 		wrongSecret := input
 		wrongSecret.Secret = base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x45}, 32))
-		if token, err := coordinator.Exchange(ctx, db, idem, wrongSecret); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, wrongSecret); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("wrong approval secret released a session")
 		}
 		wrongDevice := input
 		wrongDevice.Proof = exchangeProof(t, oldKey, item.ID, item.Nonce)
-		if token, err := coordinator.Exchange(ctx, db, idem, wrongDevice); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, wrongDevice); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("wrong device released a session")
 		}
 		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked',revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(oldClaims.SessionID)); err != nil {
 			t.Fatal("could not revoke source session")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("revoked source session released a receipt")
 		}
 		firstBinding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: idem, ApprovalID: input.ApprovalID, ApprovalSecret: input.Secret, DeviceProof: input.Proof})
@@ -917,7 +917,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked',revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(claims.SessionID)); err != nil {
 			t.Fatal("could not revoke target session")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("revoked target session released a receipt")
 		}
 		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='active',revoked_at=NULL WHERE id=?`, []byte(claims.SessionID)); err != nil {
@@ -930,7 +930,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `DELETE FROM auth_device_proof_replay WHERE device_fingerprint=?`, fingerprint[:]); err != nil {
 			t.Fatal("could not delete synthetic replay marker")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("missing original proof marker released a receipt")
 		}
 
@@ -943,7 +943,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		}
 		results := make(chan result, 2)
 		for range 2 {
-			go func() { token, err := coordinator.Exchange(ctx, db, idem, raceInput); results <- result{token, err} }()
+			go func() { token, err := coordinator.exchange(ctx, db, idem, raceInput); results <- result{token, err} }()
 		}
 		left, right := <-results, <-results
 		if left.err != nil || right.err != nil || left.token == "" || left.token != right.token {
@@ -981,7 +981,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		fakeClock.Store(time.Now().UnixNano())
 		exchanger.now = func() time.Time { return time.Unix(0, fakeClock.Load()) }
 		waited := make(chan result, 1)
-		go func() { token, err := coordinator.Exchange(ctx, db, idem, raceInput); waited <- result{token, err} }()
+		go func() { token, err := coordinator.exchange(ctx, db, idem, raceInput); waited <- result{token, err} }()
 		deadline := time.Now().Add(5 * time.Second)
 		blocked := 0
 		for time.Now().Before(deadline) {
@@ -1024,7 +1024,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			t.Fatal("failed proof recovery revoked a session that may already have been delivered")
 		}
 		exchanger.now = time.Now
-		if token, err := coordinator.Exchange(ctx, db, idem, raceInput); err != nil || token != left.token {
+		if token, err := coordinator.exchange(ctx, db, idem, raceInput); err != nil || token != left.token {
 			t.Fatal("failed lock-wait replay changed the committed result")
 		}
 
@@ -1032,7 +1032,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		uncertainItem := beginApproved(uncertainDevice, uncertainPublic)
 		uncertainInput := ExchangeInput{ApprovalID: uncertainItem.ID, Secret: uncertainItem.Secret, Proof: exchangeProof(t, uncertainDevice, uncertainItem.ID, uncertainItem.Nonce)}
 		uncertainDB, failAcknowledgement := isolatedDBWithCommitAckFailure(t)
-		if token, err := coordinator.Exchange(ctx, uncertainDB, idem, uncertainInput); token != "" || !errors.Is(err, ErrUnavailable) || failAcknowledgement.Load() {
+		if token, err := coordinator.exchange(ctx, uncertainDB, idem, uncertainInput); token != "" || !errors.Is(err, ErrUnavailable) || failAcknowledgement.Load() {
 			t.Fatal("lost commit acknowledgement released a credential or was not injected")
 		}
 		var uncertainState string
@@ -1040,11 +1040,11 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(uncertainItem.ID)).Scan(&count) != nil || count != 1 {
 			t.Fatal("synthetic lost acknowledgement did not follow a real successful commit")
 		}
-		recovered, err := coordinator.Exchange(ctx, db, idem, uncertainInput)
+		recovered, err := coordinator.exchange(ctx, db, idem, uncertainInput)
 		if err != nil || recovered == "" {
 			t.Fatal("exact retry did not recover a committed result after lost acknowledgement")
 		}
-		if again, err := coordinator.Exchange(ctx, db, idem, uncertainInput); err != nil || again != recovered ||
+		if again, err := coordinator.exchange(ctx, db, idem, uncertainInput); err != nil || again != recovered ||
 			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(uncertainItem.ID)).Scan(&count) != nil || count != 1 {
 			t.Fatal("lost-ack recovery changed or duplicated the committed session")
 		}
@@ -1058,7 +1058,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		defer func() {
 			_, _ = db.ExecContext(context.Background(), `DROP TRIGGER IF EXISTS synthetic_coordinator_receipt_failure`)
 		}()
-		if token, err := coordinator.Exchange(ctx, db, idem, failedInput); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, failedInput); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("failed receipt write returned a session")
 		}
 		var state string
@@ -1069,14 +1069,14 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `DROP TRIGGER synthetic_coordinator_receipt_failure`); err != nil {
 			t.Fatal("could not remove synthetic receipt failure")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, failedInput); err != nil || token == "" {
+		if token, err := coordinator.exchange(ctx, db, idem, failedInput); err != nil || token == "" {
 			t.Fatal("rolled-back exchange could not retry its original proof")
 		}
 
 		missingDevice, missingPublic := testDevice(t)
 		missingItem := beginApproved(missingDevice, missingPublic)
 		missingInput := ExchangeInput{ApprovalID: missingItem.ID, Secret: missingItem.Secret, Proof: exchangeProof(t, missingDevice, missingItem.ID, missingItem.Nonce)}
-		if token, err := coordinator.Exchange(ctx, db, idem, missingInput); err != nil || token == "" {
+		if token, err := coordinator.exchange(ctx, db, idem, missingInput); err != nil || token == "" {
 			t.Fatal("could not create receipt deletion fixture")
 		}
 		scope, err := crypto.ApprovalScope(missingItem.ID)
@@ -1087,7 +1087,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `DELETE FROM auth_approval_exchange_receipt WHERE approval_scope=?`, digest[:]); err != nil {
 			t.Fatal("could not delete synthetic receipt")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, missingInput); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, missingInput); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("missing receipt caused a second exchange")
 		}
 		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(missingItem.ID)).Scan(&count); err != nil || count != 1 {
@@ -1097,7 +1097,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		tamperDevice, tamperPublic := testDevice(t)
 		tamperItem := beginApproved(tamperDevice, tamperPublic)
 		tamperInput := ExchangeInput{ApprovalID: tamperItem.ID, Secret: tamperItem.Secret, Proof: exchangeProof(t, tamperDevice, tamperItem.ID, tamperItem.Nonce)}
-		if token, err := coordinator.Exchange(ctx, db, idem, tamperInput); err != nil || token == "" {
+		if token, err := coordinator.exchange(ctx, db, idem, tamperInput); err != nil || token == "" {
 			t.Fatal("could not create receipt tampering fixture")
 		}
 		tamperScope, err := crypto.ApprovalScope(tamperItem.ID)
@@ -1113,7 +1113,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `UPDATE auth_approval_exchange_receipt SET response_enc=? WHERE approval_scope=?`, ciphertext, tamperDigest[:]); err != nil {
 			t.Fatal("could not tamper synthetic receipt")
 		}
-		if token, err := coordinator.Exchange(ctx, db, idem, tamperInput); token != "" || !errors.Is(err, ErrUnavailable) {
+		if token, err := coordinator.exchange(ctx, db, idem, tamperInput); token != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("tampered receipt released a credential")
 		}
 		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(tamperItem.ID)).Scan(&count); err != nil || count != 1 {
@@ -1128,11 +1128,11 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		shortItem := beginApproved(shortDevice, shortPublic)
 		shortInput := ExchangeInput{ApprovalID: shortItem.ID, Secret: shortItem.Secret, Proof: exchangeProof(t, shortDevice, shortItem.ID, shortItem.Nonce)}
 		const contractKey = "0123456789abcdef0123456789abcdef="
-		shortToken, err := longRetention.Exchange(ctx, db, contractKey, shortInput)
+		shortToken, err := longRetention.exchange(ctx, db, contractKey, shortInput)
 		if err != nil || shortToken == "" {
 			t.Fatal("retention longer than the session prevented exchange")
 		}
-		if retry, err := longRetention.Exchange(ctx, db, contractKey, shortInput); err != nil || retry != shortToken {
+		if retry, err := longRetention.exchange(ctx, db, contractKey, shortInput); err != nil || retry != shortToken {
 			t.Fatal("contract-valid non-base64url key could not be retried")
 		}
 		shortClaims, err := codec.Verify(shortToken)
@@ -1206,7 +1206,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		device, public := testDevice(t)
 		pending := beginPending(device, public)
 		input := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
-		outcome, err := poll.Exchange(ctx, db, firstKey, input)
+		outcome, err := poll.exchange(ctx, db, firstKey, input)
 		if err != nil || outcome.Status() != PollPending {
 			t.Fatal("new request did not return pending")
 		}
@@ -1216,31 +1216,31 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if encoded, err := json.Marshal(outcome); err == nil || len(encoded) != 0 {
 			t.Fatal("poll outcome was directly serializable")
 		}
-		if again, err := poll.Exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
+		if again, err := poll.exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
 			t.Fatal("exact pending retry did not return its snapshot")
 		}
-		if replay, err := poll.Exchange(ctx, db, secondKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+		if replay, err := poll.exchange(ctx, db, secondKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("consumed proof was accepted under another key")
 		}
 		changed := input
 		changed.Proof = exchangeProof(t, device, pending.ID, pending.Nonce)
-		if replay, err := poll.Exchange(ctx, db, firstKey, changed); replay.Status() != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+		if replay, err := poll.exchange(ctx, db, firstKey, changed); replay.Status() != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
 			t.Fatal("same key with a different valid proof did not conflict")
 		}
 		wrong := input
 		wrong.Secret = base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x45}, 32))
-		if replay, err := poll.Exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+		if replay, err := poll.exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("wrong secret returned a poll status")
 		}
 		wrong = input
 		wrong.Proof = exchangeProof(t, oldKey, pending.ID, pending.Nonce)
-		if replay, err := poll.Exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+		if replay, err := poll.exchange(ctx, db, firstKey, wrong); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("wrong device returned a poll status")
 		}
 		if _, err := db.ExecContext(ctx, `UPDATE user SET status='disabled' WHERE id=?`, oldClaims.SubjectID); err != nil {
 			t.Fatal("could not disable synthetic user")
 		}
-		if replay, err := poll.Exchange(ctx, db, firstKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
+		if replay, err := poll.exchange(ctx, db, firstKey, input); replay.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("disabled user received a stored poll status")
 		}
 		if _, err := db.ExecContext(ctx, `UPDATE user SET status='active' WHERE id=?`, oldClaims.SubjectID); err != nil {
@@ -1251,11 +1251,11 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			t.Fatal("pending poll created a session")
 		}
 		decide(pending, Approve)
-		if again, err := poll.Exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
+		if again, err := poll.exchange(ctx, db, firstKey, input); err != nil || again.Status() != PollPending {
 			t.Fatal("retry did not preserve the original pending snapshot")
 		}
 		nextInput := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
-		authenticated, err := poll.Exchange(ctx, db, secondKey, nextInput)
+		authenticated, err := poll.exchange(ctx, db, secondKey, nextInput)
 		if err != nil || authenticated.Status() != PollAuthenticated {
 			t.Fatal("fresh approved poll did not exchange the session")
 		}
@@ -1263,7 +1263,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if !ok || token == "" {
 			t.Fatal("approved poll did not return committed credential")
 		}
-		if retried, err := poll.Exchange(ctx, db, secondKey, nextInput); err != nil || retried.Status() != PollAuthenticated {
+		if retried, err := poll.exchange(ctx, db, secondKey, nextInput); err != nil || retried.Status() != PollAuthenticated {
 			t.Fatal("approved exact retry failed")
 		} else if again, ok := retried.TokenForResponse(); !ok || again != token {
 			t.Fatal("approved retry returned a different session")
@@ -1274,7 +1274,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		}
 		changedAfterSuccess := ExchangeInput{ApprovalID: pending.ID, Secret: pending.Secret, Proof: exchangeProof(t, device, pending.ID, pending.Nonce)}
 		exchanger.now = func() time.Time { return consumedDeadline }
-		late, err := poll.Exchange(ctx, db, secondKey, changedAfterSuccess)
+		late, err := poll.exchange(ctx, db, secondKey, changedAfterSuccess)
 		exchanger.now = time.Now
 		if late.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("expired consumed approval created a competing status result")
@@ -1293,7 +1293,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		denied := beginPending(deniedDevice, deniedPublic)
 		decide(denied, Deny)
 		deniedInput := ExchangeInput{ApprovalID: denied.ID, Secret: denied.Secret, Proof: exchangeProof(t, deniedDevice, denied.ID, denied.Nonce)}
-		if result, err := poll.Exchange(ctx, db, firstKey, deniedInput); err != nil || result.Status() != PollDenied {
+		if result, err := poll.exchange(ctx, db, firstKey, deniedInput); err != nil || result.Status() != PollDenied {
 			t.Fatal("denied approval did not return denied")
 		} else if token, ok := result.TokenForResponse(); ok || token != "" {
 			t.Fatal("denied approval returned a credential")
@@ -1307,7 +1307,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 			t.Fatal("could not set synthetic approval deadline")
 		}
 		exchanger.now = func() time.Time { return deadline }
-		expiredResult, err := poll.Exchange(ctx, db, firstKey, expiredInput)
+		expiredResult, err := poll.exchange(ctx, db, firstKey, expiredInput)
 		exchanger.now = time.Now
 		if err != nil || expiredResult.Status() != PollExpired {
 			t.Fatal("expired approval did not return expired")
@@ -1326,7 +1326,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		results := make(chan pollResult, 2)
 		for range 2 {
 			go func() {
-				result, err := poll.Exchange(ctx, db, firstKey, concurrentInput)
+				result, err := poll.exchange(ctx, db, firstKey, concurrentInput)
 				results <- pollResult{result, err}
 			}()
 		}
@@ -1356,7 +1356,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		exchanger.now = func() time.Time { return time.Unix(0, pollClock.Load()) }
 		waitingResult := make(chan pollResult, 1)
 		go func() {
-			result, err := poll.Exchange(ctx, db, firstKey, waitingInput)
+			result, err := poll.exchange(ctx, db, firstKey, waitingInput)
 			waitingResult <- pollResult{result, err}
 		}()
 		waitUntil := time.Now().Add(5 * time.Second)
@@ -1386,7 +1386,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if waitResult.value.Status() != "" || !errors.Is(waitResult.err, ErrUnavailable) {
 			t.Fatal("poll committed pending after approval expired during lock wait")
 		}
-		if retry, err := poll.Exchange(ctx, db, firstKey, waitingInput); err != nil || retry.Status() != PollPending {
+		if retry, err := poll.exchange(ctx, db, firstKey, waitingInput); err != nil || retry.Status() != PollPending {
 			t.Fatal("expired lock-wait transaction consumed the original proof")
 		}
 
@@ -1410,7 +1410,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		exchanger.now = func() time.Time { return time.Unix(0, pollClock.Load()) }
 		proofResult := make(chan pollResult, 1)
 		go func() {
-			result, err := poll.Exchange(ctx, db, firstKey, proofInput)
+			result, err := poll.exchange(ctx, db, firstKey, proofInput)
 			proofResult <- pollResult{result, err}
 		}()
 		waitUntil = time.Now().Add(5 * time.Second)
@@ -1440,7 +1440,7 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		if proofWaitResult.value.Status() != "" || !errors.Is(proofWaitResult.err, ErrUnavailable) {
 			t.Fatal("poll accepted proof expired during lock wait")
 		}
-		if retry, err := poll.Exchange(ctx, db, firstKey, proofInput); err != nil || retry.Status() != PollPending {
+		if retry, err := poll.exchange(ctx, db, firstKey, proofInput); err != nil || retry.Status() != PollPending {
 			t.Fatal("proof-expiry rollback consumed the original proof")
 		}
 
@@ -1448,10 +1448,10 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		uncertain := beginPending(uncertainDevice, uncertainPublic)
 		uncertainInput := ExchangeInput{ApprovalID: uncertain.ID, Secret: uncertain.Secret, Proof: exchangeProof(t, uncertainDevice, uncertain.ID, uncertain.Nonce)}
 		uncertainDB, ackFailure := isolatedDBWithCommitAckFailure(t)
-		if result, err := poll.Exchange(ctx, uncertainDB, firstKey, uncertainInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) || ackFailure.Load() {
+		if result, err := poll.exchange(ctx, uncertainDB, firstKey, uncertainInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) || ackFailure.Load() {
 			t.Fatal("lost status commit acknowledgement did not fail closed")
 		}
-		if retry, err := poll.Exchange(ctx, db, firstKey, uncertainInput); err != nil || retry.Status() != PollPending {
+		if retry, err := poll.exchange(ctx, db, firstKey, uncertainInput); err != nil || retry.Status() != PollPending {
 			t.Fatal("status receipt could not recover after lost commit acknowledgement")
 		}
 
@@ -1464,13 +1464,13 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		defer func() {
 			_, _ = db.ExecContext(context.Background(), `DROP TRIGGER IF EXISTS synthetic_poll_receipt_failure`)
 		}()
-		if result, err := poll.Exchange(ctx, db, firstKey, failedInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) {
+		if result, err := poll.exchange(ctx, db, firstKey, failedInput); result.Status() != "" || !errors.Is(err, ErrUnavailable) {
 			t.Fatal("failed poll receipt write returned status")
 		}
 		if _, err := db.ExecContext(ctx, `DROP TRIGGER synthetic_poll_receipt_failure`); err != nil {
 			t.Fatal("could not remove synthetic poll failure")
 		}
-		if result, err := poll.Exchange(ctx, db, firstKey, failedInput); err != nil || result.Status() != PollPending {
+		if result, err := poll.exchange(ctx, db, firstKey, failedInput); err != nil || result.Status() != PollPending {
 			t.Fatal("failed status write consumed the original proof")
 		}
 

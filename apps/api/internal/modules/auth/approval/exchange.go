@@ -47,10 +47,10 @@ func NewExchanger(approvals *Store, codec *session.TokenCodec, replay *repositor
 	return &Exchanger{approvals: approvals, codec: codec, replay: replay, policy: policy, now: time.Now}, nil
 }
 
-// Exchange owns the entire database transaction and exposes a token only after
+// exchangeWithoutReceipt owns the entire database transaction and exposes a token only after
 // a successful commit. Its ambiguous-commit response is NOT safely replayable;
 // HTTP idempotency and rate limiting must be integrated before any public route.
-func (e *Exchanger) Exchange(ctx context.Context, db *sql.DB, input ExchangeInput) (session.AccessToken, error) {
+func (e *Exchanger) exchangeWithoutReceipt(ctx context.Context, db *sql.DB, input ExchangeInput) (session.AccessToken, error) {
 	if e == nil || ctx == nil || db == nil {
 		return session.AccessToken{}, ErrUnavailable
 	}
@@ -75,7 +75,7 @@ func (e *Exchanger) Exchange(ctx context.Context, db *sql.DB, input ExchangeInpu
 // exchangeCandidate is private to this package and never serializes a token.
 // It is only a transaction-bound staging value, not a replay authorization.
 // The enclosing coordinator must commit and perform fresh authorization before
-// exposing a credential; Exchange above remains the only current release path.
+// exposing a credential; the legacy internal path remains unmounted.
 type exchangeCandidate struct {
 	issuer         *Exchanger
 	sourceTx       *sql.Tx
