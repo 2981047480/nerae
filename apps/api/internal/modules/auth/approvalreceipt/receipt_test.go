@@ -427,12 +427,17 @@ func TestValidationAndBounds(t *testing.T) {
 	c := testCrypto(t)
 	req := validRequest()
 	for name, mutate := range map[string]func(*Request){
-		"short id":         func(r *Request) { r.ApprovalID = "short" },
-		"noncanonical key": func(r *Request) { r.IdempotencyKey += "=" },
-		"short key":        func(r *Request) { r.IdempotencyKey = base64.RawURLEncoding.EncodeToString([]byte("tiny")) },
-		"bad secret":       func(r *Request) { r.ApprovalSecret = strings.Repeat("A", 42) },
-		"proof malformed":  func(r *Request) { r.DeviceProof = "not-a-jws" },
-		"proof long":       func(r *Request) { r.DeviceProof = strings.Repeat("A", maxProofBytes+1) },
+		"short id":        func(r *Request) { r.ApprovalID = "short" },
+		"header newline":  func(r *Request) { r.IdempotencyKey += "\n" },
+		"header nul":      func(r *Request) { r.IdempotencyKey += "\x00" },
+		"header escape":   func(r *Request) { r.IdempotencyKey += "\x1b" },
+		"header delete":   func(r *Request) { r.IdempotencyKey += "\x7f" },
+		"invalid unicode": func(r *Request) { r.IdempotencyKey += string([]byte{0xff}) },
+		"short key":       func(r *Request) { r.IdempotencyKey = strings.Repeat("a", 21) },
+		"long key":        func(r *Request) { r.IdempotencyKey = strings.Repeat("a", 129) },
+		"bad secret":      func(r *Request) { r.ApprovalSecret = strings.Repeat("A", 42) },
+		"proof malformed": func(r *Request) { r.DeviceProof = "not-a-jws" },
+		"proof long":      func(r *Request) { r.DeviceProof = strings.Repeat("A", maxProofBytes+1) },
 	} {
 		t.Run(name, func(t *testing.T) {
 			bad := req
@@ -441,6 +446,13 @@ func TestValidationAndBounds(t *testing.T) {
 				t.Fatal("invalid request accepted")
 			}
 		})
+	}
+	for _, key := range []string{strings.Repeat("a", 22), strings.Repeat("a", 128), strings.Repeat("é", 22), strings.Repeat("🙂", 128), req.IdempotencyKey + "=", req.IdempotencyKey + "\t"} {
+		allowed := req
+		allowed.IdempotencyKey = key
+		if _, err := c.Summarize(allowed); err != nil {
+			t.Fatal("contract-valid idempotency key was rejected")
+		}
 	}
 	binding, _, _, _, tx := makeTestContext(t, c, req)
 	subjectScope, _ := c.SubjectScope("101")

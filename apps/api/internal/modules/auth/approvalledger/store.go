@@ -113,6 +113,15 @@ func (Handle) LogValue() slog.Value {
 
 func (h *Handle) Exists() bool { return h != nil && h.existing != nil }
 
+// ExpiresAt exposes only the non-secret deadline of an already locked receipt.
+// It does not authorize reading or releasing the stored response.
+func (h *Handle) ExpiresAt() (time.Time, bool) {
+	if h == nil || h.existing == nil {
+		return time.Time{}, false
+	}
+	return h.existing.expires, true
+}
+
 // Lock must only be called after the coordinator has resolved and locked the
 // approval's real subject and checked its current authority. subjectID must
 // come from server-side approval data, never from an anonymous request. This

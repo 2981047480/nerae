@@ -11,7 +11,7 @@
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
 - 同主体待批准设备列表的内部数据库组件和 HTTP handler 已装配到本机受保护 API 进程；私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用。实际服务器部署及可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
-- 审批兑换候选、设备证明 JTI、会话写入与加密回执已在隔离 MySQL 中手工组合到同一事务，验证同时提交、失败回滚、原请求绑定和写回执后时效检查；包内候选不可序列化。正式协调器、重试时的原证明/当前授权复核及安全 HTTP 接口仍未接通，不能视作新设备兑换完成。[事务接缝](evidence/A01/A01-09/exchange-transaction-seam.md) · [存储组件](evidence/A01/A01-24/approval-ledger.md)
+- 审批兑换新增内部回执协调器：首次兑换及回执同事务提交，精确重试重新核对设备证明、已消费标记和当前授权；隔离 MySQL/race 覆盖并发、提交确认丢失、撤销、锁等待过期和密文篡改。原证明过期或来源授权撤销后不能取回结果，可能保留已提交会话；安全 HTTP、限流、页面和真机仍未接通，不能视作新设备兑换完成。[协调器证据](evidence/A01/A01-09/exchange-receipt-coordinator.md) · [存储组件](evidence/A01/A01-24/approval-ledger.md)
 - 幂等事务可向固定服务端策略提供已验证的当前会话 ID，并在写入和回放过程中复核同一会话；私有 MySQL 测试覆盖同主体多会话及撤销。该能力已用于本机批准决定；新设备兑换仍未接入。[证据](evidence/F02/F02-04/actor-session-binding.md)
 - 当前会话撤销事务、DELETE handler 和 iOS/Android 原生传输接缝已合入，服务端已装配到本机受保护 API 进程。过期分类与不确定响应处理已修复；类型检查、23 项传输测试和两端本机 TLS 回归通过。部署、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
 - 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)

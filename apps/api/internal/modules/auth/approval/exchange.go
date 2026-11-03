@@ -165,6 +165,11 @@ func (c exchangeCandidate) sealForReceipt(ctx context.Context, tx *sql.Tx, crypt
 	if err != nil {
 		return sealedExchangeReceipt{}, ErrUnavailable
 	}
+	// A receipt must never outlive the session it can recover. Short token
+	// policies remain usable even when the configured retention is longer.
+	if expires.After(claims.ExpiresAt) {
+		expires = claims.ExpiresAt.UTC().Truncate(time.Microsecond)
+	}
 	subject, err := crypto.SubjectScope(claims.SubjectID)
 	if err != nil {
 		return sealedExchangeReceipt{}, ErrUnavailable

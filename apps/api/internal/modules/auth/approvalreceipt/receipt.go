@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -490,11 +491,22 @@ func validTokenEncoding(s string) bool {
 }
 
 func validIdempotencyKey(s string) bool {
-	if len(s) < 22 || len(s) > 128 {
+	// The exchange contract permits any 22–128 character string; forcing one
+	// particular random-byte encoding would silently reject valid clients.
+	// Randomness is a client requirement and cannot be proven from the text.
+	if len(s) > 512 || !utf8.ValidString(s) {
 		return false
 	}
-	b, err := base64.RawURLEncoding.Strict().DecodeString(s)
-	return err == nil && len(b) >= 16 && len(b) <= 96 && base64.RawURLEncoding.EncodeToString(b) == s
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		// Match Go's HTTP header field rules: HTAB is allowed, but other
+		// ASCII control bytes and DEL cannot appear in a header value.
+		if (b < 0x20 && b != '\t') || b == 0x7f {
+			return false
+		}
+	}
+	count := utf8.RuneCountInString(s)
+	return count >= 22 && count <= 128
 }
 
 func validApprovalSecret(s string) bool {

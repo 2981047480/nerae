@@ -834,4 +834,317 @@ func TestApprovedDeviceExchange(t *testing.T) {
 		// This low-level test does not prove the future coordinator revalidates
 		// the original proof/JTI or releases plaintext only after commit.
 	})
+	t.Run("receipt coordinator authenticates first exchange and exact retry", func(t *testing.T) {
+		crypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x71}, 32),
+			RequestHMACKey: bytes.Repeat([]byte{0x72}, 32), AES256GCMKey: bytes.Repeat([]byte{0x73}, 32)})
+		if err != nil {
+			t.Fatal("could not initialize receipt cryptography")
+		}
+		ledger, err := approvalledger.New(crypto, "exchange-seam-test-v1")
+		if err != nil {
+			t.Fatal("could not initialize receipt ledger")
+		}
+		coordinator, err := NewReceiptExchanger(exchanger, ledger, crypto, auth, "exchange-seam-test-v1", 3*time.Minute)
+		if err != nil {
+			t.Fatal("could not initialize receipt exchanger")
+		}
+		init, err := db.BeginTx(ctx, nil)
+		if err != nil || coordinator.Initialize(ctx, init) != nil || init.Commit() != nil {
+			if init != nil {
+				_ = init.Rollback()
+			}
+			t.Fatal("could not verify receipt epoch")
+		}
+		const idem = "AQEBAQEBAQEBAQEBAQEBAQ"
+		const otherIdem = "AgICAgICAgICAgICAgICAg"
+		device, public := testDevice(t)
+		item := beginApproved(device, public)
+		input := ExchangeInput{ApprovalID: item.ID, Secret: item.Secret, Proof: exchangeProof(t, device, item.ID, item.Nonce)}
+		first, err := coordinator.Exchange(ctx, db, idem, input)
+		if err != nil || first == "" {
+			t.Fatal("first authorized exchange did not return a committed session")
+		}
+		replayed, err := coordinator.Exchange(ctx, db, idem, input)
+		if err != nil || replayed != first {
+			t.Fatal("exact retry did not recover the same session")
+		}
+		claims, err := codec.Verify(first)
+		if err != nil || claims.SubjectID != oldClaims.SubjectID || claims.SessionID == oldClaims.SessionID {
+			t.Fatal("issued session was not bound to the original subject and new device")
+		}
+		var count int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(item.ID)).Scan(&count); err != nil || count != 1 {
+			t.Fatal("exact retry created more than one session")
+		}
+		if token, err := coordinator.Exchange(ctx, db, otherIdem, input); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+			t.Fatal("different idempotency key did not conflict")
+		}
+		changedProof := input
+		changedProof.Proof = exchangeProof(t, device, item.ID, item.Nonce)
+		if token, err := coordinator.Exchange(ctx, db, idem, changedProof); token != "" || !errors.Is(err, ErrExchangeReceiptConflict) {
+			t.Fatal("different valid device proof did not conflict")
+		}
+		wrongSecret := input
+		wrongSecret.Secret = base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x45}, 32))
+		if token, err := coordinator.Exchange(ctx, db, idem, wrongSecret); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("wrong approval secret released a session")
+		}
+		wrongDevice := input
+		wrongDevice.Proof = exchangeProof(t, oldKey, item.ID, item.Nonce)
+		if token, err := coordinator.Exchange(ctx, db, idem, wrongDevice); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("wrong device released a session")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked',revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(oldClaims.SessionID)); err != nil {
+			t.Fatal("could not revoke source session")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("revoked source session released a receipt")
+		}
+		firstBinding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: idem, ApprovalID: input.ApprovalID, ApprovalSecret: input.Secret, DeviceProof: input.Proof})
+		if err != nil {
+			t.Fatal("could not derive original recovery binding")
+		}
+		if token, err := coordinator.recoverCommitted(ctx, db, idem, input, firstBinding); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("post-commit recovery released a session after source revocation")
+		}
+		var targetState string
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_session WHERE id=?`, []byte(claims.SessionID)).Scan(&targetState); err != nil || targetState != "active" {
+			t.Fatal("failed recovery revoked a session that may already have been delivered")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='active',revoked_at=NULL WHERE id=?`, []byte(oldClaims.SessionID)); err != nil {
+			t.Fatal("could not restore synthetic source session")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked',revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(claims.SessionID)); err != nil {
+			t.Fatal("could not revoke target session")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("revoked target session released a receipt")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='active',revoked_at=NULL WHERE id=?`, []byte(claims.SessionID)); err != nil {
+			t.Fatal("could not restore synthetic target session")
+		}
+		fingerprint, err := domain.DeviceKeyFingerprint(public)
+		if err != nil {
+			t.Fatal("could not derive synthetic fingerprint")
+		}
+		if _, err := db.ExecContext(ctx, `DELETE FROM auth_device_proof_replay WHERE device_fingerprint=?`, fingerprint[:]); err != nil {
+			t.Fatal("could not delete synthetic replay marker")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, input); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("missing original proof marker released a receipt")
+		}
+
+		raceDevice, racePublic := testDevice(t)
+		raceItem := beginApproved(raceDevice, racePublic)
+		raceInput := ExchangeInput{ApprovalID: raceItem.ID, Secret: raceItem.Secret, Proof: exchangeProof(t, raceDevice, raceItem.ID, raceItem.Nonce)}
+		type result struct {
+			token string
+			err   error
+		}
+		results := make(chan result, 2)
+		for range 2 {
+			go func() { token, err := coordinator.Exchange(ctx, db, idem, raceInput); results <- result{token, err} }()
+		}
+		left, right := <-results, <-results
+		if left.err != nil || right.err != nil || left.token == "" || left.token != right.token {
+			t.Fatalf("concurrent exact requests did not converge: left error=%v, right error=%v, left present=%t, right present=%t, equal=%t",
+				left.err, right.err, left.token != "", right.token != "", left.token == right.token)
+		}
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(raceItem.ID)).Scan(&count); err != nil || count != 1 {
+			t.Fatal("concurrent exact requests created multiple sessions")
+		}
+		raceScope, err := crypto.ApprovalScope(raceItem.ID)
+		if err != nil {
+			t.Fatal("could not derive race approval scope")
+		}
+		raceDigest := raceScope.Digest()
+		gate, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not begin receipt lock-wait test")
+		}
+		var lockedScope []byte
+		var expiryRaw string
+		if err := gate.QueryRowContext(ctx, `SELECT approval_scope,DATE_FORMAT(expires_at,'%Y-%m-%d %H:%i:%s.%f') FROM auth_approval_exchange_receipt WHERE approval_scope=? FOR UPDATE`, raceDigest[:]).
+			Scan(&lockedScope, &expiryRaw); err != nil {
+			_ = gate.Rollback()
+			t.Fatal("could not lock synthetic receipt")
+		}
+		receiptExpiry, expiryErr := time.Parse("2006-01-02 15:04:05.000000", expiryRaw)
+		verified, proofErr := domain.VerifyDeviceProof(raceInput.Proof, racePublic,
+			domain.ProofExpectation{Purpose: "approval_exchange", ResourceID: raceItem.ID, Nonce: raceItem.Nonce}, time.Now().UTC(), exchanger.policy)
+		proofDeadline := verified.ExpiresAt.Add(exchanger.policy.ClockSkew)
+		if expiryErr != nil || proofErr != nil || !receiptExpiry.After(proofDeadline) || !raceItem.ExpiresAt.After(proofDeadline) || !oldClaims.ExpiresAt.After(proofDeadline) {
+			_ = gate.Rollback()
+			t.Fatal("receipt lock fixture does not isolate proof expiry")
+		}
+		var fakeClock atomic.Int64
+		fakeClock.Store(time.Now().UnixNano())
+		exchanger.now = func() time.Time { return time.Unix(0, fakeClock.Load()) }
+		waited := make(chan result, 1)
+		go func() { token, err := coordinator.Exchange(ctx, db, idem, raceInput); waited <- result{token, err} }()
+		deadline := time.Now().Add(5 * time.Second)
+		blocked := 0
+		for time.Now().Before(deadline) {
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.REQUESTING_ENGINE_TRANSACTION_ID)
+				FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+				WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='auth_approval_exchange_receipt'`).Scan(&blocked); err != nil {
+				_ = gate.Rollback()
+				t.Fatal("could not observe receipt lock wait")
+			}
+			if blocked > 0 {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if blocked == 0 {
+			_ = gate.Rollback()
+			t.Fatal("replay did not reach receipt lock")
+		}
+		fakeClock.Store(proofDeadline.UnixNano())
+		if err := gate.Rollback(); err != nil {
+			t.Fatal("could not release receipt lock")
+		}
+		waitedResult := <-waited
+		if waitedResult.token != "" || !errors.Is(waitedResult.err, ErrUnavailable) {
+			exchanger.now = time.Now
+			t.Fatal("proof expiration during receipt lock wait released a session")
+		}
+		raceBinding, err := crypto.Summarize(approvalreceipt.Request{IdempotencyKey: idem, ApprovalID: raceInput.ApprovalID, ApprovalSecret: raceInput.Secret, DeviceProof: raceInput.Proof})
+		if err != nil {
+			exchanger.now = time.Now
+			t.Fatal("could not derive race recovery binding")
+		}
+		if token, err := coordinator.recoverCommitted(ctx, db, idem, raceInput, raceBinding); token != "" || !errors.Is(err, ErrUnavailable) {
+			exchanger.now = time.Now
+			t.Fatal("post-commit recovery released a session after proof expiry")
+		}
+		raceClaims, err := codec.Verify(left.token)
+		if err != nil || db.QueryRowContext(ctx, `SELECT state FROM auth_session WHERE id=?`, []byte(raceClaims.SessionID)).Scan(&targetState) != nil || targetState != "active" {
+			exchanger.now = time.Now
+			t.Fatal("failed proof recovery revoked a session that may already have been delivered")
+		}
+		exchanger.now = time.Now
+		if token, err := coordinator.Exchange(ctx, db, idem, raceInput); err != nil || token != left.token {
+			t.Fatal("failed lock-wait replay changed the committed result")
+		}
+
+		uncertainDevice, uncertainPublic := testDevice(t)
+		uncertainItem := beginApproved(uncertainDevice, uncertainPublic)
+		uncertainInput := ExchangeInput{ApprovalID: uncertainItem.ID, Secret: uncertainItem.Secret, Proof: exchangeProof(t, uncertainDevice, uncertainItem.ID, uncertainItem.Nonce)}
+		uncertainDB, failAcknowledgement := isolatedDBWithCommitAckFailure(t)
+		if token, err := coordinator.Exchange(ctx, uncertainDB, idem, uncertainInput); token != "" || !errors.Is(err, ErrUnavailable) || failAcknowledgement.Load() {
+			t.Fatal("lost commit acknowledgement released a credential or was not injected")
+		}
+		var uncertainState string
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(uncertainItem.ID)).Scan(&uncertainState); err != nil || uncertainState != "consumed" ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(uncertainItem.ID)).Scan(&count) != nil || count != 1 {
+			t.Fatal("synthetic lost acknowledgement did not follow a real successful commit")
+		}
+		recovered, err := coordinator.Exchange(ctx, db, idem, uncertainInput)
+		if err != nil || recovered == "" {
+			t.Fatal("exact retry did not recover a committed result after lost acknowledgement")
+		}
+		if again, err := coordinator.Exchange(ctx, db, idem, uncertainInput); err != nil || again != recovered ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(uncertainItem.ID)).Scan(&count) != nil || count != 1 {
+			t.Fatal("lost-ack recovery changed or duplicated the committed session")
+		}
+
+		failedDevice, failedPublic := testDevice(t)
+		failedItem := beginApproved(failedDevice, failedPublic)
+		failedInput := ExchangeInput{ApprovalID: failedItem.ID, Secret: failedItem.Secret, Proof: exchangeProof(t, failedDevice, failedItem.ID, failedItem.Nonce)}
+		if _, err := db.ExecContext(ctx, `CREATE TRIGGER synthetic_coordinator_receipt_failure BEFORE INSERT ON auth_approval_exchange_receipt FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic receipt failure'`); err != nil {
+			t.Fatal("could not install synthetic receipt failure")
+		}
+		defer func() {
+			_, _ = db.ExecContext(context.Background(), `DROP TRIGGER IF EXISTS synthetic_coordinator_receipt_failure`)
+		}()
+		if token, err := coordinator.Exchange(ctx, db, idem, failedInput); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("failed receipt write returned a session")
+		}
+		var state string
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(failedItem.ID)).Scan(&state); err != nil || state != "approved" ||
+			db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(failedItem.ID)).Scan(&count) != nil || count != 0 {
+			t.Fatal("failed receipt write retained an exchange")
+		}
+		if _, err := db.ExecContext(ctx, `DROP TRIGGER synthetic_coordinator_receipt_failure`); err != nil {
+			t.Fatal("could not remove synthetic receipt failure")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, failedInput); err != nil || token == "" {
+			t.Fatal("rolled-back exchange could not retry its original proof")
+		}
+
+		missingDevice, missingPublic := testDevice(t)
+		missingItem := beginApproved(missingDevice, missingPublic)
+		missingInput := ExchangeInput{ApprovalID: missingItem.ID, Secret: missingItem.Secret, Proof: exchangeProof(t, missingDevice, missingItem.ID, missingItem.Nonce)}
+		if token, err := coordinator.Exchange(ctx, db, idem, missingInput); err != nil || token == "" {
+			t.Fatal("could not create receipt deletion fixture")
+		}
+		scope, err := crypto.ApprovalScope(missingItem.ID)
+		if err != nil {
+			t.Fatal("could not derive receipt deletion fixture")
+		}
+		digest := scope.Digest()
+		if _, err := db.ExecContext(ctx, `DELETE FROM auth_approval_exchange_receipt WHERE approval_scope=?`, digest[:]); err != nil {
+			t.Fatal("could not delete synthetic receipt")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, missingInput); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("missing receipt caused a second exchange")
+		}
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(missingItem.ID)).Scan(&count); err != nil || count != 1 {
+			t.Fatal("missing receipt recreated a session")
+		}
+
+		tamperDevice, tamperPublic := testDevice(t)
+		tamperItem := beginApproved(tamperDevice, tamperPublic)
+		tamperInput := ExchangeInput{ApprovalID: tamperItem.ID, Secret: tamperItem.Secret, Proof: exchangeProof(t, tamperDevice, tamperItem.ID, tamperItem.Nonce)}
+		if token, err := coordinator.Exchange(ctx, db, idem, tamperInput); err != nil || token == "" {
+			t.Fatal("could not create receipt tampering fixture")
+		}
+		tamperScope, err := crypto.ApprovalScope(tamperItem.ID)
+		if err != nil {
+			t.Fatal("could not derive tampering fixture scope")
+		}
+		tamperDigest := tamperScope.Digest()
+		var ciphertext []byte
+		if err := db.QueryRowContext(ctx, `SELECT response_enc FROM auth_approval_exchange_receipt WHERE approval_scope=?`, tamperDigest[:]).Scan(&ciphertext); err != nil || len(ciphertext) < 2 {
+			t.Fatal("could not read synthetic ciphertext")
+		}
+		ciphertext[len(ciphertext)-1] ^= 1
+		if _, err := db.ExecContext(ctx, `UPDATE auth_approval_exchange_receipt SET response_enc=? WHERE approval_scope=?`, ciphertext, tamperDigest[:]); err != nil {
+			t.Fatal("could not tamper synthetic receipt")
+		}
+		if token, err := coordinator.Exchange(ctx, db, idem, tamperInput); token != "" || !errors.Is(err, ErrUnavailable) {
+			t.Fatal("tampered receipt released a credential")
+		}
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM auth_session WHERE login_challenge_id=(SELECT challenge_id FROM auth_login_approval WHERE id=?)`, []byte(tamperItem.ID)).Scan(&count); err != nil || count != 1 {
+			t.Fatal("tampered receipt recreated a session")
+		}
+
+		longRetention, err := NewReceiptExchanger(exchanger, ledger, crypto, auth, "exchange-seam-test-v1", 2*time.Hour)
+		if err != nil {
+			t.Fatal("could not configure long receipt retention")
+		}
+		shortDevice, shortPublic := testDevice(t)
+		shortItem := beginApproved(shortDevice, shortPublic)
+		shortInput := ExchangeInput{ApprovalID: shortItem.ID, Secret: shortItem.Secret, Proof: exchangeProof(t, shortDevice, shortItem.ID, shortItem.Nonce)}
+		const contractKey = "0123456789abcdef0123456789abcdef="
+		shortToken, err := longRetention.Exchange(ctx, db, contractKey, shortInput)
+		if err != nil || shortToken == "" {
+			t.Fatal("retention longer than the session prevented exchange")
+		}
+		if retry, err := longRetention.Exchange(ctx, db, contractKey, shortInput); err != nil || retry != shortToken {
+			t.Fatal("contract-valid non-base64url key could not be retried")
+		}
+		shortClaims, err := codec.Verify(shortToken)
+		shortScope, scopeErr := crypto.ApprovalScope(shortItem.ID)
+		shortDigest := shortScope.Digest()
+		var shortExpiryRaw string
+		if err != nil || scopeErr != nil || db.QueryRowContext(ctx, `SELECT DATE_FORMAT(expires_at,'%Y-%m-%d %H:%i:%s.%f') FROM auth_approval_exchange_receipt WHERE approval_scope=?`, shortDigest[:]).Scan(&shortExpiryRaw) != nil {
+			t.Fatal("could not inspect capped receipt lifetime")
+		}
+		shortExpiry, err := time.Parse("2006-01-02 15:04:05.000000", shortExpiryRaw)
+		if err != nil || !shortExpiry.Equal(shortClaims.ExpiresAt) {
+			t.Fatal("receipt outlived its issued session")
+		}
+	})
 }
