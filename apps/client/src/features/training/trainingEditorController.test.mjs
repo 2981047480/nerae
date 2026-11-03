@@ -194,6 +194,94 @@ test('storage failure keeps edited input and reports only local storage status',
   await attached.controller.close()
 })
 
+test('a failed local write can be retried without changing or discarding the entered group', async () => {
+  const store = storage()
+  const { controller } = await fresh({ store, idProvider: ids(['event-0001', 'entry-0001', 'record-001']) })
+  await controller.addCustomExercise('深蹲', 'weight')
+  store.setFail(true)
+  const failure = await controller.editGroup('entry-0001', 'record-001', 'reps', '8')
+  assert.equal(failure.reason, 'storage_error')
+  assert.equal((await controller.retryLocalSave()).reason, 'storage_error')
+  assert.equal(controller.draft.exercises[0].sets[0].reps, '8')
+  store.setFail(false)
+  const retried = await controller.retryLocalSave()
+  assert.equal(retried.ok, true)
+  assert.equal(retried.localStatus, 'saved_locally')
+  assert.equal(JSON.parse([...store.data.values()][0]).draft.exercises[0].sets[0].reps, '8')
+  await controller.close()
+})
+
+test('a write that commits and then throws remains unconfirmed until a successful retry', async () => {
+  const store = storage()
+  const { controller } = await fresh({ store, idProvider: ids(['event-0001', 'entry-0001', 'record-001']) })
+  await controller.addCustomExercise('深蹲', 'weight')
+  const originalWrite = store.write
+  let failAfterCommit = true
+  store.write = async (key, value) => {
+    await originalWrite(key, value)
+    if (failAfterCommit) throw new Error('synthetic result lost')
+  }
+  const uncertain = await controller.editGroup('entry-0001', 'record-001', 'reps', '8')
+  assert.equal(uncertain.ok, false)
+  assert.equal(uncertain.reason, 'storage_error')
+  assert.equal(controller.localStatus, 'storage_error')
+  assert.equal(controller.draft.exercises[0].sets[0].reps, '8')
+  assert.equal((await controller.retryLocalSave()).reason, 'storage_error')
+  failAfterCommit = false
+  assert.equal((await controller.retryLocalSave()).localStatus, 'saved_locally')
+  assert.equal(JSON.parse([...store.data.values()][0]).draft.exercises[0].sets[0].reps, '8')
+  await controller.close()
+})
+
+test('retrying a local write cannot report success after account switch or a newer edit', async () => {
+  const lease = authState()
+  const store = storage()
+  const { controller } = await fresh({ store, lease, idProvider: ids(['event-0001', 'entry-0001', 'record-001']) })
+  await controller.addCustomExercise('深蹲', 'weight')
+  store.setFail(true)
+  await controller.editGroup('entry-0001', 'record-001', 'reps', '8')
+  store.setFail(false)
+  const originalWrite = store.write
+  const releases = []
+  store.write = async (key, value) => {
+    await new Promise(resolve => { releases.push(resolve) })
+    return originalWrite(key, value)
+  }
+  const retry = controller.retryLocalSave()
+  while (releases.length < 1) await new Promise(resolve => setImmediate(resolve))
+  const newer = controller.editGroup('entry-0001', 'record-001', 'reps', '9')
+  releases[0]()
+  assert.equal((await retry).ok, false)
+  while (releases.length < 2) await new Promise(resolve => setImmediate(resolve))
+  releases[1]()
+  assert.equal((await newer).ok, true)
+  assert.equal(controller.draft.exercises[0].sets[0].reps, '9')
+  lease.switchTo('202', 'login-2')
+  assert.equal((await controller.retryLocalSave()).reason, 'session_changed')
+  await controller.close()
+})
+
+test('a retry finishing after the account changes does not report that the current user saved it', async () => {
+  const lease = authState()
+  const store = storage()
+  const { controller } = await fresh({ store, lease })
+  store.setFail(true)
+  await controller.setMode('per_set')
+  store.setFail(false)
+  const originalWrite = store.write
+  let release
+  store.write = async (key, value) => {
+    await new Promise(resolve => { release = resolve })
+    return originalWrite(key, value)
+  }
+  const retry = controller.retryLocalSave()
+  while (!release) await new Promise(resolve => setImmediate(resolve))
+  lease.switchTo('202', 'login-2')
+  release()
+  assert.equal((await retry).reason, 'session_changed')
+  await controller.close()
+})
+
 test('session switch blocks reads and edits without exposing the prior draft', async () => {
   const lease = authState()
   const { controller } = await fresh({ lease })

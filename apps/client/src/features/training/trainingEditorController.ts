@@ -334,6 +334,24 @@ export class TrainingEditorController {
    */
   close(): Promise<void> { return this.ownership.close() }
 
+  /** Retry the current device snapshot without altering entered values or claiming server sync. */
+  async retryLocalSave(): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        const saved = await this.local.persist()
+        // Recheck the captured lease even if the device write itself succeeded.
+        try { void this.local.draft }
+        catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (saved && this.local.status === 'saved_locally') return this.success(false)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        if (this.local.status === 'saving' || this.local.status === 'not_saved') {
+          return { ok: false, reason: 'pending', localStatus: this.local.status }
+        }
+        return { ok: false, reason: 'superseded', localStatus: this.local.status }
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
   async setMode(mode: RecordingMode): Promise<EditorResult> {
     return this.withOwnership(() => this.mutate(draft => switchMode(draft, mode)))
   }
