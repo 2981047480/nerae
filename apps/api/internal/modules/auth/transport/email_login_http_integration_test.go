@@ -540,13 +540,17 @@ func emailLoginHTTPDevice(t *testing.T) (*ecdsa.PrivateKey, domain.DevicePublicJ
 }
 
 func emailLoginHTTPProof(t *testing.T, key *ecdsa.PrivateKey, challengeID, nonce string) string {
+	return deviceHTTPProof(t, key, "email_login", challengeID, nonce)
+}
+
+func deviceHTTPProof(t *testing.T, key *ecdsa.PrivateKey, purpose, challengeID, nonce string) string {
 	t.Helper()
 	jti, err := domain.GenerateChallengeID()
 	if err != nil {
 		t.Fatal("synthetic proof JTI generation failed")
 	}
 	now := time.Now().UTC()
-	payload, err := json.Marshal(map[string]any{"aud": "nerae-auth-device", "purpose": "email_login", "resourceId": challengeID,
+	payload, err := json.Marshal(map[string]any{"aud": "nerae-auth-device", "purpose": purpose, "resourceId": challengeID,
 		"nonce": nonce, "iat": now.Unix(), "exp": now.Add(time.Minute).Unix(), "jti": jti})
 	if err != nil {
 		t.Fatal("synthetic device proof encoding failed")

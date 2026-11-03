@@ -33,6 +33,8 @@ MIGRATIONS = (
     "auth/0008_email_challenge_request.up.sql",
     "auth/0009_email_login_receipt.up.sql",
     "transport/0001_idempotency.up.sql",
+    "auth/0011_approval_exchange_receipt.up.sql",
+    "auth/0012_approval_poll_receipt.up.sql",
 )
 
 
@@ -100,6 +102,10 @@ def run() -> int:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
             if "PASS: new-device approval decision, authorized retry and Redis attempt bound" not in test.stdout:
                 raise RuntimeError("new-device approval decision was not exercised")
+            if "PASS: approved second device, exact retry, capability limit and protected status polling" not in test.stdout:
+                raise RuntimeError("new-device status and exchange were not exercised")
+            if "PASS: two synthetic devices share create/read/set and same-subject idempotent replay" not in test.stdout:
+                raise RuntimeError("same-subject two-device workout sharing was not exercised")
             if os.environ.get("NERAE_RUN_API_ASSEMBLY_TEST") == "1":
                 # A separate empty schema prevents the earlier fixture's
                 # synthetic key epochs and test data from contaminating this

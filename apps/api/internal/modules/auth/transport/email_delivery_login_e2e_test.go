@@ -35,6 +35,8 @@ import (
 	"nerae/api/internal/middleware"
 	"nerae/api/internal/modules/auth/application"
 	"nerae/api/internal/modules/auth/approval"
+	"nerae/api/internal/modules/auth/approvalledger"
+	"nerae/api/internal/modules/auth/approvalreceipt"
 	"nerae/api/internal/modules/auth/bootstrap"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/codeepoch"
@@ -333,6 +335,50 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("approval list handler setup failed")
 	}
+	exchangeCrypto, err := approvalreceipt.New(approvalreceipt.KeyConfig{IdempotencyHMACKey: bytes.Repeat([]byte{0x61}, 32),
+		RequestHMACKey: bytes.Repeat([]byte{0x62}, 32), AES256GCMKey: bytes.Repeat([]byte{0x63}, 32)})
+	if err != nil {
+		t.Fatal("exchange receipt crypto setup failed")
+	}
+	exchangeLedger, err := approvalledger.New(exchangeCrypto, "a01-24-exchange-v1")
+	if err != nil {
+		t.Fatal("exchange receipt ledger setup failed")
+	}
+	exchanger, err := approval.NewExchanger(approvals, codec, proofReplay, domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second})
+	if err != nil {
+		t.Fatal("device exchanger setup failed")
+	}
+	exchangeReceipt, err := approval.NewReceiptExchanger(exchanger, exchangeLedger, exchangeCrypto, sessions, "a01-24-exchange-v1", 2*time.Minute)
+	if err != nil {
+		t.Fatal("exchange receipt coordinator setup failed")
+	}
+	poll, err := approval.NewPollExchanger(exchangeReceipt, "a01-24-exchange-v1", 2*time.Minute)
+	if err != nil {
+		t.Fatal("approval poll setup failed")
+	}
+	exchangeTx, err := db.BeginTx(ctx, nil)
+	if err != nil || poll.Initialize(ctx, exchangeTx) != nil || exchangeTx.Commit() != nil {
+		if exchangeTx != nil {
+			_ = exchangeTx.Rollback()
+		}
+		t.Fatal("approval poll epoch initialization failed")
+	}
+	exchangeLimiter, err := ratelimit.NewApprovalExchangeLimiter(challengeLimiter, ratelimit.ApprovalExchangePolicy{
+		Capability: ratelimit.DimensionPolicy{Limit: 8, Window: time.Minute},
+		IP:         ratelimit.DimensionPolicy{Limit: 100, Window: time.Minute}, Global: ratelimit.DimensionPolicy{Limit: 100, Window: time.Minute},
+	})
+	if err != nil {
+		t.Fatal("approval exchange limiter setup failed")
+	}
+	gate, err := approval.NewRateLimitedPoll(poll, exchangeLimiter)
+	if err != nil {
+		t.Fatal("approval poll gateway setup failed")
+	}
+	exchangeHandler, err := NewApprovalExchangeHandler(db, gate, sessions, validator,
+		TrustedSourceIPFunc(func(*http.Request) (netip.Addr, error) { return trustedIP, nil }))
+	if err != nil {
+		t.Fatal("approval exchange handler setup failed")
+	}
 	mux := http.NewServeMux()
 	mux.Handle(emailChallengesPath, challengeHandler)
 	mux.Handle(emailLoginPath, loginHandler)
@@ -341,6 +387,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	mux.Handle(ageVerifyPath, ageHandler)
 	mux.Handle("/me/login-approvals", approvalListHandler)
 	mux.Handle("/me/login-approvals/", decisionHandler)
+	mux.Handle("/auth/login-approvals/", exchangeHandler)
 	mux.Handle("/me/sessions", workoutHandler)
 	mux.Handle("/me/sessions/", workoutHandler)
 	server := httptest.NewTLSServer(mux)
@@ -508,6 +555,54 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		pending.ApprovalId == "" || pending.ComparisonCode == "" || pending.ApprovalSecret == "" {
 		t.Fatal("new device did not receive a pending approval")
 	}
+	exchangePath := "/auth/login-approvals/" + string(pending.ApprovalId) + "/exchange"
+	pendingPollBody, err := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret),
+		"deviceProof": deviceHTTPProof(t, newDevice, "approval_exchange", string(pending.ApprovalId), string(pending.Nonce))})
+	if err != nil {
+		t.Fatal("pending poll encoding failed")
+	}
+	pendingPollKey := randomIdempotencyKey(t)
+	pollStatus, pollHeaders, pollBody := post(exchangePath, pendingPollBody, pendingPollKey)
+	if pollStatus != http.StatusOK || pollHeaders.Get("Cache-Control") != "no-store" || string(pollBody) != `{"status":"pending"}` ||
+		bytes.Contains(pollBody, []byte(pending.ApprovalSecret)) || bytes.Contains(pollBody, []byte(success.Token)) {
+		t.Fatal("pending poll leaked credentials or returned an invalid status")
+	}
+	if code, _, replay := post(exchangePath, pendingPollBody, pendingPollKey); code != http.StatusOK || !bytes.Equal(replay, pollBody) {
+		t.Fatal("pending poll did not replay the same status")
+	}
+	oldClaims, err := codec.Verify(success.Token)
+	if err != nil {
+		t.Fatal("could not inspect synthetic existing session")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET state='denied',decision_session_id=?,decided_at=UTC_TIMESTAMP(6) WHERE id=?`,
+		[]byte(oldClaims.SessionID), []byte(pending.ApprovalId)); err != nil {
+		t.Fatal("could not set synthetic denied state")
+	}
+	deniedBody, err := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret),
+		"deviceProof": deviceHTTPProof(t, newDevice, "approval_exchange", string(pending.ApprovalId), string(pending.Nonce))})
+	if err != nil {
+		t.Fatal("denied poll encoding failed")
+	}
+	if code, headers, body := post(exchangePath, deniedBody, randomIdempotencyKey(t)); code != http.StatusOK || headers.Get("Cache-Control") != "no-store" || string(body) != `{"status":"denied"}` {
+		t.Fatal("denied poll did not return a protected status")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET state='pending',decision_session_id=NULL,decided_at=NULL WHERE id=?`, []byte(pending.ApprovalId)); err != nil {
+		t.Fatal("could not restore synthetic pending state")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=DATE_ADD(created_at, INTERVAL 1 MICROSECOND) WHERE id=?`, []byte(pending.ApprovalId)); err != nil {
+		t.Fatal("could not set synthetic expired state")
+	}
+	expiredBody, err := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret),
+		"deviceProof": deviceHTTPProof(t, newDevice, "approval_exchange", string(pending.ApprovalId), string(pending.Nonce))})
+	if err != nil {
+		t.Fatal("expired poll encoding failed")
+	}
+	if code, headers, body := post(exchangePath, expiredBody, randomIdempotencyKey(t)); code != http.StatusOK || headers.Get("Cache-Control") != "no-store" || string(body) != `{"status":"expired"}` {
+		t.Fatal("expired poll did not return a protected status")
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=? WHERE id=?`, pending.ExpiresAt.UTC().Format("2006-01-02 15:04:05.000000"), []byte(pending.ApprovalId)); err != nil {
+		t.Fatal("could not restore synthetic approval expiry")
+	}
 	listRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/me/login-approvals", nil)
 	if err != nil {
 		t.Fatal("approval list request failed")
@@ -569,6 +664,42 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		t.Fatal("approval decision did not persist its terminal state")
 	}
 	t.Log("PASS: new-device approval decision, authorized retry and Redis attempt bound")
+	if code, _, replay := post(exchangePath, pendingPollBody, pendingPollKey); code != http.StatusOK || !bytes.Equal(replay, pollBody) {
+		t.Fatal("approved state changed an earlier pending snapshot")
+	}
+	exchangeBody, err := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret),
+		"deviceProof": deviceHTTPProof(t, newDevice, "approval_exchange", string(pending.ApprovalId), string(pending.Nonce))})
+	if err != nil {
+		t.Fatal("approved exchange encoding failed")
+	}
+	exchangeKey := randomIdempotencyKey(t)
+	exchangeStatus, exchangeHeaders, exchangeResponse := post(exchangePath, exchangeBody, exchangeKey)
+	var newDeviceSuccess api.PhoneAuthSuccess
+	if exchangeStatus != http.StatusOK || exchangeHeaders.Get("Cache-Control") != "no-store" ||
+		json.Unmarshal(exchangeResponse, &newDeviceSuccess) != nil || newDeviceSuccess.Status != api.Authenticated ||
+		newDeviceSuccess.Token == "" || newDeviceSuccess.Token == success.Token || newDeviceSuccess.User.Id != success.User.Id ||
+		bytes.Contains(exchangeResponse, []byte(pending.ApprovalSecret)) {
+		t.Fatal("approved new device did not obtain its own same-subject session")
+	}
+	exchangeStatus, _, exchangeReplay := post(exchangePath, exchangeBody, exchangeKey)
+	var replayedExchange api.PhoneAuthSuccess
+	if exchangeStatus != http.StatusOK || json.Unmarshal(exchangeReplay, &replayedExchange) != nil ||
+		replayedExchange.Token != newDeviceSuccess.Token || replayedExchange.User.Id != success.User.Id {
+		t.Fatal("approved exchange did not replay the same session")
+	}
+	wrongExchangeBody, err := json.Marshal(map[string]string{"approvalSecret": string(pending.ApprovalSecret),
+		"deviceProof": deviceHTTPProof(t, device, "approval_exchange", string(pending.ApprovalId), string(pending.Nonce))})
+	if err != nil {
+		t.Fatal("invalid-device exchange encoding failed")
+	}
+	if code, _, body := post(exchangePath, wrongExchangeBody, randomIdempotencyKey(t)); code != http.StatusServiceUnavailable ||
+		bytes.Contains(body, []byte(newDeviceSuccess.Token)) || bytes.Contains(body, []byte(pending.ApprovalSecret)) {
+		t.Fatal("wrong device obtained a status or credential")
+	}
+	if code, _, body := post(exchangePath, exchangeBody, exchangeKey); code != http.StatusTooManyRequests || bytes.Contains(body, []byte(newDeviceSuccess.Token)) {
+		t.Fatal("approval capability limit did not apply to exact retries")
+	}
+	t.Log("PASS: approved second device, exact retry, capability limit and protected status polling")
 
 	postAge := func(client *http.Client, baseURL string, token string, body []byte) (int, http.Header, []byte) {
 		t.Helper()
@@ -595,7 +726,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		headers http.Header
 		body    []byte
 	}
-	responseSecrets := []string{success.Token}
+	responseSecrets := []string{success.Token, newDeviceSuccess.Token}
 	workoutRequest := func(method, path string, body []byte, token, key string) workoutHTTPResult {
 		t.Helper()
 		var requestBody io.Reader
@@ -724,11 +855,20 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		success.User.Id, []byte("a01-24-workout-event-001")).Scan(&createdCount); err != nil || createdCount != 1 {
 		t.Fatal("same-key creation replay did not preserve exactly one workout")
 	}
+	secondDeviceRead := workoutRequest(http.MethodGet, "/me/sessions/"+createdDetail.ID, nil, newDeviceSuccess.Token, "")
+	var secondDeviceDetail struct {
+		ID      string `json:"id"`
+		Version int    `json:"version"`
+	}
+	if secondDeviceRead.status != http.StatusOK || json.Unmarshal(secondDeviceRead.body, &secondDeviceDetail) != nil ||
+		secondDeviceDetail.ID != createdDetail.ID || secondDeviceDetail.Version != 1 {
+		t.Fatal("second same-subject device could not read the first device's workout")
+	}
 	setPath := "/me/sessions/" + createdDetail.ID + "/sets"
 	setBody := []byte(`{"expectedVersion":1,"exerciseEntryKeys":["a01-24-entry-001"],"sets":[{"recordKey":"a01-24-record-001","exerciseEntryKey":"a01-24-entry-001","exerciseName":"卧推","kind":"weight","setIndex":1,"weightKg":42.50,"reps":8,"rpe":7.5,"completed":true}]}`)
 	setKey := randomIdempotencyKey(t)
 	// Training-after batch save and per-set confirmation both map to this same write endpoint.
-	saved := workoutRequest(http.MethodPost, setPath, setBody, success.Token, setKey)
+	saved := workoutRequest(http.MethodPost, setPath, setBody, newDeviceSuccess.Token, setKey)
 	var savedDetail struct {
 		ID      string `json:"id"`
 		Status  string `json:"status"`
@@ -763,6 +903,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		readDetail.Status != "in_progress" || readDetail.Version != 2 || len(readDetail.Sets) != 1 || readDetail.Sets[0].RecordKey != "a01-24-record-001" || readDetail.Sets[0].WeightKg.String() != "42.50" {
 		t.Fatalf("owner readback differed from saved response: %d %s", ownerRead.status, ownerRead.body)
 	}
+	t.Log("PASS: two synthetic devices share create/read/set and same-subject idempotent replay")
 
 	// Authenticate a second synthetic principal through the same challenge, SMTP, and login HTTP path.
 	otherDevice, otherPublicKey := emailLoginHTTPDevice(t)
