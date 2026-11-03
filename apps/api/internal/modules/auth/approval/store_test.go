@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"nerae/api/internal/idempotency"
 	issuancetestsupport "nerae/api/internal/modules/auth/issuance/testsupport"
 	"os"
 	"path/filepath"
@@ -817,6 +818,302 @@ func TestNewDeviceApprovalTransactions(t *testing.T) {
 	if !((firstErr == nil && errors.Is(secondErr, ErrUnavailable)) || (secondErr == nil && errors.Is(firstErr, ErrUnavailable))) {
 		t.Fatal("approval race did not reach one terminal decision")
 	}
+
+	t.Run("idempotent decision commit and replay", func(t *testing.T) {
+		executor, err := NewDecisionExecutor(store, auth, bytes.Repeat([]byte{0x31}, 32), bytes.Repeat([]byte{0x32}, 32),
+			"approval-decision-test-v1", 30*time.Minute)
+		if err != nil {
+			t.Fatal("could not construct fixed-policy decision executor")
+		}
+		init, err := db.BeginTx(ctx, nil)
+		if err != nil || executor.Initialize(ctx, init) != nil || init.Commit() != nil {
+			if init != nil {
+				_ = init.Rollback()
+			}
+			t.Fatal("could not initialize decision idempotency key epoch")
+		}
+		makeInput := func(item Data, key string, decision Decision, code string, confirmed bool) DecisionInput {
+			return DecisionInput{ApprovalID: item.ID, IdempotencyKey: key, Decision: decision, ComparisonCode: code, Confirmed: confirmed}
+		}
+		key1 := "AQEBAQEBAQEBAQEBAQEBAQ"
+		_, wrongCode := begin()
+		wrongSix := "000000"
+		if wrongSix == wrongCode.ComparisonCode {
+			wrongSix = "999999"
+		}
+		for _, code := range []string{"1234", "12345", wrongSix, "1234567", "12345678"} {
+			input := makeInput(wrongCode, key1, Approve, code, true)
+			if result, err := executor.Execute(ctx, db, token, input); !errors.Is(err, idempotency.ErrForbidden) || result.Body != nil {
+				t.Fatal("validly shaped but incorrect comparison code was not rejected")
+			}
+		}
+		var pendingState string
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id = ?`, []byte(wrongCode.ID)).Scan(&pendingState); err != nil || pendingState != "pending" {
+			t.Fatal("an incorrect comparison code changed the pending approval")
+		}
+		unknown := makeInput(wrongCode, key1, Approve, wrongSix, true)
+		unknown.ApprovalID = strings.Repeat("z", 128)
+		if result, err := executor.Execute(ctx, db, token, unknown); !errors.Is(err, idempotency.ErrForbidden) || result.Body != nil {
+			t.Fatal("an unknown approval did not use the same generic rejection")
+		}
+		_, approved := begin()
+		approveInput := makeInput(approved, key1, Approve, approved.ComparisonCode, true)
+		first, err := executor.Execute(ctx, db, token, approveInput)
+		if err != nil || first.Status != 200 || first.Replayed || first.ResultRef != approvalDecisionRef(approved.ID, "approved") ||
+			!bytes.Equal(first.Body, []byte(`{"status":"approved"}`)) {
+			t.Fatal("approval decision and first receipt did not commit together")
+		}
+		var requestMAC, encryptedReply []byte
+		if err := db.QueryRowContext(ctx, `SELECT request_hmac,response_enc FROM transport_idempotency_record
+			WHERE actor_id=? AND method='POST' AND route=? AND request_key=?`, claims.SubjectID,
+			[]byte("/me/login-approvals/"+approved.ID+"/decision"), []byte(key1)).Scan(&requestMAC, &encryptedReply); err != nil ||
+			bytes.Contains(requestMAC, []byte(approved.ComparisonCode)) || bytes.Contains(encryptedReply, []byte(approved.ComparisonCode)) {
+			t.Fatal("decision code was persisted outside the approval row")
+		}
+		replayed, err := executor.Replay(ctx, db, token, approveInput)
+		if err != nil || !replayed.Replayed || replayed.ResultRef != first.ResultRef || replayed.Status != first.Status || !bytes.Equal(replayed.Body, first.Body) {
+			t.Fatal("committed decision did not return the exact authorized replay")
+		}
+		changed := approveInput
+		changed.ComparisonCode = "999999"
+		if changed.ComparisonCode == approved.ComparisonCode {
+			changed.ComparisonCode = "000000"
+		}
+		if result, err := executor.Replay(ctx, db, token, changed); !errors.Is(err, idempotency.ErrConflict) || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("same key with a different comparison code did not fail without returning a receipt")
+		}
+		changed = approveInput
+		changed.Decision = Deny
+		changed.ComparisonCode = ""
+		changed.Confirmed = false
+		if result, err := executor.Replay(ctx, db, token, changed); !errors.Is(err, idempotency.ErrConflict) || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("same key with a different decision did not conflict")
+		}
+		if result, err := executor.Replay(ctx, db, otherToken, approveInput); err == nil || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("another subject received the cached approval receipt")
+		}
+		secondSessionToken, secondSessionClaims := login("first@example.test", firstKey, firstPublic)
+		if secondSessionClaims.SubjectID != claims.SubjectID || secondSessionClaims.SessionID == claims.SessionID {
+			t.Fatal("synthetic same-identity session was not distinct")
+		}
+		if result, err := executor.Replay(ctx, db, secondSessionToken, approveInput); err == nil || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("a different source session received the decision receipt")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at = DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 2 MINUTE),
+			expires_at = DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 SECOND) WHERE id = ?`, []byte(approved.ID)); err != nil {
+			t.Fatal("could not expire isolated approval for replay check")
+		}
+		if result, err := executor.Replay(ctx, db, token, approveInput); err == nil || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("expired approval returned a cached decision receipt")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET created_at = DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 2 MINUTE),
+			expires_at = DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 5 MINUTE) WHERE id = ?`, []byte(approved.ID)); err != nil {
+			t.Fatal("could not restore approval expiry for account authorization check")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE user SET status = 'disabled' WHERE id = ?`, claims.SubjectID); err != nil {
+			t.Fatal("could not disable synthetic subject")
+		}
+		if result, err := executor.Replay(ctx, db, token, approveInput); err == nil || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("disabled account received a cached decision receipt")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE user SET status = 'active' WHERE id = ?`, claims.SubjectID); err != nil {
+			t.Fatal("could not restore synthetic subject")
+		}
+
+		_, denied := begin()
+		denyInput := makeInput(denied, "AgICAgICAgICAgICAgICAg", Deny, "", false)
+		deniedResult, err := executor.Execute(ctx, db, token, denyInput)
+		if err != nil || deniedResult.Replayed || !bytes.Equal(deniedResult.Body, []byte(`{"status":"denied"}`)) {
+			t.Fatal("explicit denial did not commit a contract-shaped receipt")
+		}
+		if again, err := executor.Execute(ctx, db, token, denyInput); err != nil || !again.Replayed || !bytes.Equal(again.Body, deniedResult.Body) {
+			t.Fatal("explicit denial did not replay under the same session")
+		}
+		_, concurrentApproval := begin()
+		concurrentInput := makeInput(concurrentApproval, "BQUFBQUFBQUFBQUFBQUFBQ", Approve, concurrentApproval.ComparisonCode, true)
+		results := make(chan struct {
+			result idempotency.Result
+			err    error
+		}, 2)
+		for range 2 {
+			go func() {
+				result, err := executor.Execute(ctx, db, token, concurrentInput)
+				results <- struct {
+					result idempotency.Result
+					err    error
+				}{result: result, err: err}
+			}()
+		}
+		firstConcurrent, secondConcurrent := <-results, <-results
+		if firstConcurrent.err != nil || secondConcurrent.err != nil || firstConcurrent.result.Replayed == secondConcurrent.result.Replayed ||
+			firstConcurrent.result.Status != 200 || secondConcurrent.result.Status != 200 ||
+			!bytes.Equal(firstConcurrent.result.Body, secondConcurrent.result.Body) || firstConcurrent.result.ResultRef != secondConcurrent.result.ResultRef {
+			t.Fatal("concurrent same-key decisions did not produce one mutation and one exact replay")
+		}
+		_, competingApproval := begin()
+		competingInput := makeInput(competingApproval, "BgYGBgYGBgYGBgYGBgYGBg", Approve, competingApproval.ComparisonCode, true)
+		competingResults := make(chan error, 2)
+		go func() { _, err := executor.Execute(ctx, db, token, competingInput); competingResults <- err }()
+		go func() {
+			_, err := executor.Execute(ctx, db, secondSessionToken, competingInput)
+			competingResults <- err
+		}()
+		left, right := <-competingResults, <-competingResults
+		if !((left == nil && errors.Is(right, idempotency.ErrForbidden)) || (right == nil && errors.Is(left, idempotency.ErrForbidden))) {
+			t.Fatal("two existing sessions did not produce exactly one terminal decision")
+		}
+
+		// Hold the approval row across its expiry to exercise the actual lock
+		// wait, not just an already-expired input at the start of a request.
+		_, waitingApproval := begin()
+		if _, err := db.ExecContext(ctx, `UPDATE auth_login_approval SET expires_at=DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 3 SECOND) WHERE id=?`, []byte(waitingApproval.ID)); err != nil {
+			t.Fatal("could not set isolated approval expiry")
+		}
+		approvalGate, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not start approval expiry gate")
+		}
+		var gateState string
+		if err := approvalGate.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=? FOR UPDATE`, []byte(waitingApproval.ID)).Scan(&gateState); err != nil {
+			_ = approvalGate.Rollback()
+			t.Fatal("could not lock isolated approval")
+		}
+		waitingInput := makeInput(waitingApproval, "BwcHBwcHBwcHBwcHBwcHBw", Approve, waitingApproval.ComparisonCode, true)
+		waitingResult := make(chan error, 1)
+		go func() { _, err := executor.Execute(ctx, db, token, waitingInput); waitingResult <- err }()
+		waitForLock := func(table string) {
+			t.Helper()
+			deadline := time.Now().Add(5 * time.Second)
+			for time.Now().Before(deadline) {
+				var blocked int
+				if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME=?`, table).Scan(&blocked); err != nil {
+					t.Fatal("could not observe isolated lock wait")
+				}
+				if blocked > 0 {
+					return
+				}
+				time.Sleep(20 * time.Millisecond)
+			}
+			t.Fatal("decision did not reach the expected lock")
+		}
+		waitForLock("auth_login_approval")
+		deadline := time.Now().Add(5 * time.Second)
+		expired := false
+		for time.Now().Before(deadline) {
+			if err := db.QueryRowContext(ctx, `SELECT UTC_TIMESTAMP(6) >= expires_at FROM auth_login_approval WHERE id=?`, []byte(waitingApproval.ID)).Scan(&expired); err != nil {
+				_ = approvalGate.Rollback()
+				t.Fatal("could not observe isolated expiry")
+			}
+			if expired {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if !expired || approvalGate.Rollback() != nil {
+			t.Fatal("approval expiry gate did not complete")
+		}
+		if err := <-waitingResult; !errors.Is(err, idempotency.ErrForbidden) {
+			t.Fatal("decision succeeded after waiting across approval expiry")
+		}
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(waitingApproval.ID)).Scan(&pendingState); err != nil || pendingState != "pending" {
+			t.Fatal("expired waiting decision changed approval state")
+		}
+
+		// A revocation that commits before the decision's identity lock wins.
+		_, revokedDuringWait := begin()
+		revokeGate, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal("could not start identity revocation gate")
+		}
+		if _, err := revokeGate.ExecContext(ctx, `UPDATE login_identity SET state='revoked' WHERE id=(SELECT identity_id FROM auth_session WHERE id=?)`, []byte(claims.SessionID)); err != nil {
+			_ = revokeGate.Rollback()
+			t.Fatal("could not stage identity revocation")
+		}
+		revokeInput := makeInput(revokedDuringWait, "CAgICAgICAgICAgICAgICA", Approve, revokedDuringWait.ComparisonCode, true)
+		revokedResult := make(chan error, 1)
+		go func() { _, err := executor.Execute(ctx, db, token, revokeInput); revokedResult <- err }()
+		waitForLock("login_identity")
+		if err := revokeGate.Commit(); err != nil {
+			t.Fatal("could not commit isolated identity revocation")
+		}
+		if err := <-revokedResult; !errors.Is(err, idempotency.ErrAuthentication) {
+			t.Fatal("decision succeeded after identity revocation won the lock")
+		}
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id=?`, []byte(revokedDuringWait.ID)).Scan(&pendingState); err != nil || pendingState != "pending" {
+			t.Fatal("revoked session changed approval state")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE login_identity SET state='active' WHERE id=(SELECT identity_id FROM auth_session WHERE id=?)`, []byte(claims.SessionID)); err != nil {
+			t.Fatal("could not restore isolated identity")
+		}
+		for _, invalid := range []DecisionInput{
+			makeInput(denied, "short", Deny, "", false),
+			makeInput(denied, "AwMDAwMDAwMDAwMDAwMDAw", Deny, "000000", false),
+			makeInput(denied, "BAQEBAQEBAQEBAQEBAQEBA", Approve, denied.ComparisonCode, false),
+		} {
+			if result, err := executor.Execute(ctx, db, token, invalid); !errors.Is(err, idempotency.ErrInvalid) || result.Body != nil {
+				t.Fatal("invalid decision shape reached the transaction or returned data")
+			}
+		}
+		for _, value := range []any{executor, *executor, approveInput, &approveInput} {
+			if _, err := json.Marshal(value); err == nil || strings.Contains(fmt.Sprintf("%+v %#v", value, value), approved.ComparisonCode) {
+				t.Fatal("decision value formatting exposed comparison-code material")
+			}
+			var log bytes.Buffer
+			slog.New(slog.NewJSONHandler(&log, nil)).Info("test", "value", value)
+			if strings.Contains(log.String(), approved.ComparisonCode) || strings.Contains(log.String(), approved.ID) {
+				t.Fatal("decision value logging exposed approval data")
+			}
+		}
+	})
+
+	t.Run("decision and receipt roll back together on receipt write failure", func(t *testing.T) {
+		executor, err := NewDecisionExecutor(store, auth, bytes.Repeat([]byte{0x31}, 32), bytes.Repeat([]byte{0x32}, 32),
+			"approval-decision-test-v1", 30*time.Minute)
+		if err != nil {
+			t.Fatal("could not construct rollback decision executor")
+		}
+		init, err := db.BeginTx(ctx, nil)
+		if err != nil || executor.Initialize(ctx, init) != nil || init.Commit() != nil {
+			if init != nil {
+				_ = init.Rollback()
+			}
+			t.Fatal("could not initialize rollback idempotency key epoch")
+		}
+		_, pending := begin()
+		input := DecisionInput{ApprovalID: pending.ID, IdempotencyKey: "BQUFBQUFBQUFBQUFBQUFBQ", Decision: Approve,
+			ComparisonCode: pending.ComparisonCode, Confirmed: true}
+		if _, err := db.ExecContext(ctx, `CREATE TRIGGER fail_decision_receipt BEFORE UPDATE ON transport_idempotency_record FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'synthetic receipt fault'`); err != nil {
+			t.Fatal("could not install isolated receipt failure trigger")
+		}
+		if result, err := executor.Execute(ctx, db, token, input); err == nil || result.Body != nil || result.ResultRef != "" {
+			_, _ = db.ExecContext(ctx, `DROP TRIGGER fail_decision_receipt`)
+			t.Fatal("failed receipt persistence returned decision success")
+		}
+		var state string
+		if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id = ?`, []byte(pending.ID)).Scan(&state); err != nil || state != "pending" {
+			_, _ = db.ExecContext(ctx, `DROP TRIGGER fail_decision_receipt`)
+			t.Fatal("decision mutation survived receipt transaction rollback")
+		}
+		var count int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM transport_idempotency_record WHERE actor_id = ? AND method = 'POST' AND route = ? AND request_key = ?`,
+			claims.SubjectID, []byte("/me/login-approvals/"+pending.ID+"/decision"), []byte(input.IdempotencyKey)).Scan(&count); err != nil || count != 0 {
+			_, _ = db.ExecContext(ctx, `DROP TRIGGER fail_decision_receipt`)
+			t.Fatal("failed decision transaction left an idempotency receipt")
+		}
+		if _, err := db.ExecContext(ctx, `DROP TRIGGER fail_decision_receipt`); err != nil {
+			t.Fatal("could not remove isolated receipt failure trigger")
+		}
+		retried, err := executor.Execute(ctx, db, token, input)
+		if err != nil || retried.Status != 200 || retried.Replayed {
+			t.Fatal("same request could not succeed after atomic rollback")
+		}
+		if _, err := db.ExecContext(ctx, `UPDATE auth_session SET state='revoked', revoked_at=UTC_TIMESTAMP(6) WHERE id=?`, []byte(claims.SessionID)); err != nil {
+			t.Fatal("could not revoke source session for decision replay check")
+		}
+		if result, err := executor.Replay(ctx, db, token, input); err == nil || result.Body != nil || result.ResultRef != "" {
+			t.Fatal("revoked source session received a committed decision receipt")
+		}
+	})
 }
 
 func TestApprovalReceiptRecovery(t *testing.T) {
@@ -1211,5 +1508,81 @@ func TestApprovalReceiptRecovery(t *testing.T) {
 	}
 	if value, err := rolledCandidate.AfterCommit(ctx, db); err == nil || value.Secret != "" {
 		t.Fatal("rolled-back approval receipt released a secret")
+	}
+}
+
+func TestDecisionRequestBindsTypedContractFields(t *testing.T) {
+	key := "AQEBAQEBAQEBAQEBAQEBAQ"
+	id := "abcdefghijklmnopqrstuv"
+	approve := DecisionInput{ApprovalID: id, IdempotencyKey: key, Decision: Approve, ComparisonCode: "123456", Confirmed: true}
+	for _, code := range []string{"1234", "12345", "123456", "1234567", "12345678"} {
+		input := approve
+		input.ComparisonCode = code
+		if !validDecisionInput(input) {
+			t.Fatalf("contract-valid comparison-code length %d was rejected before matching", len(code))
+		}
+	}
+	request, err := decisionRequest(approve)
+	if err != nil || request.Method != "POST" || request.Path != "/me/login-approvals/"+id+"/decision" || request.Key != key ||
+		!bytes.Equal(request.Body, []byte(`{"decision":"approve","comparisonCode":"123456","confirmed":true}`)) {
+		t.Fatal("approval request did not serialize its exact typed contract fields")
+	}
+	changed := approve
+	changed.ComparisonCode = "654321"
+	changedRequest, err := decisionRequest(changed)
+	if err != nil || bytes.Equal(request.Body, changedRequest.Body) {
+		t.Fatal("comparison-code change was not reflected in the request digest input")
+	}
+	changed = approve
+	changed.Confirmed = false
+	if validDecisionInput(changed) {
+		t.Fatal("approval without explicit confirmation was accepted")
+	}
+	denial := DecisionInput{ApprovalID: id, IdempotencyKey: key, Decision: Deny}
+	denialRequest, err := decisionRequest(denial)
+	if err != nil || !bytes.Equal(denialRequest.Body, []byte(`{"decision":"deny"}`)) {
+		t.Fatal("denial did not match the contract's decision-only shape")
+	}
+	denial.Confirmed = true
+	if validDecisionInput(denial) {
+		t.Fatal("denial with an uncontracted confirmation field was accepted")
+	}
+	for _, invalid := range []DecisionInput{
+		{ApprovalID: "short", IdempotencyKey: key, Decision: Deny},
+		{ApprovalID: id, IdempotencyKey: strings.Repeat("x", 21), Decision: Deny},
+		{ApprovalID: id, IdempotencyKey: strings.Repeat("x", 129), Decision: Deny},
+		{ApprovalID: id, IdempotencyKey: strings.Repeat("x", 22) + "\n", Decision: Deny},
+		{ApprovalID: id, IdempotencyKey: key, Decision: Approve, ComparisonCode: "12a456", Confirmed: true},
+		{ApprovalID: id, IdempotencyKey: key, Decision: Approve, ComparisonCode: "123", Confirmed: true},
+		{ApprovalID: id, IdempotencyKey: key, Decision: Approve, ComparisonCode: "123456789", Confirmed: true},
+	} {
+		if validDecisionInput(invalid) {
+			t.Fatal("invalid decision request was accepted")
+		}
+	}
+	for _, test := range []struct {
+		status int
+		ref    string
+		body   []byte
+		valid  bool
+	}{
+		{200, approvalDecisionRef(id, "approved"), []byte(`{"status":"approved"}`), true},
+		{200, approvalDecisionRef(id, "denied"), []byte(`{"status":"denied"}`), true},
+		{201, approvalDecisionRef(id, "approved"), []byte(`{"status":"approved"}`), false},
+		{200, approvalDecisionRef(id, "approved"), []byte(`{"status":"denied"}`), false},
+		{200, approvalDecisionRef(id, "approved"), []byte(`{"status":"approved","secret":"x"}`), false},
+	} {
+		err := validateDecisionReply(test.status, test.ref, test.body)
+		if (err == nil) != test.valid {
+			t.Fatal("decision receipt validator accepted a status/reference/body mismatch")
+		}
+	}
+	for _, value := range []any{approve, &approve} {
+		if strings.Contains(fmt.Sprintf("%+v %#v", value, value), approve.ComparisonCode) {
+			t.Fatal("decision request formatting exposed the comparison code")
+		}
+		if _, err := json.Marshal(value); err == nil {
+			t.Fatal("decision request became JSON serializable")
+		}
 	}
 }

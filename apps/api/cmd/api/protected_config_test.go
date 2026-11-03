@@ -28,7 +28,8 @@ func validAPIConfigFixture() apiSecretFile {
 		ProofLifetime: 300, ProofSkew: 30, ChallengeRetention: 3600, LoginRetention: 120,
 		SessionLifetime: 3600, WorkoutRetention: 86400, ApprovalLifetime: 300, ReauthWindow: 60,
 		CodeDigits: 6, IPv6PrefixBits: 64, ChallengeWindow: 900, ChallengeEmail: 5, ChallengeDevice: 10,
-		ChallengeIP: 30, ChallengeGlobal: 1000, LoginWindow: 900, LoginEmail: 10, LoginDevice: 20, LoginIP: 50, LoginGlobal: 1000}
+		ChallengeIP: 30, ChallengeGlobal: 1000, LoginWindow: 900, LoginEmail: 10, LoginDevice: 20, LoginIP: 50, LoginGlobal: 1000,
+		ApprovalWindow: 300, ApprovalSubject: 10, ApprovalAttempt: 3, ApprovalIP: 20, ApprovalGlobal: 1000}
 }
 
 func encodeAPIConfig(t *testing.T, v apiSecretFile) []byte {
@@ -62,7 +63,8 @@ func TestLoadAPISettingsProtectedFile(t *testing.T) {
 	settings, err := loadAPISettings()
 	if err != nil || len(settings.proxies) != 2 || settings.keys.identityID != fixture.IdentityID ||
 		settings.keys.codeHashID != fixture.CodeHashID || settings.policy.workoutRetention != 24*time.Hour ||
-		settings.policy.rate.EmailChallenge.Email.Limit != 5 || settings.policy.rate.EmailLogin.IP.Limit != 50 {
+		settings.policy.rate.EmailChallenge.Email.Limit != 5 || settings.policy.rate.EmailLogin.IP.Limit != 50 ||
+		settings.policy.approvalRate.Approval.Limit != 3 || settings.policy.approvalRate.Approval.Window != 5*time.Minute {
 		t.Fatal("protected valid settings failed to load")
 	}
 	if fmt.Sprint(settings) != "APIBusinessSettings{redacted}" || fmt.Sprint(fixture) != "APISecrets{redacted}" {
@@ -136,21 +138,24 @@ func TestAPISettingsRejectAmbiguityAndInvalidPolicy(t *testing.T) {
 		})
 	}
 	cases := map[string]func(*apiSecretFile){
-		"short key":                  func(s *apiSecretFile) { s.CodeHash = "c2hvcnQ" },
-		"padded key":                 func(s *apiSecretFile) { s.CodeHash += "=" },
-		"zero key":                   func(s *apiSecretFile) { s.CodeHash = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
-		"reused key":                 func(s *apiSecretFile) { s.CodeHash = s.SessionToken },
-		"reused proxy key":           func(s *apiSecretFile) { s.ProxyCredential = s.SessionToken },
-		"zero proxy key":             func(s *apiSecretFile) { s.ProxyCredential = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
-		"invalid key id":             func(s *apiSecretFile) { s.CodeHashID = "bad/id" },
-		"public proxy":               func(s *apiSecretFile) { s.TrustedProxies = []string{"0.0.0.0/0"} },
-		"noncanonical proxy":         func(s *apiSecretFile) { s.TrustedProxies = []string{"127.0.0.2/24"} },
-		"duplicate proxy":            func(s *apiSecretFile) { s.TrustedProxies = []string{"127.0.0.1/32", "127.0.0.1/32"} },
-		"overflow duration":          func(s *apiSecretFile) { s.SessionLifetime = math.MaxInt64 },
-		"invalid challenge attempts": func(s *apiSecretFile) { s.ChallengeAttempts = 0 },
-		"invalid proof lifetime":     func(s *apiSecretFile) { s.ProofLifetime = 1801 },
-		"invalid rate":               func(s *apiSecretFile) { s.LoginIP = 0 },
-		"invalid digits":             func(s *apiSecretFile) { s.CodeDigits = 5 },
+		"short key":                   func(s *apiSecretFile) { s.CodeHash = "c2hvcnQ" },
+		"padded key":                  func(s *apiSecretFile) { s.CodeHash += "=" },
+		"zero key":                    func(s *apiSecretFile) { s.CodeHash = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
+		"reused key":                  func(s *apiSecretFile) { s.CodeHash = s.SessionToken },
+		"reused proxy key":            func(s *apiSecretFile) { s.ProxyCredential = s.SessionToken },
+		"zero proxy key":              func(s *apiSecretFile) { s.ProxyCredential = base64.RawURLEncoding.EncodeToString(make([]byte, 32)) },
+		"invalid key id":              func(s *apiSecretFile) { s.CodeHashID = "bad/id" },
+		"public proxy":                func(s *apiSecretFile) { s.TrustedProxies = []string{"0.0.0.0/0"} },
+		"noncanonical proxy":          func(s *apiSecretFile) { s.TrustedProxies = []string{"127.0.0.2/24"} },
+		"duplicate proxy":             func(s *apiSecretFile) { s.TrustedProxies = []string{"127.0.0.1/32", "127.0.0.1/32"} },
+		"overflow duration":           func(s *apiSecretFile) { s.SessionLifetime = math.MaxInt64 },
+		"invalid challenge attempts":  func(s *apiSecretFile) { s.ChallengeAttempts = 0 },
+		"invalid proof lifetime":      func(s *apiSecretFile) { s.ProofLifetime = 1801 },
+		"invalid rate":                func(s *apiSecretFile) { s.LoginIP = 0 },
+		"missing approval rate":       func(s *apiSecretFile) { s.ApprovalSubject = 0 },
+		"weak approval attempt limit": func(s *apiSecretFile) { s.ApprovalAttempt = 11 },
+		"approval window too short":   func(s *apiSecretFile) { s.ApprovalWindow = s.ApprovalLifetime - 1 },
+		"invalid digits":              func(s *apiSecretFile) { s.CodeDigits = 5 },
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {

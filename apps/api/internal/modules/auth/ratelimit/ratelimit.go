@@ -1,5 +1,5 @@
-// Package ratelimit provides an anonymous email-authentication rate-limit
-// primitive. It does not resolve forwarding headers or make auth decisions.
+// Package ratelimit provides authentication rate-limit primitives. It does
+// not resolve forwarding headers or make authentication decisions.
 package ratelimit
 
 import (
@@ -26,8 +26,9 @@ var (
 )
 
 const (
-	EmailChallenge Purpose = "email_challenge"
-	EmailLogin     Purpose = "email_login"
+	EmailChallenge   Purpose = "email_challenge"
+	EmailLogin       Purpose = "email_login"
+	ApprovalDecision Purpose = "approval_decision"
 
 	maxLimit        = uint64(1_000_000)
 	minWindow       = 100 * time.Millisecond
@@ -48,6 +49,31 @@ type Policy struct {
 	Device DimensionPolicy
 	IP     DimensionPolicy
 	Global DimensionPolicy
+}
+
+// ApprovalDecisionPolicy is configured independently of email login. Its
+// limits count authenticated subjects, individual approvals, trusted IPs and
+// all decision requests respectively; they do not count emails or devices.
+type ApprovalDecisionPolicy struct {
+	Subject  DimensionPolicy
+	Approval DimensionPolicy
+	IP       DimensionPolicy
+	Global   DimensionPolicy
+}
+
+type ApprovalDecisionLimiter struct {
+	base   *Limiter
+	policy ApprovalDecisionPolicy
+}
+
+// NewApprovalDecisionLimiter requires an explicit server-owned policy. In
+// particular, login limits must not silently become short-code limits.
+func NewApprovalDecisionLimiter(base *Limiter, policy ApprovalDecisionPolicy) (*ApprovalDecisionLimiter, error) {
+	if base == nil || nilInterface(base.client) || !validDimension(policy.Subject) ||
+		!validDimension(policy.Approval) || !validDimension(policy.IP) || !validDimension(policy.Global) {
+		return nil, ErrInvalid
+	}
+	return &ApprovalDecisionLimiter{base: base, policy: policy}, nil
 }
 
 // HMACKeys must contain independently generated 32-byte secrets. New copies
@@ -178,6 +204,54 @@ func (l *Limiter) AllowLoginIdentityDimensions(ctx context.Context, emailIndex, 
 	return l.allow(ctx, keys, []DimensionPolicy{l.login.Email, l.login.Device})
 }
 
+// AllowApprovalDecisionEntry charges independent IP/global counters before a
+// decision request performs a database lookup. SourceIP must already come
+// from the trusted proxy boundary. The purpose keeps approval counters
+// separate from login counters.
+func (l *ApprovalDecisionLimiter) AllowApprovalDecisionEntry(ctx context.Context, sourceIP netip.Addr) error {
+	if l == nil || l.base == nil || nilInterface(l.base.client) || ctx == nil {
+		return ErrUnavailable
+	}
+	keys, err := l.base.ipGlobalRedisKeys(ApprovalDecision, sourceIP)
+	if err != nil {
+		return ErrInvalid
+	}
+	return l.base.allow(ctx, keys, []DimensionPolicy{l.policy.IP, l.policy.Global})
+}
+
+// AllowApprovalDecisionIdentity charges subject/approval counters after the
+// subject has been resolved from an authenticated session by trusted code.
+// It is only a rate limit, never proof of ownership of the approval.
+func (l *ApprovalDecisionLimiter) AllowApprovalDecisionIdentity(ctx context.Context, subjectID uint64, approvalID string) error {
+	if l == nil || l.base == nil || nilInterface(l.base.client) || ctx == nil {
+		return ErrUnavailable
+	}
+	keys, err := l.base.approvalDecisionIdentityKeys(subjectID, approvalID)
+	if err != nil {
+		return ErrInvalid
+	}
+	return l.base.allow(ctx, keys, []DimensionPolicy{l.policy.Subject, l.policy.Approval})
+}
+
+func (l *Limiter) approvalDecisionIdentityKeys(subjectID uint64, approvalID string) ([]string, error) {
+	if l == nil || subjectID == 0 || len(approvalID) < 22 || len(approvalID) > 128 {
+		return nil, ErrInvalid
+	}
+	for _, c := range approvalID {
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return nil, ErrInvalid
+		}
+	}
+	subject := strconv.FormatUint(subjectID, 10)
+	// Include the authenticated subject in the approval dimension so another
+	// subject cannot consume this subject's budget even if it learns the ID.
+	approval := subject + "\x00" + approvalID
+	return []string{
+		l.redisKey(l.keys.email[:], ApprovalDecision, "subject", []byte(subject)),
+		l.redisKey(l.keys.device[:], ApprovalDecision, "approval", []byte(approval)),
+	}, nil
+}
+
 func (l *Limiter) allow(ctx context.Context, keys []string, dimensions []DimensionPolicy) error {
 	args := make([]interface{}, 0, len(dimensions)*2)
 	for _, dimension := range dimensions {
@@ -222,7 +296,7 @@ func (l *Limiter) redisKeys(purpose Purpose, input Input) ([]string, Policy, err
 }
 
 func (l *Limiter) ipGlobalRedisKeys(purpose Purpose, sourceIP netip.Addr) ([]string, error) {
-	if l == nil || purpose != EmailChallenge && purpose != EmailLogin ||
+	if l == nil || purpose != EmailChallenge && purpose != EmailLogin && purpose != ApprovalDecision ||
 		!sourceIP.IsValid() || sourceIP.IsUnspecified() || sourceIP.IsMulticast() || sourceIP.Zone() != "" {
 		return nil, ErrInvalid
 	}

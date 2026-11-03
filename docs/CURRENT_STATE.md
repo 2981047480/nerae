@@ -1,14 +1,16 @@
-# 当前状态 · 2026-10-31
+# 当前状态 · 2026-11-03
 
-**阶段：第五轮本地 UI 样机与三端同步实施计划已形成；尚无可用业务服务或正式三端应用。**
+**阶段：三端实现进行中；尚无可用业务服务或正式三端应用。**
+
+- 已有设备批准/拒绝新设备登录的事务和 HTTP 入口已接入本机受保护 API，审批回执、独立限流、账号隔离和本机装配通过私有数据库、Redis 与合成 SMTP/TLS 测试。真实邮件、新设备领取会话、近期重新认证的产品流程、客户端页面及真机仍未接通，不能称作跨设备登录已完成。[本批证据](evidence/A01/A01-08/decision-executor.md)
 
 - 用户提供的 iOS 离线 SDK 实际为 5.33；隔离夹具可直接调用 HBuilderX 自带编译器生成 App/小程序资源，并已把四个原生插件与编译夹具一起链接成未签名的 iPhoneOS arm64 测试工程。小程序仅验证 App 接口的不可用回退，微信登录尚未实现；项目依赖锁仍为 5.26。临时 Podspec/公共辅助代码修正未成为正式打包配置，HBuilderX GUI 插件宿主异常、正式页面、AppKey、签名及手机运行仍未验证。[证据](evidence/P02/P02-15/ios-sdk-533-probe.md)
 - App 端已组合原生 HTTPS、设备身份与签名、邮箱登录、会话和版本化成年声明；合成端口测试与 5.26 原生源码生成通过，账号切换/退出时清理登录临时状态。正式入口页面、线上路由、真实邮件、设备批准和真机仍未接通。[证据](evidence/A01/app-auth-runtime.md)
 - 登录取消已加入进程内会话清理屏障和失败重试，91 项认证相关合成测试通过；系统 vault 写入与清除同时失败后跨重启仍有恢复风险，页面不得将该结果显示为取消成功。[证据](evidence/A01/app-auth-runtime.md)
 - 邮箱登录入口组件已合入，集成树 79 项认证测试与类型检查通过；锁定版 5.26 的 App/小程序探针实际引用组件后源码编译通过。正式首页尚未挂载该组件，新设备批准仍是提示，真实邮箱与真机未验收。[证据](evidence/A01/auth-entry-component.md)
-- 同主体待批准设备列表的内部数据库组件和 HTTP handler 已合入，并装配到本机受保护 API 进程；集成树私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用。实际服务器部署、批准动作及可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
+- 同主体待批准设备列表的内部数据库组件和 HTTP handler 已装配到本机受保护 API 进程；私有 MySQL/Redis 与本地 TLS/race 复测覆盖本人、他人、过期、超限和停用。实际服务器部署及可恢复兑换均未完成，不能据此宣称双设备登录可用。[数据库](evidence/A01/pending-approval-list-foundation.md) · [HTTP](evidence/A01/approval-list-http.md)
 - 审批兑换加密回执原语已合入，合成密码学与会话核对边界的 race 测试通过；尚缺回执迁移、真实会话/JTI 事务接线及提交后重放，不能视作新设备兑换完成。[证据](evidence/A01/A01-24/approvalreceipt-primitive.md)
-- 幂等事务可向固定服务端策略提供已验证的当前会话 ID，并在写入和回放过程中复核同一会话；私有 MySQL 测试覆盖同主体多会话及撤销。它只是批准决策的前置能力，批准接口和兑换仍未接入。[证据](evidence/F02/F02-04/actor-session-binding.md)
+- 幂等事务可向固定服务端策略提供已验证的当前会话 ID，并在写入和回放过程中复核同一会话；私有 MySQL 测试覆盖同主体多会话及撤销。该能力已用于本机批准决定；新设备兑换仍未接入。[证据](evidence/F02/F02-04/actor-session-binding.md)
 - 当前会话撤销事务、DELETE handler 和 iOS/Android 原生传输接缝已合入，服务端已装配到本机受保护 API 进程。过期分类与不确定响应处理已修复；类型检查、23 项传输测试和两端本机 TLS 回归通过。部署、页面退出接线和真机仍未完成。[服务端](evidence/A01/A01-25/report.md) · [原生](evidence/P02/P02-14/session-revoke-native-transport.md)
 - 邮箱、成年声明和训练处理器已装配到需显式配置、回环监听和代理凭据的 API 进程；独立 worker、验证码校验密钥 epoch 与本机合成 SMTP/数据库链路已验证。真实代理覆盖、HTTPS、服务部署、真实邮件、新设备批准兑换及两种页面模式仍未完成；readiness 目前只检查数据库和 Redis 可达性。[API 进程](evidence/A01/api-process/report.md) · [worker](evidence/A01/worker-startup/report.md)
 - 训练创建、组保存和完成各有独立的只读回执 HTTP 路径；本机隔离 MySQL/TLS 验证缺失、过期、不同主体/请求与撤回成年声明均不会重做写入。客户端可从待发日志查询并校验成功回执，同主体第二个合成会话的丢响应恢复已联测；草稿合并与日志结算仍未接通，不能据此宣称同步完成。[服务端](evidence/F02/F02-04/workout-replay-http.md) · [客户端](evidence/U02/U02-01/replay-pending-client.md)
@@ -17,7 +19,7 @@
 - 训练编辑控制器现支持两种记录模式下的本机动作和组编辑，并在合成存储中验证重复标识、创建结果未知、切号恢复和同一 JS 运行时内的独占编辑；同版训练与原生传输测试 221/221 和客户端类型检查通过。独占可被底层写入口绕过，不覆盖其他进程或设备；实际三端缺安全创建适配，待恢复草稿发现、页面和网络同步均未接入，不能作为已完成的 App 功能。[证据](evidence/U02/U02-02/training-editor-controller.md)
 - iOS 和 Android 训练待发日志已实现原生维护的槽版本和保留旧数据的迁移，共享客户端可捕获版本并执行比较交换；同一集成代码上的 Swift/Kotlin 合成测试、训练客户端测试、类型检查和 5.26 App/小程序源码探针通过。该能力不处理回执结算或跨设备同步；进程外写入、整机回滚及真机 Keychain/Keystore 不在已验证范围内。[iOS](evidence/P02/P02-13/ios-versioned-journal.md) · [Android](evidence/P02/P02-14/report.md) · [客户端](evidence/U02/U02-02/versioned-journal-adapter.md)
 - 集成树独立复现显示，旧接口将已发送记录内容写回 `ready` 后，即使槽版本递增，新快照仍可能签发第二次发送许可；复现脚本按预期退出 1。单调槽版本不足以证明每个操作从未发送，可靠发送接线仍受阻，需要不可由旧接口回退的逐操作发送标记或等效原子机制。[复现](evidence/U02/U02-02/journal-aba-review.md)
-- 新设备审批决策事务与训练写入回执过期回归均有隔离候选，但尚未合入：前者为本地分支 `codex/approval-decision-candidate-20261031` 的 `db25c77`，后者为本地分支 `codex/workout-receipt-expiry-candidate-20261031` 的 `a6ad77c` 和 `aa23a50`。后者的历史还包含未合入的待发适配器候选，不可整支合并。缺私有 MySQL/race 复测；审批候选还存在合同允许 4–8 位而当前签发/存储固定 6 位的差异，不能称作跨设备审批已完成。
+- 训练写入回执过期回归仍有隔离候选，尚未合入：本地分支 `codex/workout-receipt-expiry-candidate-20261031` 的 `a6ad77c` 和 `aa23a50`。该分支历史还包含未合入的待发适配器候选，不可整支合并，仍缺同版私有 MySQL/race 复测。
 - 训练写入适配器现传递并校验服务端幂等有效期，网络/成功响应不确定时保留原请求并可只读查询回执；尚无客户端回执的持久结算，不能据此宣称完整同步。[证据](evidence/U02/U02-01/replay-pending-client.md) 可信代理来源 IP 解析器已连接本机受保护进程；上线仍须实测代理覆盖专用头及保管代理密钥。[证据](evidence/A01/trusted-source-ip-resolver.md)
 - 18+ 自我声明事务现按版本比较并发写入，旧无版本入口已移除；版本化迁移已追加至全局清单。声明写入 HTTP 已装配到本机受保护 API 进程，A01-23/24 在隔离服务中复测通过；App 页面和真实服务尚未接通。[证据](evidence/K01/K01-02/age-declaration-version.md)
 - 本机隔离链路已把真实挑战 HTTP、发信队列、SMTP 传输、验证码登录及 `/me` 串在一起，并覆盖重放、错误验证码和数据库不可用。[证据](evidence/A01/A01-24/report.md) 接收器与账号均为合成测试；QQ 邮箱和生产服务尚未连接。

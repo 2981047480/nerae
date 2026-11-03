@@ -49,6 +49,7 @@ func businessFixture() (businessKeys, businessPolicy) {
 		challenge: challenge.Policy{ChallengeTTL: 5 * time.Minute, MaxAttempts: 3,
 			DeviceProof: domain.ProofPolicy{MaxLifetime: 5 * time.Minute, ClockSkew: 30 * time.Second}},
 		rate:               ratelimit.Config{IPv6PrefixBits: 64, EmailChallenge: limit, EmailLogin: limit},
+		approvalRate:       ratelimit.ApprovalDecisionPolicy{Subject: dim, Approval: ratelimit.DimensionPolicy{Limit: 3, Window: time.Hour}, IP: dim, Global: dim},
 		challengeRetention: time.Hour, loginRetention: 2 * time.Minute, sessionLifetime: time.Hour,
 		workoutRetention: 24 * time.Hour, approval: approval.Policy{Lifetime: 5 * time.Minute, ReauthWindow: time.Minute}, codeDigits: 6,
 	}
@@ -147,6 +148,16 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	}
 	if _, err := buildBusinessHandler(ctx, db, rdb, keys, policy, proxies); err != nil {
 		t.Fatal("same-key restart failed")
+	}
+	unsafePolicy := policy
+	unsafePolicy.approvalRate.Approval.Limit = 11
+	if _, err := buildBusinessHandler(ctx, db, rdb, keys, unsafePolicy, proxies); err == nil {
+		t.Fatal("approval attempt limit above the safety ceiling was accepted")
+	}
+	unsafePolicy = policy
+	unsafePolicy.approvalRate.Approval.Window = time.Second
+	if _, err := buildBusinessHandler(ctx, db, rdb, keys, unsafePolicy, proxies); err == nil {
+		t.Fatal("approval limit window shorter than the approval lifetime was accepted")
 	}
 	// Emulate a live workout transaction which already holds the idempotency
 	// epoch. Once startup has locked the earlier approval epoch, it must wait
@@ -287,6 +298,52 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		t.Fatalf("login status %d", login.Code)
 	}
 	token := success.Token
+	secondDevice, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal("second synthetic device setup failed")
+	}
+	secondBody, _ := json.Marshal(map[string]any{"email": "assembly@example.test", "devicePublicKey": map[string]string{
+		"kty": "EC", "crv": "P-256", "x": enc(secondDevice.X.FillBytes(make([]byte, 32))), "y": enc(secondDevice.Y.FillBytes(make([]byte, 32))),
+	}})
+	secondIssued := request("POST", "/auth/email/challenges", secondBody, "", requestKey(), peer, source)
+	var secondChallenge api.EmailLoginChallenge
+	if secondIssued.Code != http.StatusAccepted || json.Unmarshal(secondIssued.Body.Bytes(), &secondChallenge) != nil || secondChallenge.ChallengeId == "" {
+		t.Fatal("assembled new-device challenge failed")
+	}
+	secondCode, err := deriver.Derive(string(secondChallenge.ChallengeId), "email_login", 6)
+	if err != nil {
+		t.Fatal("second synthetic code derivation failed")
+	}
+	issuedAt := time.Now().UTC()
+	secondClaims, _ := json.Marshal(map[string]any{"aud": "nerae-auth-device", "purpose": "email_login", "resourceId": secondChallenge.ChallengeId,
+		"nonce": secondChallenge.Nonce, "iat": issuedAt.Unix(), "exp": issuedAt.Add(time.Minute).Unix(), "jti": requestKey()})
+	secondUnsigned := enc([]byte(`{"alg":"ES256","typ":"JWT"}`)) + "." + enc(secondClaims)
+	secondDigest := sha256.Sum256([]byte(secondUnsigned))
+	secondR, secondS, err := ecdsa.Sign(rand.Reader, secondDevice, secondDigest[:])
+	if err != nil {
+		t.Fatal("second synthetic device signing failed")
+	}
+	secondProof := secondUnsigned + "." + enc(append(secondR.FillBytes(make([]byte, 32)), secondS.FillBytes(make([]byte, 32))...))
+	secondLoginBody, _ := json.Marshal(map[string]string{"challengeId": string(secondChallenge.ChallengeId), "code": secondCode, "deviceProof": secondProof})
+	secondLogin := request("POST", "/auth/email-login", secondLoginBody, "", requestKey(), peer, source)
+	var pending api.PhoneAuthApprovalRequired
+	if secondLogin.Code != http.StatusOK || json.Unmarshal(secondLogin.Body.Bytes(), &pending) != nil || string(pending.Status) != "approval_required" || pending.ApprovalId == "" {
+		t.Fatal("assembled new-device login did not require approval")
+	}
+	decisionPath := "/me/login-approvals/" + string(pending.ApprovalId) + "/decision"
+	decisionBody, _ := json.Marshal(map[string]any{"decision": "approve", "comparisonCode": pending.ComparisonCode, "confirmed": true})
+	decisionKey := requestKey()
+	if badIP := request("POST", decisionPath, decisionBody, token, decisionKey, "198.51.100.1:12345", source); badIP.Code != http.StatusServiceUnavailable {
+		t.Fatal("decision accepted an untrusted proxy")
+	}
+	decision := request("POST", decisionPath, decisionBody, token, decisionKey, peer, source)
+	if decision.Code != http.StatusOK || decision.Body.String() != `{"status":"approved"}` || decision.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("assembled decision failed: %d", decision.Code)
+	}
+	decisionReplay := request("POST", decisionPath, decisionBody, token, decisionKey, peer, source)
+	if decisionReplay.Code != http.StatusOK || decisionReplay.Header().Get("Idempotency-Replayed") != "true" || !bytes.Equal(decision.Body.Bytes(), decisionReplay.Body.Bytes()) {
+		t.Fatal("assembled decision did not replay its committed receipt")
+	}
 	age := request("POST", "/me/age-verify", []byte(`{"isAdult":true,"expectedVersion":1}`), token, "", peer, source)
 	if age.Code != http.StatusOK {
 		t.Fatalf("age status %d", age.Code)
@@ -319,4 +376,5 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		t.Fatal("anonymous record access not denied")
 	}
 	t.Log("PASS: assembled handler challenge -> synthetic derived code login -> age -> workout create/set/read")
+	t.Log("PASS: assembled new-device decision uses trusted IP, shared idempotency epoch and authorized replay")
 }

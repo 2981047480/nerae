@@ -283,6 +283,10 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal("workout idempotency executor setup failed")
 	}
+	decisionExecutor, err := approval.NewDecisionExecutor(approvals, sessions, bytes.Repeat([]byte{0x52}, 32), bytes.Repeat([]byte{0x53}, 32), "a01-24-workout-v1", time.Hour)
+	if err != nil {
+		t.Fatal("approval decision executor setup failed")
+	}
 	workoutKeyTx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal("workout idempotency-key transaction failed")
@@ -290,6 +294,10 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	if err := workoutExecutor.InitializeKey(ctx, workoutKeyTx); err != nil {
 		_ = workoutKeyTx.Rollback()
 		t.Fatal("workout idempotency-key initialization failed")
+	}
+	if err := decisionExecutor.Initialize(ctx, workoutKeyTx); err != nil {
+		_ = workoutKeyTx.Rollback()
+		t.Fatal("approval decision epoch did not match the shared transport epoch")
 	}
 	if err := workoutKeyTx.Commit(); err != nil {
 		t.Fatal("workout idempotency-key commit failed")
@@ -309,12 +317,30 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		}
 		workoutWriteHandler.ServeHTTP(w, r)
 	})
+	decisionLimiter, err := ratelimit.NewApprovalDecisionLimiter(challengeLimiter, ratelimit.ApprovalDecisionPolicy{
+		Subject: ratelimit.DimensionPolicy{Limit: 10, Window: time.Minute}, Approval: ratelimit.DimensionPolicy{Limit: 3, Window: time.Minute},
+		IP: ratelimit.DimensionPolicy{Limit: 100, Window: time.Minute}, Global: ratelimit.DimensionPolicy{Limit: 100, Window: time.Minute},
+	})
+	if err != nil {
+		t.Fatal("test approval rate policy setup failed")
+	}
+	decisionHandler, err := NewApprovalDecisionHandler(db, decisionExecutor, sessions, decisionLimiter, validator,
+		TrustedSourceIPFunc(func(*http.Request) (netip.Addr, error) { return trustedIP, nil }))
+	if err != nil {
+		t.Fatal("approval decision handler setup failed")
+	}
+	approvalListHandler, err := NewApprovalListHandler(db, approvals, sessions, sessions, validator)
+	if err != nil {
+		t.Fatal("approval list handler setup failed")
+	}
 	mux := http.NewServeMux()
 	mux.Handle(emailChallengesPath, challengeHandler)
 	mux.Handle(emailLoginPath, loginHandler)
 	mux.Handle("/me", meHandler)
 	mux.Handle("/auth/sessions/current", logoutHandler)
 	mux.Handle(ageVerifyPath, ageHandler)
+	mux.Handle("/me/login-approvals", approvalListHandler)
+	mux.Handle("/me/login-approvals/", decisionHandler)
 	mux.Handle("/me/sessions", workoutHandler)
 	mux.Handle("/me/sessions/", workoutHandler)
 	server := httptest.NewTLSServer(mux)
@@ -443,6 +469,106 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 		*user.AgeDeclarationVersion != 1 || bytes.Contains(meBody, []byte(success.Token)) {
 		t.Fatal("/me did not authenticate the issued session without exposing its token")
 	}
+
+	// A second synthetic device must be approved by the existing session. All
+	// mail is delivered to the local SMTP sink; this is not a QQ or device test.
+	newDevice, newPublic := emailLoginHTTPDevice(t)
+	newChallengeBody, err := json.Marshal(map[string]any{"email": "a01-24-e2e@example.test", "devicePublicKey": map[string]string{
+		"kty": newPublic.Kty, "crv": newPublic.Crv, "x": newPublic.X, "y": newPublic.Y,
+	}})
+	if err != nil {
+		t.Fatal("new-device challenge encoding failed")
+	}
+	status, _, newChallengeResponse := post(emailChallengesPath, newChallengeBody, randomIdempotencyKey(t))
+	var newChallenge api.EmailLoginChallenge
+	if status != http.StatusAccepted || json.Unmarshal(newChallengeResponse, &newChallenge) != nil || newChallenge.ChallengeId == "" {
+		t.Fatal("new-device challenge did not start")
+	}
+	if err := worker.RunOnce(ctx); err != nil {
+		t.Fatal("new-device local mail delivery failed")
+	}
+	var newMessage localSMTPMessage
+	select {
+	case newMessage = <-smtpMessages:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for new-device synthetic SMTP message")
+	}
+	if newMessage.err != nil {
+		t.Fatal("new-device local SMTP sink failed")
+	}
+	newCode := deliveredCode(t, newMessage.message, "a01-24-e2e@example.test")
+	newLoginBody, err := json.Marshal(map[string]string{"challengeId": string(newChallenge.ChallengeId), "code": newCode,
+		"deviceProof": emailLoginHTTPProof(t, newDevice, string(newChallenge.ChallengeId), string(newChallenge.Nonce))})
+	if err != nil {
+		t.Fatal("new-device login encoding failed")
+	}
+	status, _, newLoginResponse := post(emailLoginPath, newLoginBody, randomIdempotencyKey(t))
+	var pending api.PhoneAuthApprovalRequired
+	if status != http.StatusOK || json.Unmarshal(newLoginResponse, &pending) != nil || string(pending.Status) != "approval_required" ||
+		pending.ApprovalId == "" || pending.ComparisonCode == "" || pending.ApprovalSecret == "" {
+		t.Fatal("new device did not receive a pending approval")
+	}
+	listRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/me/login-approvals", nil)
+	if err != nil {
+		t.Fatal("approval list request failed")
+	}
+	listRequest.Header.Set("Authorization", "Bearer "+success.Token)
+	listResponse, err := server.Client().Do(listRequest)
+	if err != nil {
+		t.Fatal("approval list HTTP call failed")
+	}
+	listBody, readErr := io.ReadAll(listResponse.Body)
+	_ = listResponse.Body.Close()
+	if readErr != nil || listResponse.StatusCode != http.StatusOK || !bytes.Contains(listBody, []byte(pending.ApprovalId)) ||
+		!bytes.Contains(listBody, []byte(pending.ComparisonCode)) || bytes.Contains(listBody, []byte(pending.ApprovalSecret)) {
+		t.Fatal("existing device could not safely inspect the pending approval")
+	}
+	decide := func(body []byte, key string) (int, http.Header, []byte) {
+		t.Helper()
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, server.URL+"/me/login-approvals/"+string(pending.ApprovalId)+"/decision", bytes.NewReader(body))
+		if err != nil {
+			t.Fatal("approval decision request failed")
+		}
+		req.Header.Set("Authorization", "Bearer "+success.Token)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Idempotency-Key", key)
+		resp, err := server.Client().Do(req)
+		if err != nil {
+			t.Fatal("approval decision HTTP call failed")
+		}
+		payload, readErr := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if readErr != nil || resp.Header.Get("Cache-Control") != "no-store" || bytes.Contains(payload, []byte(success.Token)) || bytes.Contains(payload, []byte(pending.ComparisonCode)) {
+			t.Fatal("approval decision response was unsafe")
+		}
+		return resp.StatusCode, resp.Header.Clone(), payload
+	}
+	incorrect := "000000"
+	if pending.ComparisonCode == incorrect {
+		incorrect = "999999"
+	}
+	badDecision, _ := json.Marshal(map[string]any{"decision": "approve", "comparisonCode": incorrect, "confirmed": true})
+	if code, _, _ := decide(badDecision, randomIdempotencyKey(t)); code != http.StatusForbidden {
+		t.Fatalf("wrong approval code status %d", code)
+	}
+	goodDecision, _ := json.Marshal(map[string]any{"decision": "approve", "comparisonCode": pending.ComparisonCode, "confirmed": true})
+	decisionKey := randomIdempotencyKey(t)
+	decisionStatus, _, decided := decide(goodDecision, decisionKey)
+	if decisionStatus != http.StatusOK || string(decided) != `{"status":"approved"}` {
+		t.Fatalf("authenticated decision status %d", decisionStatus)
+	}
+	decisionStatus, decisionHeaders, replayedDecision := decide(goodDecision, decisionKey)
+	if decisionStatus != http.StatusOK || decisionHeaders.Get("Idempotency-Replayed") != "true" || !bytes.Equal(decided, replayedDecision) {
+		t.Fatal("approval decision retry did not recover the same receipt")
+	}
+	if code, _, _ := decide(goodDecision, decisionKey); code != http.StatusTooManyRequests {
+		t.Fatalf("per-approval decision rate limit status %d", code)
+	}
+	var savedState string
+	if err := db.QueryRowContext(ctx, `SELECT state FROM auth_login_approval WHERE id = ?`, []byte(pending.ApprovalId)).Scan(&savedState); err != nil || savedState != "approved" {
+		t.Fatal("approval decision did not persist its terminal state")
+	}
+	t.Log("PASS: new-device approval decision, authorized retry and Redis attempt bound")
 
 	postAge := func(client *http.Client, baseURL string, token string, body []byte) (int, http.Header, []byte) {
 		t.Helper()
@@ -664,7 +790,7 @@ func TestEmailChallengeSMTPLoginAgeAndWorkoutHTTPOverLocalTLS(t *testing.T) {
 	}
 	otherCode := deliveredCode(t, otherMessage.message, otherEmail)
 	expectedOtherCode, err := deriver.Derive(string(otherIssued.ChallengeId), "email_login", 6)
-	if err != nil || otherMessage.err != nil || otherCode != expectedOtherCode || smtpConnections.Load() != 2 {
+	if err != nil || otherMessage.err != nil || otherCode != expectedOtherCode || smtpConnections.Load() != 3 {
 		t.Fatal("second SMTP-delivered code did not match its challenge")
 	}
 	otherLoginBody, err := json.Marshal(map[string]string{"challengeId": string(otherIssued.ChallengeId), "code": otherCode,

@@ -98,6 +98,8 @@ def run() -> int:
             marker = "PASS: challenge HTTP -> outbox -> local TLS SMTP -> login HTTP -> age declaration HTTP -> workout create/set/read/finish HTTP"
             if marker not in test.stdout:
                 raise RuntimeError("targeted test did not emit its PASS marker; it may have been skipped")
+            if "PASS: new-device approval decision, authorized retry and Redis attempt bound" not in test.stdout:
+                raise RuntimeError("new-device approval decision was not exercised")
             if os.environ.get("NERAE_RUN_API_ASSEMBLY_TEST") == "1":
                 # A separate empty schema prevents the earlier fixture's
                 # synthetic key epochs and test data from contaminating this
@@ -118,6 +120,8 @@ def run() -> int:
                     raise RuntimeError(f"business handler assembly test failed ({assembly.returncode})")
                 if "PASS: assembled handler challenge -> synthetic derived code login -> age -> workout create/set/read" not in assembly.stdout:
                     raise RuntimeError("business assembly test did not emit its PASS marker; it may have been skipped")
+                if "PASS: assembled new-device decision uses trusted IP, shared idempotency epoch and authorized replay" not in assembly.stdout:
+                    raise RuntimeError("assembled approval decision was not exercised")
             subprocess.run([str(REDIS_CLI), "-s", str(redis_socket), "SHUTDOWN", "NOSAVE"],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, timeout=10, check=False)
             redis_child.wait(timeout=15)

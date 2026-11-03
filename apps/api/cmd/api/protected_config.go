@@ -82,6 +82,11 @@ type apiSecretFile struct {
 	LoginDevice        uint64   `json:"rate_login_device_limit"`
 	LoginIP            uint64   `json:"rate_login_ip_limit"`
 	LoginGlobal        uint64   `json:"rate_login_global_limit"`
+	ApprovalWindow     int64    `json:"rate_approval_window_seconds"`
+	ApprovalSubject    uint64   `json:"rate_approval_subject_limit"`
+	ApprovalAttempt    uint64   `json:"rate_approval_attempt_limit"`
+	ApprovalIP         uint64   `json:"rate_approval_ip_limit"`
+	ApprovalGlobal     uint64   `json:"rate_approval_global_limit"`
 }
 
 func (apiSecretFile) String() string               { return "APISecrets{redacted}" }
@@ -230,10 +235,12 @@ func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 		!within(s.SessionLifetime, 1, 30*86400) || !within(s.WorkoutRetention, 1, 30*86400) ||
 		!within(s.ApprovalLifetime, 1, 1800) || !within(s.ReauthWindow, 1, 86400) ||
 		s.CodeDigits < 6 || s.CodeDigits > 10 || s.IPv6PrefixBits < 16 || s.IPv6PrefixBits > 128 ||
-		!within(s.ChallengeWindow, 1, 86400) || !within(s.LoginWindow, 1, 86400) {
+		!within(s.ChallengeWindow, 1, 86400) || !within(s.LoginWindow, 1, 86400) ||
+		!within(s.ApprovalWindow, 1, 86400) || s.ApprovalWindow < s.ApprovalLifetime || s.ApprovalAttempt < 1 || s.ApprovalAttempt > 10 {
 		return apiBusinessSettings{}, errAPIConfig
 	}
-	limits := []uint64{s.ChallengeEmail, s.ChallengeDevice, s.ChallengeIP, s.ChallengeGlobal, s.LoginEmail, s.LoginDevice, s.LoginIP, s.LoginGlobal}
+	limits := []uint64{s.ChallengeEmail, s.ChallengeDevice, s.ChallengeIP, s.ChallengeGlobal, s.LoginEmail, s.LoginDevice, s.LoginIP, s.LoginGlobal,
+		s.ApprovalSubject, s.ApprovalAttempt, s.ApprovalIP, s.ApprovalGlobal}
 	for _, limit := range limits {
 		if limit < 1 || limit > 1000000 {
 			return apiBusinessSettings{}, errAPIConfig
@@ -250,10 +257,12 @@ func (s apiSecretFile) settings() (apiBusinessSettings, error) {
 		}
 		return ratelimit.Policy{Email: dim(email), Device: dim(device), IP: dim(ip), Global: dim(global)}
 	}
+	approvalRate := policyFor(s.ApprovalWindow, s.ApprovalSubject, s.ApprovalAttempt, s.ApprovalIP, s.ApprovalGlobal)
 	policy := businessPolicy{challenge: challenge.Policy{ChallengeTTL: seconds(s.ChallengeTTL), MaxAttempts: s.ChallengeAttempts, DeviceProof: proof},
 		rate: ratelimit.Config{IPv6PrefixBits: s.IPv6PrefixBits,
 			EmailChallenge: policyFor(s.ChallengeWindow, s.ChallengeEmail, s.ChallengeDevice, s.ChallengeIP, s.ChallengeGlobal),
 			EmailLogin:     policyFor(s.LoginWindow, s.LoginEmail, s.LoginDevice, s.LoginIP, s.LoginGlobal)},
+		approvalRate:       ratelimit.ApprovalDecisionPolicy{Subject: approvalRate.Email, Approval: approvalRate.Device, IP: approvalRate.IP, Global: approvalRate.Global},
 		challengeRetention: seconds(s.ChallengeRetention), loginRetention: seconds(s.LoginRetention),
 		sessionLifetime: seconds(s.SessionLifetime), workoutRetention: seconds(s.WorkoutRetention),
 		approval: approval.Policy{Lifetime: seconds(s.ApprovalLifetime), ReauthWindow: seconds(s.ReauthWindow)}, codeDigits: s.CodeDigits}

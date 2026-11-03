@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"nerae/api/internal/dbtx"
+	"nerae/api/internal/idempotency"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
 	"nerae/api/internal/modules/auth/identity"
@@ -233,6 +235,16 @@ func (s *Store) InitializeKey(ctx context.Context, tx *sql.Tx) error {
 }
 
 func (s *Store) checkEpoch(ctx context.Context, tx *sql.Tx) error {
+	if tx == nil {
+		return ErrUnavailable
+	}
+	return s.checkEpochReader(ctx, dbtx.Wrap(tx))
+}
+
+func (s *Store) checkEpochReader(ctx context.Context, tx idempotency.ReadTransaction) error {
+	if s == nil || ctx == nil || tx == nil {
+		return ErrUnavailable
+	}
 	var id, tag []byte
 	if err := tx.QueryRowContext(ctx, `SELECT key_id, key_tag FROM auth_approval_key_epoch WHERE slot = 1 FOR SHARE`).Scan(&id, &tag); err != nil ||
 		string(id) != s.keyID || !hmac.Equal(tag, s.epoch[:]) {
@@ -638,6 +650,15 @@ func validComparisonCode(value string) bool {
 	if len(value) != 6 {
 		return false
 	}
+	return validComparisonInput(value)
+}
+
+// Input follows the wire contract. Current issued codes are six digits, so a
+// valid 4, 5, 7 or 8 digit input can only be rejected as a non-matching code.
+func validComparisonInput(value string) bool {
+	if len(value) < 4 || len(value) > 8 {
+		return false
+	}
 	for _, digit := range value {
 		if digit < '0' || digit > '9' {
 			return false
@@ -820,7 +841,7 @@ const (
 // authentication. This is not an approval exchange or device registration.
 func (s *Store) Decide(ctx context.Context, tx *sql.Tx, principal *session.Principal, approvalID string, decision Decision, code string, confirmed bool) error {
 	if s == nil || s.now == nil || ctx == nil || tx == nil || principal == nil || len(approvalID) < 22 || len(approvalID) > 128 ||
-		(decision != Approve && decision != Deny) || (decision == Approve && (!confirmed || len(code) != 6)) ||
+		(decision != Approve && decision != Deny) || (decision == Approve && (!confirmed || !validComparisonInput(code))) ||
 		(decision == Deny && (confirmed || code != "")) {
 		return ErrUnavailable
 	}
@@ -828,49 +849,11 @@ func (s *Store) Decide(ctx context.Context, tx *sql.Tx, principal *session.Princ
 	if err != nil {
 		return ErrUnavailable
 	}
-	if s.checkEpoch(ctx, tx) != nil {
-		return ErrUnavailable
-	}
-	var sessionIdentity []byte
-	var authRaw string
-	if err := tx.QueryRowContext(ctx, `SELECT identity_id, DATE_FORMAT(authenticated_at, '%Y-%m-%d %H:%i:%s.%f')
-        FROM auth_session WHERE id = ? AND user_id = ? FOR UPDATE`, []byte(actor.SessionID), actor.SubjectID).
-		Scan(&sessionIdentity, &authRaw); err != nil {
-		return ErrUnavailable
-	}
-	var userID, tokenVersion, identityVersion uint64
-	var originalIdentity []byte
-	var storedCode, state, expiryRaw string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id, identity_id, token_version, identity_version, comparison_code, state,
-        DATE_FORMAT(expires_at, '%Y-%m-%d %H:%i:%s.%f') FROM auth_login_approval WHERE id = ? FOR UPDATE`, []byte(approvalID)).
-		Scan(&userID, &originalIdentity, &tokenVersion, &identityVersion, &storedCode, &state, &expiryRaw); err != nil ||
-		userID != actor.SubjectID || state != "pending" || !hmac.Equal(originalIdentity, sessionIdentity) {
-		return ErrUnavailable
-	}
-	var status string
-	var currentTokenVersion, currentIdentityVersion uint64
-	if err := tx.QueryRowContext(ctx, `SELECT status, token_version, identity_version FROM user WHERE id = ? FOR UPDATE`, userID).
-		Scan(&status, &currentTokenVersion, &currentIdentityVersion); err != nil || status != "active" ||
-		currentTokenVersion != tokenVersion || currentIdentityVersion != identityVersion {
-		return ErrUnavailable
-	}
-	const layout = "2006-01-02 15:04:05.000000"
-	expires, expiryErr := time.Parse(layout, expiryRaw)
-	authenticated, authErr := time.Parse(layout, authRaw)
-	now := s.now().UTC().Truncate(time.Microsecond)
-	if expiryErr != nil || authErr != nil || now.IsZero() || !expires.After(now) || authenticated.After(now) {
-		return ErrUnavailable
-	}
-	state = "denied"
-	if decision == Approve {
-		if !hmac.Equal([]byte(storedCode), []byte(code)) || !authenticated.Add(s.policy.ReauthWindow).After(now) {
+	if err := s.decideForActor(ctx, dbtx.Wrap(tx), decisionPrincipal{subjectID: actor.SubjectID, sessionID: actor.SessionID}, approvalID, decision, code, confirmed); err != nil {
+		if errors.Is(err, errDecisionRejected) {
 			return ErrUnavailable
 		}
-		state = "approved"
-	}
-	if _, err := tx.ExecContext(ctx, `UPDATE auth_login_approval SET state = ?, decision_session_id = ?, decided_at = ? WHERE id = ? AND state = 'pending'`,
-		state, []byte(actor.SessionID), timestamp(now), []byte(approvalID)); err != nil {
-		return ErrUnavailable
+		return err
 	}
 	if _, err := principal.ForTransaction(ctx, tx); err != nil {
 		return ErrUnavailable

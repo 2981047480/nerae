@@ -10,6 +10,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -48,6 +49,48 @@ func TestNewRejectsUnsafeConfiguration(t *testing.T) {
 	invalid.EmailLogin.IP.Limit = maxLimit + 1
 	if _, err := New(client, invalid); !errors.Is(err, ErrInvalid) {
 		t.Fatal("unbounded rate limit was accepted")
+	}
+}
+
+func TestApprovalDecisionKeyIsolationAndValidation(t *testing.T) {
+	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1"})
+	defer client.Close()
+	limiter, err := New(client, validConfig(t))
+	if err != nil {
+		t.Fatal("limiter construction failed")
+	}
+	if _, err := NewApprovalDecisionLimiter(limiter, ApprovalDecisionPolicy{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("missing approval-specific policy was accepted")
+	}
+	decisionLimiter := newTestApprovalLimiter(t, limiter, policy(2, 1, 2, 4, time.Second))
+	approvalID := "private-approval-id-001"
+	keys, err := limiter.approvalDecisionIdentityKeys(987654321, approvalID)
+	if err != nil || len(keys) != 2 {
+		t.Fatal("valid approval dimensions were rejected")
+	}
+	for _, key := range keys {
+		if !contains(key, redisClusterTag) || contains(key, approvalID) || contains(key, "987654321") {
+			t.Fatal("approval counter exposed its raw identifier")
+		}
+	}
+	ip := netip.MustParseAddr("198.51.100.9")
+	approvalKeys, err := limiter.ipGlobalRedisKeys(ApprovalDecision, ip)
+	loginKeys, loginErr := limiter.ipGlobalRedisKeys(EmailLogin, ip)
+	if err != nil || loginErr != nil || len(approvalKeys) != 2 || approvalKeys[0] == loginKeys[0] || approvalKeys[1] == loginKeys[1] {
+		t.Fatal("approval and login entry counters were not separated")
+	}
+	for _, item := range []struct {
+		subject uint64
+		id      string
+	}{
+		{0, approvalID}, {1, "short"}, {1, strings.Repeat("a", 129)}, {1, strings.Repeat("a", 21) + "/"},
+	} {
+		if _, err := limiter.approvalDecisionIdentityKeys(item.subject, item.id); !errors.Is(err, ErrInvalid) {
+			t.Fatal("invalid approval rate-limit input was accepted")
+		}
+	}
+	if err := decisionLimiter.AllowApprovalDecisionEntry(context.Background(), netip.Addr{}); !errors.Is(err, ErrInvalid) {
+		t.Fatal("missing trusted source IP was accepted")
 	}
 }
 
@@ -152,6 +195,71 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		t.Fatal("private Redis ping failed")
 	}
 	t.Cleanup(func() { _ = client.Close() })
+
+	t.Run("approval decision dimensions and concurrent bound", func(t *testing.T) {
+		ctx := context.Background()
+		p := policy(2, 1, 2, 4, 5*time.Second)
+		limiter := newTestApprovalLimiter(t, newTestLimiter(t, client, p, p), p)
+		ip := netip.MustParseAddr("198.51.100.42")
+		if err := limiter.AllowApprovalDecisionEntry(ctx, ip); err != nil {
+			t.Fatal("first approval entry was denied")
+		}
+		if err := limiter.AllowApprovalDecisionEntry(ctx, ip); err != nil {
+			t.Fatal("second approval entry was denied")
+		}
+		if !errors.Is(limiter.AllowApprovalDecisionEntry(ctx, ip), ErrLimited) {
+			t.Fatal("approval IP bound was not enforced")
+		}
+		first := "approval-0000000000001"
+		second := "approval-0000000000002"
+		third := "approval-0000000000003"
+		if err := limiter.AllowApprovalDecisionIdentity(ctx, 101, first); err != nil {
+			t.Fatal("first approval identity request was denied")
+		}
+		if !errors.Is(limiter.AllowApprovalDecisionIdentity(ctx, 101, first), ErrLimited) {
+			t.Fatal("approval-specific limit was not enforced")
+		}
+		if err := limiter.AllowApprovalDecisionIdentity(ctx, 202, first); err != nil {
+			t.Fatal("another subject shared the approval-specific counter")
+		}
+		if err := limiter.AllowApprovalDecisionIdentity(ctx, 101, second); err != nil {
+			t.Fatal("another approval under the subject budget was denied")
+		}
+		if !errors.Is(limiter.AllowApprovalDecisionIdentity(ctx, 101, third), ErrLimited) {
+			t.Fatal("subject limit was bypassed with a different approval")
+		}
+		if err := limiter.AllowApprovalDecisionIdentity(ctx, 303, third); err != nil {
+			t.Fatal("a denied subject request partially consumed the approval counter")
+		}
+
+		concurrentPolicy := policy(100, 7, 100, 100, 5*time.Second)
+		concurrent := newTestApprovalLimiter(t, newTestLimiter(t, client, p, p), concurrentPolicy)
+		const attempts = 40
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		allowed, limited, failed := 0, 0, 0
+		for i := 0; i < attempts; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				err := concurrent.AllowApprovalDecisionIdentity(ctx, 101, "approval-concurrent-001")
+				mu.Lock()
+				defer mu.Unlock()
+				switch {
+				case err == nil:
+					allowed++
+				case errors.Is(err, ErrLimited):
+					limited++
+				default:
+					failed++
+				}
+			}()
+		}
+		wg.Wait()
+		if allowed != 7 || limited != attempts-7 || failed != 0 {
+			t.Fatalf("approval concurrent bound: allowed=%d limited=%d failed=%d", allowed, limited, failed)
+		}
+	})
 
 	t.Run("purpose and four independent thresholds", func(t *testing.T) {
 		policy := policy(1, 1, 1, 1, 3*time.Second)
@@ -539,7 +647,23 @@ func TestLimiterAgainstPrivateRedis(t *testing.T) {
 		if !errors.Is(err, ErrUnavailable) || contains(err.Error(), "closed") || contains(err.Error(), socket) {
 			t.Fatal("Redis failure was not mapped to a redacted unavailable error")
 		}
+		decisionLimiter := newTestApprovalLimiter(t, limiter, policy(2, 2, 2, 2, time.Second))
+		if err := decisionLimiter.AllowApprovalDecisionEntry(context.Background(), netip.MustParseAddr("192.0.2.88")); !errors.Is(err, ErrUnavailable) {
+			t.Fatal("unavailable Redis did not block approval entry")
+		}
+		if err := decisionLimiter.AllowApprovalDecisionIdentity(context.Background(), 101, "approval-unavailable-001"); !errors.Is(err, ErrUnavailable) {
+			t.Fatal("unavailable Redis did not block approval identity")
+		}
 	})
+}
+
+func newTestApprovalLimiter(t *testing.T, base *Limiter, p Policy) *ApprovalDecisionLimiter {
+	t.Helper()
+	limiter, err := NewApprovalDecisionLimiter(base, ApprovalDecisionPolicy{Subject: p.Email, Approval: p.Device, IP: p.IP, Global: p.Global})
+	if err != nil {
+		t.Fatal("approval limiter construction failed")
+	}
+	return limiter
 }
 
 func newTestLimiter(t *testing.T, client redis.Scripter, challenge, login Policy) *Limiter {

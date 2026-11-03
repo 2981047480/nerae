@@ -77,6 +77,7 @@ func (k businessKeys) distinctKeys() bool {
 type businessPolicy struct {
 	challenge                                                             challenge.Policy
 	rate                                                                  ratelimit.Config
+	approvalRate                                                          ratelimit.ApprovalDecisionPolicy
 	challengeRetention, loginRetention, sessionLifetime, workoutRetention time.Duration
 	approval                                                              approval.Policy
 	codeDigits                                                            int
@@ -198,6 +199,25 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	if err != nil {
 		return nil, errBusinessStartup
 	}
+	// A new window must not reset one approval's short-code attempt budget
+	// while that approval could still be valid.
+	if policy.approvalRate.Approval.Limit > 10 || policy.approvalRate.Approval.Window < policy.approval.Lifetime {
+		return nil, errBusinessStartup
+	}
+	decisionLimiter, err := ratelimit.NewApprovalDecisionLimiter(limiter, policy.approvalRate)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	// The transport idempotency epoch is shared with workout requests. Both
+	// executors must use identical epoch keys while retaining separate SQL policies.
+	decisionExecutor, err := approval.NewDecisionExecutor(approvals, sessions, keys.workoutHash, keys.workoutCipher, keys.workoutID, policy.workoutRetention)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	decisionHandler, err := authtransport.NewApprovalDecisionHandler(db, decisionExecutor, sessions, decisionLimiter, validator, ip)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
 	nameProtector, err := workoutrepo.NewExerciseNameProtector(keys.workoutName, keys.workoutNameID)
 	if err != nil {
 		return nil, errBusinessStartup
@@ -235,7 +255,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	for _, initialize := range []func(context.Context, *sql.Tx) error{
 		identityEpoch.Initialize, ensureEmptyCodeEpochHistory, producer.InitializeCodeKey, hashEpoch.Initialize,
 		issuer.InitializeKey, ledger.Initialize, approvals.InitializeKey,
-		executor.InitializeKey, nameProtector.InitializeExerciseKey,
+		executor.InitializeKey, decisionExecutor.Initialize, nameProtector.InitializeExerciseKey,
 	} {
 		if err := initialize(ctx, tx); err != nil {
 			return nil, errBusinessStartup
@@ -259,6 +279,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	mux.Handle("/me", meHandler)
 	mux.Handle("/me/age-verify", ageHandler)
 	mux.Handle("/me/login-approvals", approvalListHandler)
+	mux.Handle("/me/login-approvals/", decisionHandler)
 	mux.Handle("/me/sessions", workoutHandler)
 	mux.Handle("/me/sessions/", workoutHandler)
 	return mux, nil
