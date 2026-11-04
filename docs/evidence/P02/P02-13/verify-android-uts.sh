@@ -48,8 +48,15 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
     const wrapper = generated.find(file => file.endsWith(path.join('app-android', 'src', 'index.kt')))
     if (!wrapper) throw new Error('UTS conversion omitted generated Kotlin wrapper')
     const source = fs.readFileSync(wrapper, 'utf8')
-    for (const operation of ['readTrainingOperationJournal', 'compareAndSetTrainingOperationJournal']) {
-      if (!source.includes(`NeraeAndroidSecureVaultBridge.${operation}`)) throw new Error(`generated wrapper omitted ${operation}`)
+    for (const [bridge, operation] of [
+      ['NeraeAndroidSecureVaultBridge', 'readTrainingOperationJournal'],
+      ['NeraeAndroidSecureVaultBridge', 'compareAndSetTrainingOperationJournal'],
+      ['NeraeAndroidTrainingDraftBridge', 'readTrainingDraft'],
+      ['NeraeAndroidTrainingDraftBridge', 'discoverTrainingDrafts'],
+      ['NeraeAndroidTrainingDraftBridge', 'createTrainingDraft'],
+      ['NeraeAndroidTrainingDraftBridge', 'writeTrainingDraft'],
+    ]) {
+      if (!source.includes(`${bridge}.${operation}`)) throw new Error(`generated wrapper omitted ${bridge}.${operation}`)
     }
     process.stdout.write(`PASS: HBuilderX ${process.env.HX_Version} generated ${generated.length} Kotlin file(s); no dex/APK/Keystore was run.\n`)
   } catch (error) { process.stderr.write(String(error?.message || error) + '\n'); process.exitCode = 1 }
