@@ -42,7 +42,13 @@ deprecation warning for `KeyInfo.isInsideSecureHardware`.
 
 The harness injects software AES keys, memory files, and a payload validator.
 It does not exercise the production Android Keystore, filesystem `AtomicFile`,
-HBuilderX UTS conversion/link, APK, emulator, or physical device.
+APK, emulator, or physical device. On the integrated source, the project's
+matching 5.33 npm UTS compiler also generated the four Kotlin bridge calls
+and copied both native Kotlin source files unchanged. This is UTS conversion,
+not a complete HBuilderX link or dex/APK build. The check is repeatable with
+`NERAE_UTS_COMPILER_FILE` pointing to the matching
+`@dcloudio/uni-uts-v1/dist/kotlin.js`, then running
+`bash docs/evidence/P02/P02-13/verify-android-uts.sh`.
 The locked empty-inventory case is tested through the injected availability
 gate; actual Android `UserManager`/`KeyguardManager` behavior and non-mutating
 `AtomicFile` recovery handling remain unverified on a device/runtime.

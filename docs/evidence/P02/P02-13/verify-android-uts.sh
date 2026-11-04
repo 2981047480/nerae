@@ -5,13 +5,30 @@ repo_root=$(git -C "$evidence_dir" rev-parse --show-toplevel)
 hbuilder_app=${NERAE_HBUILDERX_APP:-/private/tmp/nerae-hbuilder-download/HBuilderX.app}
 node_bin=${NERAE_NODE:-/opt/homebrew/bin/node}
 plugins_dir="$hbuilder_app/Contents/HBuilderX/plugins"
-compiler="$plugins_dir/uniapp-uts-v1/node_modules/@dcloudio/uni-uts-v1/dist/kotlin.js"
-if [[ ! -x "$node_bin" || ! -f "$compiler" || ! -f "$hbuilder_app/Contents/Info.plist" ]]; then
-  printf 'Required local HBuilderX Kotlin UTS compiler or Node executable is missing.\n' >&2
-  exit 2
+if [[ ! -x "$node_bin" ]]; then printf 'Required Node executable is missing.\n' >&2; exit 2; fi
+if [[ -n "${NERAE_UTS_COMPILER_FILE:-}" ]]; then
+  compiler=$NERAE_UTS_COMPILER_FILE
+  plugins_dir=''
+  if [[ ! -f "$compiler" ]]; then printf 'Requested npm UTS compiler is missing.\n' >&2; exit 2; fi
+  NERAE_COMPILER_FILE="$compiler" NERAE_CLIENT_PACKAGE="$repo_root/apps/client/package.json" "$node_bin" <<'NODE'
+const path = require('path')
+const compiler = process.env.NERAE_COMPILER_FILE
+const wanted = require(process.env.NERAE_CLIENT_PACKAGE).devDependencies['@dcloudio/uni-uts-v1']
+const actual = require(path.resolve(path.dirname(compiler), '../package.json')).version
+const uts = require(require.resolve('@dcloudio/uts/package.json', { paths: [path.dirname(compiler)] })).version
+if (actual !== wanted || uts !== wanted) throw Error('npm UTS compiler versions do not match the client')
+NODE
+  label='npm UTS compiler matching the client'
+else
+  compiler="$plugins_dir/uniapp-uts-v1/node_modules/@dcloudio/uni-uts-v1/dist/kotlin.js"
+  if [[ ! -f "$compiler" || ! -f "$hbuilder_app/Contents/Info.plist" ]]; then
+    printf 'Required local HBuilderX Kotlin UTS compiler is missing.\n' >&2
+    exit 2
+  fi
+  version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$hbuilder_app/Contents/Info.plist")
+  if [[ "$version" != 5.33.* ]]; then printf 'Expected HBuilderX 5.33; got %s.\n' "$version" >&2; exit 2; fi
+  label="HBuilderX $version"
 fi
-version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$hbuilder_app/Contents/Info.plist")
-if [[ "$version" != 5.33.* ]]; then printf 'Expected HBuilderX 5.33; got %s.\n' "$version" >&2; exit 2; fi
 work_dir=$(mktemp -d /private/tmp/nerae-p02-13-android-uts.XXXXXXXX)
 succeeded=0
 cleanup() {
@@ -26,7 +43,7 @@ TMPDIR="$work_dir/tmp" UNI_INPUT_DIR="$input_dir" UNI_OUTPUT_DIR="$output_dir" \
 UNI_HBUILDERX_PLUGINS="$plugins_dir" HX_Version=5.33 UNI_COMPILER_VERSION=5.33 \
 NODE_ENV=development NERAE_UTS_COMPILER="$compiler" \
 NERAE_UTS_INPUT="$input_dir/uni_modules/nerae-secure-vault/utssdk/app-android/index.uts" \
-NERAE_UTS_OUTPUT="$output_dir" "$node_bin" <<'NODE'
+NERAE_UTS_OUTPUT="$output_dir" NERAE_UTS_LABEL="$label" "$node_bin" <<'NODE'
 const path = require('path')
 const fs = require('fs')
 const kotlin = require(process.env.NERAE_UTS_COMPILER)
@@ -37,7 +54,7 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
       isPlugin: true, isModule: false, isX: false, isSingleThread: false,
       isExtApi: false, hookClass: '', extApis: {}, uniModules: [], noEmit: false, sourceMap: false,
     })
-    if (!result || result.error) throw new Error('HBuilderX returned no successful Kotlin conversion result')
+    if (!result || result.error) throw new Error('UTS compiler returned no successful Kotlin conversion result')
     const generated = []
     const visit = dir => { for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const next = path.join(dir, entry.name)
@@ -58,7 +75,12 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
     ]) {
       if (!source.includes(`${bridge}.${operation}`)) throw new Error(`generated wrapper omitted ${bridge}.${operation}`)
     }
-    process.stdout.write(`PASS: HBuilderX ${process.env.HX_Version} generated ${generated.length} Kotlin file(s); no dex/APK/Keystore was run.\n`)
+    for (const name of ['NeraeAndroidTrainingDraftStore.kt', 'NeraeAndroidSecureVaultBridge.kt']) {
+      const copied = generated.find(file => file.endsWith(path.join('app-android', 'src', name)))
+      const original = path.join(path.dirname(process.env.NERAE_UTS_INPUT), name)
+      if (!copied || !fs.readFileSync(copied).equals(fs.readFileSync(original))) throw new Error(`native source missing or changed: ${name}`)
+    }
+    process.stdout.write(`PASS: ${process.env.NERAE_UTS_LABEL} generated ${generated.length} Kotlin file(s); no dex/APK/Keystore was run.\n`)
   } catch (error) { process.stderr.write(String(error?.message || error) + '\n'); process.exitCode = 1 }
 })()
 NODE
