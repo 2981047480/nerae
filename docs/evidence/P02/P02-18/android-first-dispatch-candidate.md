@@ -36,6 +36,12 @@ ciphertext on a rejected value. The first candidate compile failed on a local
 variable name collision; a later clean compile and run passed. These are not
 device tests.
 
+After integration, the matching npm UTS compiler generated four Android
+Kotlin files successfully using `P02-13/verify-android-uts.sh`. An initial
+invocation pointed to a nonexistent copy under `P02-18` and exited 127; it
+did not run the check. The corrected command passed, without building an APK
+or exercising Keystore.
+
 No UTS dispatch permit is exposed yet, and this is not server sync or a
 settlement implementation. The Android `AtomicFile`, hardware Keystore,
 actual process lifecycle and device execution were not exercised by the JVM
