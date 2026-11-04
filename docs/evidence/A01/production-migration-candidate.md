@@ -45,11 +45,22 @@ connection is discarded rather than reused.
   switching schemas. The executor now checks the account's actual grants and
   active roles after acquiring its migration lock and before making changes. The
   overbroad-account test above verifies that guard on MySQL 8.0.46.
+- The same isolated test was subsequently run on the target host with the
+  repository-pinned MySQL 8.4.13 and Redis 7.4.12 container images, both with
+  networking disabled. All 18 migrations, the repeat run, restricted-grant,
+  concurrent, failed-DDL, session-drift and API checks passed. The two test
+  containers were stopped and their successful synthetic data removed. Two
+  initial attempts reached the image's short-lived initialization server rather
+  than its final server and failed to bootstrap; the harness now waits for the
+  image's initialization-complete marker and final readiness before proceeding.
+  A later run passed its functional tests but reported cleanup as unconfirmed
+  because the Docker client's missing-object error was lowercase; inspection
+  showed no remaining test containers. Cleanup classification was corrected,
+  mounts were narrowed, and the full container test then passed again.
 
 No production database, real account, SMTP credential or public endpoint was
 used. The executor does not provision accounts, databases, backups or services;
 an already populated schema without a compatible ledger is deliberately not
 adopted. The release bundle and database administration must remain trusted;
 existing privileged triggers and concurrent administrative grant changes are
-outside this check. MySQL 8.4 and real deployment remain to be independently
-validated.
+outside this check. Real deployment remains to be independently validated.

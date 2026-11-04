@@ -16,6 +16,13 @@ headers. Ubuntu's configured package metadata lists MySQL and Redis candidates;
 availability, isolation and operational suitability of those packages have not
 yet been established.
 
+Subsequently the host reached the project's pinned image digests through
+[Tencent Cloud's internal Docker mirror](https://cloud.tencent.com/document/practice/1207/45596).
+Both images were pulled into the host cache without restarting Docker. Their
+isolated container verification is recorded in the
+[migration evidence](production-migration-candidate.md); no persistent
+production containers were started.
+
 The integration source was cross-compiled locally to Linux x86-64 API and mail
 worker executables with the pinned Go toolchain and existing module cache. These
 executables were not copied to or run on the host. The API still needs isolated
@@ -41,7 +48,9 @@ It expects an owner-only `/tmp/nerae-package-preflight.*` directory containing
 the extracted Ubuntu packages, the API and migration integration-test binaries,
 the migration executable and a clean release migration tree. The latest run
 also exercised the new migration executor and session-drift protection; details
-are in the [migration evidence](production-migration-candidate.md). No real SMTP
+are in the [migration evidence](production-migration-candidate.md). Pass
+`--containers` to use the pinned, network-isolated MySQL and Redis images; omit
+it to use the extracted package binaries. No real SMTP
 credentials, public listener, production data or iPhone were used. This does
 not establish email delivery from the deployed service or cross-device sync.
 
