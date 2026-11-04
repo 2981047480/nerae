@@ -15,9 +15,16 @@ the draft bytes, protected-item bytes and journal remained unchanged; the
 receipt remained `verified` rather than being settled.
 
 This is not wired into the app or a real service. In particular, the
-candidate has a global limit of 128 retained receipts with no safe pruning
-policy, and its separate draft and journal items are not one transaction.
+candidate has a global limit of 128 retained journal receipts and a separate
+limit of 128 applied receipt markers per draft, with no verified safe pruning
+policy. Its separate draft and journal items are not one transaction.
 Receipt origin, live session binding at settlement, conflict recovery,
 cross-process behavior, actual Keychain, device and server tests remain
 necessary before enabling sends. The earlier failing synthetic iterations
 and reviewer probes are retained under the above temporary directories.
+
+A proposed cleanup order is not yet safe in this implementation: if an
+applied-draft marker is removed after journal settlement but the process
+stops before the receipt is removed, a settlement retry currently requires
+the now-missing marker. Cleanup needs its own recoverable protocol and a
+tested post-cleanup UI/runtime path before either item can be pruned.
