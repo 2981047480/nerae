@@ -203,6 +203,27 @@ final class NeraeProtectedDraftStore {
         guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
     }
 
+    /// Conditionally update one existing draft within this process. A caller
+    /// must still establish that its proposed changes are authorized. Failure
+    /// after backend.update is an unknown outcome, not a failed comparison.
+    func compareAndSet(key: String, expected: String, value: String) throws -> Bool {
+        let owner = try Self.owner(key)
+        guard Self.valid(expected, owner: owner), Self.valid(value, owner: owner),
+              let expectedData = expected.data(using: .utf8), let data = value.data(using: .utf8) else {
+            throw NeraeVaultError.invalidState
+        }
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        guard let previous = try backend.read(account: owner.account) else { return false }
+        guard let previousValue = String(data: previous, encoding: .utf8), Self.valid(previousValue, owner: owner) else {
+            throw NeraeVaultError.unavailable
+        }
+        guard previous == expectedData else { return false }
+        try backend.update(account: owner.account, value: data)
+        guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
+        return true
+    }
+
     // The Keychain items themselves are the only source of truth. No second
     // manifest can become detached from a successfully-created draft.
     func discover(subject: String, after cursor: String) throws -> String {
@@ -265,7 +286,8 @@ final class NeraeProtectedDraftStore {
               let schema = envelope["schema"] as? NSNumber, CFGetTypeID(schema) != CFBooleanGetTypeID(),
               schema.intValue == 1, schema.doubleValue == 1,
               envelope["subjectId"] as? String == owner.subject,
-              let draft = envelope["draft"] as? [String: Any], draft["clientEventId"] as? String == owner.event else { return false }
+              let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String,
+              event.utf8.elementsEqual(owner.event.utf8) else { return false }
         return true
     }
 }

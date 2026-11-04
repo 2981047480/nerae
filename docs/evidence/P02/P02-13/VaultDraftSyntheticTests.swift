@@ -62,6 +62,13 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         try check(try store.create(key: otherKey, value: try payload("202")))
         try expect(.invalidState) { _ = try store.create(key: key, value: try payload("202")) }
         try expect(.invalidState) { _ = try store.create(key: key, value: try payload("101", "event-0002")) }
+        let composedEvent = "event-\u{00e9}001"
+        let decomposedEvent = "event-e\u{0301}001"
+        try check(composedEvent == decomposedEvent && Data(composedEvent.utf8) != Data(decomposedEvent.utf8))
+        try expect(.invalidState) {
+            _ = try store.create(key: "nerae.workout.draft.v1.101.\(composedEvent)",
+                                 value: try payload("101", decomposedEvent))
+        }
         try expect(.conflict) { try store.write(key: "nerae.workout.draft.v1.101.event-0002", value: try payload("101", "event-0002")) }
         try check(backend.values.count == 2)
 
@@ -79,10 +86,35 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         try expect(.unavailable) { try store.write(key: key, value: afterUnknown) }
         backend.failAfterUpdate = false
         try check(try store.read(key: key).value == afterUnknown)
+
+        let conditional = try payload(note: "条件保存")
+        try check(try store.compareAndSet(key: key, expected: afterUnknown, value: conditional))
+        try check(!(try store.compareAndSet(key: key, expected: afterUnknown, value: first)))
+        try check(try store.read(key: key).value == conditional)
+        try expect(.invalidState) { _ = try store.compareAndSet(key: key, expected: conditional, value: try payload("202")) }
+        try check(try store.read(key: key).value == conditional)
+        try check(!(try store.compareAndSet(key: "nerae.workout.draft.v1.101.event-0002",
+                                            expected: try payload("101", "event-0002"),
+                                            value: try payload("101", "event-0002", note: "new"))))
+        backend.failAfterUpdate = true
+        try expect(.unavailable) { _ = try store.compareAndSet(key: key, expected: conditional, value: afterUnknown) }
+        backend.failAfterUpdate = false
+        try check(try store.read(key: key).value == afterUnknown)
+
+        // Swift String equality treats canonically equivalent Unicode strings
+        // as equal; a draft comparison must compare the original UTF-8 bytes.
+        let composed = try payload(note: "\u{00e9}")
+        let decomposed = try payload(note: "e\u{0301}")
+        try check(composed == decomposed && Data(composed.utf8) != Data(decomposed.utf8))
+        try store.write(key: key, value: composed)
+        try check(!(try store.compareAndSet(key: key, expected: decomposed, value: first)))
+        try check(Data((try store.read(key: key)).value.utf8) == Data(composed.utf8))
+        try store.write(key: key, value: afterUnknown)
         backend.corruptRead = true
         try expect(.unavailable) { _ = try store.read(key: key) }
         let beforeCorruptWrite = backend.values
         try expect(.unavailable) { try store.write(key: key, value: first) }
+        try expect(.unavailable) { _ = try store.compareAndSet(key: key, expected: afterUnknown, value: first) }
         try check(backend.values == beforeCorruptWrite)
         backend.corruptRead = false
         try check(try store.read(key: key).value == afterUnknown)
@@ -104,6 +136,18 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         }
         try check(winners == 1 && failures == 0 && racingBackend.values.count == 1)
         try check(try stores[1].read(key: raceKey).value == raceValue)
+
+        var casWinners = 0
+        var casFailures = 0
+        DispatchQueue.concurrentPerform(iterations: 64) { index in
+            do {
+                let next = try payload("101", "event-race01", note: "writer-\(index)")
+                if try stores[index % stores.count].compareAndSet(key: raceKey, expected: raceValue, value: next) {
+                    resultLock.lock(); casWinners += 1; resultLock.unlock()
+                }
+            } catch { resultLock.lock(); casFailures += 1; resultLock.unlock() }
+        }
+        try check(casWinners == 1 && casFailures == 0)
 
         let discoveryBackend = FakeDraftBackend()
         let discovery = NeraeProtectedDraftStore(backend: discoveryBackend)
