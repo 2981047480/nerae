@@ -99,7 +99,7 @@ export function samePendingSnapshot(first: unknown, second: unknown): boolean {
 
 export interface DispatchPermit {
   readonly operation: PendingOperation
-  /** Check immediately before invoking the authenticated transport/API. No token is included. */
+  /** Check immediately before invoking the authenticated transport/API. This is not a one-use send primitive. */
   isCurrent(): boolean
 }
 
@@ -458,7 +458,18 @@ export class TrainingOperationJournal {
       if (!changed) throw new OperationJournalError('conflict')
       const proof: PermitProof = { key, storedBytes: nextBytes, subjectId: lease.subjectId,
         generation: lease.generation, eventId: clientEventId, active: true }
-      const permit = Object.freeze({ operation: freezeOperation(next), isCurrent: () => proof.active && this.#leaseIsCurrent(lease) })
+      let validForDispatch = true
+      let lastCheckedAt = now
+      const permit = Object.freeze({ operation: freezeOperation(next), isCurrent: () => {
+        if (!proof.active || !validForDispatch) return false
+        if (!this.#leaseIsCurrent(lease)) { validForDispatch = false; return false }
+        try {
+          const checkedAt = this.#timestamp()
+          if (checkedAt < lastCheckedAt || checkedAt >= next.expiresAt) validForDispatch = false
+          else lastCheckedAt = checkedAt
+        } catch { validForDispatch = false }
+        return validForDispatch
+      } })
       permits.set(permit, proof)
       return permit
     } catch (error) {
@@ -470,6 +481,9 @@ export class TrainingOperationJournal {
   /** Call after network/transport ambiguity. No response body is accepted here. */
   async markUncertain(permit: DispatchPermit): Promise<void> {
     const proof = this.#permitProof(permit)
+    // Revoke the local send check before the async storage transition starts.
+    // Keep the persisted in-flight entry if that transition cannot complete.
+    proof.active = false
     try {
       const lease = this.#captureLease()
       if (lease.subjectId !== proof.subjectId || lease.generation !== proof.generation) {
@@ -485,7 +499,6 @@ export class TrainingOperationJournal {
       this.#assertLease(lease)
       if (!changed) throw new OperationJournalError('conflict')
     } finally {
-      proof.active = false
       this.#busy.delete(proof.key)
     }
   }

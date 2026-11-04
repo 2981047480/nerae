@@ -14,6 +14,7 @@
 - App 登录协调器及登录组件已支持显式检查新设备确认状态；同一不确定请求保留原签名和幂等键重试。真实客户端逻辑使用合成设备签名及 vault，在本机 TLS／私有数据库上完成批准、模拟丢响应后恢复会话并读取同主体训练记录。首页后续接线见下，线上服务及真机仍未完成。[新设备](evidence/A01/approval-client-flow.md) · [已登录设备](evidence/A01/approval-owner-client.md)
 - App 首页已接入邮箱登录及已登录设备确认组件，并在会话变更时撤下旧界面；受保护 401 会引导重新验证，未决确认仍保留。App、微信及 H5 资源编译和合成页面/认证测试通过；真实服务地址、原生安装、真机界面及训练同步仍未完成，微信登录不可用。[入口证据](evidence/A01/app-entry-assembly.md)
 - 训练待发日志已加入首次发送门禁。iOS 原生候选将活动训练与精确请求逐字节绑定，旧版有活动但无绑定的数据保留且禁止猜测恢复；首次发送标记现已通过 UTS 接到 App 存储工厂。合成测试及 iPhoneOS 插件链接通过，但尚无页面发送编排、可信服务端回执结算或真机验证；Android 与小程序的 UTS 仍不支持该标记，不能称为跨设备同步已完成。[桥接](evidence/P02/P02-13/ios-dispatch-bridge.md) · [iOS 绑定](evidence/P02/P02-13/ios-recovery-binding.md)
+- 发送许可现在会在调用方检查时复核有效期和会话，过期或时钟异常后保留待核对请求；训练合成测试通过。该检查尚不是一次性网络发送或服务端回执结算。[证据](evidence/U02/U02-01/dispatch-permit-expiry.md)
 - Android 已加入内部首次发送历史与请求绑定候选，旧日志历史不明时拒绝发送；合成测试与 Android API 35 编译通过。UTS 发送许可尚未接入，硬件存储、APK、真机及同步仍未验收。[Android 候选](evidence/P02/P02-18/android-first-dispatch-candidate.md)
 - iOS 新增内部 replay HTTPS 通道和草稿条件更新候选：本机 TLS 正反例、草稿并发／不确定写入合成测试与 iPhoneOS 源码类型检查通过。它们尚未接页面、验证完整回执或结算草稿，真实服务及手机未验证。[网络与草稿证据](evidence/P02/P02-13/ios-recovery-http-candidate.md)
 - iOS 内部恢复候选已串联日志读取、HTTPS 重放、回执校验和日志复核；版本化日志亦修复 Unicode 等价但字节不同的比较问题。认证 vault 的原生代次已检测同进程内账号 A→B→A 切换。本机 TLS、合成反例及日志回归通过；JS 会话代次、草稿合并、日志结算和页面仍未接通，不能视为同步已完成。[回执候选](evidence/P02/P02-16/replay-validator-candidate.md) · [认证代次](evidence/P02/P02-17/auth-generation-candidate.md)

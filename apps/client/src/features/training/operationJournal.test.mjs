@@ -132,6 +132,95 @@ test('storage without a monotonic first-send claim preserves the request and iss
   assert.equal(storage.writes, 1)
 })
 
+test('dispatch permission expires before sending and retains the in-flight request for recovery', async () => {
+  const storage = new MemoryJournalStorage()
+  const now = { value: 10_000_000 }
+  const journal = makeJournal(storage, makeAuth(), () => now.value)
+  const staged = await journal.stage('event-0001', createRequest())
+  now.value = staged.expiresAt - 1
+  const permit = await journal.beginSend('event-0001')
+  assert.equal(permit.isCurrent(), true)
+  now.value = staged.expiresAt
+  assert.equal(permit.isCurrent(), false)
+  now.value = staged.expiresAt - 1
+  assert.equal(permit.isCurrent(), false, 'a clock rollback cannot revive an expired permit')
+  assert.equal((await journal.readPending('event-0001')).state, 'in_flight')
+  await journal.markUncertain(permit)
+  assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+  await assert.rejects(journal.beginSend('event-0001'), isJournalError('reconciliation_required'))
+})
+
+test('invalid or backward clocks invalidate dispatch permission without discarding the request', async () => {
+  for (const invalid of [NaN, -1, null]) {
+    const storage = new MemoryJournalStorage()
+    const now = { value: 10_000_000 }
+    const journal = makeJournal(storage, makeAuth(), () => {
+      if (now.value === null) throw new Error('clock unavailable')
+      return now.value
+    })
+    await journal.stage('event-0001', createRequest())
+    const permit = await journal.beginSend('event-0001')
+    now.value = invalid
+    assert.equal(permit.isCurrent(), false)
+    now.value = 10_000_000
+    assert.equal(permit.isCurrent(), false)
+    await journal.markUncertain(permit)
+    assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+  }
+  const now = { value: 10_000_000 }
+  const journal = makeJournal(new MemoryJournalStorage(), makeAuth(), () => now.value)
+  await journal.stage('event-0001', createRequest())
+  const permit = await journal.beginSend('event-0001')
+  now.value--
+  assert.equal(permit.isCurrent(), false)
+  now.value++
+  assert.equal(permit.isCurrent(), false)
+})
+
+test('a dispatch claim that completes after its deadline cannot be used to send', async () => {
+  const storage = new MemoryJournalStorage()
+  const now = { value: 10_000_000 }
+  const journal = makeJournal(storage, makeAuth(), () => now.value)
+  const staged = await journal.stage('event-0001', createRequest())
+  const claim = storage.claimFirstSend.bind(storage)
+  storage.claimFirstSend = async (...args) => {
+    const changed = await claim(...args)
+    now.value = staged.expiresAt
+    return changed
+  }
+  const permit = await journal.beginSend('event-0001')
+  assert.equal(permit.isCurrent(), false)
+  await journal.markUncertain(permit)
+  assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+})
+
+test('marking uncertain invalidates the permit before the storage write finishes', async () => {
+  const storage = new MemoryJournalStorage()
+  const journal = makeJournal(storage, makeAuth())
+  await journal.stage('event-0001', createRequest())
+  const permit = await journal.beginSend('event-0001')
+  const compareAndSwap = storage.compareAndSwap.bind(storage)
+  let resume
+  let reportStarted
+  const started = new Promise(resolve => { reportStarted = resolve })
+  const gate = new Promise(resolve => { resume = resolve })
+  storage.compareAndSwap = async (...args) => {
+    reportStarted()
+    await gate
+    return compareAndSwap(...args)
+  }
+  const marking = journal.markUncertain(permit)
+  await started
+  try {
+    assert.equal(permit.isCurrent(), false)
+    await assert.rejects(journal.markUncertain(permit), isJournalError('conflict'))
+  } finally {
+    resume()
+    await marking
+  }
+  assert.equal((await journal.readPending('event-0001')).state, 'uncertain')
+})
+
 test('same event and exact request is idempotent; any changed key, body or route conflicts', async () => {
   const storage = new MemoryJournalStorage()
   const journal = makeJournal(storage, makeAuth())
