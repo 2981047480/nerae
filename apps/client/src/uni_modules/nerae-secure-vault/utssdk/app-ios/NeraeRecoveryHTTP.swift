@@ -72,15 +72,13 @@ struct NeraeRecoveryHTTPConfiguration {
 private struct NeraeRecoveryCredential {
     let subject: String
     let token: String
-    let encoded: String
+    let snapshot: NeraeAuthenticationStateSnapshot
 }
 
-/// Uses the same protected authentication item as the app's session manager.
-/// The raw value is compared again after the network request.
-private func recoveryCredential(_ vault: NeraeCredentialVault) throws -> NeraeRecoveryCredential {
-    let read = try vault.read()
-    guard read.found, NeraeStrictJSON.isCanonicalJournalObject(read.value),
-          let data = read.value.data(using: .utf8),
+/// Parses a snapshot obtained from the app's protected authentication gate.
+private func recoveryCredential(_ snapshot: NeraeAuthenticationStateSnapshot) throws -> NeraeRecoveryCredential {
+    guard snapshot.found, NeraeStrictJSON.isCanonicalJournalObject(snapshot.encodedState),
+          let data = snapshot.encodedState.data(using: .utf8),
           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
           Set(object.keys) == Set(["schema", "subjectId", "accessToken"]),
           let schema = object["schema"] as? NSNumber, CFGetTypeID(schema) != CFBooleanGetTypeID(),
@@ -89,7 +87,7 @@ private func recoveryCredential(_ vault: NeraeCredentialVault) throws -> NeraeRe
           subject.utf8.first != 48, subject.utf8.allSatisfy({ (48...57).contains($0) }),
           let token = object["accessToken"] as? String, (1...8192).contains(token.utf8.count),
           token.utf8.allSatisfy({ (33...126).contains($0) }) else { throw NeraeRecoveryHTTPError.unavailable }
-    return NeraeRecoveryCredential(subject: subject, token: token, encoded: read.value)
+    return NeraeRecoveryCredential(subject: subject, token: token, snapshot: snapshot)
 }
 
 final class NeraeRecoveryHTTPTransport {
@@ -97,15 +95,15 @@ final class NeraeRecoveryHTTPTransport {
     private static var active: [UUID: NeraeRecoveryHTTPRequest] = [:]
     private static let maxConcurrent = 8
     private let configuration: NeraeRecoveryHTTPConfiguration
-    private let vault: NeraeCredentialVault
+    private let authentication: NeraeAuthenticationStateGenerationGate
     #if NERAE_RECOVERY_HTTP_TESTING
     fileprivate static var testAnchor: Data?
     static func setTestAnchor(_ value: Data?) { testAnchor = value }
     #endif
 
-    init(configuration: NeraeRecoveryHTTPConfiguration, vault: NeraeCredentialVault) {
+    init(configuration: NeraeRecoveryHTTPConfiguration, authentication: NeraeAuthenticationStateGenerationGate) {
         self.configuration = configuration
-        self.vault = vault
+        self.authentication = authentication
     }
 
     /// The caller must obtain intent from the native journal, not from JS.
@@ -113,7 +111,7 @@ final class NeraeRecoveryHTTPTransport {
     /// endpoint; this method never sends an ordinary mutating request.
     func replay(_ intent: NeraeRecoveryIntent, completion: @escaping (Result<NeraeRecoveryHTTPResponse, NeraeRecoveryHTTPError>) -> Void) {
         do {
-            let credential = try recoveryCredential(vault)
+            let credential = try recoveryCredential(authentication.snapshot())
             guard credential.subject == intent.subjectId,
                   let url = configuration.replayURL(path: intent.path),
                   (8...128).contains(intent.idempotencyKey.utf8.count),
@@ -123,7 +121,7 @@ final class NeraeRecoveryHTTPTransport {
                   NeraeStrictJSON.isCanonicalJournalObject(intent.body) else { throw NeraeRecoveryHTTPError.unavailable }
             let id = UUID()
             let operation = NeraeRecoveryHTTPRequest(id: id, url: url, body: body, key: intent.idempotencyKey,
-                credential: credential, vault: vault, completion: completion)
+                credential: credential, authentication: authentication, completion: completion)
             Self.registryLock.lock()
             guard Self.active.count < Self.maxConcurrent else {
                 Self.registryLock.unlock()
@@ -152,7 +150,7 @@ private final class NeraeRecoveryHTTPRequest: NSObject, URLSessionDataDelegate, 
     private let body: Data
     private let key: String
     private let credential: NeraeRecoveryCredential
-    private let vault: NeraeCredentialVault
+    private let authentication: NeraeAuthenticationStateGenerationGate
     private let completion: (Result<NeraeRecoveryHTTPResponse, NeraeRecoveryHTTPError>) -> Void
     private let lock = NSLock()
     private var finished = false
@@ -162,9 +160,10 @@ private final class NeraeRecoveryHTTPRequest: NSObject, URLSessionDataDelegate, 
     private var timeout: DispatchWorkItem?
 
     init(id: UUID, url: URL, body: Data, key: String, credential: NeraeRecoveryCredential,
-         vault: NeraeCredentialVault, completion: @escaping (Result<NeraeRecoveryHTTPResponse, NeraeRecoveryHTTPError>) -> Void) {
+         authentication: NeraeAuthenticationStateGenerationGate,
+         completion: @escaping (Result<NeraeRecoveryHTTPResponse, NeraeRecoveryHTTPError>) -> Void) {
         self.id = id; self.url = url; self.body = body; self.key = key
-        self.credential = credential; self.vault = vault; self.completion = completion
+        self.credential = credential; self.authentication = authentication; self.completion = completion
     }
 
     func start() {
@@ -242,8 +241,7 @@ private final class NeraeRecoveryHTTPRequest: NSObject, URLSessionDataDelegate, 
         lock.lock(); let http = response; let responseBody = received; lock.unlock()
         guard let http, (200...299).contains(http.statusCode),
               let headers = Self.safeHeaders(http), String(data: responseBody, encoding: .utf8) != nil,
-              let latest = try? recoveryCredential(vault),
-              latest.encoded.utf8.elementsEqual(credential.encoded.utf8) else {
+              authentication.isCurrent(credential.snapshot) else {
             finish(.failure(.unavailable)); return
         }
         finish(.success(NeraeRecoveryHTTPResponse(status: http.statusCode, headers: headers, body: responseBody)))

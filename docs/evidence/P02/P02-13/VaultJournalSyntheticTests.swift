@@ -4,13 +4,19 @@ private final class SyntheticBackend: NeraeVaultBackend {
     var data: Data?
     var failWrite = false
     var applyThenFail = false
+    var decomposeWrittenJournalValue = false
     var writes = 0
     func read() throws -> Data? { data }
     func write(_ value: Data) throws {
         writes += 1
         if applyThenFail { data = value; throw NeraeVaultError.unavailable }
         if failWrite { throw NeraeVaultError.unavailable }
-        data = value
+        if decomposeWrittenJournalValue,
+           var object = try PropertyListSerialization.propertyList(from: value, options: [], format: nil) as? [String: Any],
+           let payload = object["value"] as? String {
+            object["value"] = payload.decomposedStringWithCanonicalMapping
+            data = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+        } else { data = value }
     }
     func clear() throws { data = nil }
 }
@@ -823,6 +829,64 @@ private func check(_ condition: @autoclosure () throws -> Bool,
     }
 }
 
+private func exactJournalBytesTests() throws {
+    let composed = "{\"note\":\"Café\"}"
+    let decomposed = composed.decomposedStringWithCanonicalMapping
+    try check(composed == decomposed && !composed.utf8.elementsEqual(decomposed.utf8))
+
+    let current = SyntheticBackend()
+    let journal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: current)
+    let saved = try journal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                          expectedValue: "", newFound: true, newValue: composed)
+    try expect(.conflict) {
+        _ = try journal.compareAndSet(expectedRevision: saved.revision, expectedFound: true,
+                                      expectedValue: decomposed, newFound: true, newValue: "{}")
+    }
+    try expect(.conflict) {
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: decomposed, value: "{}")
+    }
+    try check(try journal.read().value.utf8.elementsEqual(composed.utf8))
+
+    let body = try jsonString(["source": "free", "date": "2026-11-03", "clientEventId": "event-test-0001", "timeZone": "Café"])
+    let (key, ready, sending) = try dispatchFixtures(bodyOverride: body)
+    let dispatch = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: SyntheticBackend())
+    let staged = try dispatch.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                             expectedValue: "", newFound: true, newValue: ready)
+    try expect(.conflict) {
+        _ = try dispatch.claimFirstSend(expectedRevision: staged.revision,
+                                        expectedValue: ready.decomposedStringWithCanonicalMapping,
+                                        operationKey: key, nextValue: sending.decomposedStringWithCanonicalMapping)
+    }
+    try check(try dispatch.read().value.utf8.elementsEqual(ready.utf8))
+
+    let (otherKey, otherReady, _) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002",
+        bodyOverride: try jsonString(["source": "free", "date": "2026-11-03", "clientEventId": "event-test-0002", "timeZone": "Café"]))
+    var entries = try registryEntries(ready)
+    entries[otherKey] = try registryEntries(otherReady)[otherKey]
+    let bothReady = try jsonString(["schema": 1, "entries": entries])
+    var sentEntries = entries
+    sentEntries[key] = try registryEntries(sending)[key]
+    sentEntries[otherKey] = entries[otherKey]?.decomposedStringWithCanonicalMapping
+    let alteredOther = try jsonString(["schema": 1, "entries": sentEntries])
+    let joined = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: SyntheticBackend())
+    let joinedState = try joined.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                               expectedValue: "", newFound: true, newValue: bothReady)
+    try expect(.invalidState) {
+        _ = try joined.claimFirstSend(expectedRevision: joinedState.revision, expectedValue: bothReady,
+                                      operationKey: key, nextValue: alteredOther)
+    }
+    try check(try joined.read().value.utf8.elementsEqual(bothReady.utf8))
+
+    let changingBackend = SyntheticBackend(); changingBackend.decomposeWrittenJournalValue = true
+    let changing = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: changingBackend)
+    try expect(.unavailable) {
+        _ = try changing.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                       expectedValue: "", newFound: true, newValue: composed)
+    }
+    try check(try changing.read().value.utf8.elementsEqual(decomposed.utf8))
+    print("PASS: journal compares and reads back exact UTF-8 bytes")
+}
+
 @main struct Main {
     static func main() throws {
         let authBackend = SyntheticBackend()
@@ -837,6 +901,7 @@ private func check(_ condition: @autoclosure () throws -> Bool,
         try dispatchMarkerTests()
         try strictRequestJSONTests()
         try recoveryBindingTests()
+        try exactJournalBytesTests()
 
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.deviceIdentityRegistry)
         try check(NeraeVaultNamespaces.authenticationState != NeraeVaultNamespaces.trainingOperationJournal)

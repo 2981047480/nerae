@@ -6,8 +6,9 @@ and sends the exact stored body and idempotency key only to that intent's
 replay-only HTTPS route. Its service base comes from the signed App bundle's
 `NeraeAPIBaseURL` setting; no JavaScript-selected URL is accepted by this
 transport. It disables cookies and caches, rejects redirects, limits response
-size and concurrency, and rechecks the exact authentication value before
-returning the response. The response is deliberately not a settlement permit.
+size and concurrency, and rechecks the authentication generation and exact
+value before returning the response. The response is deliberately not a
+settlement permit.
 
 On 2026-11-04 `bash docs/evidence/P02/P02-13/verify-recovery-http.sh` exited
 0. A private loopback TLS server and synthetic vault checked trusted and
@@ -23,14 +24,39 @@ copied the native Swift files unchanged. The UTS check is repeatable with
 authority is enabled only under the test compilation flag; the shipping
 source uses system TLS trust.
 
+The current integrated client source was also copied into an isolated build
+fixture with matching 5.33 dependencies. `verify_ios_uts_sdk_link.py` generated
+the App/Weixin import probes and linked all four iPhoneOS arm64 plugin
+libraries against the user's 5.33 offline SDK, including the secure-vault
+library containing this transport and draft comparison. It exited 0. These
+libraries are unsigned and do not establish App linking or device execution.
+
+On 2026-11-04 a separate isolated copy of the SDK sample was populated with
+the Nerae App resources and the generated 5.33 UTS plugin sources from
+integration commit `27236c9`.
+The unsigned Debug iPhoneOS workspace build succeeded with Xcode 26.5 after
+running outside the restricted environment, which could not recognize the
+workspace. The resulting Mach-O executable is arm64 for iOS 15.0 or later;
+the copied app-service.js matches the current resource build by SHA-256 and
+the sample control.xml points at that app. The compiled bundle setting matches
+the candidate client API base. The SDK sample also contains another example
+app, and the origin and validity of the embedded sample AppKey have not been
+established. This disposable build has no code signature, has not been
+installed or run, and does not establish working login, synchronization,
+server deployment, AppKey entitlement, or readiness for distribution.
+The subsequent journal comparison fix, response validator and inspector were separately
+compiled into the four unsigned iPhoneOS plugin libraries, but have not been
+rebuilt in this full sample App.
+
 This is an internal transport candidate, not a wired App flow or a verified
 receipt. Response semantics, the journal's current revision and exact request,
-and the current app session must be checked before any settlement. Comparing
-authentication bytes before and after the request does not detect an
-intermediate change that restores the same bytes. The App build must supply
+and the current app session must be checked before any settlement. The native
+generation gate catches authentication A→B→A changes through that gate, but
+not changes made by an uninstrumented external writer; the separate JS session
+generation also remains to be checked. The App build must supply
 the signed bundle setting and verify it matches the configured client API
-base. No actual Keychain, iPhone TLS, production server, native framework
-link, signed App, or cross-device sync was tested here.
+base. No actual Keychain, iPhone TLS, production server, signed App, or
+cross-device sync was tested here.
 
 The protected iOS draft store also exposes an internal conditional update for
 future receipt merging. It compares the exact UTF-8 bytes under the same
@@ -48,3 +74,12 @@ string comparison for event IDs, while the shared client requires the exact
 event bytes. A new composed/decomposed Unicode regression failed before the
 fix; ownership now compares UTF-8 bytes. The failed synthetic run was retained
 at `/private/tmp/nerae-ios-draft-test.Z8H5PUcr`.
+
+Subsequent journal review found the same distinction in versioned CAS,
+first-dispatch checks, legacy CAS and persisted-value readback. The checks now
+compare exact UTF-8 bytes, including untouched entries during a dispatch. A
+new regression failed before the fix; after the fix `verify-ios.sh` passed
+the stale-value, other-entry alteration and altered-readback cases as well as
+the earlier journal tests. The failing synthetic run is retained at
+`/private/tmp/nerae-p02-13-swift.LQbl2EUZ`. This is an in-process comparison;
+it does not add cross-process synchronization or journal settlement.

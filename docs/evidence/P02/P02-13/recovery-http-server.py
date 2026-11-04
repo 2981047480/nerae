@@ -38,7 +38,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length', '0')
             self.end_headers()
             return
-        if self.path.startswith('/slow/'):
+        if self.path.startswith(('/slow/', '/slow-verified/', '/slow-aba/')):
             time.sleep(1.0)
         if self.path.startswith('/chunked/'):
             self.send_response(201)
@@ -54,11 +54,20 @@ class Handler(BaseHTTPRequestHandler):
                 pass
             self.close_connection = True
             return
-        raw = b'x' * (4 * 1024 * 1024 + 1) if self.path.startswith('/large/') else b'{"id":"42"}'
+        if self.path.startswith(('/verified/', '/mismatched/', '/slow-verified/')):
+            event = 'other-event' if self.path.startswith('/mismatched/') else 'event-0001'
+            raw = json.dumps({'id': '42', 'clientEventId': event, 'date': '2026-10-29',
+                              'timeZone': 'Asia/Shanghai', 'status': 'in_progress', 'source': 'free',
+                              'version': 1, 'createdAt': '2026-10-29T00:00:00Z',
+                              'updatedAt': '2026-10-29T00:00:00Z', 'recordedAt': None,
+                              'sets': [], 'exerciseEntryKeys': []}, separators=(',', ':')).encode('utf-8')
+        else:
+            raw = b'x' * (4 * 1024 * 1024 + 1) if self.path.startswith('/large/') else b'{"id":"42"}'
         self.send_response(201)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Idempotency-Replayed', 'true')
+        self.send_header('Idempotency-Key-Expires-At', '2026-11-05T00:00:00Z')
         self.send_header('X-Request-ID', '0123456789abcdef0123456789abcdef')
         self.send_header('Content-Length', str(len(raw)))
         self.send_header('Connection', 'close')

@@ -447,7 +447,7 @@ final class NeraeVersionedTrainingJournal {
         let state = try loadLocked()
         guard state.revision == expected,
               state.found == expectedFound,
-              state.value == expectedValue else {
+              state.value.utf8.elementsEqual(expectedValue.utf8) else {
             throw NeraeVaultError.conflict
         }
         return try commitLocked(state, found: newFound, value: newValue)
@@ -467,7 +467,8 @@ final class NeraeVersionedTrainingJournal {
         defer { Self.processLock.unlock() }
         let state = try loadLocked()
         guard state.dispatchHistoryKnown, state.activeBindingsKnown else { throw NeraeVaultError.unavailable }
-        guard state.revision == expected, state.found, state.value == expectedValue else {
+        guard state.revision == expected, state.found,
+              state.value.utf8.elementsEqual(expectedValue.utf8) else {
             throw NeraeVaultError.conflict
         }
         let identity = try Self.dispatchIdentity(before: expectedValue, after: nextValue, operationKey: operationKey)
@@ -536,7 +537,7 @@ final class NeraeVersionedTrainingJournal {
         Self.processLock.lock()
         defer { Self.processLock.unlock() }
         let state = try loadLocked()
-        guard state.found == expectedFound, state.value == expectedValue else {
+        guard state.found == expectedFound, state.value.utf8.elementsEqual(expectedValue.utf8) else {
             throw NeraeVaultError.conflict
         }
         _ = try commitLocked(state, found: true, value: value)
@@ -777,6 +778,15 @@ final class NeraeVersionedTrainingJournal {
         return lhs == rhs
     }
 
+    private static func equalRegistryEntries(_ first: [String: String], _ second: [String: String]) -> Bool {
+        guard first.count == second.count else { return false }
+        return first.allSatisfy { key, value in
+            second.contains { otherKey, otherValue in
+                key.utf8.elementsEqual(otherKey.utf8) && value.utf8.elementsEqual(otherValue.utf8)
+            }
+        }
+    }
+
     private static func exactInteger(_ value: Any?, _ expected: Int) -> Bool {
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
               !CFNumberIsFloatType(number as CFNumber) else { return false }
@@ -817,7 +827,7 @@ final class NeraeVersionedTrainingJournal {
               var newEntries = next["entries"] as? [String: String],
               oldEntries.count <= 64, newEntries.count <= 64,
               let oldValue = oldEntries.removeValue(forKey: operationKey),
-              let newValue = newEntries.removeValue(forKey: operationKey), oldEntries == newEntries else {
+              let newValue = newEntries.removeValue(forKey: operationKey), equalRegistryEntries(oldEntries, newEntries) else {
             throw NeraeVaultError.invalidState
         }
         var oldOperation = try jsonObject(oldValue)
@@ -977,7 +987,7 @@ final class NeraeVersionedTrainingJournal {
     }
 
     private static func same(_ lhs: State, _ rhs: State) -> Bool {
-        lhs.found == rhs.found && lhs.value == rhs.value && lhs.revision == rhs.revision &&
+        lhs.found == rhs.found && lhs.value.utf8.elementsEqual(rhs.value.utf8) && lhs.revision == rhs.revision &&
             lhs.legacyFingerprint == rhs.legacyFingerprint &&
             lhs.dispatchHistoryKnown == rhs.dispatchHistoryKnown && lhs.dispatchMarkers == rhs.dispatchMarkers &&
             lhs.activeDispatchEvents == rhs.activeDispatchEvents && lhs.activeBindingsKnown == rhs.activeBindingsKnown &&
@@ -995,6 +1005,7 @@ public final class NeraeSecureVaultBridge: NSObject {
     private static let authenticationStateVault = NeraeCredentialVault(
         backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.authenticationState)
     )
+    private static let authenticationStateGate = NeraeAuthenticationStateGenerationGate(vault: authenticationStateVault)
     private static let deviceIdentityRegistry = NeraeCredentialVault(
         backend: NeraeKeychainBackend(namespace: NeraeVaultNamespaces.deviceIdentityRegistry)
     )
@@ -1030,8 +1041,8 @@ public final class NeraeSecureVaultBridge: NSObject {
 
     @objc public static func readAuthenticationState() -> String {
         do {
-            let result = try authenticationStateVault.read()
-            return encode(ok: true, found: result.found, value: result.value)
+            let result = try authenticationStateGate.snapshot()
+            return encode(ok: true, found: result.found, value: result.encodedState)
         } catch {
             return encodeFailure(error)
         }
@@ -1039,7 +1050,7 @@ public final class NeraeSecureVaultBridge: NSObject {
 
     @objc public static func writeAuthenticationState(_ value: String) -> String {
         do {
-            try authenticationStateVault.write(value)
+            try authenticationStateGate.write(value)
             return encode(ok: true)
         } catch {
             return encodeFailure(error)
@@ -1048,7 +1059,7 @@ public final class NeraeSecureVaultBridge: NSObject {
 
     @objc public static func clearAuthenticationState() -> String {
         do {
-            try authenticationStateVault.clear()
+            try authenticationStateGate.clear()
             return encode(ok: true)
         } catch {
             return encodeFailure(error)

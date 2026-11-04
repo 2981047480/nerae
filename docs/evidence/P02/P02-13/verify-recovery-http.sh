@@ -27,6 +27,8 @@ openssl req -x509 -newkey rsa:2048 -nodes -keyout "$scratch/bad.key" -out "$scra
 openssl x509 -in "$scratch/bad.pem" -outform DER -out "$scratch/bad.der"
 xcrun swiftc -module-cache-path "$scratch/modules" -D NERAE_RECOVERY_HTTP_TESTING \
   "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
+  "$source_dir/NeraeAuthenticationStateGeneration.swift" \
+  "$source_dir/NeraeRecoveryReplayValidator.swift" "$source_dir/NeraeRecoveryInspector.swift" \
   "$evidence_dir/RecoveryHTTPProbe.swift" -framework Security -o "$scratch/probe"
 export NERAE_RECOVERY_CERT="$scratch/server.pem" NERAE_RECOVERY_KEY="$scratch/server.key"
 export NERAE_RECOVERY_PORT="$scratch/port" NERAE_RECOVERY_HITS="$scratch/hits"
@@ -46,13 +48,16 @@ from pathlib import Path
 
 rows = [json.loads(line) for line in Path(sys.argv[1]).read_text().splitlines()]
 expected = {'/ok/me/sessions/replay', '/redirect/me/sessions/replay', '/large/me/sessions/replay',
-            '/chunked/me/sessions/replay', '/slow/me/sessions/replay'}
+            '/chunked/me/sessions/replay', '/slow/me/sessions/replay', '/verified/me/sessions/replay',
+            '/mismatched/me/sessions/replay', '/slow-verified/me/sessions/replay', '/slow-aba/me/sessions/replay'}
 assert {row['path'] for row in rows} == expected, rows
 assert len(rows) == len(expected) and all(row['requestMatches'] for row in rows), rows
 print('PASS: exact replay-only routes; no mismatched-owner, redirect destination or ordinary write reached the server')
 PY
 sdk_path=$(xcrun --sdk iphoneos --show-sdk-path)
 xcrun swiftc -module-cache-path "$scratch/modules" -target arm64-apple-ios15.0 -sdk "$sdk_path" -typecheck \
-  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift"
+  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
+  "$source_dir/NeraeAuthenticationStateGeneration.swift" \
+  "$source_dir/NeraeRecoveryReplayValidator.swift" "$source_dir/NeraeRecoveryInspector.swift"
 printf 'PASS: iPhoneOS arm64 source typecheck; no signed app or device was run\n'
 succeeded=1

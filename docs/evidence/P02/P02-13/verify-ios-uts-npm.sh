@@ -44,7 +44,7 @@ const compiler = require(process.env.NERAE_UTS_COMPILER)
   } }
   walk(process.env.NERAE_UTS_OUTPUT)
   const native = path.dirname(process.env.NERAE_UTS_INPUT)
-  for (const name of ['NeraeSecureVaultBridge.swift', 'NeraeStrictJSON.swift', 'NeraeRecoveryHTTP.swift']) {
+  for (const name of ['NeraeSecureVaultBridge.swift', 'NeraeStrictJSON.swift', 'NeraeRecoveryHTTP.swift', 'NeraeRecoveryReplayValidator.swift', 'NeraeRecoveryInspector.swift', 'NeraeAuthenticationStateGeneration.swift']) {
     const copied = files.find(file => file.endsWith(path.join('app-ios', 'src', name)))
     if (!copied || !fs.readFileSync(copied).equals(fs.readFileSync(path.join(native, name)))) {
       throw Error(`native Swift source missing or changed: ${name}`)
