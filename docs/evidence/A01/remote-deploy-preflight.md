@@ -16,6 +16,10 @@ existing `api` process. Do not bind, stop, or reuse it for Nerae. A separate
 free loopback port must be selected and reserved at deployment time. The same
 check found no system `mysqld` or `redis-server` process; this is not a full
 inventory of containers, sockets, or external services.
+The paths `/srv/nerae`, `/var/lib/nerae`, `/etc/nerae` and `/run/nerae` were
+absent on the same date, and no Nerae-named containers or systemd units were
+listed. These are point-in-time checks, not permission to reuse a future path
+without rechecking it.
 
 An [offline deployment candidate](deployment-preflight/README.md) now checks
 the release migration inputs and owner-only API/worker configuration, including
@@ -77,6 +81,14 @@ schema before connecting. The isolated services stopped and their successful
 test directories were removed. This verifies the server assembly on the
 target host; it does not demonstrate a deployed service or sync from either
 real device.
+
+The same synthetic business-assembly path was subsequently run using a fresh
+database account with only database-level SELECT, INSERT, UPDATE and DELETE;
+it had no DDL grants. The agent observed `SYNTHETIC_GRANT_PASS exit=0` from a
+separately written status file; that file was removed after the successful run,
+so no independent status artifact remains. This does not establish table-level
+least privilege, worker permissions or coverage outside the tested path. The
+repeatable harness now creates that restricted test account for this case.
 
 ## Candidate proxy behavior
 

@@ -148,6 +148,9 @@ try:
                "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraeother.* TO 'nerae_overbroad'@'localhost'; "
                "USE nerae_api_process_test;\n" + '\n'.join(sql_parts) +
                "\nUSE nerae_api_assembly_test;\n" + '\n'.join(sql_parts))
+        # A dedicated account verifies the covered business path without DDL
+        # or root privileges. This is database-wide DML, not least privilege.
+        sql += f"\nCREATE USER 'nerae_api_runtime'@'localhost' IDENTIFIED BY '{password}'; GRANT SELECT, INSERT, UPDATE, DELETE ON nerae_api_assembly_test.* TO 'nerae_api_runtime'@'localhost';\n"
         bootstrap = subprocess.run(client, input=sql, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, timeout=30)
         if bootstrap.returncode:
@@ -189,7 +192,7 @@ try:
         if test.returncode or 'PASS: protected API process startup -> loopback business route -> enqueue -> clean shutdown' not in test.stdout:
             raise RuntimeError('API process integration test failed or was skipped')
         assembly_env = {**env,
-                        'NERAE_API_ASSEMBLY_TEST_DSN': f'root@unix({mysql_sock})/nerae_api_assembly_test?parseTime=true&loc=UTC',
+                        'NERAE_API_ASSEMBLY_TEST_DSN': f'nerae_api_runtime:{password}@unix({mysql_sock})/nerae_api_assembly_test?parseTime=true&loc=UTC',
                         'NERAE_API_ASSEMBLY_REDIS_SOCKET': str(redis_sock)}
         assembly = subprocess.run([str(binary), '-test.v', '-test.run=^TestBusinessAssemblyPrivateServices$'],
                                   env=assembly_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
