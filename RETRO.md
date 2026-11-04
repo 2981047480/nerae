@@ -10,6 +10,7 @@
 
 ## 本地 UI 工具链
 
+- uni-app（非 uni-app x）的普通 TS/JS 不能用 `APP-IOS` / `APP-ANDROID` 条件编译区分平台；5.33 实编会移除两支。平台差异放在各自 UTS 实现或显式运行时检查中，并让未知平台失败关闭。
 - 从DeepSeek Harness运行Vite遇到native binding的Team ID签名不匹配时，先核实实际Node路径；本轮同一源码用现有`/opt/homebrew/bin/node`成功构建与启动。更换Vite主版本未解决该运行时限制；保留真实错误与显式启动命令，避免反复猜版本。
 - IAB显隐可能重新应用宿主缩放。响应式截图前后核对实际CSS视口、DPR和滚动位置，并读取PNG/JPEG编码尺寸；DOM已更新时栅格仍可能停在旧尺寸，本轮21张因此被剔除重拍。使用默认viewport截图，不猜DPR、不按DPR放大clip；异常原图保留说明，重新观察后拍摄，不能仅凭文件名、DOM尺寸或旧图SHA宣布对应宽度通过。校准实现见cua_pixel_capture.mjs。
 - 浏览器重建标签后，旧helper可能仍捕获旧tab/viewport句柄。先用getState核实真实标签，再显式向helper传当前上下文；不要由数字browser id下的空listTabs结果反复重建有效标签。

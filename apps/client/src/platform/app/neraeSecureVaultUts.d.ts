@@ -6,6 +6,7 @@ declare module '@/uni_modules/nerae-secure-vault' {
   export function clearAuthenticationState(): SecureVaultResult
   export function readDeviceIdentityRegistry(): SecureVaultResult
   export function compareAndSetDeviceIdentityRegistry(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult
+  export function trainingDraftStorageCapability(): string
   export function readTrainingDraft(key: string): SecureVaultResult
   export function discoverTrainingDrafts(subjectId: string, cursor: string): SecureVaultResult
   export function createTrainingDraft(key: string, value: string): SecureVaultResult

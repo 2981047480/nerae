@@ -1,5 +1,7 @@
 import { SecureVaultResult, VersionedSecureVaultResult } from '../interface.uts'
 
+export function trainingDraftStorageCapability(): string { return 'ios-versioned-v1' }
+
 function failure(errorCode: string): SecureVaultResult {
   const parsed = JSON.parseObject<SecureVaultResult>(
     '{"ok":false,"errorCode":"' + errorCode + '","found":false,"value":""}'

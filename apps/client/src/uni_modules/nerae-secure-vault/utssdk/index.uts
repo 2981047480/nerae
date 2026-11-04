@@ -1,5 +1,7 @@
 import { SecureVaultResult, VersionedSecureVaultResult } from './interface.uts'
 
+export function trainingDraftStorageCapability(): string { return 'unsupported' }
+
 function unsupported(): SecureVaultResult {
   return { ok: false, errorCode: 'unsupported_platform', found: false, value: '' }
 }

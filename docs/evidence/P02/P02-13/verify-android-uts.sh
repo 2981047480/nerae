@@ -65,6 +65,9 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
     const wrapper = generated.find(file => file.endsWith(path.join('app-android', 'src', 'index.kt')))
     if (!wrapper) throw new Error('UTS conversion omitted generated Kotlin wrapper')
     const source = fs.readFileSync(wrapper, 'utf8')
+    if (!source.includes('android-legacy-v1') || source.includes('ios-versioned-v1')) {
+      throw new Error('Android wrapper has an invalid draft storage capability')
+    }
     for (const [bridge, operation] of [
       ['NeraeAndroidSecureVaultBridge', 'readTrainingOperationJournal'],
       ['NeraeAndroidSecureVaultBridge', 'compareAndSetTrainingOperationJournal'],

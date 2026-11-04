@@ -5,6 +5,7 @@
 - QQ SMTP 向用户本人邮箱的测试邮件已实际送达；另一本机私有数据库／回环 TLS 测试以真实 QQ 发信完成挑战、登录及会话读取。验证码由测试程序派生，尚未经过手机手工输入，也未部署线上。[真实邮件证据](evidence/A01/real-qq-mail.md)
 - 腾讯云主机已用隔离测试库验证 API 登录入口和候选代理规则；两台合成设备在同机通过登录批准及同一训练记录的读写联测。迁移执行器在同机合成数据库通过 18 项迁移、重复执行、并发、权限隔离及失败后保留 dirty 的测试。真实服务、QQ 凭据和公网路由仍未部署，手机同步尚未接通。[部署前检查](evidence/A01/remote-deploy-preflight.md) · [迁移证据](evidence/A01/production-migration-candidate.md)
 - iOS 与 Android 已有按账号／训练分项的受保护草稿源码候选，两种记录方式共享一份草稿；创建冲突、切号、异常写入和发现分页通过合成测试，Android UTS 桥已生成。iOS 已加入内部持久 revision 和旧草稿升级候选，但 JS 编辑器尚未使用 revision。真实 Keychain／Keystore、两端真机和同步均未验收；小程序安全草稿接口仍不可用。[iOS 草稿](evidence/P02/P02-13/secure-draft-ios.md) · [iOS 草稿版本](evidence/P02/P02-13/secure-draft-revision-ios.md) · [Android 草稿](evidence/P02/P02-13/android-secure-draft-candidate.md)
+- 受保护草稿 UTS 已提供平台能力标识：iOS、Android 与通用回退各自返回不同值；匹配版资源生成和 iOS 插件链接通过。编辑器尚未使用该标识，真机行为未验证。[证据](evidence/P02/P02-13/draft-platform-capability.md)
 - App 已登录入口已接入本机训练草稿和两种录入方式，连续输入、保存失败重试、账号切换及返回拦截通过合成组件测试；服务端保存、原生返回事件和真机视觉均未验收。[候选证据](evidence/U02/U02-02/training-entry-candidate.md)
 - App 训练入口已接入当前登录账号的云端记录列表和详情读取；切换账号时清空显示，读取不会覆盖本机草稿。客户端回归与 App/微信资源编译通过，但云端写入同步、线上服务和真机读取仍未接通或验证。[读取证据](evidence/U02/U02-02/cloud-history-candidate.md)
 - 修复同进程草稿并发读写的两个竞态：较早写入不再覆盖较新的失败输入，读取期间同一草稿出现新写入时会重新读取；5 个反例修复前失败、修复后通过。设备写入失败时的最新输入仍只在进程内保留，不能称为持久保存。[证据](evidence/U02/U02-02/draft-write-race.md)

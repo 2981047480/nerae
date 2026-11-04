@@ -50,7 +50,12 @@ const compiler = require(process.env.NERAE_UTS_COMPILER)
       throw Error(`native Swift source missing or changed: ${name}`)
     }
   }
-  if (!files.some(file => file.endsWith(path.join('app-ios', 'src', 'index.swift')))) throw Error('UTS Swift wrapper missing')
+  const wrapper = files.find(file => file.endsWith(path.join('app-ios', 'src', 'index.swift')))
+  if (!wrapper) throw Error('UTS Swift wrapper missing')
+  const source = fs.readFileSync(wrapper, 'utf8')
+  if (!source.includes('ios-versioned-v1') || source.includes('android-legacy-v1')) {
+    throw Error('iOS wrapper has an invalid draft storage capability')
+  }
   process.stdout.write('PASS: matching npm UTS compiler generated Swift wrapper and copied native source; no framework/app/device was run.\n')
 })().catch(error => { process.stderr.write(String(error?.message || error) + '\n'); process.exitCode = 1 })
 NODE
