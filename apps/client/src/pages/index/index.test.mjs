@@ -10,7 +10,8 @@ import { AuthSessionCoordinator } from '../../features/auth/sessionCoordinator.t
 const pageURL = new URL('./index.vue', import.meta.url)
 const gateURL = new URL('../../features/auth/appEntrySession.ts', import.meta.url)
 const vueURL = import.meta.resolve('vue')
-const current = { runtime: null, authMounts: 0, panelMounts: 0, authEmit: null, panelEmit: null }
+const current = { runtime: null, authMounts: 0, panelMounts: 0, authEmit: null, panelEmit: null,
+  backHandler: null, trainingEmit: null, trainingCanLeave: true }
 globalThis.__neraeEntryTest = current
 
 const AuthStub = defineComponent({
@@ -35,14 +36,25 @@ const PanelStub = defineComponent({
     return () => h('approval-panel')
   },
 })
+const TrainingStub = defineComponent({
+  props: ['session', 'timeZone'], emits: ['exit', 'session-changed'],
+  setup(_props, { emit, expose }) {
+    current.trainingEmit = emit
+    expose({ canLeave: () => current.trainingCanLeave })
+    return () => h('training-entry')
+  },
+})
 current.AuthStub = AuthStub
 current.PanelStub = PanelStub
+current.TrainingStub = TrainingStub
 
 registerHooks({ resolve(specifier, context, nextResolve) {
   if (context.parentURL?.startsWith('data:text/javascript')) {
     if (specifier === 'vue') return { url: vueURL, shortCircuit: true }
+    if (specifier === '@dcloudio/uni-app') return { url: 'data:text/javascript,export const onBackPress = callback => { globalThis.__neraeEntryTest.backHandler = callback }', shortCircuit: true }
     if (specifier.endsWith('/AuthEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.AuthStub', shortCircuit: true }
     if (specifier.endsWith('/DeviceApprovalPanel.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.PanelStub', shortCircuit: true }
+    if (specifier.endsWith('/TrainingEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.TrainingStub', shortCircuit: true }
     if (specifier.endsWith('/appEntrySession')) return { url: gateURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeAuthRuntime')) return { url: 'data:text/javascript,export const createAppAuthRuntime = () => { if (!globalThis.__neraeEntryTest.runtime) throw Error(); return globalThis.__neraeEntryTest.runtime }', shortCircuit: true }
   }
@@ -141,5 +153,42 @@ test('an explicit session recheck keeps a valid account or returns a revoked one
   await flush()
   assert.ok(find(root, node => node.type === 'auth-entry'))
   assert.equal(current.authMounts, 4, 'safe cancellation remounts the root login entry')
+  app.unmount()
+})
+
+test('the signed-in recording entry blocks back navigation until its draft can be left', async () => {
+  let stored = JSON.stringify({ schema: 1, subjectId: '101', accessToken: 'synthetic-token' })
+  const user = { id: '101', nickname: '', roles: ['student'], ageVerified: true }
+  const session = new AuthSessionCoordinator({
+    readAuthenticationState: () => ({ ok: true, errorCode: '', found: !!stored, value: stored }),
+    writeAuthenticationState: value => { stored = value; return { ok: true, errorCode: '', found: false, value: '' } },
+    clearAuthenticationState: () => { stored = ''; return { ok: true, errorCode: '', found: false, value: '' } },
+  }, async () => ({ status: 'valid', user }))
+  current.runtime = { session, approvals: {} }; current.trainingCanLeave = false; current.backHandler = null
+  const { root, app } = mount()
+  await flush()
+  const start = find(root, node => node.type === 'button' && node.text === '开始记录')
+  assert.ok(start)
+  start.props.onClick()
+  await flush()
+  assert.ok(find(root, node => node.type === 'training-entry'))
+  assert.equal(current.backHandler({ from: 'backbutton' }), true)
+  await flush()
+  assert.ok(find(root, node => node.type === 'training-entry'))
+  current.trainingEmit('exit')
+  await flush()
+  assert.ok(find(root, node => node.type === 'training-entry'))
+  current.trainingCanLeave = true
+  assert.equal(current.backHandler({ from: 'backbutton' }), true)
+  await flush()
+  assert.equal(find(root, node => node.type === 'training-entry'), undefined)
+  assert.ok(find(root, node => node.type === 'approval-panel'))
+  find(root, node => node.type === 'button' && node.text === '开始记录').props.onClick()
+  await flush()
+  assert.ok(find(root, node => node.type === 'training-entry'))
+  await session.logout()
+  await flush()
+  assert.equal(find(root, node => node.type === 'training-entry'), undefined)
+  assert.ok(find(root, node => node.text === '登录状态已变化'))
   app.unmount()
 })

@@ -1,9 +1,9 @@
 # Client
 
-The uni-app Vue 3 / TypeScript client has an App authentication entry and a
-device-approval panel. Its training page and reliable synchronization are not
-wired; the route reports that training records are unavailable. Weixin login
-is not implemented. There is no training or rest countdown.
+The uni-app Vue 3 / TypeScript client has an App authentication entry, a
+device-approval panel and a local training-draft entry. Reliable server-backed
+synchronization is not wired, so drafts are explicitly marked unsynchronized.
+Weixin login is not implemented. There is no training or rest countdown.
 
 From the repository root, install with the committed workspace lock, then run:
 

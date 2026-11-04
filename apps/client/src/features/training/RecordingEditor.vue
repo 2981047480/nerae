@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import type { DraftExercise, GroupIssue, InputField, RecordingDraft, RecordingMode, SetKind } from './recording'
 
 /** The parent owns authenticated draft persistence, IDs and all server writes. */
@@ -14,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'change-mode', value: RecordingMode): void
+  (event: 'prepare-date'): void
   (event: 'change-date', value: string): void
   (event: 'add-exercise'): void
   (event: 'add-set', exerciseEntryKey: string): void
@@ -28,6 +30,16 @@ const kindLabels: Record<SetKind, string> = {
   bodyweightPerSide: '每侧自重次数', duration: '实际时长',
   durationPerSide: '每侧实际时长', breath: '呼吸次数',
 }
+
+const selectedExerciseKey = ref('')
+watch(() => props.draft.exercises.map(item => item.exerciseEntryKey), (keys, previous = []) => {
+  const added = keys.find(key => !previous.includes(key))
+  if (props.draft.mode === 'per_set' && added) selectedExerciseKey.value = added
+  else if (!keys.includes(selectedExerciseKey.value)) selectedExerciseKey.value = keys[0] || ''
+}, { immediate: true })
+const visibleExercises = computed(() => props.draft.mode === 'per_set'
+  ? props.draft.exercises.filter(item => item.exerciseEntryKey === selectedExerciseKey.value)
+  : props.draft.exercises)
 
 function nameOf(exercise: DraftExercise): string {
   if (exercise.resolvedExerciseName) return exercise.resolvedExerciseName
@@ -54,32 +66,28 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
 <template>
   <view class="record-editor">
     <view class="record-header">
-      <text class="record-header__eyebrow">NERAE · 训练记录</text>
-      <text class="record-header__title">记下实际训练</text>
-      <text class="record-header__description">按自己的节奏填写，空白组不会计入记录。</text>
-      <picker mode="date" :value="draft.date" :end="latestAllowedDate" @change="emit('change-date', valueOf($event))">
+      <picker mode="date" :value="draft.date" :end="latestAllowedDate" @touchstart="emit('prepare-date')" @change="emit('change-date', valueOf($event))">
         <view class="date-picker" aria-label="选择训练日期">
-          <text>训练日期</text><text class="date-picker__value">{{ draft.date }} ›</text>
+          <text>{{ draft.date }} ﹀</text>
         </view>
       </picker>
+      <text class="record-header__title">记下实际训练</text>
+      <text class="record-header__description">把训练记下来，让下一次更有方向。</text>
     </view>
 
     <view class="record-body">
       <view class="mode-section">
-        <text class="section-title">记录方式</text>
         <view class="mode-options">
           <button class="mode-option" :class="{ 'mode-option--active': draft.mode === 'after_workout' }"
             :aria-pressed="draft.mode === 'after_workout'" @tap="emit('change-mode', 'after_workout')">
             <text class="mode-option__title">训练后记录</text>
-            <text class="mode-option__detail">完成训练后一起填写</text>
           </button>
           <button class="mode-option" :class="{ 'mode-option--active': draft.mode === 'per_set' }"
             :aria-pressed="draft.mode === 'per_set'" @tap="emit('change-mode', 'per_set')">
             <text class="mode-option__title">每组完成后记录</text>
-            <text class="mode-option__detail">一组一组记下实际数据</text>
           </button>
         </view>
-        <text class="mode-note">切换方式不会改变已有的动作和组。</text>
+        <text class="mode-note">空白组不会计入；切换方式不改变已填内容。</text>
       </view>
 
       <view class="exercise-section">
@@ -94,7 +102,17 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
           <button class="empty-state__button" @tap="emit('add-exercise')">添加动作</button>
         </view>
 
-        <view v-for="exercise in draft.exercises" :key="exercise.exerciseEntryKey" class="exercise-card">
+        <scroll-view v-if="draft.mode === 'per_set' &amp;&amp; draft.exercises.length > 0" class="exercise-tabs" scroll-x>
+          <view class="exercise-tabs__list">
+            <button v-for="exercise in draft.exercises" :key="exercise.exerciseEntryKey" class="exercise-tabs__button"
+              :class="{ 'exercise-tabs__button--active': exercise.exerciseEntryKey === selectedExerciseKey }"
+              :aria-pressed="exercise.exerciseEntryKey === selectedExerciseKey" @tap="selectedExerciseKey = exercise.exerciseEntryKey">
+              {{ nameOf(exercise) }}
+            </button>
+          </view>
+        </scroll-view>
+
+        <view v-for="exercise in visibleExercises" :key="exercise.exerciseEntryKey" class="exercise-card">
           <view class="exercise-card__header">
             <view class="exercise-card__name-block">
               <text class="exercise-card__name">{{ nameOf(exercise) }}</text>
@@ -103,42 +121,35 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
             <text class="exercise-card__count">{{ exercise.sets.length }} 组</text>
           </view>
 
+          <view class="set-columns">
+            <text class="set-column__number">组</text>
+            <text v-if="hasWeight(exercise.kind)" class="set-column__input">{{ isPerSide(exercise.kind) ? '每侧重量 kg' : '重量 kg' }}</text>
+            <text class="set-column__input">{{ hasSeconds(exercise.kind) ? (isPerSide(exercise.kind) ? '每侧秒数' : '实际秒数') : (isPerSide(exercise.kind) ? '每侧次数' : exercise.kind === 'breath' ? '呼吸次数' : '次数') }}</text>
+            <text v-if="draft.mode === 'per_set'" class="set-column__confirm">操作</text>
+            <text class="set-column__remove" />
+          </view>
           <view v-for="(set, index) in exercise.sets" :key="set.recordKey" class="set-row">
-            <view class="set-row__heading">
-              <text class="set-row__number">第 {{ index + 1 }} 组</text>
-              <text v-if="set.persisted &amp;&amp; !set.dirty" class="set-row__confirmed">已保存</text>
-              <text v-else-if="set.persisted &amp;&amp; set.dirty" class="set-row__confirmed">已修改，待保存</text>
-              <text v-else-if="set.confirmed" class="set-row__confirmed">已记下，待保存</text>
-              <button class="remove-button" :aria-label="`移除第 ${index + 1} 组`"
-                @tap="emit('remove-set', exercise.exerciseEntryKey, set.recordKey)">移除</button>
+            <view class="set-row__values">
+              <text class="set-column__number">{{ index + 1 }}</text>
+              <input v-if="hasWeight(exercise.kind)" class="set-input" type="digit" :value="set.weightKg" placeholder="输入"
+                :aria-label="isPerSide(exercise.kind) ? '每侧重量，千克' : '重量，千克'"
+                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'weightKg', valueOf($event))" />
+              <input v-if="!hasSeconds(exercise.kind)" class="set-input" type="number" :value="set.reps" placeholder="输入"
+                :aria-label="isPerSide(exercise.kind) ? '每侧次数' : exercise.kind === 'breath' ? '呼吸次数' : '次数'"
+                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'reps', valueOf($event))" />
+              <input v-else class="set-input" type="number" :value="set.seconds" placeholder="输入"
+                :aria-label="isPerSide(exercise.kind) ? '每侧实际秒数' : '实际秒数'"
+                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'seconds', valueOf($event))" />
+              <button v-if="draft.mode === 'per_set'" class="confirm-button" :class="{ 'confirm-button--done': set.confirmed }" :disabled="saving"
+                @tap="emit('confirm-set', exercise.exerciseEntryKey, set.recordKey)">{{ set.confirmed ? '已记下' : '记下' }}</button>
+              <button class="remove-button" :disabled="saving || set.persisted" :aria-label="`移除第 ${index + 1} 组`"
+                @tap="emit('remove-set', exercise.exerciseEntryKey, set.recordKey)">×</button>
             </view>
-            <view class="set-inputs">
-              <view v-if="hasWeight(exercise.kind)" class="input-field">
-                <text class="input-field__label">{{ isPerSide(exercise.kind) ? '每侧重量 (kg)' : '重量 (kg)' }}</text>
-                <input class="input-field__control" type="digit" :value="set.weightKg" placeholder="输入重量"
-                  :aria-label="isPerSide(exercise.kind) ? '每侧重量，千克' : '重量，千克'"
-                  @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'weightKg', valueOf($event))" />
-              </view>
-              <view v-if="!hasSeconds(exercise.kind)" class="input-field">
-                <text class="input-field__label">{{ isPerSide(exercise.kind) ? '每侧次数' : exercise.kind === 'breath' ? '呼吸次数' : '次数' }}</text>
-                <input class="input-field__control" type="number" :value="set.reps" placeholder="输入次数"
-                  :aria-label="isPerSide(exercise.kind) ? '每侧次数' : '次数'"
-                  @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'reps', valueOf($event))" />
-              </view>
-              <view v-if="hasSeconds(exercise.kind)" class="input-field">
-                <text class="input-field__label">{{ isPerSide(exercise.kind) ? '每侧实际秒数' : '实际秒数' }}</text>
-                <input class="input-field__control" type="number" :value="set.seconds" placeholder="输入秒数"
-                  :aria-label="isPerSide(exercise.kind) ? '每侧实际秒数' : '实际秒数'"
-                  @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'seconds', valueOf($event))" />
-              </view>
-            </view>
+            <text v-if="set.persisted &amp;&amp; !set.dirty" class="set-row__confirmed">已保存</text>
+            <text v-else-if="set.persisted &amp;&amp; set.dirty" class="set-row__confirmed">已修改，待保存</text>
             <text v-if="issueFor(exercise.exerciseEntryKey, set.recordKey)" class="set-error" role="alert">
               {{ issueFor(exercise.exerciseEntryKey, set.recordKey) }}
             </text>
-            <button v-if="draft.mode === 'per_set'" class="confirm-button" :disabled="saving"
-              @tap="emit('confirm-set', exercise.exerciseEntryKey, set.recordKey)">
-              {{ set.confirmed ? '重新记下这组' : '记下这组' }}
-            </button>
           </view>
           <button class="add-set-button" :disabled="saving" @tap="emit('add-set', exercise.exerciseEntryKey)">＋ 添加一组</button>
         </view>
@@ -157,45 +168,53 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
 
 <style scoped>
 .record-editor { min-height: 100vh; background: #f3f4f1; color: #252c29; }
-.record-header { display: flex; flex-direction: column; gap: 14rpx; padding: 52rpx 40rpx 38rpx; color: #fff; background: #252c29; }
-.record-header__eyebrow { color: #c4cbc5; font-size: 21rpx; letter-spacing: 3rpx; }
-.record-header__title { font-size: 46rpx; line-height: 1.22; font-weight: 650; }
-.record-header__description { color: #d4d9d5; font-size: 26rpx; line-height: 1.5; }
-.date-picker { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; min-height: 88rpx; margin-top: 16rpx; padding: 0 24rpx; border: 1px solid #68716b; border-radius: 18rpx; font-size: 26rpx; }
-.date-picker__value { color: #fff; font-weight: 600; }
-.record-body { padding: 38rpx 32rpx 0; }
-.mode-section, .exercise-section { margin-bottom: 44rpx; }
+.record-header { display: flex; flex-direction: column; align-items: flex-start; gap: 12rpx; padding: 12rpx 32rpx 0; }
+.record-header picker { align-self: center; }
+.record-header__title { margin-top: 18rpx; font-size: 42rpx; line-height: 1.22; font-weight: 650; }
+.record-header__description { color: #606a63; font-size: 24rpx; line-height: 1.5; }
+.date-picker { display: flex; align-items: center; justify-content: center; min-height: 88rpx; padding: 0 26rpx; border: 1px solid #d9ded9; border-radius: 44rpx; background: #fff; color: #465149; font-size: 23rpx; }
+.record-body { padding: 24rpx 32rpx 0; }
+.mode-section, .exercise-section { margin-bottom: 32rpx; }
 .section-title { display: block; font-size: 32rpx; font-weight: 650; line-height: 1.35; }
-.mode-options { display: flex; gap: 16rpx; margin-top: 22rpx; }
-.mode-option { display: flex; flex: 1; min-width: 0; min-height: 126rpx; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8rpx; margin: 0; padding: 20rpx; border: 1px solid #d9ded9; border-radius: 20rpx; background: #fff; color: #252c29; text-align: left; line-height: 1.35; }
+.mode-options { display: flex; gap: 4rpx; padding: 5rpx; border-radius: 40rpx; background: #e5e9e1; }
+.mode-option { display: flex; flex: 1; min-width: 0; min-height: 88rpx; align-items: center; justify-content: center; margin: 0; padding: 10rpx; border: 0; border-radius: 44rpx; background: transparent; color: #465149; line-height: 1.35; }
 .mode-option::after, .text-button::after, .empty-state__button::after, .remove-button::after, .confirm-button::after, .add-set-button::after, .save-button::after { border: 0; }
-.mode-option--active { border: 2px solid #252c29; background: #f7f8f5; }
-.mode-option__title { font-size: 27rpx; font-weight: 650; }
-.mode-option__detail, .mode-note { font-size: 22rpx; color: #606a63; line-height: 1.4; }
+.mode-option--active { background: #252c29; color: #fff; }
+.mode-option__title { font-size: 24rpx; font-weight: 650; }
+.mode-note { font-size: 22rpx; color: #606a63; line-height: 1.4; }
 .mode-note { display: block; margin-top: 14rpx; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 20rpx; }
 .section-caption { display: block; margin-top: 6rpx; font-size: 23rpx; color: #606a63; }
+.exercise-tabs { width: 100%; margin-top: 20rpx; white-space: nowrap; }
+.exercise-tabs__list { display: flex; gap: 12rpx; }
+.exercise-tabs__button { flex: 0 0 auto; max-width: 220rpx; overflow: hidden; text-overflow: ellipsis; margin: 0; padding: 0 24rpx; min-height: 88rpx; line-height: 88rpx; border-radius: 15rpx; background: #e7eae4; color: #465149; font-size: 24rpx; }
+.exercise-tabs__button--active { background: #252c29; color: #fff; }
+.exercise-tabs__button::after { border: 0; }
 .text-button { min-height: 88rpx; margin: 0; padding: 0 4rpx; background: transparent; color: #8d412d; font-size: 25rpx; font-weight: 650; line-height: 88rpx; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 12rpx; margin-top: 22rpx; padding: 56rpx 24rpx; border: 1px solid #e2e5e0; border-radius: 24rpx; background: #fff; text-align: center; }
 .empty-state__title { font-size: 29rpx; font-weight: 650; }
 .empty-state__detail { color: #606a63; font-size: 24rpx; line-height: 1.5; }
 .empty-state__button { min-height: 88rpx; margin-top: 12rpx; padding: 0 34rpx; border-radius: 16rpx; background: #f08b65; color: #252c29; font-size: 26rpx; line-height: 88rpx; }
 .exercise-card { margin-top: 22rpx; padding: 28rpx; border: 1px solid #e2e5e0; border-radius: 24rpx; background: #fff; }
-.exercise-card__header, .set-row__heading { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.exercise-card__header { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
 .exercise-card__name-block { min-width: 0; flex: 1; }
 .exercise-card__name { display: block; overflow-wrap: anywhere; font-size: 30rpx; font-weight: 650; line-height: 1.4; }
 .exercise-card__kind { display: block; margin-top: 6rpx; color: #606a63; font-size: 23rpx; }
 .exercise-card__count { flex-shrink: 0; color: #606a63; font-size: 23rpx; }
-.set-row { margin-top: 26rpx; padding-top: 22rpx; border-top: 1px solid #edf0eb; }
-.set-row__number { font-size: 26rpx; font-weight: 650; }
-.set-row__confirmed { flex: 1; color: #606a63; font-size: 22rpx; text-align: right; }
-.remove-button { min-height: 88rpx; margin: 0; padding: 0 4rpx; background: transparent; color: #8d412d; font-size: 23rpx; line-height: 88rpx; }
-.set-inputs { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.input-field { flex: 1; min-width: 200rpx; }
-.input-field__label { display: block; margin-bottom: 10rpx; color: #606a63; font-size: 23rpx; }
-.input-field__control { min-height: 88rpx; box-sizing: border-box; padding: 0 20rpx; border: 1px solid #d9ded9; border-radius: 14rpx; background: #fafbf9; font-size: 28rpx; }
+.set-columns, .set-row__values { display: flex; align-items: center; gap: 10rpx; }
+.set-columns { margin-top: 22rpx; color: #606a63; font-size: 22rpx; }
+.set-column__number { flex: 0 0 38rpx; text-align: center; }
+.set-column__input { flex: 1; min-width: 0; }
+.set-column__confirm { flex: 0 0 92rpx; text-align: center; }
+.set-column__remove { flex: 0 0 88rpx; }
+.set-row { margin-top: 12rpx; }
+.set-row__confirmed { display: block; margin: 6rpx 58rpx 0; color: #606a63; font-size: 21rpx; }
+.set-input { flex: 1; min-width: 0; height: 88rpx; box-sizing: border-box; padding: 0 10rpx; border: 1px solid #d9ded9; border-radius: 12rpx; background: #fafbf9; font-size: 26rpx; text-align: center; }
+.remove-button { flex: 0 0 88rpx; min-width: 88rpx; min-height: 88rpx; margin: 0; padding: 0; background: transparent; color: #7b857d; font-size: 32rpx; line-height: 88rpx; }
 .set-error { display: block; margin-top: 12rpx; color: #a33121; font-size: 23rpx; line-height: 1.4; }
-.confirm-button, .add-set-button { min-height: 88rpx; margin: 18rpx 0 0; border-radius: 14rpx; background: #f2f4f0; color: #252c29; font-size: 25rpx; line-height: 88rpx; }
+.confirm-button { flex: 0 0 92rpx; min-width: 92rpx; min-height: 88rpx; margin: 0; padding: 0; border-radius: 12rpx; background: #f08b65; color: #252c29; font-size: 22rpx; line-height: 88rpx; }
+.confirm-button--done { background: #e6ebdc; color: #52604d; }
+.add-set-button { min-height: 76rpx; margin: 18rpx 0 0; border-radius: 14rpx; color: #252c29; font-size: 25rpx; line-height: 76rpx; }
 .add-set-button { width: 100%; border: 1px dashed #b9c1ba; background: #fff; }
 .record-footer-space { height: 160rpx; }
 .record-footer { position: fixed; right: 0; bottom: 0; left: 0; padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #e2e5e0; }

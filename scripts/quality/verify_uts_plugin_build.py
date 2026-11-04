@@ -17,6 +17,7 @@ PROBE = """<script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import AuthEntry from '@/features/auth/AuthEntry.vue'
 import DeviceApprovalPanel from '@/features/auth/DeviceApprovalPanel.vue'
+import TrainingEntry from '@/features/training/TrainingEntry.vue'
 import type { AppAuthRuntime } from '@/platform/app/nativeAuthRuntime'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
 import { createConfiguredAppHttpsPorts } from '@/platform/app'
@@ -43,7 +44,8 @@ function probe() {
 }
 </script>
 <template><view @tap="probe">{{ result }}</view><AuthEntry v-if="authRuntime" :runtime="authRuntime" />
-  <DeviceApprovalPanel v-if="authRuntime" :approvals="authRuntime.approvals" :session="authRuntime.session" /></template>
+  <DeviceApprovalPanel v-if="authRuntime" :approvals="authRuntime.approvals" :session="authRuntime.session" />
+  <TrainingEntry v-if="authRuntime" :session="authRuntime.session" time-zone="Asia/Shanghai" /></template>
 """
 
 PLUGINS = {
@@ -78,6 +80,8 @@ def main() -> None:
     service = (app / "app-service.js").read_text(encoding="utf-8")
     require("AuthEntry" in service and "请查看此邮箱" in service and "检查确认状态" in service and "匹配一致，允许登录" in service,
             "App output is missing the referenced authentication entry")
+    require("本机草稿" in service and "重试本机保存" in service,
+            "App output is missing the referenced training entry")
     require("revokeCurrentSession" in service and "TrainingOperationJournal" in service,
             "App output is missing a referenced revocation or training journal entry")
     for plugin, (package, functions) in PLUGINS.items():
@@ -97,6 +101,9 @@ def main() -> None:
     weixin_approval = work / "dist/build/mp-weixin/features/auth/DeviceApprovalPanel.wxml"
     require(weixin_approval.is_file() and "匹配一致，允许登录" in weixin_approval.read_text(encoding="utf-8"),
             "Weixin output is missing the referenced device approval panel")
+    weixin_training = work / "dist/build/mp-weixin/features/training/TrainingEntry.wxml"
+    require(weixin_training.is_file() and "重试本机保存" in weixin_training.read_text(encoding="utf-8"),
+            "Weixin output is missing the referenced training entry")
     for plugin in PLUGINS:
         fallback = weixin / plugin / "utssdk/index.js"
         require(fallback.is_file() and "unsupported_platform" in fallback.read_text(encoding="utf-8"),
