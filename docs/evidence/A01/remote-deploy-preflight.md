@@ -38,9 +38,10 @@ failed first test directory and the package preflight files were retained.
 
 The repeatable harness is [remote-private-services-smoke.py](remote-private-services-smoke.py).
 It expects an owner-only `/tmp/nerae-package-preflight.*` directory containing
-the extracted Ubuntu packages, the integration-test binary and migration tree.
-After adding this argument check, the same host test was run again and passed.
-No real SMTP
+the extracted Ubuntu packages, the API and migration integration-test binaries,
+the migration executable and a clean release migration tree. The latest run
+also exercised the new migration executor and session-drift protection; details
+are in the [migration evidence](production-migration-candidate.md). No real SMTP
 credentials, public listener, production data or iPhone were used. This does
 not establish email delivery from the deployed service or cross-device sync.
 

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import secrets
 import shutil
 import subprocess
 import sys
@@ -25,14 +26,17 @@ mysqld = package / 'sbin/mysqld'
 redis = package / 'bin/redis-server'
 redis_cli = package / 'bin/redis-cli'
 binary = root / 'api-integration.test'
-manifest_path = root / 'scripts/dev/migrations.json'
+migrator = root / 'nerae-migrate'
+migration_test = root / 'migrations-integration.test'
+bundle = root / 'release-clean'
+manifest_path = bundle / 'scripts/dev/migrations.json'
 manifest = json.loads(manifest_path.read_text())
 sql_parts = []
 for index, item in enumerate(manifest['migrations'], 1):
     if item['order'] != index or item['id'] != item['module'] + '/' + item['file']:
         raise SystemExit('invalid migration manifest')
-    path = (root / 'apps/api/migrations' / item['id']).resolve(strict=True)
-    if not path.is_relative_to(root / 'apps/api/migrations') or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
+    path = (bundle / 'apps/api/migrations' / item['id']).resolve(strict=True)
+    if not path.is_relative_to(bundle / 'apps/api/migrations') or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
         raise SystemExit('migration checksum mismatch')
     sql_parts.append(path.read_text())
 base = Path(tempfile.mkdtemp(prefix='api-smoke-', dir=root))
@@ -82,11 +86,49 @@ try:
             time.sleep(.2)
         else:
             raise RuntimeError('private Redis did not become ready')
-        sql = 'CREATE DATABASE nerae_api_process_test;\nUSE nerae_api_process_test;\n' + '\n'.join(sql_parts)
-        migration = subprocess.run(client, input=sql, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   text=True, timeout=60)
-        if migration.returncode:
-            raise RuntimeError('private migration failed: ' + migration.stderr[-600:])
+        password = secrets.token_hex(24)
+        sql = ("CREATE DATABASE nerae_api_process_test; CREATE DATABASE neraemigrationrelease; "
+               "CREATE DATABASE neraemigrationexecutortest; CREATE DATABASE neraemigrationdrifttest; CREATE DATABASE neraeother; "
+               f"CREATE USER 'nerae_release'@'localhost' IDENTIFIED BY '{password}'; "
+               f"CREATE USER 'nerae_migrator'@'localhost' IDENTIFIED BY '{password}'; "
+               f"CREATE USER 'nerae_migratordrift'@'localhost' IDENTIFIED BY '{password}'; "
+               f"CREATE USER 'nerae_overbroad'@'localhost' IDENTIFIED BY '{password}'; "
+               "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationrelease.* TO 'nerae_release'@'localhost'; "
+               "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationexecutortest.* TO 'nerae_migrator'@'localhost'; "
+               "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationdrifttest.* TO 'nerae_migratordrift'@'localhost'; "
+               "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationexecutortest.* TO 'nerae_overbroad'@'localhost'; "
+               "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraeother.* TO 'nerae_overbroad'@'localhost'; "
+               "USE nerae_api_process_test;\n" + '\n'.join(sql_parts))
+        bootstrap = subprocess.run(client, input=sql, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, timeout=30)
+        if bootstrap.returncode:
+            raise RuntimeError('private test database bootstrap failed')
+        def migration_dsn(user, database):
+            return f'{user}:{password}@unix({mysql_sock})/{database}?parseTime=true&loc=UTC'
+        migration_env = {**env, 'NERAE_MIGRATION_ROOT': str(bundle), 'NERAE_MIGRATION_DATABASE': 'neraemigrationrelease',
+                         'NERAE_MYSQL_DSN': migration_dsn('nerae_release', 'neraemigrationrelease')}
+        for operation in ('check', 'up', 'up'):
+            migration = subprocess.run([str(migrator), operation], env=migration_env, stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT, text=True, timeout=90)
+            if migration.returncode:
+                raise RuntimeError(f'private migration {operation} failed: ' + migration.stdout[-600:])
+            print(migration.stdout, end='')
+        cases = [
+            ('failure', 'nerae_migrator', 'neraemigrationexecutortest',
+             'PASS: restricted grants, concurrent migrations, multi-statement DDL, drift and dirty recovery gates'),
+            ('session_drift', 'nerae_migratordrift', 'neraemigrationdrifttest',
+             'PASS: changed database session remains dirty and is discarded'),
+        ]
+        for case, user, database, marker in cases:
+            migration_test_env = {**env, 'NERAE_MIGRATION_CASE': case,
+                                  'NERAE_MIGRATION_TEST_DSN': migration_dsn(user, database),
+                                  'NERAE_MIGRATION_BAD_DSN': migration_dsn('nerae_overbroad', database)}
+            migration_checked = subprocess.run([str(migration_test), '-test.v', '-test.run=^TestApplyAgainstPrivateMySQL$'],
+                                               env=migration_test_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                               text=True, timeout=90)
+            print(migration_checked.stdout, end='')
+            if migration_checked.returncode or marker not in migration_checked.stdout:
+                raise RuntimeError('migration integration test failed or was skipped')
         test_env = {**env,
                     'NERAE_API_PROCESS_TEST_DSN': f'root@unix({mysql_sock})/nerae_api_process_test?parseTime=true&loc=UTC',
                     'NERAE_API_PROCESS_REDIS_SOCKET': str(redis_sock)}

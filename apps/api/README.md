@@ -37,6 +37,27 @@ connections. See the [API assembly evidence](../../docs/evidence/A01/api-process
 and [worker startup evidence](../../docs/evidence/A01/worker-startup/report.md)
 for the complete settings and verification boundaries.
 
+The separate `cmd/migrate` executable verifies the release manifest and can
+apply it to an explicitly configured database. Set `NERAE_MIGRATION_ROOT` to
+the absolute release root containing `scripts/dev/migrations.json` and
+`apps/api/migrations`. `nerae-migrate check` validates those files without a
+database connection. For `nerae-migrate up`, also set `NERAE_MYSQL_DSN` and
+`NERAE_MIGRATION_DATABASE`; the DSN must select that same database over a
+Unix socket or verified TLS. Use a dedicated non-root account with direct
+`SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES` privileges
+only on that database, no roles and no grant option. The database
+name must contain only letters and digits, starting with a letter, to avoid
+MySQL database-grant wildcard semantics. MySQL 8.0.16 or later within the 8.0
+series, or MySQL 8.4.x, is required.
+
+An untracked database must be empty before its migration ledger is created.
+An existing ledger must be a clean, exact prefix of the manifest. A failed or
+uncertain migration remains dirty and requires inspection; the executor does
+not automatically retry, repair or roll back DDL. A migration that changes the
+selected database or autocommit also remains dirty, and its connection is
+discarded. See the
+[migration evidence](../../docs/evidence/A01/production-migration-candidate.md).
+
 `GET /health/live` reports whether the HTTP process is alive without contacting dependencies. `GET /health/ready` pings the configured MySQL database and Redis; it returns 503 when either dependency is unavailable or the check times out. Responses do not contain dependency errors or configuration values. Restrict operational endpoints at deployment; they do not implement authentication.
 
 Both processes respond to SIGINT/SIGTERM. The API drains HTTP requests up to the configured shutdown limit and closes its clients. The following older process-foundation smoke tests use reserved, closed loopback ports and do not need a running database:
