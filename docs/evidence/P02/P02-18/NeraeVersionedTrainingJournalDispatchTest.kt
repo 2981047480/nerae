@@ -183,5 +183,20 @@ fun main() {
             expectVaultFailure("$label rejected") { f.journal().read() }
         }
     }
-    println("PASS 6 production-journal synthetic scenarios")
+    run {
+        val f = Fixture.empty()
+        val body = "{\"expectedVersion\":1.0000000000000001,\"exerciseEntryKeys\":[]}"
+        fun setsOperation(state: String, revision: Int, attempt: String? = null) =
+            registry(operation(state, revision, attempt, body).replace("\"path\":\"/me/sessions\"", "\"path\":\"/me/sessions/55/sets\""))
+        val ready = setsOperation("ready", 1)
+        val flight = setsOperation("in_flight", 2, "auth-gen-a")
+        f.journal().compareAndSet("0", false, "", true, ready)
+        val before = f.current.read()!!
+        expectVaultFailureCode("invalid_state", "fractional expectedVersion cannot claim a send") {
+            f.journal().claimFirstSend("1", ready, operationKey, flight)
+        }
+        expect(f.current.read()!!.contentEquals(before), "invalid decimal leaves journal ciphertext and history unchanged")
+        expect(f.journal().read() == VersionedJournalResult(true, ready, 1), "invalid decimal leaves ready record intact")
+    }
+    println("PASS 7 production-journal synthetic scenarios")
 }

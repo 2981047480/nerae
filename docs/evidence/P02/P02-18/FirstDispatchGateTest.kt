@@ -84,6 +84,20 @@ fun main() {
         expect(FirstDispatchGate(MemorySlot(env(old))).claim(7, old, key, changedReq) == ClaimResult.Unavailable, "request mutation rejected")
     }
     run {
+        expect(strictJsonObject("{\"x\":\"\\u4e2d\"}"), "valid ASCII hex Unicode escape accepted")
+        expect(strictJsonObject("{\"x\":\"\\uD83C\\uDFCB\"}"), "valid surrogate pair accepted")
+        for (badDigits in listOf("+123", "-123", "１２３４", "١٢٣٤")) {
+            val invalidEscape = "\\" + "u" + badDigits
+            val invalidBody = "{\"source\":\"free\",\"date\":\"2026-11-04\",\"timeZone\":\"Asia/$invalidEscape\",\"clientEventId\":\"event-0001\"}"
+            expect(!strictJsonObject(invalidBody), "signed Unicode escape rejected as invalid JSON")
+            val request = "\"request\":{\"method\":\"POST\",\"path\":\"/me/sessions\",\"idempotencyKey\":\"idem-0001\",\"body\":${quote(invalidBody)}}"
+            val badReady = registry(op("ready", 1, request = request))
+            val badFlight = registry(op("in_flight", 2, "gen-A", request))
+            expect(FirstDispatchGate(MemorySlot(env(badReady))).claim(7, badReady, key, badFlight) == ClaimResult.Unavailable,
+                "invalid Unicode escape cannot claim a dispatch")
+        }
+    }
+    run {
         val unsafeIntegerOperation = op("ready", 1).replace("\"createdAt\":100", "\"createdAt\":9007199254740992")
         val unsafeInteger = registry(unsafeIntegerOperation)
         expect(FirstDispatchGate(MemorySlot(env(unsafeInteger))).claim(7, unsafeInteger, key, next) == ClaimResult.Unavailable,
@@ -181,7 +195,7 @@ fun main() {
         }
         val (zeroOld, zeroFlight) = finishBody("0", "zero-key-0001")
         val slot = MemorySlot(env(zeroOld)); expect(FirstDispatchGate(slot).claim(7, zeroOld, key, zeroFlight) == ClaimResult.Claimed(8), "zero duration accepted")
-        for (equivalent in listOf("0e-999", "-0", "0.0")) {
+        for (equivalent in listOf("0e-128", "0e+128", "-0", "0.0")) {
             val (same, sameFlight) = finishBody(equivalent, "zero-key-0002")
             val settled = slot.snapshot().copy(revision = 20, payload = same, activeBindings = emptyMap())
             expect(FirstDispatchGate(MemorySlot(settled)).claim(20, same, key, sameFlight) == ClaimResult.Conflict,
@@ -201,5 +215,40 @@ fun main() {
         expect(FirstDispatchGate(MemorySlot(settled)).claim(20, b, key, bFlight) == ClaimResult.Claimed(21),
             "adjacent binary64 values have distinct body markers")
     }
-    println("PASS 11 synthetic groups")
+    run {
+        fun transition(path: String, requestBody: String): Pair<String, String> {
+            val request = "\"request\":{\"method\":\"POST\",\"path\":${quote(path)},\"idempotencyKey\":\"decimal-key-0001\",\"body\":${quote(requestBody)}}"
+            return registry(op("ready", 1, request = request)) to registry(op("in_flight", 2, "gen-A", request))
+        }
+        fun result(path: String, requestBody: String): ClaimResult {
+            val (before, after) = transition(path, requestBody)
+            return FirstDispatchGate(MemorySlot(env(before))).claim(7, before, key, after)
+        }
+        val setsPath = "/me/sessions/55/sets"
+        for (version in listOf("1", "1.0", "1e0", "10e-1", "1." + "0".repeat(126))) {
+            expect(result(setsPath, "{\"expectedVersion\":$version,\"exerciseEntryKeys\":[]}") is ClaimResult.Claimed,
+                "exact integer $version accepted")
+        }
+        for (version in listOf("1.0000000000000001", "9007199254740991.0000000000000001", "1." + "0".repeat(127))) {
+            expect(result(setsPath, "{\"expectedVersion\":$version,\"exerciseEntryKeys\":[]}") == ClaimResult.Unavailable,
+                "fractional or oversized numeric token $version rejected")
+        }
+        val finishPath = "/me/sessions/55/finish"
+        for (number in listOf("0e-128", "0e+128")) {
+            expect(result(finishPath, "{\"expectedVersion\":1,\"durationMin\":$number}") is ClaimResult.Claimed,
+                "duration exponent boundary $number accepted")
+        }
+        for (number in listOf("0e-129", "0e+129", "0e-999")) {
+            expect(result(finishPath, "{\"expectedVersion\":1,\"durationMin\":$number}") == ClaimResult.Unavailable,
+                "duration exponent beyond server boundary $number rejected")
+        }
+        fun weightBody(weight: String, reps: String = "8", index: String = "1", rpe: String = "7.5") =
+            "{\"expectedVersion\":1,\"exerciseEntryKeys\":[\"entry-0001\"],\"sets\":[{\"recordKey\":\"record-001\",\"exerciseEntryKey\":\"entry-0001\",\"exerciseName\":\"深蹲\",\"kind\":\"weight\",\"setIndex\":$index,\"weightKg\":$weight,\"reps\":$reps,\"rpe\":$rpe,\"completed\":true}]}"
+        expect(result(setsPath, weightBody("4.250e1", index = "1e0")) is ClaimResult.Claimed,
+            "server-valid exact weight and integer exponent accepted")
+        for (body in listOf(weightBody("42.500"), weightBody("42.500000000000001"), weightBody("42.5", reps = "8.0000000000000001"), weightBody("42.5", rpe = "7.500"))) {
+            expect(result(setsPath, body) == ClaimResult.Unavailable, "server-invalid precision rejected")
+        }
+    }
+    println("PASS 14 synthetic groups")
 }

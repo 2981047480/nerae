@@ -21,6 +21,20 @@ The prior versioned-journal regression initially expected a migrated item to
 use the old v2 header and failed; the expectation now reflects v3 while its
 separate authenticated v2 fixture remains. The failed test directory was
 retained at `/private/tmp/nerae-p02-14-kotlin.3dVF1dV5`.
+Independent review then found that the JSON parser accepted signed or
+non-ASCII digits in a Unicode escape. A regression failed before the fix;
+escapes now require four ASCII hexadecimal digits, with valid escape and
+surrogate-pair cases retained. The failing synthetic run was retained at
+`/private/tmp/nerae-android-dispatch.GjedvrJw` and the updated suite passed.
+The review also found that binary64 rounding could accept request numbers the
+server rejects as non-integers. The candidate now validates bounded raw
+decimal precision and exponents against the server's parsing rules before
+claiming a send; existing binary64 body markers remain unchanged. An exact
+fractional-version counterexample failed before the fix. The integrated API 35
+JVM suite passed 14 parser groups and 7 journal scenarios, including unchanged
+ciphertext on a rejected value. The first candidate compile failed on a local
+variable name collision; a later clean compile and run passed. These are not
+device tests.
 
 No UTS dispatch permit is exposed yet, and this is not server sync or a
 settlement implementation. The Android `AtomicFile`, hardware Keystore,

@@ -66,7 +66,12 @@ private class StrictJson(private val source: String) {
                         '"', '\\', '/' -> out.append(e)
                         'b' -> out.append('\b'); 'f' -> out.append('\u000c'); 'n' -> out.append('\n')
                         'r' -> out.append('\r'); 't' -> out.append('\t')
-                        'u' -> { require(i + 4 <= source.length); val n = source.substring(i, i + 4).toIntOrNull(16) ?: error("unicode escape"); out.append(n.toChar()); i += 4 }
+                        'u' -> {
+                            require(i + 4 <= source.length)
+                            val hex = source.substring(i, i + 4)
+                            require(hex.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) { "unicode escape" }
+                            out.append(hex.toInt(16).toChar()); i += 4
+                        }
                         else -> error("escape")
                     }
                 }
@@ -159,9 +164,7 @@ internal object FirstDispatchNativeParser {
     private fun validateBody(path: String, event: String, body: JO) {
         fun allowed(required: Set<String>, all: Set<String>) = required.all { it in body.fields.keys } && body.fields.keys.all { it in all }
         fun str(k: String) = body.str(k)
-        fun integer(k: String): Long? = (body.fields[k] as? JN)?.raw?.let { raw ->
-            raw.toDoubleOrNull()?.takeIf { it.isFinite() && it % 1.0 == 0.0 && it >= 0 && it <= 9_007_199_254_740_991.0 }?.toLong()
-        }
+        fun integer(k: String): Long? = exactSafeInteger(body.fields[k])
         fun keyText(v: J?): String? = (v as? JS)?.value?.takeIf { scalarCount(it) in 8..64 && it.isNotBlank() && '\r' !in it && '\n' !in it }
         if (path == "/me/sessions") {
             val date = str("date") ?: error("date must be a string")
@@ -206,7 +209,7 @@ internal object FirstDispatchNativeParser {
                 require(set.fields.keys.containsAll(requiredSet) && set.fields.keys.all { it in allowedSet })
                 val record = keyText(set.fields["recordKey"]) ?: error("record key")
                 val entry = keyText(set.fields["exerciseEntryKey"]) ?: error("exercise entry")
-                val index = (set.fields["setIndex"] as? JN)?.raw?.toLongOrNull()?.takeIf { it in 1..9_007_199_254_740_991L } ?: error("set index")
+                val index = exactSafeInteger(set.fields["setIndex"])?.takeIf { it >= 1 } ?: error("set index")
                 require(records.add(record) && entry in entryKeys)
                 val hasExerciseId = "exerciseId" in set.fields
                 val hasExerciseName = "exerciseName" in set.fields
@@ -225,13 +228,13 @@ internal object FirstDispatchNativeParser {
                 val repsToken = set.fields["reps"]
                 val secondsToken = set.fields["seconds"]
                 val rpeToken = set.fields["rpe"]
-                val weight = (weightToken as? JN)?.raw?.toDoubleOrNull()
-                val reps = (repsToken as? JN)?.raw?.toDoubleOrNull()
-                val seconds = (secondsToken as? JN)?.raw?.toDoubleOrNull()
-                require(weightToken == null || weight != null && weight.isFinite() && weight > 0 && weight <= 300 && decimalPlacesAtMost(weightToken, 2))
-                require(repsToken == null || reps != null && reps.isFinite() && reps % 1.0 == 0.0 && reps in 1.0..100.0)
-                require(secondsToken == null || seconds != null && seconds.isFinite() && seconds % 1.0 == 0.0 && seconds in 5.0..600.0)
-                require(rpeToken == null || rpeToken == JNull || rpeToken is JN && rpeToken.raw.toDoubleOrNull()?.let { it.isFinite() && it in 1.0..10.0 && decimalPlacesAtMost(rpeToken, 1) } == true)
+                val weight = (weightToken as? JN)?.let { exactNumber(it.raw) }
+                val reps = exactSafeInteger(repsToken)
+                val seconds = exactSafeInteger(secondsToken)
+                require(weightToken == null || weight != null && weight > BigDecimal.ZERO && weight <= BigDecimal.valueOf(300) && decimalPlacesAtMost(weightToken, 2))
+                require(repsToken == null || reps != null && reps in 1L..100L)
+                require(secondsToken == null || seconds != null && seconds in 5L..600L)
+                require(rpeToken == null || rpeToken == JNull || validRpe(rpeToken))
                 when (kind) {
                     "weight", "perSide" -> require(weight != null && reps != null && secondsToken == null)
                     "duration", "durationPerSide" -> require(weightToken == null && repsToken == null && seconds != null)
@@ -250,13 +253,43 @@ internal object FirstDispatchNativeParser {
             val note = body.fields["note"]
             require(note == null || note == JNull || note is JS && scalarCount(note.value) <= 2000)
             val rpe = body.fields["rpe"]
-            require(rpe == null || rpe == JNull || rpe is JN && rpe.raw.toDoubleOrNull()?.let { it.isFinite() && it in 1.0..10.0 && decimalPlacesAtMost(rpe, 1) } == true)
+            require(rpe == null || rpe == JNull || validRpe(rpe))
             return
         }
         error("unsupported path")
     }
 
+    /** Match the server's bounded exact-decimal parsing before a send is claimed. */
+    private fun exactNumber(raw: String): BigDecimal? {
+        if (raw.length !in 1..128) return null
+        val exponentIndex = raw.indexOfFirst { it == 'e' || it == 'E' }
+        if (exponentIndex >= 0) {
+            val exponent = raw.substring(exponentIndex + 1).toIntOrNull() ?: return null
+            if (exponent !in -128..128) return null
+        }
+        return try { BigDecimal(raw) } catch (_: NumberFormatException) { null }
+    }
+
+    private fun exactSafeInteger(number: J?): Long? {
+        val decimal = (number as? JN)?.let { exactNumber(it.raw) } ?: return null
+        val integer = try { decimal.longValueExact() } catch (_: ArithmeticException) { return null }
+        return integer.takeIf { it in 0..9_007_199_254_740_991L }
+    }
+
+    private fun validRpe(number: J): Boolean {
+        val value = (number as? JN)?.let { exactNumber(it.raw) } ?: return false
+        return value >= BigDecimal.ONE && value <= BigDecimal.TEN && decimalPlacesAtMost(number, 1)
+    }
+
     private fun decimalPlacesAtMost(number: J, max: Int): Boolean {
+        val raw = (number as? JN)?.raw ?: return false
+        val exact = exactNumber(raw) ?: return false
+        val exponentIndex = raw.indexOfFirst { it == 'e' || it == 'E' }
+        val mantissa = if (exponentIndex < 0) raw else raw.substring(0, exponentIndex)
+        val exactExponent = if (exponentIndex < 0) 0 else raw.substring(exponentIndex + 1).toIntOrNull() ?: return false
+        val pointIndex = mantissa.indexOf('.')
+        val rawFractionalDigits = if (pointIndex < 0) 0 else mantissa.length - pointIndex - 1
+        if (rawFractionalDigits - exactExponent > max || exact.movePointRight(max).stripTrailingZeros().scale() > 0) return false
         val text = renderCanonical(number)
         val match = Regex("^-?(?:\\d+)(?:\\.(\\d+))?(?:e([+-]?\\d+))?$", RegexOption.IGNORE_CASE).matchEntire(text) ?: return false
         val fractionalDigits = match.groupValues[1].length
