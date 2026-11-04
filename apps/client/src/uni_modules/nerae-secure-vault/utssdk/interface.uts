@@ -19,9 +19,9 @@ export type ReadDeviceIdentityRegistry = () => SecureVaultResult
  */
 export type CompareAndSetDeviceIdentityRegistry = (expectedFound: boolean, expectedValue: string, value: string) => SecureVaultResult
 
-/** One independently protected draft per key; create never overwrites. */
 /** Identifies the compiled native draft implementation; unknown values are unsupported. */
 export type TrainingDraftStorageCapability = () => string
+/** One independently protected draft per key; create never overwrites. */
 export type ReadTrainingDraft = (key: string) => SecureVaultResult
 export type DiscoverTrainingDrafts = (subjectId: string, cursor: string) => SecureVaultResult
 export type CreateTrainingDraft = (key: string, value: string) => SecureVaultResult
