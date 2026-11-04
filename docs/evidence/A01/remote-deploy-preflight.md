@@ -6,7 +6,9 @@ The existing Caddy service owns ports 80 and 443 and already serves the public
 IP; its HTTPS certificate was accepted by this Mac's normal trust store. The
 current IP HTTPS route responds statically, so any Nerae route must be added
 without changing other routes. iPhone trust and a live proxy configuration have
-not been tested. No remote configuration or service was changed.
+not been tested. The observed certificate expires 2026-11-10 12:11:56 UTC;
+automatic renewal has not been verified. No existing remote configuration or
+service was changed.
 
 No MySQL/Redis image was found among the checked local Docker images. A
 read-only Docker Hub manifest request timed out while waiting for registry
@@ -41,3 +43,13 @@ After adding this argument check, the same host test was run again and passed.
 No real SMTP
 credentials, public listener, production data or iPhone were used. This does
 not establish email delivery from the deployed service or cross-device sync.
+
+## Candidate proxy behavior
+
+The isolated [Caddy proxy test](caddy-proxy-boundary-smoke.py) passed on the
+host using temporary loopback ports and a synthetic backend/credential. For the
+candidate `/nerae-api-v1/` prefix it verified prefix removal, replacement of
+duplicate forged proxy-credential and source-IP headers, and rejection of
+health and unrelated paths. Its temporary processes and configuration were
+removed on exit. This did not modify or validate coexistence with the existing
+live Caddy site, check real HTTPS from an iPhone, or deploy the API.
