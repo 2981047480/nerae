@@ -28,7 +28,8 @@ cleanup() {
 }
 trap cleanup EXIT
 mkdir -p "$work_dir/classes"
-"$kotlinc" -classpath "$android_jar" -d "$work_dir/classes" "$source_file" "$test_file"
+"$kotlinc" -classpath "$android_jar" -d "$work_dir/classes" "$source_file" \
+  "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-android/NativeFirstDispatchParser.kt" "$test_file"
 "$JAVA_HOME/bin/java" -cp "$work_dir/classes:$(dirname "$kotlinc")/../lib/kotlin-stdlib.jar:$android_jar" \
   uts.sdk.modules.neraeSecureVault.VaultJournalSyntheticSmokeKt
 printf 'Synthetic JVM keys are software test keys; production remains Android Keystore only.\n'

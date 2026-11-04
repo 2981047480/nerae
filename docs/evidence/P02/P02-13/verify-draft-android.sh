@@ -28,6 +28,7 @@ trap cleanup EXIT
 mkdir -p "$work_dir/classes"
 "$kotlinc" -classpath "$android_jar" -d "$work_dir/classes" \
   "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-android/NeraeAndroidSecureVaultBridge.kt" \
+  "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-android/NativeFirstDispatchParser.kt" \
   "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-android/NeraeAndroidTrainingDraftStore.kt" \
   "$evidence_dir/TrainingDraftAndroidSyntheticTests.kt"
 "$java_home/bin/java" -cp "$work_dir/classes:$(dirname "$kotlinc")/../lib/kotlin-stdlib.jar:$android_jar" \

@@ -75,7 +75,7 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
     ]) {
       if (!source.includes(`${bridge}.${operation}`)) throw new Error(`generated wrapper omitted ${bridge}.${operation}`)
     }
-    for (const name of ['NeraeAndroidTrainingDraftStore.kt', 'NeraeAndroidSecureVaultBridge.kt']) {
+    for (const name of ['NeraeAndroidTrainingDraftStore.kt', 'NeraeAndroidSecureVaultBridge.kt', 'NativeFirstDispatchParser.kt']) {
       const copied = generated.find(file => file.endsWith(path.join('app-android', 'src', name)))
       const original = path.join(path.dirname(process.env.NERAE_UTS_INPUT), name)
       if (!copied || !fs.readFileSync(copied).equals(fs.readFileSync(original))) throw new Error(`native source missing or changed: ${name}`)

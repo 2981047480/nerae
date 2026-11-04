@@ -36,7 +36,8 @@ printf 'JDK: '
 "$JAVA_HOME/bin/java" -version 2>&1 | head -n 1
 printf 'Kotlin: '
 "$kotlinc" -version 2>&1 | head -n 1
-"$kotlinc" -classpath "$android_jar" -d "$work_dir/classes" "$source_file" "$test_file"
+"$kotlinc" -classpath "$android_jar" -d "$work_dir/classes" "$source_file" \
+  "$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-android/NativeFirstDispatchParser.kt" "$test_file"
 	"$JAVA_HOME/bin/java" -cp "$work_dir/classes:$(dirname "$kotlinc")/../lib/kotlin-stdlib.jar:$android_jar" \
 	uts.sdk.modules.neraeSecureVault.RegistrySyntheticSmokeKt
 printf 'PASS: production Kotlin source compiled against Android API 35; synthetic crypto tests used software AES only.\n'

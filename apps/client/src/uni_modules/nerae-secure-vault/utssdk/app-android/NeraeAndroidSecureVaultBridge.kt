@@ -12,7 +12,10 @@ import android.util.AtomicFile
 import android.util.JsonReader
 import android.util.JsonToken
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -325,12 +328,17 @@ internal class NeraeVersionedTrainingJournal(
 ) {
     companion object {
         private const val LEGACY_VERSION: Byte = 1
-        private const val VERSIONED_VERSION: Byte = 2
+        private const val VERSIONED_VERSION_V2: Byte = 2
+        private const val VERSIONED_VERSION_V3: Byte = 3
         private const val LEGACY_HEADER_BYTES = 5
         private const val LEGACY_DIGEST_BYTES = 32
         private const val VERSIONED_HEADER_BYTES = 5 + Long.SIZE_BYTES + 2 + LEGACY_DIGEST_BYTES
         private const val MAX_VALUE_BYTES = 64 * 1024
-        internal const val MAX_ENVELOPE_BYTES = VERSIONED_HEADER_BYTES + GCM_NONCE_BYTES + MAX_VALUE_BYTES + 16
+        private const val MAX_DISPATCH_MARKERS = 8192
+        private const val MAX_ACTIVE_DISPATCHES = 64
+        private const val MARKER_BYTES = 32
+        private const val MAX_HISTORY_BYTES = (MAX_DISPATCH_MARKERS * MARKER_BYTES) + (MAX_ACTIVE_DISPATCHES * MARKER_BYTES * 2) + 4096
+        internal const val MAX_ENVELOPE_BYTES = VERSIONED_HEADER_BYTES + GCM_NONCE_BYTES + MAX_VALUE_BYTES + MAX_HISTORY_BYTES + 16
     }
 
     fun read(): VersionedJournalResult = synchronized(processLock) {
@@ -361,6 +369,28 @@ internal class NeraeVersionedTrainingJournal(
         replaceLocked(current, found = true, value = value)
     }
 
+    /** Atomic first-send mark; no caller-provided metadata is accepted apart from stored bytes and target key. */
+    fun claimFirstSend(expectedRevision: String, expectedValue: String, operationKey: String, nextValue: String): Long = synchronized(processLock) {
+        val expected = parseRevision(expectedRevision)
+        validateValue(expectedValue)
+        validateValue(nextValue)
+        val identity = try { FirstDispatchNativeParser.derive(expectedValue, nextValue, operationKey) }
+        catch (_: Exception) { throw VaultFailure("invalid_state") }
+        val current = readCurrentLocked()
+        if (!current.dispatchHistoryKnown) throw VaultFailure("unavailable")
+        if (current.revision != expected || !current.found || !current.value.toByteArray(StandardCharsets.UTF_8).contentEquals(expectedValue.toByteArray(StandardCharsets.UTF_8))) {
+            throw VaultFailure("conflict")
+        }
+        if (identity.eventMarker in current.activeBindings || identity.keyMarker in current.dispatchMarkers ||
+            identity.bodyMarker in current.dispatchMarkers) throw VaultFailure("conflict")
+        if (current.dispatchMarkers.size > MAX_DISPATCH_MARKERS - 2 || current.activeBindings.size >= MAX_ACTIVE_DISPATCHES) {
+            throw VaultFailure("unavailable")
+        }
+        replaceLocked(current, true, nextValue,
+            current.dispatchMarkers + setOf(identity.keyMarker, identity.bodyMarker),
+            current.activeBindings + (identity.eventMarker to identity.binding))
+    }
+
     fun compareAndSet(
         expectedRevision: String,
         expectedFound: Boolean,
@@ -382,7 +412,10 @@ internal class NeraeVersionedTrainingJournal(
         val found: Boolean,
         val value: String,
         val legacy: Boolean,
-        val legacyFingerprint: ByteArray?
+        val legacyFingerprint: ByteArray?,
+        val dispatchHistoryKnown: Boolean,
+        val dispatchMarkers: Set<String>,
+        val activeBindings: Map<String, String>
     )
 
     private fun readCurrentLocked(): State {
@@ -392,8 +425,9 @@ internal class NeraeVersionedTrainingJournal(
             val key = keys.existing() ?: throw VaultFailure()
             val fingerprint = state.legacyFingerprint ?: throw VaultFailure()
             if (versionedStorage.read() != null) throw VaultFailure()
+            val migratedState = state.copy(dispatchHistoryKnown = false, dispatchMarkers = emptySet(), activeBindings = emptyMap())
             versionedStorage.writeAtomically(encryptValue(
-                state.value.toByteArray(StandardCharsets.UTF_8), 1L, true, fingerprint, key
+                encodeJournalEnvelope(migratedState), 1L, true, fingerprint, key, VERSIONED_VERSION_V3
             ))
             val migrated = readLocked()
             if (migrated.legacy || migrated.revision != 1L || !migrated.found || migrated.value != state.value ||
@@ -414,16 +448,17 @@ internal class NeraeVersionedTrainingJournal(
         if (versioned == null) {
             if (legacy == null) {
                 if (keys.existing() != null) throw VaultFailure()
-                return State(0, false, "", false, null)
+                return State(0, false, "", false, null, true, emptySet(), emptyMap())
             }
             if (legacy.size !in (LEGACY_HEADER_BYTES + GCM_NONCE_BYTES + 16)..MAX_ENVELOPE_BYTES ||
                 !legacy.copyOfRange(0, MAGIC.size).contentEquals(MAGIC) || legacy[MAGIC.size] != LEGACY_VERSION) throw VaultFailure()
             val legacyPlaintext = decrypt(legacy, LEGACY_HEADER_BYTES, legacyHeader())
-            return State(0, true, decodeValue(legacyPlaintext), true, MessageDigest.getInstance("SHA-256").digest(legacy))
+            return State(0, true, decodeValue(legacyPlaintext), true, MessageDigest.getInstance("SHA-256").digest(legacy), false, emptySet(), emptyMap())
         }
         if (versioned.size !in (VERSIONED_HEADER_BYTES + GCM_NONCE_BYTES + 16)..MAX_ENVELOPE_BYTES ||
             !versioned.copyOfRange(0, MAGIC.size).contentEquals(MAGIC) ||
-            versioned[MAGIC.size] != VERSIONED_VERSION) throw VaultFailure()
+            versioned[MAGIC.size] !in setOf(VERSIONED_VERSION_V2, VERSIONED_VERSION_V3)) throw VaultFailure()
+        val envelopeVersion = versioned[MAGIC.size]
         val header = versioned.copyOfRange(0, VERSIONED_HEADER_BYTES)
         val revision = ByteBuffer.wrap(versioned, MAGIC.size + 1, Long.SIZE_BYTES).long
         val foundOffset = MAGIC.size + 1 + Long.SIZE_BYTES
@@ -442,15 +477,19 @@ internal class NeraeVersionedTrainingJournal(
         }
         val plaintext = decrypt(versioned, VERSIONED_HEADER_BYTES, header)
         val found = foundByte == 1.toByte()
-        return if (!found) {
-            if (plaintext.isNotEmpty()) throw VaultFailure()
-            State(revision, false, "", false, legacyFingerprint)
-        } else {
-            State(revision, true, decodeValue(plaintext), false, legacyFingerprint)
+        if (envelopeVersion == VERSIONED_VERSION_V2) {
+            if (!found && plaintext.isNotEmpty()) throw VaultFailure()
+            val value = if (found) decodeValue(plaintext) else ""
+            return State(revision, found, value, false, legacyFingerprint, false, emptySet(), emptyMap())
         }
+        return decodeJournalEnvelope(plaintext, revision, found, legacyFingerprint)
     }
 
-    private fun replaceLocked(current: State, found: Boolean, value: String): Long {
+    private fun replaceLocked(
+        current: State, found: Boolean, value: String,
+        dispatchMarkers: Set<String> = current.dispatchMarkers,
+        activeBindings: Map<String, String> = current.activeBindings
+    ): Long {
         if (current.revision == Long.MAX_VALUE) throw VaultFailure("invalid_state")
         val targetRevision = current.revision + 1
         val key: SecretKey
@@ -460,13 +499,15 @@ internal class NeraeVersionedTrainingJournal(
                 if (versionedStorage.read() != null || legacyStorage.read() != null) throw VaultFailure()
                 keys.createHardware().also { createdKey = true }
             }
+            val nextState = current.copy(revision = targetRevision, found = found, value = if (found) value else "",
+                legacy = false, dispatchMarkers = dispatchMarkers, activeBindings = activeBindings)
             versionedStorage.writeAtomically(encryptValue(
-                if (found) value.toByteArray(StandardCharsets.UTF_8) else ByteArray(0),
-                targetRevision, found, current.legacyFingerprint, key
+                encodeJournalEnvelope(nextState), targetRevision, found, current.legacyFingerprint, key, VERSIONED_VERSION_V3
             ))
             val committed = readLocked()
-            if (committed.revision != targetRevision || committed.found != found || committed.value != value ||
-                !sameFingerprint(committed.legacyFingerprint, current.legacyFingerprint)) throw VaultFailure()
+            if (committed.revision != targetRevision || committed.found != found || committed.value != (if (found) value else "") ||
+                committed.dispatchHistoryKnown != current.dispatchHistoryKnown || committed.dispatchMarkers != dispatchMarkers ||
+                committed.activeBindings != activeBindings || !sameFingerprint(committed.legacyFingerprint, current.legacyFingerprint)) throw VaultFailure()
             return targetRevision
         } catch (failure: VaultFailure) {
             if (createdKey) discardKeyOnlyIfEmpty()
@@ -476,6 +517,66 @@ internal class NeraeVersionedTrainingJournal(
             throw VaultFailure()
         }
     }
+
+    private fun encodeJournalEnvelope(state: State): ByteArray {
+        if (state.dispatchMarkers.size > MAX_DISPATCH_MARKERS || state.activeBindings.size > MAX_ACTIVE_DISPATCHES ||
+            state.dispatchMarkers.any { !isMarker(it) } || state.activeBindings.any { !isMarker(it.key) || !isMarker(it.value) }) throw VaultFailure("invalid_state")
+        val output = ByteArrayOutputStream()
+        DataOutputStream(output).use { data ->
+            data.write(byteArrayOf(0x4e, 0x4a, 0x33, 0x00)) // NJ3\0
+            data.writeByte(if (state.dispatchHistoryKnown) 1 else 0)
+            val valueBytes = if (state.found) state.value.toByteArray(StandardCharsets.UTF_8) else ByteArray(0)
+            data.writeInt(valueBytes.size); data.write(valueBytes)
+            val markers = state.dispatchMarkers.sorted()
+            data.writeInt(markers.size)
+            markers.forEach { data.write(hexToBytes(it)) }
+            val bindings = state.activeBindings.toSortedMap()
+            data.writeInt(bindings.size)
+            bindings.forEach { (event, binding) -> data.write(hexToBytes(event)); data.write(hexToBytes(binding)) }
+        }
+        val encoded = output.toByteArray()
+        if (encoded.size > MAX_VALUE_BYTES + MAX_HISTORY_BYTES) throw VaultFailure("invalid_state")
+        return encoded
+    }
+
+    private fun decodeJournalEnvelope(bytes: ByteArray, revision: Long, found: Boolean, fingerprint: ByteArray?): State {
+        try {
+            DataInputStream(ByteArrayInputStream(bytes)).use { data ->
+                if (!ByteArray(4).also(data::readFully).contentEquals(byteArrayOf(0x4e, 0x4a, 0x33, 0x00))) throw VaultFailure()
+                val historyFlag = data.readUnsignedByte()
+                if (historyFlag !in 0..1) throw VaultFailure()
+                val valueSize = data.readInt()
+                if (valueSize !in 0..MAX_VALUE_BYTES || (!found && valueSize != 0)) throw VaultFailure()
+                val valueBytes = ByteArray(valueSize); data.readFully(valueBytes)
+                val value = if (found) decodeValue(valueBytes) else ""
+                val markerCount = data.readInt()
+                if (markerCount !in 0..MAX_DISPATCH_MARKERS) throw VaultFailure()
+                val markers = LinkedHashSet<String>()
+                repeat(markerCount) {
+                    val marker = bytesToHex(ByteArray(MARKER_BYTES).also(data::readFully))
+                    if (!markers.add(marker)) throw VaultFailure()
+                }
+                val activeCount = data.readInt()
+                if (activeCount !in 0..MAX_ACTIVE_DISPATCHES) throw VaultFailure()
+                val active = LinkedHashMap<String, String>()
+                repeat(activeCount) {
+                    val event = bytesToHex(ByteArray(MARKER_BYTES).also(data::readFully))
+                    val binding = bytesToHex(ByteArray(MARKER_BYTES).also(data::readFully))
+                    if (active.put(event, binding) != null) throw VaultFailure()
+                }
+                if (data.read() != -1 || (historyFlag == 0 && (markers.isNotEmpty() || active.isNotEmpty()))) throw VaultFailure()
+                return State(revision, found, value, false, fingerprint, historyFlag == 1, markers, active)
+            }
+        } catch (failure: VaultFailure) { throw failure }
+        catch (_: Exception) { throw VaultFailure() }
+    }
+
+    private fun isMarker(value: String): Boolean = value.matches(Regex("[0-9a-f]{64}"))
+    private fun hexToBytes(value: String): ByteArray {
+        if (!isMarker(value)) throw VaultFailure("invalid_state")
+        return ByteArray(MARKER_BYTES) { index -> value.substring(index * 2, index * 2 + 2).toInt(16).toByte() }
+    }
+    private fun bytesToHex(value: ByteArray): String = value.joinToString("") { "%02x".format(it) }
 
     private fun discardKeyOnlyIfEmpty() {
         try {
@@ -530,12 +631,12 @@ internal class NeraeVersionedTrainingJournal(
 
     private fun legacyHeader(): ByteArray = MAGIC + byteArrayOf(LEGACY_VERSION)
 
-    private fun versionedHeader(revision: Long, found: Boolean, legacyFingerprint: ByteArray?): ByteArray {
+    private fun versionedHeader(revision: Long, found: Boolean, legacyFingerprint: ByteArray?, version: Byte = VERSIONED_VERSION_V3): ByteArray {
         if (legacyFingerprint != null && legacyFingerprint.size != LEGACY_DIGEST_BYTES) throw VaultFailure()
         return ByteBuffer
         .allocate(VERSIONED_HEADER_BYTES)
         .put(MAGIC)
-        .put(VERSIONED_VERSION)
+        .put(version)
         .putLong(revision)
         .put(if (found) 1 else 0)
         .put(if (legacyFingerprint == null) 0 else 1)
@@ -544,9 +645,10 @@ internal class NeraeVersionedTrainingJournal(
     }
 
     private fun encryptValue(
-        plaintext: ByteArray, revision: Long, found: Boolean, legacyFingerprint: ByteArray?, key: SecretKey
+        plaintext: ByteArray, revision: Long, found: Boolean, legacyFingerprint: ByteArray?, key: SecretKey,
+        version: Byte = VERSIONED_VERSION_V3
     ): ByteArray {
-        val header = versionedHeader(revision, found, legacyFingerprint)
+        val header = versionedHeader(revision, found, legacyFingerprint, version)
         val cipher = Cipher.getInstance(AES_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         val nonce = cipher.iv ?: throw VaultFailure()

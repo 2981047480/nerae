@@ -216,18 +216,19 @@ fun main() {
     check(legacyStorage.read()!!.contentEquals(v1Bytes))
     check(legacyV2Storage.read() != null)
     check(migrated.read().let { it.revision == 1L && it.found && it.value == legacyValue })
-    check(legacyV2Storage.read()!![4] == 2.toByte())
+    // A successful legacy migration now writes the v3 history envelope.
+    check(legacyV2Storage.read()!![4] == 3.toByte())
     check(legacyStorage.read()!!.contentEquals(v1Bytes))
     check(migrated.compareAndSetLegacy(true, legacyValue, legacyValue) == 2L)
     check(migrated.read().let { it.revision == 2L && it.value == legacyValue })
     check(legacyStorage.read()!!.contentEquals(v1Bytes))
 
-    val committedV2 = legacyV2Storage.read()!!
-    val tamperedHeader = committedV2.copyOf()
+    val committedEnvelope = legacyV2Storage.read()!!
+    val tamperedHeader = committedEnvelope.copyOf()
     tamperedHeader[12] = (tamperedHeader[12].toInt() xor 1).toByte()
     legacyV2Storage.bytes = tamperedHeader
     expectFailure { migrated.read() }
-    legacyV2Storage.bytes = committedV2
+    legacyV2Storage.bytes = committedEnvelope
 
     val v1Fingerprint = MessageDigest.getInstance("SHA-256").digest(v1Bytes)
     val maxHeader = ByteBuffer.allocate(47).put(byteArrayOf(0x4e, 0x52, 0x56, 0x41)).put(2.toByte())
