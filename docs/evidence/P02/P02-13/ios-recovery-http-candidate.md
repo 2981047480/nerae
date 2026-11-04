@@ -44,9 +44,12 @@ app, and the origin and validity of the embedded sample AppKey have not been
 established. This disposable build has no code signature, has not been
 installed or run, and does not establish working login, synchronization,
 server deployment, AppKey entitlement, or readiness for distribution.
-The subsequent journal comparison fix, response validator and inspector were separately
-compiled into the four unsigned iPhoneOS plugin libraries, but have not been
-rebuilt in this full sample App.
+The subsequent journal comparison fix, authentication generation gate,
+response validator and inspector were also separately linked into the four
+unsigned iPhoneOS plugin libraries. The isolated sample App was then rebuilt
+successfully from integration commit `45c2ef2`; its embedded business
+resources matched that build and the Xcode log listed the updated native
+sources. It is still the same unsigned sample with the same limitations.
 
 This is an internal transport candidate, not a wired App flow or a verified
 receipt. Response semantics, the journal's current revision and exact request,

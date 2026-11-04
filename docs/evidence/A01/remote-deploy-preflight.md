@@ -10,6 +10,19 @@ not been tested. The observed certificate expires 2026-11-10 12:11:56 UTC;
 automatic renewal has not been verified. No existing remote configuration or
 service was changed.
 
+On a later read-only check on 2026-11-04, Caddy was still active and the
+previously suggested loopback port `127.0.0.1:18080` was already held by an
+existing `api` process. Do not bind, stop, or reuse it for Nerae. A separate
+free loopback port must be selected and reserved at deployment time. The same
+check found no system `mysqld` or `redis-server` process; this is not a full
+inventory of containers, sockets, or external services.
+
+An [offline deployment candidate](deployment-preflight/README.md) now checks
+the release migration inputs and owner-only API/worker configuration, including
+shared key epochs, without printing secrets or connecting to services. Eleven
+synthetic tests passed. It does not provision the host, verify permissions on
+running services, or replace startup and backup/restore verification.
+
 No MySQL/Redis image was found among the checked local Docker images. A
 read-only Docker Hub manifest request timed out while waiting for registry
 headers. Ubuntu's configured package metadata lists MySQL and Redis candidates;
