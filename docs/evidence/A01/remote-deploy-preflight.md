@@ -54,6 +54,17 @@ it to use the extracted package binaries. No real SMTP
 credentials, public listener, production data or iPhone were used. This does
 not establish email delivery from the deployed service or cross-device sync.
 
+On 2026-11-04 the pinned-container run was extended to a second fresh schema
+and passed `TestBusinessAssemblyPrivateServices` on the Tencent host. Two
+synthetic device keys completed the email-code and owner-approval flow; one
+device created a workout, the other read it and saved a set, and the first read
+the set. The code was derived in the test process, not delivered by QQ. The
+assembly test now rejects any database name other than its dedicated synthetic
+schema before connecting. The isolated services stopped and their successful
+test directories were removed. This verifies the server assembly on the
+target host; it does not demonstrate a deployed service or sync from either
+real device.
+
 ## Candidate proxy behavior
 
 The isolated [Caddy proxy test](caddy-proxy-boundary-smoke.py) passed on the

@@ -7,6 +7,7 @@ import TrainingEntry from '../../features/training/TrainingEntry.vue'
 import { AppEntrySession } from '../../features/auth/appEntrySession'
 import type { PublicSession } from '../../features/auth/sessionCoordinator'
 import type { AppAuthRuntime } from '../../platform/app/nativeAuthRuntime'
+import type { RecordingApi } from '../../features/training/recordingApi'
 // #ifdef APP-PLUS
 import { createAppAuthRuntime } from '../../platform/app/nativeAuthRuntime'
 // #endif
@@ -29,6 +30,7 @@ const entryGeneration = shallowRef(0)
 const trainingOpen = shallowRef(false)
 const trainingTimeZone = shallowRef('')
 const trainingEntry = shallowRef<InstanceType<typeof TrainingEntry> | null>(null)
+const trainingApi = shallowRef<RecordingApi | null>(null)
 const trainingError = shallowRef('')
 const gate = runtime ? new AppEntrySession(runtime.session, onSessionChanged) : null
 
@@ -36,6 +38,7 @@ function onSessionChanged(): void {
   gate?.clear()
   trainingOpen.value = false
   trainingEntry.value = null
+  trainingApi.value = null
   authenticated.value = null
   sessionChanged.value = true
 }
@@ -46,22 +49,31 @@ function startTraining(): void {
     onSessionChanged()
     return
   }
+  let zone: string
   try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    zone = Intl.DateTimeFormat().resolvedOptions().timeZone
     if (typeof zone !== 'string' || !zone || zone.length > 64) throw new Error('unavailable time zone')
     new Intl.DateTimeFormat('en', { timeZone: zone })
-    trainingTimeZone.value = zone
-    trainingError.value = ''
-    trainingOpen.value = true
   } catch {
     trainingError.value = '暂时无法确定设备时区，请检查系统设置后重试。'
+    return
   }
+  try { trainingApi.value = runtime.createRecordingApi() }
+  catch {
+    if (!runtime.session.isCurrent(session.subjectId, session.generation)) onSessionChanged()
+    else trainingError.value = '暂时无法读取训练记录，请稍后重试。'
+    return
+  }
+  trainingTimeZone.value = zone
+  trainingError.value = ''
+  trainingOpen.value = true
 }
 
 function exitTraining(): void {
   if (!trainingEntry.value || !trainingEntry.value.canLeave()) return
   trainingOpen.value = false
   trainingEntry.value = null
+  trainingApi.value = null
 }
 
 onBackPress(() => {
@@ -95,7 +107,7 @@ onBeforeUnmount(() => gate?.dispose())
     </view>
     <AuthEntry v-else-if="!authenticated" :key="entryGeneration" :runtime="runtime" :allow-cancel="false"
       @authenticated="onAuthenticated" @cancel="entryGeneration++" />
-    <TrainingEntry v-else-if="trainingOpen" ref="trainingEntry" :session="runtime.session" :time-zone="trainingTimeZone"
+    <TrainingEntry v-else-if="trainingOpen" ref="trainingEntry" :session="runtime.session" :time-zone="trainingTimeZone" :recording-api="trainingApi"
       @exit="exitTraining" @session-changed="onSessionChanged" />
     <view v-else class="entry-page__content">
       <view class="entry-page__notice">

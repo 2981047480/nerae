@@ -135,7 +135,7 @@ try:
         else:
             raise RuntimeError('private Redis did not become ready')
         password = secrets.token_hex(24)
-        sql = ("CREATE DATABASE nerae_api_process_test; CREATE DATABASE neraemigrationrelease; "
+        sql = ("CREATE DATABASE nerae_api_process_test; CREATE DATABASE nerae_api_assembly_test; CREATE DATABASE neraemigrationrelease; "
                "CREATE DATABASE neraemigrationexecutortest; CREATE DATABASE neraemigrationdrifttest; CREATE DATABASE neraeother; "
                f"CREATE USER 'nerae_release'@'localhost' IDENTIFIED BY '{password}'; "
                f"CREATE USER 'nerae_migrator'@'localhost' IDENTIFIED BY '{password}'; "
@@ -146,7 +146,8 @@ try:
                "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationdrifttest.* TO 'nerae_migratordrift'@'localhost'; "
                "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraemigrationexecutortest.* TO 'nerae_overbroad'@'localhost'; "
                "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, DROP, INDEX, REFERENCES ON neraeother.* TO 'nerae_overbroad'@'localhost'; "
-               "USE nerae_api_process_test;\n" + '\n'.join(sql_parts))
+               "USE nerae_api_process_test;\n" + '\n'.join(sql_parts) +
+               "\nUSE nerae_api_assembly_test;\n" + '\n'.join(sql_parts))
         bootstrap = subprocess.run(client, input=sql, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, timeout=30)
         if bootstrap.returncode:
@@ -187,6 +188,16 @@ try:
         print(test.stdout, end='')
         if test.returncode or 'PASS: protected API process startup -> loopback business route -> enqueue -> clean shutdown' not in test.stdout:
             raise RuntimeError('API process integration test failed or was skipped')
+        assembly_env = {**env,
+                        'NERAE_API_ASSEMBLY_TEST_DSN': f'root@unix({mysql_sock})/nerae_api_assembly_test?parseTime=true&loc=UTC',
+                        'NERAE_API_ASSEMBLY_REDIS_SOCKET': str(redis_sock)}
+        assembly = subprocess.run([str(binary), '-test.v', '-test.run=^TestBusinessAssemblyPrivateServices$'],
+                                  env=assembly_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                  text=True, timeout=90)
+        print(assembly.stdout, end='')
+        if (assembly.returncode or
+                'PASS: assembled new-device exchange and shared workout through proxy boundary' not in assembly.stdout):
+            raise RuntimeError('two-device business integration test failed or was skipped')
         succeeded = True
 except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
     print('FAIL:', error, '; synthetic directories retained:', base, metadata, file=sys.stderr)

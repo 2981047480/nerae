@@ -11,7 +11,7 @@ const pageURL = new URL('./index.vue', import.meta.url)
 const gateURL = new URL('../../features/auth/appEntrySession.ts', import.meta.url)
 const vueURL = import.meta.resolve('vue')
 const current = { runtime: null, authMounts: 0, panelMounts: 0, authEmit: null, panelEmit: null,
-  backHandler: null, trainingEmit: null, trainingCanLeave: true }
+  backHandler: null, trainingEmit: null, trainingCanLeave: true, recordingApi: null }
 globalThis.__neraeEntryTest = current
 
 const AuthStub = defineComponent({
@@ -37,9 +37,10 @@ const PanelStub = defineComponent({
   },
 })
 const TrainingStub = defineComponent({
-  props: ['session', 'timeZone'], emits: ['exit', 'session-changed'],
-  setup(_props, { emit, expose }) {
+  props: ['session', 'timeZone', 'recordingApi'], emits: ['exit', 'session-changed'],
+  setup(props, { emit, expose }) {
     current.trainingEmit = emit
+    current.recordingApi = props.recordingApi
     expose({ canLeave: () => current.trainingCanLeave })
     return () => h('training-entry')
   },
@@ -164,7 +165,8 @@ test('the signed-in recording entry blocks back navigation until its draft can b
     writeAuthenticationState: value => { stored = value; return { ok: true, errorCode: '', found: false, value: '' } },
     clearAuthenticationState: () => { stored = ''; return { ok: true, errorCode: '', found: false, value: '' } },
   }, async () => ({ status: 'valid', user }))
-  current.runtime = { session, approvals: {} }; current.trainingCanLeave = false; current.backHandler = null
+  const recordingApi = {}
+  current.runtime = { session, approvals: {}, createRecordingApi: () => recordingApi }; current.trainingCanLeave = false; current.backHandler = null
   const { root, app } = mount()
   await flush()
   const start = find(root, node => node.type === 'button' && node.text === '开始记录')
@@ -172,6 +174,7 @@ test('the signed-in recording entry blocks back navigation until its draft can b
   start.props.onClick()
   await flush()
   assert.ok(find(root, node => node.type === 'training-entry'))
+  assert.equal(current.recordingApi, recordingApi)
   assert.equal(current.backHandler({ from: 'backbutton' }), true)
   await flush()
   assert.ok(find(root, node => node.type === 'training-entry'))

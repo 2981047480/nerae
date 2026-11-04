@@ -2,6 +2,7 @@ import { EmailAuthApi } from '../../api/auth/emailAuthApi'
 import { generateSecureRandomRequestKey } from '@/uni_modules/nerae-random'
 import { ApprovalOwnerApi } from '../../features/auth/approvalOwnerApi'
 import { AgeAttestationApi } from '../../features/auth/ageAttestationApi'
+import { RecordingApi } from '../../features/training/recordingApi'
 import type { EmailLoginFlow } from '../../features/auth/emailLoginFlow'
 import type { AuthSessionCoordinator } from '../../features/auth/sessionCoordinator'
 import { createConfiguredAppHttpsPorts } from './index'
@@ -13,6 +14,8 @@ export interface AppAuthRuntime {
   readonly login: EmailLoginFlow
   readonly ageDeclaration: AgeAttestationApi
   readonly approvals: ApprovalOwnerApi
+  /** Capture the currently authenticated account for training reads/writes. */
+  createRecordingApi(): RecordingApi
 }
 
 let runtime: AppAuthRuntime | undefined
@@ -43,7 +46,13 @@ export function createAppAuthRuntime(baseUrl: string): AppAuthRuntime {
     return result.value
   })
   const login = createAppEmailLoginFlow(api, session)
-  const result = Object.freeze({ session, login, ageDeclaration, approvals })
+  const createRecordingApi = (): RecordingApi => {
+    const current = session.snapshot()
+    if (!current || !session.isCurrent(current.subjectId, current.generation)) throw new Error('authenticated session unavailable')
+    return new RecordingApi(base, session, ports.recordingRequest,
+      { subjectId: current.subjectId, generation: current.generation })
+  }
+  const result = Object.freeze({ session, login, ageDeclaration, approvals, createRecordingApi })
   configuredBase = base
   runtime = result
   return result

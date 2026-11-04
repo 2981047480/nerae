@@ -25,6 +25,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
   if (context.parentURL?.startsWith('data:text/javascript')) {
     if (specifier === 'vue') return { url: vueURL, shortCircuit: true }
     if (specifier.endsWith('/RecordingEditor.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeTrainingEntryTest.EditorStub', shortCircuit: true }
+    if (specifier.endsWith('/TrainingHistory.vue')) return { url: 'data:text/javascript,export default {render(){return null}}', shortCircuit: true }
     if (specifier === './draftStorage') return { url: draftStorageURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeTrainingEditor')) return { url: 'data:text/javascript,export const discoverAppTrainingDrafts=(...a)=>globalThis.__neraeTrainingEntryTest.services.discover(...a);export const createAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.create(...a);export const attachAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.attach(...a)', shortCircuit: true }
   }

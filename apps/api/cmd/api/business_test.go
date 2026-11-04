@@ -94,8 +94,8 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		t.Skip("private socket-only services not configured")
 	}
 	parsed, err := mysql.ParseDSN(dsn)
-	if err != nil || parsed.Net != "unix" {
-		t.Fatal("test database must use a private Unix socket")
+	if err != nil || parsed.Net != "unix" || parsed.DBName != "nerae_api_assembly_test" {
+		t.Fatal("test database must use the dedicated private assembly schema over a Unix socket")
 	}
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import RecordingEditor from './RecordingEditor.vue'
+import TrainingHistory from './TrainingHistory.vue'
 import { todayInTimezone } from './draftStorage'
 import type { RecordingDraft, RecordingMode, InputField } from './recording'
 import { discoverAppTrainingDrafts, createAppTrainingEditor, attachAppTrainingEditor } from '../../platform/app/nativeTrainingEditor'
 import type { AuthSessionCoordinator } from '../auth/sessionCoordinator'
 import type { EditorResult, TrainingEditorController } from './trainingEditorController'
+import type { RecordingApi } from './recordingApi'
 
-const props = defineProps<{ session: AuthSessionCoordinator; timeZone: string; exerciseLabels?: Record<string, string> }>()
+const props = defineProps<{ session: AuthSessionCoordinator; timeZone: string; recordingApi?: RecordingApi | null; exerciseLabels?: Record<string, string> }>()
 const emit = defineEmits<{ exit: []; 'session-changed': [] }>()
 
 type DraftItem = { eventId: string; date: string | null; exerciseCount: number; localError: boolean }
@@ -293,6 +295,7 @@ onBeforeUnmount(() => {
         </view>
         <button v-if="nextCursor" class="training-entry__secondary" :disabled="loading || opening" @tap="discover(false)">加载更多</button>
         <button v-if="error &amp;&amp; !sessionInvalid" class="training-entry__secondary" :disabled="loading || opening" @tap="discover()">重新查找</button>
+        <TrainingHistory v-if="recordingApi" :session="session" :api="recordingApi" @session-changed="changedSession" />
         <button class="training-entry__secondary" :disabled="opening || loading" @tap="emit('exit')">返回</button>
       </view>
     </template>

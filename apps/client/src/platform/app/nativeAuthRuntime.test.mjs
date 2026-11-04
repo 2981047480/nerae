@@ -48,6 +48,16 @@ globalThis.__neraeRuntimeTest = {
     } else if (request.path === '/me') {
       assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
       body = user()
+    } else if (request.path === '/me/sessions?page=1&pageSize=20') {
+      assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
+      body = { page: 1, pageSize: 20, total: 1, items: [{ id: '42', date: '2026-10-29',
+        timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 1,
+        createdAt: '2026-10-29T08:00:00Z', updatedAt: '2026-10-29T08:00:00Z', recordedAt: null }] }
+    } else if (request.path === '/me/sessions/42') {
+      assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
+      body = { id: '42', clientEventId: 'event-0001', date: '2026-10-29', timeZone: 'Asia/Shanghai',
+        status: 'in_progress', source: 'free', version: 1, createdAt: '2026-10-29T08:00:00Z',
+        updatedAt: '2026-10-29T08:00:00Z', recordedAt: null, exerciseEntryKeys: [], sets: [] }
     } else if (request.path === '/me/login-approvals' && request.method === 'GET') {
       assert.equal(headers.Authorization, 'Bearer synthetic.runtime.token')
       body = { items: [{ id: 'a'.repeat(24), comparisonCode: '123456', createdAt: '2026-11-03T00:00:00Z', expiresAt: '2026-11-03T00:05:00Z' }] }
@@ -98,6 +108,7 @@ test('App authentication assembly requires one explicit HTTPS origin', async () 
   assert.equal(createAppAuthRuntime('https://api.example.test/v1///'), runtime)
   assert.throws(() => createAppAuthRuntime('https://other.example.test/v1'), /already configured/)
   assert.equal((await runtime.session.restore()).status, 'signed_out')
+  assert.throws(() => runtime.createRecordingApi())
   assert.equal((await runtime.login.requestCode('member@example.test')).status, 'waiting_code')
   assert.equal((await runtime.login.submitCode('012345')).status, 'authenticated')
   assert.equal(runtime.session.snapshot().user.ageVerified, false)
@@ -106,11 +117,16 @@ test('App authentication assembly requires one explicit HTTPS origin', async () 
   const pending = await runtime.approvals.list()
   assert.equal(pending.status, 'ready')
   assert.equal((await runtime.approvals.decide(pending.items[0], 'approve', true)).status, 'approved')
+  const recording = runtime.createRecordingApi()
+  assert.equal((await recording.listSessions({ page: 1, pageSize: 20 })).items[0].id, '42')
+  assert.equal((await recording.readSession('42')).detail.clientEventId, 'event-0001')
   assert.deepEqual(state.requests.map(item => item.path), [
     '/auth/email/challenges', '/auth/email-login', '/me/age-verify', '/me',
     '/me/login-approvals', `/me/login-approvals/${'a'.repeat(24)}/decision`,
+    '/me/sessions?page=1&pageSize=20', '/me/sessions/42',
   ])
   assert.ok(state.requests.every(item => item.baseUrl === 'https://api.example.test/v1'))
   assert.equal((await runtime.session.logout()).status, 'signed_out')
   assert.equal(state.session, '')
+  await assert.rejects(recording.readSession('42'), error => error.code === 'unauthenticated' || error.code === 'session_changed')
 })
