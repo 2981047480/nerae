@@ -22,6 +22,8 @@ export function compareAndSetTrainingOperationJournal(_expectedFound: boolean, _
 function unsupportedVersioned(): VersionedSecureVaultResult {
   return { ok: false, errorCode: 'unsupported_platform', found: false, value: '', revision: '' }
 }
+export function readVersionedTrainingDraft(_key: string): VersionedSecureVaultResult { return unsupportedVersioned() }
+export function compareAndSetVersionedTrainingDraft(_key: string, _expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _value: string): VersionedSecureVaultResult { return unsupportedVersioned() }
 export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult { return unsupportedVersioned() }
 export function compareAndSetVersionedTrainingOperationJournal(_expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _newFound: boolean, _newValue: string): VersionedSecureVaultResult { return unsupportedVersioned() }
 export function claimTrainingOperationDispatch(_expectedRevision: string, _expectedValue: string, _operationKey: string, _nextValue: string): VersionedSecureVaultResult { return unsupportedVersioned() }

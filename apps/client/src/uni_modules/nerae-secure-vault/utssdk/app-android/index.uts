@@ -72,6 +72,9 @@ export function compareAndSetTrainingOperationJournal(expectedFound: boolean, ex
 function versionedFailure(errorCode: string): VersionedSecureVaultResult {
 	return { ok: false, errorCode: errorCode, found: false, value: '', revision: '' }
 }
+// The Android draft slot does not yet provide persistent revision CAS.
+export function readVersionedTrainingDraft(_key: string): VersionedSecureVaultResult { return versionedFailure('unsupported_platform') }
+export function compareAndSetVersionedTrainingDraft(_key: string, _expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _value: string): VersionedSecureVaultResult { return versionedFailure('unsupported_platform') }
 
 function validRevision(revision: string): boolean {
 	return /^(0|[1-9][0-9]{0,18})$/.test(revision) &&

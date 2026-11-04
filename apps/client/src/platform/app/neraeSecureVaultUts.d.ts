@@ -10,6 +10,8 @@ declare module '@/uni_modules/nerae-secure-vault' {
   export function discoverTrainingDrafts(subjectId: string, cursor: string): SecureVaultResult
   export function createTrainingDraft(key: string, value: string): SecureVaultResult
   export function writeTrainingDraft(key: string, value: string): SecureVaultResult
+  export function readVersionedTrainingDraft(key: string): VersionedSecureVaultResult
+  export function compareAndSetVersionedTrainingDraft(key: string, expectedRevision: string, expectedFound: boolean, expectedValue: string, value: string): VersionedSecureVaultResult
   export function readTrainingOperationJournal(): SecureVaultResult
   export function compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult
   export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult

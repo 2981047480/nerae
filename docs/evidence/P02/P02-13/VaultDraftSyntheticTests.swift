@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 private enum Failure: Error { case assertion }
 private func check(_ value: @autoclosure () throws -> Bool) throws {
@@ -8,6 +9,10 @@ private func check(_ value: @autoclosure () throws -> Bool) throws {
 private final class FakeDraftBackend: NeraeDraftBackend {
     var values: [String: Data] = [:]
     var failAfterUpdate = false
+    var failBeforeUpdate = false
+    var failAfterCreate = false
+    var failReadAfterUpdate = false
+    var failNextRead = false
     var corruptRead = false
     var failEnumeration = false
     var accountOverride: [String]?
@@ -16,17 +21,21 @@ private final class FakeDraftBackend: NeraeDraftBackend {
         return accountOverride ?? values.keys.sorted()
     }
     func read(account: String) throws -> Data? {
+        if failNextRead { failNextRead = false; throw NeraeVaultError.unavailable }
         if corruptRead { return Data("broken".utf8) }
         return values[account]
     }
     func create(account: String, value: Data) throws -> Bool {
         if values[account] != nil { return false }
         values[account] = value
+        if failAfterCreate { throw NeraeVaultError.unavailable }
         return true
     }
     func update(account: String, value: Data) throws {
         guard values[account] != nil else { throw NeraeVaultError.conflict }
+        if failBeforeUpdate { throw NeraeVaultError.unavailable }
         values[account] = value
+        if failReadAfterUpdate { failNextRead = true }
         if failAfterUpdate { throw NeraeVaultError.unavailable }
     }
 }
@@ -36,6 +45,18 @@ private func payload(_ subject: String = "101", _ event: String = "event-0001", 
     let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
     guard let value = String(data: data, encoding: .utf8) else { throw Failure.assertion }
     return value
+}
+
+private func account(for key: String) -> String {
+    SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
+}
+
+private func versionedEnvelope(_ value: Data, revision: String) throws -> Data {
+    try PropertyListSerialization.data(fromPropertyList: [
+        "format": "com.nerae.training-draft.versioned.v2",
+        "payload": value,
+        "revision": revision
+    ], format: .binary, options: 0)
 }
 
 private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) throws {
@@ -207,6 +228,192 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         guard let ids3 = page3["eventIds"] as? [String] else { throw Failure.assertion }
         try check(ids1.count == 100 && ids2.count == 100 && ids3.count == 80 && page3["nextCursor"] is NSNull)
         try check(Set(ids1 + ids2 + ids3).count == 280)
+
+        // Legacy records remain byte-for-byte untouched by reads, then migrate
+        // in place on the first successful versioned mutation.
+        let legacyBackend = FakeDraftBackend()
+        let legacyStore = NeraeProtectedDraftStore(backend: legacyBackend)
+        let legacyKey = "nerae.workout.draft.v1.101.event-legacy1"
+        let legacyPayload = try payload("101", "event-legacy1", note: "e\u{0301}")
+        let legacyBytes = Data(legacyPayload.utf8)
+        legacyBackend.values[account(for: legacyKey)] = legacyBytes
+        let legacyRead = try legacyStore.readVersioned(key: legacyKey)
+        try check(legacyRead.found && legacyRead.revision == "0" && Data(legacyRead.value.utf8) == legacyBytes)
+        try check(legacyBackend.values[account(for: legacyKey)] == legacyBytes)
+        let upgraded = try payload("101", "event-legacy1", note: "升级")
+        try check(try legacyStore.compareAndSetVersioned(key: legacyKey, expectedRevision: "0",
+                                                         expectedFound: true, expectedValue: legacyPayload,
+                                                         value: upgraded))
+        let upgradedRead = try legacyStore.readVersioned(key: legacyKey)
+        try check(upgradedRead.revision == "1" && Data(upgradedRead.value.utf8) == Data(upgraded.utf8))
+        try check(legacyBackend.values[account(for: legacyKey)]?.starts(with: Data("bplist00".utf8)) == true)
+
+        let compatibilityLegacyKey = "nerae.workout.draft.v1.101.event-legacy3"
+        let compatibilityOld = try payload("101", "event-legacy3", note: "旧调用")
+        let compatibilityNew = try payload("101", "event-legacy3", note: "升级写入")
+        legacyBackend.values[account(for: compatibilityLegacyKey)] = Data(compatibilityOld.utf8)
+        try check(try legacyStore.compareAndSet(key: compatibilityLegacyKey,
+                                                expected: compatibilityOld, value: compatibilityNew))
+        let compatibilityRead = try legacyStore.readVersioned(key: compatibilityLegacyKey)
+        try check(compatibilityRead.revision == "1" && Data(compatibilityRead.value.utf8) == Data(compatibilityNew.utf8))
+
+        let versionedBackend = FakeDraftBackend()
+        let versionedStores = [NeraeProtectedDraftStore(backend: versionedBackend),
+                               NeraeProtectedDraftStore(backend: versionedBackend)]
+        let versionedKey = "nerae.workout.draft.v1.101.event-version"
+        let a = try payload("101", "event-version", note: "é")
+        let b = try payload("101", "event-version", note: "B")
+        let c = try payload("101", "event-version", note: "C")
+        let uncertainCreateBackend = FakeDraftBackend()
+        let uncertainCreate = NeraeProtectedDraftStore(backend: uncertainCreateBackend)
+        uncertainCreateBackend.failAfterCreate = true
+        try expect(.unavailable) { _ = try uncertainCreate.create(key: versionedKey, value: a) }
+        uncertainCreateBackend.failAfterCreate = false
+        let recoveredCreate = try uncertainCreate.readVersioned(key: versionedKey)
+        try check(recoveredCreate.found && recoveredCreate.revision == "1" && Data(recoveredCreate.value.utf8) == Data(a.utf8))
+        try check(!(try uncertainCreate.create(key: versionedKey, value: b)))
+        try check(!(try versionedStores[0].readVersioned(key: versionedKey)).found)
+        try check(try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "0",
+                                                                 expectedFound: false, expectedValue: "", value: a))
+        try check(try versionedStores[0].readVersioned(key: versionedKey).revision == "1")
+        try check(try versionedStores[1].compareAndSetVersioned(key: versionedKey, expectedRevision: "1",
+                                                                 expectedFound: true, expectedValue: a, value: b))
+        try check(try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "2",
+                                                                 expectedFound: true, expectedValue: b, value: a))
+        try check(!(try versionedStores[1].compareAndSetVersioned(key: versionedKey, expectedRevision: "1",
+                                                                   expectedFound: true, expectedValue: a, value: c)))
+        try expect(.invalidState) {
+            _ = try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "3",
+                                                                expectedFound: true, expectedValue: try payload("202", "event-version"),
+                                                                value: c)
+        }
+        try expect(.invalidState) {
+            _ = try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "01",
+                                                                expectedFound: true, expectedValue: a, value: c)
+        }
+        let afterABA = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(afterABA.revision == "3" && Data(afterABA.value.utf8) == Data(a.utf8))
+        func decodeBridge(_ value: String) throws -> [String: Any] {
+            guard let parsed = try JSONSerialization.jsonObject(with: Data(value.utf8)) as? [String: Any] else { throw Failure.assertion }
+            return parsed
+        }
+        let bridgeRead = try decodeBridge(NeraeSecureVaultBridge.readVersionedTrainingDraft(in: versionedStores[0], key: versionedKey))
+        try check(bridgeRead["ok"] as? Bool == true && bridgeRead["revision"] as? String == "3" &&
+                  bridgeRead["value"] as? String == a)
+        let bridgeConflict = try decodeBridge(NeraeSecureVaultBridge.compareAndSetVersionedTrainingDraft(
+            in: versionedStores[1], key: versionedKey, expectedRevision: "1", expectedFound: true,
+            expectedValue: a, value: c))
+        try check(bridgeConflict["ok"] as? Bool == false && bridgeConflict["errorCode"] as? String == "conflict" &&
+                  bridgeConflict["value"] as? String == "" && bridgeConflict["revision"] as? String == "")
+
+        // Exactly one concurrent writer with the same revision can advance.
+        var versionedWins = 0
+        var versionedFailures = 0
+        DispatchQueue.concurrentPerform(iterations: 64) { index in
+            do {
+                let next = try payload("101", "event-version", note: "race-\(index)")
+                if try versionedStores[index % 2].compareAndSetVersioned(key: versionedKey,
+                                                                           expectedRevision: "3", expectedFound: true,
+                                                                           expectedValue: a, value: next) {
+                    resultLock.lock(); versionedWins += 1; resultLock.unlock()
+                }
+            } catch { resultLock.lock(); versionedFailures += 1; resultLock.unlock() }
+        }
+        try check(versionedWins == 1 && versionedFailures == 0)
+        let revision4 = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(revision4.revision == "4")
+
+        // A failure before mutation preserves the complete old envelope. A
+        // failure after mutation is unknown to the caller but remains readable.
+        let beforeFailure = versionedBackend.values[account(for: versionedKey)]!
+        versionedBackend.failBeforeUpdate = true
+        try expect(.unavailable) {
+            _ = try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "4",
+                                                               expectedFound: true, expectedValue: revision4.value,
+                                                               value: c)
+        }
+        versionedBackend.failBeforeUpdate = false
+        try check(versionedBackend.values[account(for: versionedKey)] == beforeFailure)
+        versionedBackend.failAfterUpdate = true
+        try expect(.unavailable) {
+            _ = try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "4",
+                                                               expectedFound: true, expectedValue: revision4.value,
+                                                               value: c)
+        }
+        versionedBackend.failAfterUpdate = false
+        let afterUnknownVersionedWrite = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(afterUnknownVersionedWrite.revision == "5" && Data(afterUnknownVersionedWrite.value.utf8) == Data(c.utf8))
+        versionedBackend.failReadAfterUpdate = true
+        try expect(.unavailable) {
+            _ = try versionedStores[0].compareAndSetVersioned(key: versionedKey, expectedRevision: "5",
+                                                               expectedFound: true, expectedValue: c, value: b)
+        }
+        versionedBackend.failReadAfterUpdate = false
+        let recoveredReadback = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(recoveredReadback.revision == "6" && Data(recoveredReadback.value.utf8) == Data(b.utf8))
+        let d = try payload("101", "event-version", note: "compatibility write")
+        try versionedStores[0].write(key: versionedKey, value: d)
+        let revision7 = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(revision7.revision == "7" && Data(revision7.value.utf8) == Data(d.utf8))
+        let e = try payload("101", "event-version", note: "compatibility CAS")
+        try check(try versionedStores[1].compareAndSet(key: versionedKey, expected: d, value: e))
+        let revision8 = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(revision8.revision == "8" && Data(revision8.value.utf8) == Data(e.utf8))
+        let bridgeWrite = try decodeBridge(NeraeSecureVaultBridge.compareAndSetVersionedTrainingDraft(
+            in: versionedStores[0], key: versionedKey, expectedRevision: "8", expectedFound: true,
+            expectedValue: e, value: c))
+        try check(bridgeWrite["ok"] as? Bool == true && bridgeWrite["revision"] as? String == "9" &&
+                  bridgeWrite["value"] as? String == "")
+        let afterBridgeWrite = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(afterBridgeWrite.revision == "9" && Data(afterBridgeWrite.value.utf8) == Data(c.utf8))
+
+        // Corrupt, unknown-version, invalid UTF-8, and exhausted revisions are
+        // retained and fail closed instead of being reset or overwritten.
+        let corruptBackend = FakeDraftBackend()
+        let corruptStore = NeraeProtectedDraftStore(backend: corruptBackend)
+        let corruptKey = "nerae.workout.draft.v1.101.event-corrupt"
+        let corruptDraftAccount = account(for: corruptKey)
+        let unknown = try versionedEnvelope(Data(try payload("101", "event-corrupt").utf8), revision: "1")
+        let unknownObject = try PropertyListSerialization.propertyList(from: unknown, options: [], format: nil) as! [String: Any]
+        var badFormat = unknownObject
+        badFormat["format"] = "com.nerae.training-draft.versioned.v999"
+        corruptBackend.values[corruptDraftAccount] = try PropertyListSerialization.data(fromPropertyList: badFormat, format: .binary, options: 0)
+        let unknownBytes = corruptBackend.values[corruptDraftAccount]!
+        try expect(.unavailable) { _ = try corruptStore.readVersioned(key: corruptKey) }
+        try expect(.unavailable) { try corruptStore.write(key: corruptKey, value: try payload("101", "event-corrupt", note: "overwrite")) }
+        try check(corruptBackend.values[corruptDraftAccount] == unknownBytes)
+        corruptBackend.values[corruptDraftAccount] = Data([0xff, 0xfe])
+        let invalidUTF8 = corruptBackend.values[corruptDraftAccount]!
+        try expect(.unavailable) { _ = try corruptStore.readVersioned(key: corruptKey) }
+        try check(corruptBackend.values[corruptDraftAccount] == invalidUTF8)
+
+        let maxBackend = FakeDraftBackend()
+        let maxStore = NeraeProtectedDraftStore(backend: maxBackend)
+        let maxKey = "nerae.workout.draft.v1.101.event-maxrev1"
+        let maxPayload = Data(try payload("101", "event-maxrev1").utf8)
+        maxBackend.values[account(for: maxKey)] = try versionedEnvelope(maxPayload, revision: "9223372036854775807")
+        let maxBytes = maxBackend.values[account(for: maxKey)]!
+        try check(try maxStore.readVersioned(key: maxKey).revision == "9223372036854775807")
+        try expect(.unavailable) { try maxStore.write(key: maxKey, value: try payload("101", "event-maxrev1", note: "overflow")) }
+        try expect(.unavailable) {
+            _ = try maxStore.compareAndSetVersioned(key: maxKey, expectedRevision: "9223372036854775807",
+                                                     expectedFound: true, expectedValue: String(decoding: maxPayload, as: UTF8.self),
+                                                     value: try payload("101", "event-maxrev1", note: "overflow"))
+        }
+        try check(maxBackend.values[account(for: maxKey)] == maxBytes)
+
+        // Discovery accepts legacy and versioned items without rewriting either.
+        let mixedBackend = FakeDraftBackend()
+        let mixedStore = NeraeProtectedDraftStore(backend: mixedBackend)
+        let mixedLegacyKey = "nerae.workout.draft.v1.101.event-legacy2"
+        let mixedV2Key = "nerae.workout.draft.v1.101.event-version2"
+        let mixedLegacyBytes = Data(try payload("101", "event-legacy2").utf8)
+        mixedBackend.values[account(for: mixedLegacyKey)] = mixedLegacyBytes
+        try check(try mixedStore.create(key: mixedV2Key, value: try payload("101", "event-version2")))
+        let mixedList = try mixedStore.discover(subject: "101", after: "")
+        let mixedObject = try JSONSerialization.jsonObject(with: Data(mixedList.utf8)) as? [String: Any]
+        try check(mixedObject?["eventIds"] as? [String] == ["event-legacy2", "event-version2"])
+        try check(mixedBackend.values[account(for: mixedLegacyKey)] == mixedLegacyBytes)
         print("PASS: synthetic draft isolation, in-process races, paged discovery and uncertain write preservation")
     }
 }

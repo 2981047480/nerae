@@ -166,41 +166,58 @@ final class NeraeKeychainDraftBackend: NeraeDraftBackend {
 final class NeraeProtectedDraftStore {
     private static let lock = NSLock()
     static let discoveryPageSize = 100
+    private static let maxPayloadBytes = NeraeCredentialVault.maxBytes
+    private static let maxEnvelopeBytes = maxPayloadBytes + 1024
+    private static let versionedFormat = "com.nerae.training-draft.versioned.v2"
+    private static let maxRevision = "9223372036854775807"
     private let backend: NeraeDraftBackend
     init(backend: NeraeDraftBackend) { self.backend = backend }
 
     func read(key: String) throws -> NeraeVaultRead {
+        let result = try readVersioned(key: key)
+        return NeraeVaultRead(found: result.found, value: result.value)
+    }
+
+    /// Reads legacy JSON without rewriting it. Legacy items have revision zero;
+    /// the first successful mutation upgrades the same Keychain item to v2.
+    func readVersioned(key: String) throws -> NeraeVersionedDraftRead {
         let owner = try Self.owner(key)
         Self.lock.lock()
         defer { Self.lock.unlock() }
-        guard let data = try backend.read(account: owner.account) else { return NeraeVaultRead(found: false, value: "") }
-        guard let value = String(data: data, encoding: .utf8), Self.valid(value, owner: owner) else { throw NeraeVaultError.unavailable }
-        return NeraeVaultRead(found: true, value: value)
+        guard let data = try backend.read(account: owner.account) else {
+            return NeraeVersionedDraftRead(found: false, value: "", revision: "0")
+        }
+        let state = try Self.decode(data, owner: owner)
+        guard let value = String(data: state.payload, encoding: .utf8) else { throw NeraeVaultError.unavailable }
+        return NeraeVersionedDraftRead(found: true, value: value, revision: state.revision)
     }
 
     func create(key: String, value: String) throws -> Bool {
         let owner = try Self.owner(key)
-        guard Self.valid(value, owner: owner), let data = value.data(using: .utf8) else { throw NeraeVaultError.invalidState }
+        guard Self.valid(value, owner: owner), let payload = value.data(using: .utf8) else { throw NeraeVaultError.invalidState }
         Self.lock.lock()
         defer { Self.lock.unlock() }
+        let data = try Self.encode(payload: payload, revision: "1")
         let created = try backend.create(account: owner.account, value: data)
         if created {
-            guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
+            guard let stored = try backend.read(account: owner.account) else { throw NeraeVaultError.unavailable }
+            let committed = try Self.decode(stored, owner: owner)
+            guard committed.revision == "1", committed.payload == payload else {
+                throw NeraeVaultError.unavailable
+            }
         }
         return created
     }
 
     func write(key: String, value: String) throws {
         let owner = try Self.owner(key)
-        guard Self.valid(value, owner: owner), let data = value.data(using: .utf8) else { throw NeraeVaultError.invalidState }
+        guard Self.valid(value, owner: owner), let payload = value.data(using: .utf8) else { throw NeraeVaultError.invalidState }
         Self.lock.lock()
         defer { Self.lock.unlock() }
         guard let previous = try backend.read(account: owner.account) else { throw NeraeVaultError.conflict }
-        guard let previousValue = String(data: previous, encoding: .utf8), Self.valid(previousValue, owner: owner) else {
-            throw NeraeVaultError.unavailable
-        }
-        try backend.update(account: owner.account, value: data)
-        guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
+        let old = try Self.decode(previous, owner: owner)
+        let next = try Self.nextRevision(old.revision)
+        try Self.persist(payload: payload, revision: next, owner: owner, account: owner.account, backend: backend)
     }
 
     /// Conditionally update one existing draft within this process. A caller
@@ -215,13 +232,53 @@ final class NeraeProtectedDraftStore {
         Self.lock.lock()
         defer { Self.lock.unlock() }
         guard let previous = try backend.read(account: owner.account) else { return false }
-        guard let previousValue = String(data: previous, encoding: .utf8), Self.valid(previousValue, owner: owner) else {
+        let old = try Self.decode(previous, owner: owner)
+        guard old.payload == expectedData else { return false }
+        let next = try Self.nextRevision(old.revision)
+        try Self.persist(payload: data, revision: next, owner: owner, account: owner.account, backend: backend)
+        return true
+    }
+
+    /// Revision-bound CAS. Unlike the compatibility value-only CAS, this
+    /// rejects A→B→A because each successful mutation advances the revision.
+    func compareAndSetVersioned(key: String, expectedRevision: String, expectedFound: Bool,
+                                expectedValue: String, value: String) throws -> Bool {
+        try commitVersioned(key: key, expectedRevision: expectedRevision, expectedFound: expectedFound,
+                            expectedValue: expectedValue, value: value) != nil
+    }
+
+    /// Returns the revision from the same locked commit, never from a later
+    /// read which may already include another writer's changes.
+    func commitVersioned(key: String, expectedRevision: String, expectedFound: Bool,
+                         expectedValue: String, value: String) throws -> NeraeVersionedDraftRead? {
+        let owner = try Self.owner(key)
+        guard Self.validRevision(expectedRevision), Self.validExpected(found: expectedFound, value: expectedValue),
+              (!expectedFound || Self.valid(expectedValue, owner: owner)),
+              Self.valid(value, owner: owner), let newPayload = value.data(using: .utf8) else {
+            throw NeraeVaultError.invalidState
+        }
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        let previous = try backend.read(account: owner.account)
+        let old: State
+        if let previous { old = try Self.decode(previous, owner: owner) }
+        else { old = State(payload: Data(), revision: "0") }
+        guard old.revision == expectedRevision, (previous != nil) == expectedFound,
+              old.payload == Data(expectedValue.utf8) else { return nil }
+        let next = try Self.nextRevision(old.revision)
+        let encoded = try Self.encode(payload: newPayload, revision: next)
+        if previous == nil {
+            let created = try backend.create(account: owner.account, value: encoded)
+            guard created else { return nil }
+        } else {
+            try backend.update(account: owner.account, value: encoded)
+        }
+        guard let stored = try backend.read(account: owner.account) else { throw NeraeVaultError.unavailable }
+        let committed = try Self.decode(stored, owner: owner)
+        guard committed.revision == next, committed.payload == newPayload else {
             throw NeraeVaultError.unavailable
         }
-        guard previous == expectedData else { return false }
-        try backend.update(account: owner.account, value: data)
-        guard try backend.read(account: owner.account) == data else { throw NeraeVaultError.unavailable }
-        return true
+        return NeraeVersionedDraftRead(found: true, value: value, revision: next)
     }
 
     // The Keychain items themselves are the only source of truth. No second
@@ -241,13 +298,14 @@ final class NeraeProtectedDraftStore {
             guard account.count == 64, account.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
                   seen.insert(account).inserted else { hasUnclassifiedItems = true; continue }
             guard let data = try backend.read(account: account) else { hasUnclassifiedItems = true; continue }
-            guard data.count <= NeraeCredentialVault.maxBytes,
-                  let value = String(data: data, encoding: .utf8),
-                  let parsed = try? JSONSerialization.jsonObject(with: data), let envelope = parsed as? [String: Any],
+            guard data.count <= Self.maxEnvelopeBytes,
+                  let decoded = try? Self.decodeUnowned(data),
+                  let parsed = try? JSONSerialization.jsonObject(with: decoded.payload), let envelope = parsed as? [String: Any],
                   let itemSubject = envelope["subjectId"] as? String,
                   let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String,
                   let itemOwner = try? Self.owner("nerae.workout.draft.v1.\(itemSubject).\(event)"),
-                  itemOwner.account == account, Self.valid(value, owner: itemOwner) else { hasUnclassifiedItems = true; continue }
+                  itemOwner.account == account, let payload = String(data: decoded.payload, encoding: .utf8),
+                  Self.valid(payload, owner: itemOwner) else { hasUnclassifiedItems = true; continue }
             guard itemSubject == subject, cursor.isEmpty || before(cursor, event) else { continue }
             events.append(event)
             events.sort(by: before)
@@ -261,6 +319,7 @@ final class NeraeProtectedDraftStore {
     }
 
     private struct Owner { let subject: String; let event: String; let account: String }
+    private struct State { let payload: Data; let revision: String }
     private static func validSubject(_ subject: String) -> Bool {
         !subject.isEmpty && subject.utf8.count <= 20 && subject.first != "0" &&
             subject.utf8.allSatisfy({ (48...57).contains($0) })
@@ -280,16 +339,100 @@ final class NeraeProtectedDraftStore {
     }
 
     private static func valid(_ value: String, owner: Owner) -> Bool {
-        guard let data = value.data(using: .utf8), !data.isEmpty, data.count <= NeraeCredentialVault.maxBytes,
+        valid(value, owner: Optional<Owner>.some(owner))
+    }
+
+    private static func valid(_ value: String, owner: Owner?) -> Bool {
+        guard let data = value.data(using: .utf8), validPayload(data),
               let raw = try? JSONSerialization.jsonObject(with: data), let envelope = raw as? [String: Any],
               Set(envelope.keys) == Set(["schema", "subjectId", "draft"]),
               let schema = envelope["schema"] as? NSNumber, CFGetTypeID(schema) != CFBooleanGetTypeID(),
               schema.intValue == 1, schema.doubleValue == 1,
-              envelope["subjectId"] as? String == owner.subject,
-              let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String,
-              event.utf8.elementsEqual(owner.event.utf8) else { return false }
+              let subject = envelope["subjectId"] as? String,
+              let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String else { return false }
+        if let owner {
+            guard subject.utf8.elementsEqual(owner.subject.utf8), event.utf8.elementsEqual(owner.event.utf8) else { return false }
+        }
         return true
     }
+
+    private static func validExpected(found: Bool, value: String) -> Bool {
+        found ? valid(value, owner: Optional<Owner>.none) : value.isEmpty
+    }
+
+    private static func validPayload(_ data: Data) -> Bool {
+        !data.isEmpty && data.count <= maxPayloadBytes && String(data: data, encoding: .utf8) != nil
+    }
+
+    private static func validRevision(_ value: String) -> Bool {
+        guard value.range(of: #"\A(?:0|[1-9][0-9]{0,18})\z"#, options: .regularExpression) != nil else { return false }
+        return value.count < 19 || value <= maxRevision
+    }
+
+    private static func nextRevision(_ value: String) throws -> String {
+        guard validRevision(value), value != maxRevision else { throw NeraeVaultError.unavailable }
+        var digits = Array(value.utf8)
+        for index in digits.indices.reversed() {
+            if digits[index] < 57 { digits[index] += 1; return String(decoding: digits, as: UTF8.self) }
+            digits[index] = 48
+        }
+        let next = "1" + String(decoding: digits, as: UTF8.self)
+        guard validRevision(next) else { throw NeraeVaultError.unavailable }
+        return next
+    }
+
+    private static func encode(payload: Data, revision: String) throws -> Data {
+        guard !payload.isEmpty, payload.count <= maxPayloadBytes, validRevision(revision), revision != "0" else {
+            throw NeraeVaultError.invalidState
+        }
+        let object: [String: Any] = ["format": versionedFormat, "payload": payload, "revision": revision]
+        let encoded = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+        guard encoded.count <= maxEnvelopeBytes else { throw NeraeVaultError.invalidState }
+        return encoded
+    }
+
+    private static func decode(_ data: Data, owner: Owner) throws -> State {
+        guard data.count <= maxEnvelopeBytes else { throw NeraeVaultError.unavailable }
+        let state = try decodeUnowned(data)
+        guard let value = String(data: state.payload, encoding: .utf8),
+              Self.valid(value, owner: owner) else { throw NeraeVaultError.unavailable }
+        return state
+    }
+
+    private static func decodeUnowned(_ data: Data) throws -> State {
+        guard !data.isEmpty, data.count <= maxEnvelopeBytes else { throw NeraeVaultError.unavailable }
+        if data.starts(with: Data("bplist00".utf8)) {
+            guard let object = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+                  Set(object.keys) == Set(["format", "payload", "revision"]),
+                  object["format"] as? String == versionedFormat,
+                  let payload = object["payload"] as? Data, validPayload(payload),
+                  let revision = object["revision"] as? String, validRevision(revision), revision != "0" else {
+                throw NeraeVaultError.unavailable
+            }
+            return State(payload: payload, revision: revision)
+        }
+        guard validPayload(data) else {
+            throw NeraeVaultError.unavailable
+        }
+        return State(payload: data, revision: "0")
+    }
+
+    private static func persist(payload: Data, revision: String, owner: Owner, account: String,
+                                backend: NeraeDraftBackend) throws {
+        let encoded = try encode(payload: payload, revision: revision)
+        try backend.update(account: account, value: encoded)
+        guard let stored = try backend.read(account: account) else { throw NeraeVaultError.unavailable }
+        let committed = try decode(stored, owner: owner)
+        guard committed.revision == revision, committed.payload == payload else { throw NeraeVaultError.unavailable }
+    }
+}
+
+struct NeraeVersionedDraftRead: CustomStringConvertible, CustomDebugStringConvertible {
+    let found: Bool
+    let value: String
+    let revision: String
+    var description: String { "NeraeVersionedDraftRead{redacted}" }
+    var debugDescription: String { description }
 }
 
 struct NeraeVaultRead: CustomStringConvertible, CustomDebugStringConvertible {
@@ -1037,6 +1180,38 @@ public final class NeraeSecureVaultBridge: NSObject {
     @objc public static func writeTrainingDraft(_ key: String, _ value: String) -> String {
         do { try trainingDrafts.write(key: key, value: value); return encode(ok: true) }
         catch { return encodeFailure(error) }
+    }
+
+    @objc public static func readVersionedTrainingDraft(_ key: String) -> String {
+        readVersionedTrainingDraft(in: trainingDrafts, key: key)
+    }
+
+    static func readVersionedTrainingDraft(in store: NeraeProtectedDraftStore, key: String) -> String {
+        do {
+            let result = try store.readVersioned(key: key)
+            return encodeVersioned(ok: true, found: result.found, value: result.value, revision: result.revision)
+        } catch { return encodeVersionedFailure(error) }
+    }
+
+    @objc public static func compareAndSetVersionedTrainingDraft(
+        _ key: String, _ expectedRevision: String, _ expectedFound: Bool,
+        _ expectedValue: String, _ value: String
+    ) -> String {
+        compareAndSetVersionedTrainingDraft(in: trainingDrafts, key: key, expectedRevision: expectedRevision,
+                                            expectedFound: expectedFound, expectedValue: expectedValue, value: value)
+    }
+
+    static func compareAndSetVersionedTrainingDraft(
+        in store: NeraeProtectedDraftStore, key: String, expectedRevision: String,
+        expectedFound: Bool, expectedValue: String, value: String
+    ) -> String {
+        do {
+            guard let result = try store.commitVersioned(key: key, expectedRevision: expectedRevision,
+                expectedFound: expectedFound, expectedValue: expectedValue, value: value) else {
+                throw NeraeVaultError.conflict
+            }
+            return encodeVersioned(ok: true, revision: result.revision)
+        } catch { return encodeVersionedFailure(error) }
     }
 
     @objc public static func readAuthenticationState() -> String {

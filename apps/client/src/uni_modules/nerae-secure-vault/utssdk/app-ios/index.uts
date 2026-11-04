@@ -74,6 +74,36 @@ function validRevision(revision: string): boolean {
     (revision.length < 19 || revision <= '9223372036854775807')
 }
 
+// Draft revision 0 is valid both for a missing item and for an unchanged
+// legacy draft. A successful write always returns a positive revision.
+function decodeVersionedDraft(raw: string, isRead: boolean): VersionedSecureVaultResult {
+  try {
+    const parsed = JSON.parseObject<VersionedSecureVaultResult>(raw)
+    if (parsed == null) return versionedFailure('bridge_failure')
+    const result = parsed!
+    if (!result.ok) {
+      if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable' && result.errorCode != 'conflict') return versionedFailure('bridge_failure')
+      return versionedFailure(result.errorCode)
+    }
+    if (result.errorCode.length != 0 || !validRevision(result.revision)) return versionedFailure('bridge_failure')
+    if (isRead && (result.found == (result.value.length == 0) || (!result.found && result.revision != '0'))) return versionedFailure('bridge_failure')
+    if (!isRead && (result.found || result.value.length != 0 || result.revision == '0')) return versionedFailure('bridge_failure')
+    return result
+  } catch (_error) {
+    return versionedFailure('bridge_failure')
+  }
+}
+
+export function readVersionedTrainingDraft(key: string): VersionedSecureVaultResult {
+  return decodeVersionedDraft(NeraeSecureVaultBridge.readVersionedTrainingDraft(key), true)
+}
+
+export function compareAndSetVersionedTrainingDraft(key: string, expectedRevision: string, expectedFound: boolean, expectedValue: string, value: string): VersionedSecureVaultResult {
+  if (!validRevision(expectedRevision) || expectedFound == (expectedValue.length == 0) ||
+      (!expectedFound && expectedRevision != '0') || value.length == 0) return versionedFailure('invalid_state')
+  return decodeVersionedDraft(NeraeSecureVaultBridge.compareAndSetVersionedTrainingDraft(key, expectedRevision, expectedFound, expectedValue, value), false)
+}
+
 function decodeVersioned(raw: string, isRead: boolean): VersionedSecureVaultResult {
   try {
     const parsed = JSON.parseObject<VersionedSecureVaultResult>(raw)

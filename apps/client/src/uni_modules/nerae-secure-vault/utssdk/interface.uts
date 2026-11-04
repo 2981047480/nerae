@@ -38,6 +38,11 @@ export type VersionedSecureVaultResult = {
   value: string
   revision: string
 }
+/** Legacy drafts may be found at revision 0; a successful mutation advances it. */
+export type ReadVersionedTrainingDraft = (key: string) => VersionedSecureVaultResult
+export type CompareAndSetVersionedTrainingDraft = (
+  key: string, expectedRevision: string, expectedFound: boolean, expectedValue: string, value: string
+) => VersionedSecureVaultResult
 export type ReadVersionedTrainingOperationJournal = () => VersionedSecureVaultResult
 export type CompareAndSetVersionedTrainingOperationJournal = (
   expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string

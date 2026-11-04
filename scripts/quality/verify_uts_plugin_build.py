@@ -29,7 +29,7 @@ import { createNativeTrainingJournalStorage } from '@/platform/app/nativeTrainin
 import { createNativeTrainingDraftStorage } from '@/platform/app/nativeTrainingDraftStorage'
 import { createAppTrainingEditor, attachAppTrainingEditor, discoverAppTrainingDrafts } from '@/platform/app/nativeTrainingEditor'
 import { TrainingOperationJournal } from '@/features/training/operationJournal'
-import { discoverTrainingDrafts, readTrainingDraft, createTrainingDraft, writeTrainingDraft, readTrainingOperationJournal, compareAndSetTrainingOperationJournal, readVersionedTrainingOperationJournal, compareAndSetVersionedTrainingOperationJournal, claimTrainingOperationDispatch } from '@/uni_modules/nerae-secure-vault'
+import { discoverTrainingDrafts, readTrainingDraft, createTrainingDraft, writeTrainingDraft, readVersionedTrainingDraft, compareAndSetVersionedTrainingDraft, readTrainingOperationJournal, compareAndSetTrainingOperationJournal, readVersionedTrainingOperationJournal, compareAndSetVersionedTrainingOperationJournal, claimTrainingOperationDispatch } from '@/uni_modules/nerae-secure-vault'
 
 const result = ref('')
 const authRuntime = shallowRef<AppAuthRuntime | null>(null)
@@ -39,6 +39,7 @@ function probe() {
     String(createNativeTrainingJournalStorage) + String(createNativeTrainingDraftStorage) + String(createAppTrainingEditor) + String(attachAppTrainingEditor) + String(discoverAppTrainingDrafts) + String(TrainingOperationJournal) +
     String(createConfiguredAppHttpsPorts('https://example.invalid').revokeCurrentSession) +
     String(discoverTrainingDrafts) + String(readTrainingDraft) + String(createTrainingDraft) + String(writeTrainingDraft) +
+    String(readVersionedTrainingDraft) + String(compareAndSetVersionedTrainingDraft) +
     String(readTrainingOperationJournal) + String(compareAndSetTrainingOperationJournal) +
     String(readVersionedTrainingOperationJournal) + String(compareAndSetVersionedTrainingOperationJournal) + String(claimTrainingOperationDispatch)
 }
@@ -51,7 +52,7 @@ function probe() {
 PLUGINS = {
     "nerae-device-key": ("neraeDeviceKey", ("readExistingDevicePublicKeyByJs", "createDeviceKeyAtReservedAliasByJs", "signExistingDeviceProofByJs")),
     "nerae-random": ("neraeRandom", ("generateSecureRandomRequestKeyByJs",)),
-    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs", "discoverTrainingDraftsByJs", "readTrainingDraftByJs", "createTrainingDraftByJs", "writeTrainingDraftByJs", "readTrainingOperationJournalByJs", "compareAndSetTrainingOperationJournalByJs", "readVersionedTrainingOperationJournalByJs", "compareAndSetVersionedTrainingOperationJournalByJs", "claimTrainingOperationDispatchByJs")),
+    "nerae-secure-vault": ("neraeSecureVault", ("readAuthenticationStateByJs", "writeAuthenticationStateByJs", "clearAuthenticationStateByJs", "readDeviceIdentityRegistryByJs", "compareAndSetDeviceIdentityRegistryByJs", "discoverTrainingDraftsByJs", "readTrainingDraftByJs", "createTrainingDraftByJs", "writeTrainingDraftByJs", "readVersionedTrainingDraftByJs", "compareAndSetVersionedTrainingDraftByJs", "readTrainingOperationJournalByJs", "compareAndSetTrainingOperationJournalByJs", "readVersionedTrainingOperationJournalByJs", "compareAndSetVersionedTrainingOperationJournalByJs", "claimTrainingOperationDispatchByJs")),
     "nerae-https": ("neraeHttps", ("requestByJs", "cancelByJs")),
 }
 
