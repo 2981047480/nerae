@@ -20,6 +20,11 @@ The paths `/srv/nerae`, `/var/lib/nerae`, `/etc/nerae` and `/run/nerae` were
 absent on the same date, and no Nerae-named containers or systemd units were
 listed. These are point-in-time checks, not permission to reuse a future path
 without rechecking it.
+The later read-only capacity check reported about 7.5 GiB total memory,
+6.0 GiB available memory, four CPUs and 21.3 GiB free on the root filesystem.
+Available disk has fallen since the earlier check; the cause has not been
+established and no ambiguous test directory was removed. Recheck resource
+headroom and retention before provisioning long-lived services.
 
 An [offline deployment candidate](deployment-preflight/README.md) now checks
 the release migration inputs and owner-only API/worker configuration, including

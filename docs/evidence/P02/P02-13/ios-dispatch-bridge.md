@@ -22,4 +22,7 @@ The user-facing record page still cannot submit a server save: a coordinator,
 trusted replay receipt, crash-safe draft merge and journal settlement are not
 implemented. Claiming alone retains an active marker and cannot finish a
 workout's sequence of writes. No claim here establishes real login, network
-sync, an Android implementation or device acceptance.
+sync or device acceptance; the later Android internal candidate is documented
+separately. The native history limit is 8,192 markers, normally two per
+distinct request, and no safe pruning protocol has yet been implemented.
+Reaching it blocks further claims and must be addressed before production use.

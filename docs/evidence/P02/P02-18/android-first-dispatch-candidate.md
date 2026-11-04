@@ -28,3 +28,7 @@ actual process lifecycle and device execution were not exercised by the JVM
 tests. Locks are process-local; external writers or privileged rollback of an
 entire encrypted envelope are outside this guarantee. Unknown historical
 state requires a future safe recovery path, not automatic reset.
+The history is currently capped at 8,192 markers, normally two per distinct
+request, and has no implemented safe pruning protocol. Reaching the cap blocks
+further claims; durable retention and a user-safe recovery strategy remain
+necessary before treating this as a production sync path.
