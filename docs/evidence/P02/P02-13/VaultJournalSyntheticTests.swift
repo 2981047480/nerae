@@ -577,6 +577,39 @@ private func dispatchMarkerTests() throws {
     print("PASS: native dispatch claim survives CAS rewind, recreate, unknown write and concurrency; old history fails closed")
 }
 
+private func dispatchBridgeTests() throws {
+    let (key, ready, inFlight) = try dispatchFixtures()
+    let current = SyntheticBackend()
+    let journal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: current)
+    let staged = try journal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                           expectedValue: "", newFound: true, newValue: ready)
+    let wire = NeraeSecureVaultBridge.claimTrainingOperationDispatch(in: journal, expectedRevision: staged.revision,
+                                                                     expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let result = try JSONSerialization.jsonObject(with: Data(wire.utf8)) as? [String: Any]
+    try check(result?["ok"] as? Bool == true && result?["found"] as? Bool == false &&
+              result?["value"] as? String == "" && result?["revision"] as? String == "2")
+    try check(!wire.contains(key) && !wire.contains("request-00000001"))
+    let repeated = NeraeSecureVaultBridge.claimTrainingOperationDispatch(in: journal, expectedRevision: staged.revision,
+                                                                         expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let conflict = try JSONSerialization.jsonObject(with: Data(repeated.utf8)) as? [String: Any]
+    try check(conflict?["ok"] as? Bool == false && conflict?["errorCode"] as? String == "conflict" &&
+              conflict?["value"] as? String == "" && conflict?["revision"] as? String == "")
+
+    let uncertainBackend = SyntheticBackend()
+    let uncertain = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: uncertainBackend)
+    let pending = try uncertain.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                              expectedValue: "", newFound: true, newValue: ready)
+    uncertainBackend.applyThenFail = true
+    let failed = NeraeSecureVaultBridge.claimTrainingOperationDispatch(in: uncertain, expectedRevision: pending.revision,
+                                                                       expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let failure = try JSONSerialization.jsonObject(with: Data(failed.utf8)) as? [String: Any]
+    try check(failure?["ok"] as? Bool == false && failure?["errorCode"] as? String == "unavailable" &&
+              failure?["value"] as? String == "" && failure?["revision"] as? String == "")
+    uncertainBackend.applyThenFail = false
+    try check(try uncertain.read().value == inFlight)
+    print("PASS: dispatch bridge returns redacted success, conflict and uncertain-write failure")
+}
+
 private func versionedJournalTests() throws {
     let readWire = NeraeSecureVaultBridge.encodeVersioned(ok: true, found: true,
                                                          value: "{\"op\":\"visible-only-on-read\"}", revision: "7")
@@ -800,6 +833,7 @@ private func check(_ condition: @autoclosure () throws -> Bool,
         let journal = NeraeCredentialVault(backend: journalBackend)
 
         try versionedJournalTests()
+        try dispatchBridgeTests()
         try dispatchMarkerTests()
         try strictRequestJSONTests()
         try recoveryBindingTests()

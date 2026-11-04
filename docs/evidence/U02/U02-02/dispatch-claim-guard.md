@@ -13,3 +13,5 @@
 - `pnpm --dir apps/client build:app` 和 `pnpm --dir apps/client build:mp-weixin`：源码资源构建退出 0，不是安装包或真机验证。
 
 后续仍需在 iOS/Android 各自实现并验证原生持久标记、旧数据迁移和失败恢复；小程序需单独确定可证明的原子存储边界。还需要可靠回执结算、草稿恢复、页面接线以及真实跨设备联测。
+
+后续 iOS 候选已实现首次发送标记并接入 UTS 与存储工厂，见 [iOS 桥接证据](../../P02/P02-13/ios-dispatch-bridge.md)。此进展未完成回执结算、真实发送编排或 Android／小程序支持。

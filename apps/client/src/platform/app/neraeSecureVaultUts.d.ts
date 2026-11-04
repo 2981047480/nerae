@@ -14,4 +14,5 @@ declare module '@/uni_modules/nerae-secure-vault' {
   export function compareAndSetTrainingOperationJournal(expectedFound: boolean, expectedValue: string, value: string): SecureVaultResult
   export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult
   export function compareAndSetVersionedTrainingOperationJournal(expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string): VersionedSecureVaultResult
+  export function claimTrainingOperationDispatch(expectedRevision: string, expectedValue: string, operationKey: string, nextValue: string): VersionedSecureVaultResult
 }

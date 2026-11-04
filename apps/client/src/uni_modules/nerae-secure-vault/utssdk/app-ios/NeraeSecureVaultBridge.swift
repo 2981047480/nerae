@@ -1108,6 +1108,30 @@ public final class NeraeSecureVaultBridge: NSObject {
         }
     }
 
+    /// A successful response means the native journal recorded the first-send
+    /// marker and the transition together. It is not a server receipt.
+    @objc public static func claimTrainingOperationDispatch(
+        _ expectedRevision: String, _ expectedValue: String,
+        _ operationKey: String, _ nextValue: String
+    ) -> String {
+        claimTrainingOperationDispatch(in: trainingOperationJournal, expectedRevision: expectedRevision,
+                                       expectedValue: expectedValue, operationKey: operationKey,
+                                       nextValue: nextValue)
+    }
+
+    static func claimTrainingOperationDispatch(
+        in journal: NeraeVersionedTrainingJournal, expectedRevision: String,
+        expectedValue: String, operationKey: String, nextValue: String
+    ) -> String {
+        do {
+            let result = try journal.claimFirstSend(expectedRevision: expectedRevision, expectedValue: expectedValue,
+                                                    operationKey: operationKey, nextValue: nextValue)
+            return encodeVersioned(ok: true, found: false, value: "", revision: result.revision)
+        } catch {
+            return encodeVersionedFailure(error)
+        }
+    }
+
     private static func encodeFailure(_ error: Error) -> String {
         if let vaultError = error as? NeraeVaultError, case .invalidState = vaultError {
             return encode(ok: false, errorCode: "invalid_state")

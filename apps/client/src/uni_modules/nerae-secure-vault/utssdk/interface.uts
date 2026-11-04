@@ -42,3 +42,7 @@ export type ReadVersionedTrainingOperationJournal = () => VersionedSecureVaultRe
 export type CompareAndSetVersionedTrainingOperationJournal = (
   expectedRevision: string, expectedFound: boolean, expectedValue: string, newFound: boolean, newValue: string
 ) => VersionedSecureVaultResult
+/** Atomically records a first-send marker and the matching journal transition. */
+export type ClaimTrainingOperationDispatch = (
+  expectedRevision: string, expectedValue: string, operationKey: string, nextValue: string
+) => VersionedSecureVaultResult

@@ -1,6 +1,7 @@
 import {
   compareAndSetTrainingOperationJournal,
   compareAndSetVersionedTrainingOperationJournal,
+  claimTrainingOperationDispatch,
   readTrainingOperationJournal,
   readVersionedTrainingOperationJournal,
 } from '@/uni_modules/nerae-secure-vault'
@@ -16,5 +17,6 @@ export function createNativeTrainingJournalStorage(auth: JournalAuth): SecureOpe
     compareAndSetTrainingOperationJournal,
     readVersionedTrainingOperationJournal,
     compareAndSetVersionedTrainingOperationJournal,
+    claimTrainingOperationDispatch,
   }, auth)
 }

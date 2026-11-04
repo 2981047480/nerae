@@ -24,3 +24,4 @@ function unsupportedVersioned(): VersionedSecureVaultResult {
 }
 export function readVersionedTrainingOperationJournal(): VersionedSecureVaultResult { return unsupportedVersioned() }
 export function compareAndSetVersionedTrainingOperationJournal(_expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _newFound: boolean, _newValue: string): VersionedSecureVaultResult { return unsupportedVersioned() }
+export function claimTrainingOperationDispatch(_expectedRevision: string, _expectedValue: string, _operationKey: string, _nextValue: string): VersionedSecureVaultResult { return unsupportedVersioned() }

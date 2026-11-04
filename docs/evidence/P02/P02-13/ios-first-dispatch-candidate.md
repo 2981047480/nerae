@@ -9,3 +9,5 @@
 补充编译检查：本机 Xcode 26.5 的 iPhoneOS SDK 将该 Swift 文件编译为 arm64 目标文件，`vtool` 显示 `platform IOS`；这不是 framework 或 App。原 `verify-ios-uts.sh` 因其预期的 `/private/tmp/nerae-hbuilder-download/HBuilderX.app` 不存在而退出 2，本轮没有完成 UTS/iOS framework 编译。
 
 限制：方法尚未暴露给 UTS 或应用，实际三端发送门禁不变。活动标记不会自行结算，直接接线将阻断同一训练的后续保存组和完成操作；不能将本候选当作可用的跨设备同步。后续需由原生可信传输或服务端签名回执验证结果并原子结算，同时保留请求历史；还须校验当前登录主体、验证真实 Keychain 和进程范围，并为历史容量提供安全维护策略。
+
+后续进展：首次发送标记已接入 iOS UTS 和 App 存储工厂，见 [桥接证据](ios-dispatch-bridge.md)；可信回执结算和实际发送编排仍未完成。

@@ -100,3 +100,8 @@ export function compareAndSetVersionedTrainingOperationJournal(expectedRevision:
     (expectedFound && expectedRevision == '0') || newFound == (newValue.length == 0)) return versionedFailure('invalid_state')
   return decodeVersioned(NeraeSecureVaultBridge.compareAndSetVersionedTrainingOperationJournal(expectedRevision, expectedFound, expectedValue, newFound, newValue), false)
 }
+export function claimTrainingOperationDispatch(expectedRevision: string, expectedValue: string, operationKey: string, nextValue: string): VersionedSecureVaultResult {
+  if (!validRevision(expectedRevision) || expectedRevision == '0' || expectedValue.length == 0 ||
+    operationKey.length == 0 || nextValue.length == 0) return versionedFailure('invalid_state')
+  return decodeVersioned(NeraeSecureVaultBridge.claimTrainingOperationDispatch(expectedRevision, expectedValue, operationKey, nextValue), false)
+}
