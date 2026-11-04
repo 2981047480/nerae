@@ -9,6 +9,7 @@
 - App 已登录入口已接入本机训练草稿和两种录入方式，连续输入、保存失败重试、账号切换及返回拦截通过合成组件测试；服务端保存、原生返回事件和真机视觉均未验收。[候选证据](evidence/U02/U02-02/training-entry-candidate.md)
 - App 训练入口已接入当前登录账号的云端记录列表和详情读取；切换账号时清空显示，读取不会覆盖本机草稿。客户端回归与 App/微信资源编译通过，但云端写入同步、线上服务和真机读取仍未接通或验证。[读取证据](evidence/U02/U02-02/cloud-history-candidate.md)
 - 修复同进程草稿并发读写的两个竞态：较早写入不再覆盖较新的失败输入，读取期间同一草稿出现新写入时会重新读取；5 个反例修复前失败、修复后通过。设备写入失败时的最新输入仍只在进程内保留，不能称为持久保存。[证据](evidence/U02/U02-02/draft-write-race.md)
+- iOS 版本化草稿的 JS 接入有隔离候选；合成测试覆盖并发失败与证明失效，但页面缺少冲突恢复，失败输入也未保证跨重启保留，暂未接入正式代码。[候选边界](evidence/U02/U02-02/ios-versioned-draft-js-lab.md)
 - 只读训练回执在返回前重新检查原待发操作：请求在途被删除、更改或无法读取时不报告已确认；隔离 MySQL/TLS 与客户端回归通过。该检查不防中间 ABA，也不结算日志或合并草稿，跨设备同步仍未完成。[证据](evidence/U02/U02-01/replay-pending-stability.md)
 - 已有设备批准/拒绝新设备登录的事务和 HTTP 入口已接入本机受保护 API，审批回执、独立限流、账号隔离和本机装配通过私有数据库、Redis 与合成 SMTP/TLS 测试。近期重新认证的产品流程、客户端页面及真机仍未接通，不能称作跨设备登录已完成。[本批证据](evidence/A01/A01-08/decision-executor.md)
 - 新设备审批轮询已接入受保护 API 的本机启动装配，独立密钥、限流和数据库 epoch 缺失时拒绝启动。隔离 MySQL／Redis 测试中，两台不同密钥的合成设备经过本人批准获得同主体会话，可读写同一训练记录；本机进程实测新路由对无效请求返回受限错误。客户端正式入口、线上代理、状态清理和真机同步未完成。[装配证据](evidence/A01/A01-09/exchange-assembly.md) · [隔离 HTTP](evidence/A01/A01-09/exchange-http.md)
@@ -19,6 +20,7 @@
 - Android 已加入内部首次发送历史与请求绑定候选，旧日志历史不明时拒绝发送；合成测试与 Android API 35 编译通过。UTS 发送许可尚未接入，硬件存储、APK、真机及同步仍未验收。[Android 候选](evidence/P02/P02-18/android-first-dispatch-candidate.md)
 - iOS 新增内部 replay HTTPS 通道和草稿条件更新候选：本机 TLS 正反例、草稿并发／不确定写入合成测试与 iPhoneOS 源码类型检查通过。它们尚未接页面、验证完整回执或结算草稿，真实服务及手机未验证。[网络与草稿证据](evidence/P02/P02-13/ios-recovery-http-candidate.md)
 - iOS 内部恢复候选已串联日志读取、HTTPS 重放、回执校验和日志复核；版本化日志亦修复 Unicode 等价但字节不同的比较问题。认证 vault 的原生代次已检测同进程内账号 A→B→A 切换。本机 TLS、合成反例及日志回归通过；JS 会话代次、草稿合并、日志结算和页面仍未接通，不能视为同步已完成。[回执候选](evidence/P02/P02-16/replay-validator-candidate.md) · [认证代次](evidence/P02/P02-17/auth-generation-candidate.md)
+- iOS 回执结算在临时目录完成一轮合成验证：同训练连续创建、保存组和完成可结算；旧回执覆盖新输入与版本回退的反例经独立复测被拒绝。回执容量与安全裁剪、真实授权和原生设备验证仍未解决，候选未接 App。[证据](evidence/P02/P02-16/receipt-settlement-lab.md)
 - 已将集成版本 `45c2ef2` 的 Nerae 业务资源和原生插件放入隔离的 5.33 SDK 示例工程，成功编译未签名的 iPhoneOS arm64 Debug 工程，包内业务资源摘要一致。示例工程仍含其他示例资源，AppKey 有效性、签名、安装和真机运行均未确认，不能作为交付包。[构建边界](evidence/P02/P02-13/ios-recovery-http-candidate.md)
 - iOS 首次发送与恢复候选已增加原生请求结构、重复字段和安全整数检查；正常与异常的合成用例、较大批次和 5.33 原生链接通过。它不代替服务端业务校验，也未接通可信回执、草稿结算或真机发送。[证据](evidence/P02/P02-13/ios-recovery-request-validation.md)
 
