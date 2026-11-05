@@ -23,6 +23,7 @@
 - iOS 训练待发日志的普通和旧版写入也会保护已发送请求，阻止回退、删除和篡改；历史无法确认时保留数据并拒绝写入。Swift 合成测试和 iPhoneOS 源码类型检查通过，旧格式恢复、真实 Keychain、回执结算与手机同步仍需验证。[iOS 写入保护](evidence/P02/P02-13/ios-dispatch-bridge.md)
 - Android 草稿底层已支持版本读取和条件写入，旧草稿可保留原内容并在写入时升级；合成测试和 UTS 生成通过，现有页面仍使用旧存储接口，真实设备未验收。[Android 草稿](evidence/P02/P02-13/android-draft-versioned.md)
 - 自由训练创建请求可先固定内容再由同一接口发送，相关客户端测试和类型检查通过；持久化恢复及页面同步尚未接入。[请求准备](evidence/U02/U02-02/free-session-request.md)
+- 当前真实页面源码已用 5.33 编译为 App 和微信资源，并与四个原生桥在隔离的 iPhoneOS 样例工程中完成未签名链接；正式 AppKey、签名、设备运行和真实同步仍未完成。[iOS 构建证据](evidence/P02/P02-15/ios-real-entry-20261105.md)
 - iOS 新增内部 replay HTTPS 通道和草稿条件更新候选：本机 TLS 正反例、草稿并发／不确定写入合成测试与 iPhoneOS 源码类型检查通过。它们尚未接页面、验证完整回执或结算草稿，真实服务及手机未验证。[网络与草稿证据](evidence/P02/P02-13/ios-recovery-http-candidate.md)
 - iOS 内部恢复候选已串联日志读取、HTTPS 重放、回执校验和日志复核；版本化日志亦修复 Unicode 等价但字节不同的比较问题。认证 vault 的原生代次已检测同进程内账号 A→B→A 切换。本机 TLS、合成反例及日志回归通过；JS 会话代次、草稿合并、日志结算和页面仍未接通，不能视为同步已完成。[回执候选](evidence/P02/P02-16/replay-validator-candidate.md) · [认证代次](evidence/P02/P02-17/auth-generation-candidate.md)
 - iOS 回执结算在临时目录完成一轮合成验证：同训练连续创建、保存组和完成可结算；旧回执覆盖新输入与版本回退的反例经独立复测被拒绝。回执容量与安全裁剪、真实授权和原生设备验证仍未解决，候选未接 App。[证据](evidence/P02/P02-16/receipt-settlement-lab.md)
