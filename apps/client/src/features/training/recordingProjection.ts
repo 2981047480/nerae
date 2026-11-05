@@ -240,6 +240,9 @@ export function restoreConfirmedSession(
     let local: RecordingDraft
     try { local = restoreDraft(existingDraft, today) }
     catch { return restoreFailure('local_unsynced') }
+    // A server snapshot alone cannot prove what happened to a local request
+    // awaiting reconciliation. Reconstructing the draft would discard it.
+    if (Object.prototype.hasOwnProperty.call(local, 'syncPending')) return restoreFailure('local_unsynced')
     if (local.clientEventId !== detail.clientEventId || local.date !== detail.date || local.timeZone !== detail.timeZone) {
       return restoreFailure('reconcile_required')
     }

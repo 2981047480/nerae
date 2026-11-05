@@ -406,6 +406,19 @@ test('cross-device restore preserves unsynced local drafts and requires coordina
   assert.equal(JSON.stringify(emptyAction), emptyActionBefore)
 })
 
+test('cross-device restore cannot discard an unresolved local send', async () => {
+  const remote = await scoped()
+  const clean = restoreConfirmedSession(remote, auth, today).draft
+  for (const pending of ['{"state":"in_flight"}', '', null]) {
+    const local = { ...clean, syncPending: pending }
+    const before = JSON.stringify(local)
+    const result = restoreConfirmedSession(remote, auth, today, local)
+    assert.equal(result.ok, false)
+    assert.equal(result.reason, 'local_unsynced')
+    assert.equal(JSON.stringify(local), before)
+  }
+})
+
 test('restore rechecks the live lease before returning and leaves the supplied draft untouched on a session race', async () => {
   const snapshot = await scoped()
   const existing = restoreConfirmedSession(snapshot, auth, today).draft
