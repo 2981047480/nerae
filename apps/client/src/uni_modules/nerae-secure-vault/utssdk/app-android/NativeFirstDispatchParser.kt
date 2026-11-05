@@ -121,6 +121,75 @@ internal object FirstDispatchNativeParser {
             marker("body-binary64-v2", transition.subject, transition.path, transition.normalizedBody),
             marker("binding-v1", key, transition.subject, transition.path, transition.idempotencyKey, transition.body))
     }
+
+    /** An ordinary CAS may advance uncertainty, but may not alter or remove an active intent. */
+    fun preservesActiveOperations(oldText: String, nextText: String, bindings: Map<String, String>, history: Set<String>): Boolean {
+        if (bindings.isEmpty()) return true
+        return try {
+            val oldRoot = StrictJson(oldText).parse() as? JO ?: return false
+            val nextRoot = StrictJson(nextText).parse() as? JO ?: return false
+            if (!oldRoot.exactKeys("schema", "entries") || !nextRoot.exactKeys("schema", "entries") ||
+                oldRoot.fields["schema"] != JN("1") || nextRoot.fields["schema"] != JN("1")) return false
+            val oldEntries = oldRoot.obj("entries") ?: return false
+            val nextEntries = nextRoot.obj("entries") ?: return false
+            if (oldEntries.fields.size > MAX_ENTRIES || nextEntries.fields.size > MAX_ENTRIES ||
+                oldEntries.fields.values.any { it !is JS } || nextEntries.fields.values.any { it !is JS }) return false
+            val matched = mutableSetOf<String>()
+            for ((operationKey, oldEntry) in oldEntries.fields) {
+                val eventMarker = marker("event", operationKey)
+                val binding = bindings[eventMarker] ?: continue
+                if (!matched.add(eventMarker)) return false
+                val oldOperation = StrictJson((oldEntry as JS).value).parse() as? JO ?: return false
+                val nextEntry = nextEntries.fields[operationKey] as? JS ?: return false
+                val nextOperation = StrictJson(nextEntry.value).parse() as? JO ?: return false
+                if (!validActiveOperation(oldOperation, operationKey, binding, history) ||
+                    !validActiveOperation(nextOperation, operationKey, binding, history)) return false
+                val oldRevision = oldOperation.num("revision") ?: return false
+                val nextRevision = nextOperation.num("revision") ?: return false
+                if (nextRevision < oldRevision) return false
+                if (nextOperation.str("state") == "in_flight" &&
+                    oldOperation.str("attemptGeneration") != nextOperation.str("attemptGeneration")) return false
+                val mutableFields = setOf("state", "revision", "attemptGeneration")
+                if (oldOperation.fields - mutableFields != nextOperation.fields - mutableFields) return false
+            }
+            matched == bindings.keys
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun validActiveOperation(operation: JO, key: String, binding: String, history: Set<String>): Boolean {
+        val state = operation.str("state") ?: return false
+        val revision = operation.num("revision") ?: return false
+        val common = setOf("schema", "subjectId", "clientEventId", "createdGeneration", "revision", "state", "createdAt", "expiresAt", "request")
+        when (state) {
+            "in_flight" -> if (revision != 2L || operation.fields.keys != common + "attemptGeneration" ||
+                !validGeneration(operation.str("attemptGeneration"))) return false
+            "uncertain" -> if (revision < 3L || operation.fields.keys != common) return false
+            else -> return false
+        }
+        if (operation.fields["schema"] != JN("1") || !validGeneration(operation.str("createdGeneration"))) return false
+        val created = operation.num("createdAt") ?: return false
+        val expires = operation.num("expiresAt") ?: return false
+        if (expires <= created) return false
+        val subject = operation.str("subjectId") ?: return false
+        val event = operation.str("clientEventId") ?: return false
+        if (!Regex("[1-9][0-9]{0,19}").matches(subject) || scalarCount(event) !in 8..64 || event.isBlank() ||
+            key != "nerae.workout.operation.v1.$subject.${encodeURIComponent(event)}") return false
+        val request = operation.obj("request") ?: return false
+        if (!request.exactKeys("method", "path", "idempotencyKey", "body") || request.str("method") != "POST") return false
+        val path = request.str("path") ?: return false
+        if (path != "/me/sessions" && !Regex("/me/sessions/[1-9][0-9]{0,19}/(sets|finish)").matches(path)) return false
+        val idem = request.str("idempotencyKey") ?: return false
+        if (!Regex("[A-Za-z0-9._~-]{8,128}").matches(idem)) return false
+        val body = request.str("body") ?: return false
+        val bodyObject = StrictJson(body).parse() as? JO ?: return false
+        validateBody(path, event, bodyObject)
+        return binding == marker("binding-v1", key, subject, path, idem, body) &&
+            marker("key", subject, path, idem) in history &&
+            marker("body-binary64-v2", subject, path, canonicalBodyMarker(bodyObject)) in history
+    }
+
     private fun parseTransition(oldText: String, nextText: String, key: String): Transition {
         require(strictUtf8(oldText).size in 1..MAX_JSON_BYTES && strictUtf8(nextText).size in 1..MAX_JSON_BYTES)
         val oldRoot = StrictJson(oldText).parse() as? JO ?: error("registry")

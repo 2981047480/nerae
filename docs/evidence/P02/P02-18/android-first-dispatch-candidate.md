@@ -42,12 +42,31 @@ invocation pointed to a nonexistent copy under `P02-18` and exited 127; it
 did not run the check. The corrected command passed, without building an APK
 or exercising Keystore.
 
-No UTS dispatch permit is exposed yet, and this is not server sync or a
-settlement implementation. The Android `AtomicFile`, hardware Keystore,
-actual process lifecycle and device execution were not exercised by the JVM
-tests. Locks are process-local; external writers or privileged rollback of an
-entire encrypted envelope are outside this guarantee. Unknown historical
-state requires a future safe recovery path, not automatic reset.
+The Android UTS first-dispatch entry now forwards the exact request to the
+native journal instead of always returning `unsupported_platform`. Ordinary
+and legacy CAS paths reject deletion, rollback or changes to an active request
+while allowing its transition to `uncertain` and unrelated training entries.
+If an existing active binding or its history is inconsistent, claims fail
+closed without replacing the encrypted item. The native claim alone is not a
+network-send authorization: the caller must still check the returned permit's
+current session and deadline immediately before sending.
+
+The integrated API 35/Kotlin synthetic tests passed 14 parser groups and the
+journal/active-CAS/bridge scenarios; four UTS source/bridge synthetic tests
+and 37 JS journal/adapter tests also passed. The client-matched 5.33 UTS
+compiler generated four Kotlin files, and the generated call type-checked
+against the native bridge with stub UTS types. Two initial generation attempts
+using the integration worktree's installed compiler failed: first through a
+symlink that could not resolve `@dcloudio/uts`, then with a verified 5.26
+compiler that did not match the client's 5.33 lock. The passing attempt used
+the already-prepared matching 5.33 installation. No dependency was changed.
+
+This is not server sync or a settlement implementation. The Android
+`AtomicFile`, hardware Keystore, actual process lifecycle, DCloud runtime
+link, APK and device execution were not exercised by these tests. Locks are
+process-local; external writers or privileged rollback of an entire encrypted
+envelope are outside this guarantee. Unknown historical state requires a
+future safe recovery path, not automatic reset.
 The history is currently capped at 8,192 markers, normally two per distinct
 request, and has no implemented safe pruning protocol. Reaching the cap blocks
 further claims; durable retention and a user-safe recovery strategy remain

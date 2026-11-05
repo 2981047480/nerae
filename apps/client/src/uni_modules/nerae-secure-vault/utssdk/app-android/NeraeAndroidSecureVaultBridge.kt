@@ -366,6 +366,9 @@ internal class NeraeVersionedTrainingJournal(
         if (current.found != expectedFound || (expectedFound && current.value != expectedValue)) {
             throw VaultFailure("conflict")
         }
+        if (!FirstDispatchNativeParser.preservesActiveOperations(current.value, value, current.activeBindings, current.dispatchMarkers)) {
+            throw VaultFailure("invalid_state")
+        }
         replaceLocked(current, found = true, value = value)
     }
 
@@ -380,6 +383,9 @@ internal class NeraeVersionedTrainingJournal(
         if (!current.dispatchHistoryKnown) throw VaultFailure("unavailable")
         if (current.revision != expected || !current.found || !current.value.toByteArray(StandardCharsets.UTF_8).contentEquals(expectedValue.toByteArray(StandardCharsets.UTF_8))) {
             throw VaultFailure("conflict")
+        }
+        if (!FirstDispatchNativeParser.preservesActiveOperations(current.value, nextValue, current.activeBindings, current.dispatchMarkers)) {
+            throw VaultFailure("unavailable")
         }
         if (identity.eventMarker in current.activeBindings || identity.keyMarker in current.dispatchMarkers ||
             identity.bodyMarker in current.dispatchMarkers) throw VaultFailure("conflict")
@@ -404,6 +410,9 @@ internal class NeraeVersionedTrainingJournal(
         val current = readCurrentLocked()
         if (current.revision != expected || current.found != expectedFound ||
             (expectedFound && current.value != expectedValue)) throw VaultFailure("conflict")
+        if (!FirstDispatchNativeParser.preservesActiveOperations(current.value, if (newFound) newValue else "", current.activeBindings, current.dispatchMarkers)) {
+            throw VaultFailure("invalid_state")
+        }
         replaceLocked(current, newFound, newValue)
     }
 
@@ -995,6 +1004,33 @@ object NeraeAndroidSecureVaultBridge {
         if (expectedRevision == null || expectedValue == null || newValue == null) throw VaultFailure("invalid_state")
         val revision = journal.compareAndSet(expectedRevision, expectedFound, expectedValue, newFound, newValue)
         encodeJournal(ok = true, revision = revision.toString())
+    }
+
+    /** A successful revision is a first-send permit, not a server receipt. */
+    @JvmStatic
+    fun claimTrainingOperationDispatch(
+        context: Context?, expectedRevision: String?, expectedValue: String?, operationKey: String?, nextValue: String?
+    ): String = withTrainingJournal(context) { journal ->
+        claimTrainingOperationDispatch(journal, expectedRevision, expectedValue, operationKey, nextValue)
+    }
+
+    // The journal overload keeps the production mapping testable with isolated
+    // synthetic storage; the public entry above always supplies the native slot.
+    internal fun claimTrainingOperationDispatch(
+        journal: NeraeVersionedTrainingJournal, expectedRevision: String?, expectedValue: String?,
+        operationKey: String?, nextValue: String?
+    ): String = try {
+        if (expectedRevision.isNullOrEmpty() || expectedRevision == "0" || expectedValue.isNullOrEmpty() ||
+            operationKey.isNullOrEmpty() || nextValue.isNullOrEmpty()) throw VaultFailure("invalid_state")
+        val revision = journal.claimFirstSend(expectedRevision, expectedValue, operationKey, nextValue)
+        encodeJournal(ok = true, revision = revision.toString())
+    } catch (problem: VaultFailure) {
+        when (problem.code) {
+            "invalid_state", "conflict" -> journalFailure(problem.code)
+            else -> journalFailure("unavailable")
+        }
+    } catch (_: Exception) {
+        journalFailure("unavailable")
     }
 
     private fun withVault(context: Context?, action: (NeraeCredentialVault) -> String): String =

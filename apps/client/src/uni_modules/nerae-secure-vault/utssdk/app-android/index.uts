@@ -110,7 +110,12 @@ export function compareAndSetVersionedTrainingOperationJournal(expectedRevision:
 	return decodeVersioned(NeraeAndroidSecureVaultBridge.compareAndSetVersionedTrainingOperationJournal(UTSAndroid.getAppContext(), expectedRevision, expectedFound, expectedValue, newFound, newValue), false)
 }
 
-// The Android journal does not yet retain a verified native first-send marker.
-export function claimTrainingOperationDispatch(_expectedRevision: string, _expectedValue: string, _operationKey: string, _nextValue: string): VersionedSecureVaultResult {
-	return versionedFailure('unsupported_platform')
+export function claimTrainingOperationDispatch(expectedRevision: string, expectedValue: string, operationKey: string, nextValue: string): VersionedSecureVaultResult {
+	if (!validRevision(expectedRevision) || expectedRevision == '0' || expectedValue.length == 0 ||
+		operationKey.length == 0 || nextValue.length == 0) return versionedFailure('invalid_state')
+	try {
+		return decodeVersioned(NeraeAndroidSecureVaultBridge.claimTrainingOperationDispatch(UTSAndroid.getAppContext(), expectedRevision, expectedValue, operationKey, nextValue), false)
+	} catch (_error) {
+		return versionedFailure('bridge_failure')
+	}
 }
