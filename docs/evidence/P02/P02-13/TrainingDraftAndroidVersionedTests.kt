@@ -55,7 +55,7 @@ private class VersionedDraftTestValidator : TrainingDraftPayloadValidator {
         val subject = Regex("\\\"subjectId\\\":\\\"([0-9]+)\\\"").find(value)?.groupValues?.get(1) ?: return null
         val event = Regex("\\\"clientEventId\\\":\\\"([^\\\"]+)\\\"").find(value)?.groupValues?.get(1) ?: return null
         if (!value.startsWith("{\"schema\":1,\"subjectId\":\"$subject\",\"draft\":{\"clientEventId\":\"$event\",\"note\":\"")) return null
-        if (!value.endsWith("\"}}")) return null
+        if (!value.endsWith("}}")) return null
         return TrainingDraftPayloadOwner(subject, event)
     }
 }
@@ -67,7 +67,159 @@ private fun expect(code: String, operation: () -> Unit) {
     try { operation(); error("expected $code") } catch (failure: VaultFailure) { check(failure.code == code) }
 }
 
+private fun pendingValue(pendingJson: String?, note: String = ""): String =
+    "{\"schema\":1,\"subjectId\":\"101\",\"draft\":{\"clientEventId\":\"event-0001\",\"note\":\"$note\"" +
+        (pendingJson?.let { ",\"syncPending\":$it" } ?: "") + "}}"
+
+private fun verifyPendingGuard() {
+    val backend = VersionedDraftTestBackend()
+    val lock = Any()
+    val store = NeraeProtectedTrainingDraftStore(backend, lock, VersionedDraftTestValidator())
+    val pending = pendingValue("\"caf\u00e9\"")
+    check(store.create(key, pending))
+    val original = store.readVersioned(key)
+    expect("conflict") { store.write(key, pendingValue(null, "delete")) }
+    expect("conflict") { store.write(key, pendingValue("\"cafe\u0301\"", "mutate")) }
+    check(store.readVersioned(key) == original)
+    // JSON spelling differs, but the decoded string is the same UTF-8 bytes.
+    val equivalent = pendingValue("\"caf\\u00e9\"", "ordinary-edit")
+    store.write(key, equivalent)
+    val edited = store.readVersioned(key)
+    check(edited.value == equivalent && edited.revision.toLong() == original.revision.toLong() + 1)
+
+    val emojiBackend = VersionedDraftTestBackend()
+    val emojiStore = NeraeProtectedTrainingDraftStore(emojiBackend, Any(), VersionedDraftTestValidator())
+    check(emojiStore.create(key, pendingValue("\"🚴\"")))
+    val emojiEscaped = pendingValue("\"\\ud83d\\udeb4\"", "emoji-edit")
+    emojiStore.write(key, emojiEscaped)
+    check(emojiStore.readVersioned(key).value == emojiEscaped)
+    expect("invalid_state") { emojiStore.write(key, pendingValue("\"\\ud83d\"")) }
+    check(emojiStore.readVersioned(key).value == emojiEscaped)
+
+    for (bad in listOf("null", "true", "1", "{}", "[]", "\"\\ud800\"")) {
+        expect("invalid_state") { store.write(key, pendingValue(bad)) }
+        expect("invalid_state") { store.compareAndSetVersioned(key, edited.revision, true, edited.value, pendingValue(bad)) }
+        check(store.readVersioned(key) == edited)
+    }
+    val duplicated = pendingValue("\"safe\"").replace("\"syncPending\":\"safe\"",
+        "\"syncPending\":\"safe\",\"sync\\u0050ending\":\"safe\"")
+    expect("invalid_state") { store.write(key, duplicated) }
+    expect("invalid_state") { store.compareAndSetVersioned(key, edited.revision, true, edited.value, duplicated) }
+    check(store.readVersioned(key) == edited)
+
+    val changed = pendingValue("\"next\"")
+    val cas = store.compareAndSetVersioned(key, edited.revision, true, edited.value, changed)
+    check(store.readVersioned(key).value == changed)
+    expect("conflict") { store.write(key, edited.value) }
+    check(store.readVersioned(key).value == changed)
+    val settled = store.compareAndSetVersioned(key, cas.revision, true, changed, pendingValue(null))
+    expect("conflict") { store.write(key, changed) } // no resurrection by a stale ordinary writer
+    check(store.readVersioned(key).value == pendingValue(null))
+    store.write(key, pendingValue(null, "normal"))
+    check(store.readVersioned(key).revision.toLong() == settled.revision.toLong() + 1)
+    val noPending = store.readVersioned(key)
+    expect("conflict") { store.write(key, pendingValue("\"introduced\"")) }
+    val newlyStaged = store.compareAndSetVersioned(key, noPending.revision, true, noPending.value, pendingValue("\"introduced\""))
+    check(store.readVersioned(key).revision == newlyStaged.revision && store.readVersioned(key).value == pendingValue("\"introduced\""))
+
+    val corruptValues = listOf(
+        pendingValue("null"),
+        pendingValue("{\"state\":\"ready\"}"),
+        pendingValue("\"\\ud800\""),
+        duplicated,
+        pendingValue(null).removeSuffix("}") + ",\"draft\":{\"clientEventId\":\"event-0001\",\"syncPending\":\"hidden\"}}"
+    )
+    for (corrupt in corruptValues) {
+        val cleanBackend = VersionedDraftTestBackend()
+        val clean = NeraeProtectedTrainingDraftStore(cleanBackend, Any(), VersionedDraftTestValidator())
+        expect("invalid_state") { clean.create(key, corrupt) }
+        check(cleanBackend.files.isEmpty() && cleanBackend.keys.isEmpty())
+        val damagedBackend = VersionedDraftTestBackend()
+        val digest = damagedBackend.digest(key)
+        damagedBackend.legacyVault(digest).compareAndSet(false, "", corrupt)
+        val old = damagedBackend.files.getValue(digest).copyOf()
+        val damaged = NeraeProtectedTrainingDraftStore(damagedBackend, Any(), VersionedDraftTestValidator())
+        expect("unavailable") { damaged.readVersioned(key) }
+        expect("unavailable") { damaged.write(key, pendingValue(null)) }
+        expect("unavailable") { damaged.compareAndSetVersioned(key, "0", true, pendingValue(null), pendingValue(null, "replace")) }
+        check(damagedBackend.files.getValue(digest).contentEquals(old))
+        val listing = damaged.discover("101", "")
+        check(listing.contains("\"hasUnclassifiedItems\":true") && !listing.contains("event-0001"))
+    }
+
+    val legacyBackend = VersionedDraftTestBackend()
+    legacyBackend.legacyVault(legacyBackend.digest(key)).compareAndSet(false, "", pending)
+    val legacy = NeraeProtectedTrainingDraftStore(legacyBackend, Any(), VersionedDraftTestValidator())
+    expect("conflict") { legacy.write(key, pendingValue(null)) }
+    check(legacy.readVersioned(key).revision == "0" && legacy.readVersioned(key).value == pending)
+    legacy.write(key, pendingValue("\"caf\u00e9\"", "upgrade"))
+    check(legacy.readVersioned(key).revision == "1")
+    legacyBackend.failAfterWrite = true
+    expect("unavailable") { legacy.write(key, pendingValue("\"caf\u00e9\"", "uncertain")) }
+    legacyBackend.failAfterWrite = false
+    check(legacy.readVersioned(key).value == pendingValue("\"caf\u00e9\"", "uncertain"))
+
+    // Unrelated duplicate fields are legacy-compatible; duplicate draft or syncPending is not.
+    val legacyNoPending = VersionedDraftTestBackend()
+    val duplicatedNote = pendingValue(null).replace("\"note\":\"\"", "\"note\":\"first\",\"note\":\"second\"")
+    legacyNoPending.legacyVault(legacyNoPending.digest(key)).compareAndSet(false, "", duplicatedNote)
+    val oldNoPending = NeraeProtectedTrainingDraftStore(legacyNoPending, Any(), VersionedDraftTestValidator())
+    check(oldNoPending.readVersioned(key).value == duplicatedNote)
+    oldNoPending.write(key, pendingValue(null, "kept-compatible"))
+    check(oldNoPending.readVersioned(key).value == pendingValue(null, "kept-compatible"))
+    val unrelatedSurrogateBackend = VersionedDraftTestBackend()
+    val unrelatedSurrogate = pendingValue(null, "\\ud800")
+    unrelatedSurrogateBackend.legacyVault(unrelatedSurrogateBackend.digest(key)).compareAndSet(false, "", unrelatedSurrogate)
+    val unrelatedSurrogateStore = NeraeProtectedTrainingDraftStore(unrelatedSurrogateBackend, Any(), VersionedDraftTestValidator())
+    check(unrelatedSurrogateStore.readVersioned(key).value == unrelatedSurrogate)
+    unrelatedSurrogateStore.write(key, pendingValue(null, "normal"))
+    check(unrelatedSurrogateStore.readVersioned(key).value == pendingValue(null, "normal"))
+
+    val fullBackend = VersionedDraftTestBackend()
+    val fullStore = NeraeProtectedTrainingDraftStore(fullBackend, Any(), VersionedDraftTestValidator())
+    val emptyPending = pendingValue("\"\"")
+    val fullPending = pendingValue("\"" + "x".repeat(65536 - bytes(emptyPending).size) + "\"")
+    check(bytes(fullPending).size == 65536 && fullStore.create(key, fullPending))
+    fullStore.write(key, fullPending)
+    check(fullStore.readVersioned(key).value == fullPending && fullStore.readVersioned(key).revision == "2")
+
+    val sequentialBackend = VersionedDraftTestBackend()
+    val sequential = NeraeProtectedTrainingDraftStore(sequentialBackend, Any(), VersionedDraftTestValidator())
+    check(sequential.create(key, pending))
+    val prior = sequential.readVersioned(key)
+    sequential.write(key, pendingValue("\"caf\u00e9\"", "first"))
+    expect("conflict") { sequential.compareAndSetVersioned(key, prior.revision, true, prior.value, changed) }
+    check(sequential.readVersioned(key).value == pendingValue("\"caf\u00e9\"", "first"))
+
+    val raceBackend = VersionedDraftTestBackend()
+    val raceLock = Any()
+    val raceStore = NeraeProtectedTrainingDraftStore(raceBackend, raceLock, VersionedDraftTestValidator())
+    check(raceStore.create(key, pending))
+    val raceStart = raceStore.readVersioned(key)
+    val gate = CountDownLatch(1)
+    val done = CountDownLatch(2)
+    val ordinarySuccess = AtomicInteger()
+    val casSuccess = AtomicInteger()
+    val conflicts = AtomicInteger()
+    Thread {
+        try { gate.await(); raceStore.write(key, pendingValue("\"caf\u00e9\"", "race")); ordinarySuccess.incrementAndGet() }
+        catch (failure: VaultFailure) { if (failure.code == "conflict") conflicts.incrementAndGet() else throw failure }
+        finally { done.countDown() }
+    }.start()
+    Thread {
+        try { gate.await(); raceStore.compareAndSetVersioned(key, raceStart.revision, true, raceStart.value, changed); casSuccess.incrementAndGet() }
+        catch (failure: VaultFailure) { if (failure.code == "conflict") conflicts.incrementAndGet() else throw failure }
+        finally { done.countDown() }
+    }.start()
+    gate.countDown()
+    done.await()
+    check(ordinarySuccess.get() + casSuccess.get() == 1 && conflicts.get() == 1)
+    check(raceStore.readVersioned(key).value == if (casSuccess.get() == 1) changed else pendingValue("\"caf\u00e9\"", "race"))
+    println("PASS: Android inline pending guard, migration, UTF-8, malformed fields and competing writes")
+}
+
 fun main() {
+    verifyPendingGuard()
     val legacyBackend = VersionedDraftTestBackend()
     val legacyPayload = value("旧草稿 e\u0301")
     legacyBackend.legacyVault(legacyBackend.digest(key)).compareAndSet(false, "", legacyPayload)

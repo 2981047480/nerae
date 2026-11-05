@@ -15,21 +15,22 @@ private data class JS(val value: String) : J
 private data class JN(val raw: String) : J
 private data class JB(val value: Boolean) : J
 private data object JNull : J
+private enum class PendingScope { ROOT, DRAFT, OTHER }
 
-/** Strict bounded JSON parser: rejects duplicate keys, malformed Unicode, trailing bytes, and excessive depth. */
-private class StrictJson(private val source: String) {
+/** Strict by default. Draft compatibility only relaxes unrelated legacy fields. */
+private class StrictJson(private val source: String, private val draftPendingCompatibility: Boolean = false) {
     private var i = 0
     fun parse(): J {
         require(source.toByteArray(UTF8).size <= MAX_JSON_BYTES) { "size" }
-        val result = value(0)
+        val result = value(0, PendingScope.ROOT)
         ws()
         require(i == source.length) { "trailing" }
         return result
     }
-    private fun value(depth: Int): J {
+    private fun value(depth: Int, scope: PendingScope): J {
         require(depth <= MAX_DEPTH) { "depth" }; ws(); require(i < source.length) { "eof" }
         return when (source[i]) {
-            '{' -> obj(depth + 1)
+            '{' -> obj(depth + 1, scope)
             '[' -> array(depth + 1)
             '"' -> JS(string())
             't' -> { literal("true"); JB(true) }
@@ -39,13 +40,17 @@ private class StrictJson(private val source: String) {
             else -> error("value")
         }
     }
-    private fun obj(depth: Int): JO {
+    private fun obj(depth: Int, scope: PendingScope): JO {
         i++; ws(); val fields = LinkedHashMap<String, J>()
         if (take('}')) return JO(fields)
         while (true) {
             ws(); require(i < source.length && source[i] == '"') { "object key" }
-            val key = string(); require(!fields.containsKey(key)) { "duplicate key" }
-            ws(); require(take(':')) { "colon" }; fields[key] = value(depth); ws()
+            val key = string()
+            val guardedKey = (scope == PendingScope.ROOT && key == "draft") ||
+                (scope == PendingScope.DRAFT && key == "syncPending")
+            require(!fields.containsKey(key) || (draftPendingCompatibility && !guardedKey)) { "duplicate key" }
+            val childScope = if (scope == PendingScope.ROOT && key == "draft") PendingScope.DRAFT else PendingScope.OTHER
+            ws(); require(take(':')) { "colon" }; fields[key] = value(depth, childScope); ws()
             if (take('}')) return JO(fields)
             require(take(',')) { "comma" }
         }
@@ -53,14 +58,18 @@ private class StrictJson(private val source: String) {
     private fun array(depth: Int): JA {
         i++; ws(); val values = ArrayList<J>()
         if (take(']')) return JA(values)
-        while (true) { values += value(depth); ws(); if (take(']')) return JA(values); require(take(',')) { "comma" } }
+        while (true) { values += value(depth, PendingScope.OTHER); ws(); if (take(']')) return JA(values); require(take(',')) { "comma" } }
     }
     private fun string(): String {
         require(take('"')); val out = StringBuilder()
         while (i < source.length) {
             val c = source[i++]
             when {
-                c == '"' -> { val s = out.toString(); strictUtf8(s); return s }
+                c == '"' -> {
+                    val s = out.toString()
+                    if (!draftPendingCompatibility) strictUtf8(s)
+                    return s
+                }
                 c == '\\' -> {
                     require(i < source.length); when (val e = source[i++]) {
                         '"', '\\', '/' -> out.append(e)
@@ -98,6 +107,15 @@ private class StrictJson(private val source: String) {
 }
 
 internal fun strictJsonObject(value: String): Boolean = try { StrictJson(value).parse() is JO } catch (_: Exception) { false }
+
+/** Null means absent; malformed, duplicate or non-string pending state throws. */
+internal fun draftSyncPendingBytes(value: String): ByteArray? {
+    val root = StrictJson(value, draftPendingCompatibility = true).parse() as? JO ?: error("draft envelope")
+    val draft = root.fields["draft"] as? JO ?: error("draft object")
+    if (!draft.fields.containsKey("syncPending")) return null
+    val pending = draft.fields["syncPending"] as? JS ?: error("draft pending")
+    return strictUtf8(pending.value)
+}
 
 private fun strictUtf8(value: String): ByteArray = StandardCharsets.UTF_8.newEncoder()
     .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)

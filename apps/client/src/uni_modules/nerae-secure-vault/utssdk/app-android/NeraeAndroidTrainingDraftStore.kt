@@ -88,16 +88,19 @@ internal class NeraeProtectedTrainingDraftStore(
         val owner = parseOwner(key)
         val state = readSlot(backend.slot(owner.digest))
         if (state.found && !validPayload(state.value, owner.subject, owner.event)) throw VaultFailure()
+        if (state.found) pendingBytes(state.value, "unavailable")
         VersionedTrainingDraftResult(state.found, state.value, state.revision.toString())
     }
 
     fun create(key: String, value: String): Boolean = synchronized(processLock) {
         val owner = parseOwner(key)
         if (!validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
+        pendingBytes(value, "invalid_state")
         val slot = backend.slot(owner.digest)
         val previous = readSlot(slot)
         if (previous.found) {
             if (!validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
+            pendingBytes(previous.value, "unavailable")
             return@synchronized false
         }
         persist(slot, owner, previous, value)
@@ -107,10 +110,17 @@ internal class NeraeProtectedTrainingDraftStore(
     fun write(key: String, value: String): Unit = synchronized(processLock) {
         val owner = parseOwner(key)
         if (!validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
+        val proposedPending = pendingBytes(value, "invalid_state")
         val slot = backend.slot(owner.digest)
         val previous = readSlot(slot)
         if (!previous.found) throw VaultFailure("conflict")
         if (!validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
+        val currentPending = pendingBytes(previous.value, "unavailable")
+        // A stale unversioned editor may neither change nor resurrect a pending operation.
+        if ((currentPending == null) != (proposedPending == null) ||
+            (currentPending != null && proposedPending != null && !currentPending.contentEquals(proposedPending))) {
+            throw VaultFailure("conflict")
+        }
         persist(slot, owner, previous, value)
     }
 
@@ -121,9 +131,12 @@ internal class NeraeProtectedTrainingDraftStore(
         if ((!expectedFound && (revision != 0L || expectedValue.isNotEmpty())) ||
             (expectedFound && !validPayload(expectedValue, owner.subject, owner.event)) ||
             !validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
+        if (expectedFound) pendingBytes(expectedValue, "invalid_state")
+        pendingBytes(value, "invalid_state")
         val slot = backend.slot(owner.digest)
         val previous = readSlot(slot)
         if (previous.found && !validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
+        if (previous.found) pendingBytes(previous.value, "unavailable")
         if (previous.revision != revision || previous.found != expectedFound ||
             previous.value != expectedValue) throw VaultFailure("conflict")
         val committed = persist(slot, owner, previous, value)
@@ -191,6 +204,12 @@ internal class NeraeProtectedTrainingDraftStore(
     private data class Owner(val subject: String, val event: String, val digest: String)
     private data class DraftState(val found: Boolean, val value: String, val revision: Long) {
         override fun toString(): String = "DraftState{redacted}"
+    }
+
+    private fun pendingBytes(value: String, errorCode: String): ByteArray? = try {
+        draftSyncPendingBytes(value)
+    } catch (_: Exception) {
+        throw VaultFailure(errorCode)
     }
 
     private fun parseRevision(value: String): Long {
@@ -293,6 +312,7 @@ internal class NeraeProtectedTrainingDraftStore(
         if (!validSubject(subject) || !validEvent(event)) throw VaultFailure()
         val owner = Owner(subject, event, digest("$DRAFT_KEY_PREFIX$subject.$event"))
         if (owner.digest != expectedDigest || !validPayload(value, subject, event)) throw VaultFailure()
+        pendingBytes(value, "unavailable")
         return owner
     }
 
