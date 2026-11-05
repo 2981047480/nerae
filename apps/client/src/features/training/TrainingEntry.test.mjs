@@ -165,6 +165,7 @@ test('both recording modes preserve rapid edits and failed device saves can be r
   current.editorEmit('edit-set', exercise.exerciseEntryKey, record, 'reps', '9')
   await flush()
   assert.match(current.editorProps.statusMessage, /尚未确认/)
+  assert.match(current.editorProps.statusMessage, /关闭应用可能丢失/)
   assert.equal(instance.canLeave(), false)
   button(root, '‹').props.onTap()
   await flush()

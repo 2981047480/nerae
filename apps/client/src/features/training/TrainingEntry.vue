@@ -27,6 +27,7 @@ const recoveryWarning = ref(false)
 const enteringExercise = ref(false)
 const exerciseName = ref('')
 const dateRefresh = ref(0)
+const localSaveFailureMessage = '本机保存尚未确认，输入暂留在当前页面；关闭应用可能丢失，请先重试。'
 let alive = true
 let sessionInvalid = false
 let stopWatching: (() => void) | null = null
@@ -161,7 +162,7 @@ async function change(action: (target: TrainingEditorController) => Promise<Edit
     const result = await operation
     if (!refresh(target)) return
     if (!result.ok && result.reason !== 'pending' && result.reason !== 'superseded') {
-      error.value = result.reason === 'storage_error' ? '本机保存尚未确认，输入暂留在当前页面。' :
+      error.value = result.reason === 'storage_error' ? localSaveFailureMessage :
         result.message || '暂时无法完成，请检查输入后重试。'
     }
   } catch {
@@ -241,7 +242,7 @@ defineExpose({ canLeave })
 
 const statusMessage = computed(() => {
   if (error.value) return error.value
-  if (localStatus.value === 'storage_error') return '本机保存尚未确认，输入暂留在当前页面。'
+  if (localStatus.value === 'storage_error') return localSaveFailureMessage
   if (pending.value > 0 || localStatus.value === 'saving') return '正在保存到本机…'
   if (localStatus.value === 'saved_locally') return '已保存在本机，尚未同步。'
   return '本机保存尚未确认。'
