@@ -37,3 +37,13 @@ non-ASCII or URI-escaped event identifiers were rejected when recording a
 receipt. These findings and probes are retained in
 `/private/tmp/nerae-ios-receipt-gc-review.trnNJttc/REVIEW.md`. The permanent
 key/body history still has an 8,192-marker cap; cleanup does not remove it.
+
+A revised isolated candidate routes receipt application through the journal's
+lock and verifies the active request binding before changing the draft. It
+also normalizes event keys consistently with the sender. Independent retests
+in `/private/tmp/nerae-ios-receipt-gc-fix-recheck.dvanLD2R/RECHECK.md`
+confirmed that cleaned receipts could not be registered or applied again,
+and that Chinese, space and percent-sign event IDs could be processed. The
+full Swift synthetic suite passed. This still does not prove real process
+interruption, Keychain, device, server or UI recovery; the candidate remains
+unmerged and the permanent-marker limit remains unresolved.
