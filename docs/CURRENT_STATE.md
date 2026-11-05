@@ -26,6 +26,7 @@
 - iOS 草稿同样保护待发字段并保留普通旧字段的兼容性；Swift 合成测试、独立旧稿对照和 iPhoneOS 类型检查通过，真实设备与同步仍未验收。[iOS 待发保护](evidence/P02/P02-13/ios-inline-pending.md)
 - 自由训练创建请求可先固定内容再由同一接口发送，相关客户端测试和类型检查通过；持久化恢复及页面同步尚未接入。[请求准备](evidence/U02/U02-02/free-session-request.md)
 - 当前真实页面源码已用 5.33 编译为 App 和微信资源，并与四个原生桥在隔离的 iPhoneOS 样例工程中完成未签名链接；正式 AppKey、签名、设备运行和真实同步仍未完成。[iOS 构建证据](evidence/P02/P02-15/ios-real-entry-20261105.md)
+- 本机隔离测试已用项目发信代码向本人 QQ 邮箱提交真实登录挑战，QQ 返回接受；测试程序取得该挑战验证码后完成登录及读取账号。邮件实际到达、手机手输、线上服务和跨设备同步仍待验证。[QQ 联测](evidence/A01/real-qq-self-login-20261105.md)
 - iOS 新增内部 replay HTTPS 通道和草稿条件更新候选：本机 TLS 正反例、草稿并发／不确定写入合成测试与 iPhoneOS 源码类型检查通过。它们尚未接页面、验证完整回执或结算草稿，真实服务及手机未验证。[网络与草稿证据](evidence/P02/P02-13/ios-recovery-http-candidate.md)
 - iOS 内部恢复候选已串联日志读取、HTTPS 重放、回执校验和日志复核；版本化日志亦修复 Unicode 等价但字节不同的比较问题。认证 vault 的原生代次已检测同进程内账号 A→B→A 切换。本机 TLS、合成反例及日志回归通过；JS 会话代次、草稿合并、日志结算和页面仍未接通，不能视为同步已完成。[回执候选](evidence/P02/P02-16/replay-validator-candidate.md) · [认证代次](evidence/P02/P02-17/auth-generation-candidate.md)
 - iOS 回执结算在临时目录完成一轮合成验证：同训练连续创建、保存组和完成可结算；旧回执覆盖新输入与版本回退的反例经独立复测被拒绝。回执容量与安全裁剪、真实授权和原生设备验证仍未解决，候选未接 App。[证据](evidence/P02/P02-16/receipt-settlement-lab.md)
