@@ -47,6 +47,24 @@ private func payload(_ subject: String = "101", _ event: String = "event-0001", 
     return value
 }
 
+private func payloadWithSyncPending(_ subject: String = "101", _ event: String = "event-0001",
+                                   note: String = "", syncPending: Any?) throws -> String {
+    var draft: [String: Any] = ["clientEventId": event, "note": note]
+    if let syncPending { draft["syncPending"] = syncPending }
+    let object: [String: Any] = ["schema": 1, "subjectId": subject, "draft": draft]
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    guard let value = String(data: data, encoding: .utf8) else { throw Failure.assertion }
+    return value
+}
+
+private func syncPendingBytes(_ json: String) throws -> Data? {
+    guard let object = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+          let draft = object["draft"] as? [String: Any] else { throw Failure.assertion }
+    guard let value = draft["syncPending"] else { return nil }
+    guard let string = value as? String else { throw Failure.assertion }
+    return Data(string.utf8)
+}
+
 private func account(for key: String) -> String {
     SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
 }
@@ -256,6 +274,174 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
                                                 expected: compatibilityOld, value: compatibilityNew))
         let compatibilityRead = try legacyStore.readVersioned(key: compatibilityLegacyKey)
         try check(compatibilityRead.revision == "1" && Data(compatibilityRead.value.utf8) == Data(compatibilityNew.utf8))
+
+        // Older drafts may contain unrelated duplicate keys and deep unknown
+        // fields. The marker check must not make those drafts uneditable.
+        let deepKey = "nerae.workout.draft.v1.101.event-deep-old"
+        let deepValue = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-deep-old","note":"old","note":"new","extra":"# +
+            String(repeating: "[", count: 40) + "1" + String(repeating: "]", count: 40) + "}}"
+        legacyBackend.values[account(for: deepKey)] = Data(deepValue.utf8)
+        try check(try legacyStore.readVersioned(key: deepKey).value == deepValue)
+        try legacyStore.write(key: deepKey, value: deepValue)
+        try check(try legacyStore.readVersioned(key: deepKey).value == deepValue)
+        let manyKey = "nerae.workout.draft.v1.101.event-many-old"
+        let manyValue = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-many-old","extra":["# +
+            Array(repeating: "0", count: 13_000).joined(separator: ",") + "]}}"
+        legacyBackend.values[account(for: manyKey)] = Data(manyValue.utf8)
+        try legacyStore.write(key: manyKey, value: manyValue)
+        try check(try legacyStore.readVersioned(key: manyKey).value == manyValue)
+
+        // A versioned write must not introduce an invalid marker that a
+        // later recovery cannot distinguish from a valid pending operation.
+        let invalidMarkerKey = "nerae.workout.draft.v1.101.event-invalid1"
+        let markerFree = try payload("101", "event-invalid1")
+        try check(try legacyStore.create(key: invalidMarkerKey, value: markerFree))
+        let markerFreeRead = try legacyStore.readVersioned(key: invalidMarkerKey)
+        let invalidMarker = try payloadWithSyncPending("101", "event-invalid1", syncPending: NSNull())
+        try expect(.invalidState) {
+            _ = try legacyStore.compareAndSetVersioned(key: invalidMarkerKey, expectedRevision: markerFreeRead.revision,
+                                                       expectedFound: true, expectedValue: markerFree, value: invalidMarker)
+        }
+        try check(try legacyStore.readVersioned(key: invalidMarkerKey).value == markerFree)
+        try expect(.invalidState) { _ = try legacyStore.create(key: "nerae.workout.draft.v1.101.event-invalid2",
+            value: try payloadWithSyncPending("101", "event-invalid2", syncPending: NSNull())) }
+
+        // Legacy write APIs may edit ordinary fields, but cannot create,
+        // remove, or change the protected syncPending marker. Compare marker
+        // values by UTF-8 bytes, since Swift String equality normalizes Unicode.
+        let pendingKey = "nerae.workout.draft.v1.101.event-pending1"
+        let composedMarker = "receipt-\u{00e9}-ready"
+        let decomposedMarker = "receipt-e\u{0301}-ready"
+        try check(composedMarker == decomposedMarker && Data(composedMarker.utf8) != Data(decomposedMarker.utf8))
+        let pendingInitial = try payloadWithSyncPending("101", "event-pending1", note: "before", syncPending: composedMarker)
+        let pendingChangedNote = try payloadWithSyncPending("101", "event-pending1", note: "ordinary edit", syncPending: composedMarker)
+        legacyBackend.values[account(for: pendingKey)] = Data(pendingInitial.utf8)
+        try legacyStore.write(key: pendingKey, value: pendingChangedNote)
+        try check(syncPendingBytes(try legacyStore.readVersioned(key: pendingKey).value) == Data(composedMarker.utf8))
+        let pendingAfterWrite = try legacyStore.readVersioned(key: pendingKey).value
+        let pendingCas = try payloadWithSyncPending("101", "event-pending1", note: "ordinary CAS edit", syncPending: composedMarker)
+        try check(try legacyStore.compareAndSet(key: pendingKey, expected: pendingAfterWrite, value: pendingCas))
+        try check(syncPendingBytes(try legacyStore.readVersioned(key: pendingKey).value) == Data(composedMarker.utf8))
+
+        let pendingBytesBeforeRejectedChanges = legacyBackend.values[account(for: pendingKey)]!
+        let pendingAfterFailure = try payloadWithSyncPending("101", "event-pending1", note: "after unknown write", syncPending: composedMarker)
+        legacyBackend.failBeforeUpdate = true
+        try expect(.unavailable) { try legacyStore.write(key: pendingKey, value: pendingAfterFailure) }
+        legacyBackend.failBeforeUpdate = false
+        try check(legacyBackend.values[account(for: pendingKey)] == pendingBytesBeforeRejectedChanges)
+        legacyBackend.failAfterUpdate = true
+        try expect(.unavailable) { try legacyStore.write(key: pendingKey, value: pendingAfterFailure) }
+        legacyBackend.failAfterUpdate = false
+        try check(Data(try legacyStore.readVersioned(key: pendingKey).value.utf8) == Data(pendingAfterFailure.utf8))
+        try check(syncPendingBytes(try legacyStore.readVersioned(key: pendingKey).value) == Data(composedMarker.utf8))
+        let pendingBytesAfterUnknownWrite = legacyBackend.values[account(for: pendingKey)]!
+        let pendingWithoutField = try payload("101", "event-pending1", note: "delete marker")
+        try expect(.invalidState) { try legacyStore.write(key: pendingKey, value: pendingWithoutField) }
+        try expect(.invalidState) { _ = try legacyStore.compareAndSet(key: pendingKey, expected: pendingAfterFailure, value: pendingWithoutField) }
+        let pendingChangedUnicode = try payloadWithSyncPending("101", "event-pending1", note: "replace marker", syncPending: decomposedMarker)
+        try expect(.invalidState) { try legacyStore.write(key: pendingKey, value: pendingChangedUnicode) }
+        try expect(.invalidState) { _ = try legacyStore.compareAndSet(key: pendingKey, expected: pendingAfterFailure, value: pendingChangedUnicode) }
+        let nonStringPending = try payloadWithSyncPending("101", "event-pending1", syncPending: 7)
+        try expect(.invalidState) { try legacyStore.write(key: pendingKey, value: nonStringPending) }
+        try expect(.invalidState) { _ = try legacyStore.compareAndSet(key: pendingKey, expected: pendingAfterFailure, value: nonStringPending) }
+        let duplicateNew = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-pending1","syncPending":"receipt-é-ready","syncPending":"receipt-x-ready"}}"#
+        try expect(.invalidState) { try legacyStore.write(key: pendingKey, value: duplicateNew) }
+        try expect(.invalidState) { _ = try legacyStore.compareAndSet(key: pendingKey, expected: pendingAfterFailure, value: duplicateNew) }
+        try check(legacyBackend.values[account(for: pendingKey)] == pendingBytesAfterUnknownWrite)
+
+        // A matching versioned CAS retains authority to settle the marker.
+        let versionedPendingBeforeSettlement = try legacyStore.readVersioned(key: pendingKey)
+        let settled = try payload("101", "event-pending1", note: "settled by versioned owner")
+        try check(try legacyStore.compareAndSetVersioned(key: pendingKey,
+                                                         expectedRevision: versionedPendingBeforeSettlement.revision,
+                                                         expectedFound: true,
+                                                         expectedValue: versionedPendingBeforeSettlement.value,
+                                                         value: settled))
+        try check(syncPendingBytes(try legacyStore.readVersioned(key: pendingKey).value) == nil)
+
+        // An old draft with no marker remains editable through old APIs, but
+        // those APIs cannot introduce a new protected marker either.
+        let noMarkerKey = "nerae.workout.draft.v1.101.event-nopend1"
+        let noMarkerOld = try payload("101", "event-nopend1", note: "legacy")
+        legacyBackend.values[account(for: noMarkerKey)] = Data(noMarkerOld.utf8)
+        let noMarkerEdit = try payload("101", "event-nopend1", note: "legacy edit")
+        try legacyStore.write(key: noMarkerKey, value: noMarkerEdit)
+        try check(try legacyStore.compareAndSet(key: noMarkerKey, expected: noMarkerEdit,
+                                                value: try payload("101", "event-nopend1", note: "legacy CAS")))
+        let noMarkerCurrent = try legacyStore.readVersioned(key: noMarkerKey).value
+        let introducedMarker = try payloadWithSyncPending("101", "event-nopend1", note: "forged", syncPending: "forged")
+        try expect(.invalidState) { try legacyStore.write(key: noMarkerKey, value: introducedMarker) }
+        try expect(.invalidState) { _ = try legacyStore.compareAndSet(key: noMarkerKey, expected: noMarkerCurrent, value: introducedMarker) }
+        try check(Data(try legacyStore.readVersioned(key: noMarkerKey).value.utf8) == Data(noMarkerCurrent.utf8))
+        let markerFreeVersion = try legacyStore.readVersioned(key: noMarkerKey)
+        try check(try legacyStore.compareAndSetVersioned(key: noMarkerKey, expectedRevision: markerFreeVersion.revision,
+                                                         expectedFound: true, expectedValue: noMarkerCurrent, value: introducedMarker))
+        let stagedVersion = try legacyStore.readVersioned(key: noMarkerKey)
+        try check(try legacyStore.compareAndSetVersioned(key: noMarkerKey, expectedRevision: stagedVersion.revision,
+                                                         expectedFound: true, expectedValue: introducedMarker, value: noMarkerCurrent))
+        try expect(.invalidState) { try legacyStore.write(key: noMarkerKey, value: introducedMarker) }
+        try check(try legacyStore.readVersioned(key: noMarkerKey).value == noMarkerCurrent)
+
+        let emojiKey = "nerae.workout.draft.v1.101.event-emoji01"
+        let emojiInitial = try payloadWithSyncPending("101", "event-emoji01", syncPending: "🚴")
+        try check(try legacyStore.create(key: emojiKey, value: emojiInitial))
+        let emojiEscaped = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-emoji01","syncPending":"\ud83d\udeb4"}}"#
+        try legacyStore.write(key: emojiKey, value: emojiEscaped)
+        try check(try legacyStore.readVersioned(key: emojiKey).value == emojiEscaped)
+        let invalidSurrogate = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-emoji01","syncPending":"\ud83d"}}"#
+        try expect(.invalidState) { try legacyStore.write(key: emojiKey, value: invalidSurrogate) }
+        try check(try legacyStore.readVersioned(key: emojiKey).value == emojiEscaped)
+
+        // Malformed old marker values and duplicate JSON keys are not treated
+        // as an absent marker; failed writes preserve the exact old bytes.
+        let malformedPendingKey = "nerae.workout.draft.v1.101.event-badpend"
+        let malformedOld = try payloadWithSyncPending("101", "event-badpend", syncPending: NSNull())
+        let malformedOldBytes = Data(malformedOld.utf8)
+        legacyBackend.values[account(for: malformedPendingKey)] = malformedOldBytes
+        try expect(.unavailable) { try legacyStore.write(key: malformedPendingKey, value: try payload("101", "event-badpend", note: "must retain")) }
+        try expect(.unavailable) { _ = try legacyStore.readVersioned(key: malformedPendingKey) }
+        try check(legacyBackend.values[account(for: malformedPendingKey)] == malformedOldBytes)
+        let duplicatePendingKey = "nerae.workout.draft.v1.101.event-dup-pend"
+        let duplicateOld = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-dup-pend","syncPending":"first","syncPending":"second"}}"#
+        let duplicateOldBytes = Data(duplicateOld.utf8)
+        legacyBackend.values[account(for: duplicatePendingKey)] = duplicateOldBytes
+        try expect(.unavailable) { try legacyStore.write(key: duplicatePendingKey, value: try payload("101", "event-dup-pend", note: "must retain")) }
+        try expect(.unavailable) { _ = try legacyStore.readVersioned(key: duplicatePendingKey) }
+        try check(legacyBackend.values[account(for: duplicatePendingKey)] == duplicateOldBytes)
+        let escapedDuplicateKey = "nerae.workout.draft.v1.101.event-escaped1"
+        let escapedDuplicate = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-escaped1","syncPending":"first","sync\u0050ending":"second"}}"#
+        legacyBackend.values[account(for: escapedDuplicateKey)] = Data(escapedDuplicate.utf8)
+        try expect(.unavailable) { _ = try legacyStore.readVersioned(key: escapedDuplicateKey) }
+        try check(legacyBackend.values[account(for: escapedDuplicateKey)] == Data(escapedDuplicate.utf8))
+        let duplicateDraftKey = "nerae.workout.draft.v1.101.event-dupdraft"
+        let duplicateDraft = #"{"schema":1,"subjectId":"101","draft":{"clientEventId":"event-dupdraft"},"dr\u0061ft":{"clientEventId":"event-dupdraft","syncPending":"hidden"}}"#
+        legacyBackend.values[account(for: duplicateDraftKey)] = Data(duplicateDraft.utf8)
+        try expect(.unavailable) { _ = try legacyStore.readVersioned(key: duplicateDraftKey) }
+        try check(legacyBackend.values[account(for: duplicateDraftKey)] == Data(duplicateDraft.utf8))
+        let inventory = try legacyStore.discover(subject: "101", after: "")
+        let inventoryData = Data(inventory.utf8)
+        guard let listing = try JSONSerialization.jsonObject(with: inventoryData) as? [String: Any] else { throw Failure.assertion }
+        try check(listing["hasUnclassifiedItems"] as? Bool == true)
+        // Competing ordinary edits serialize, and whichever wins must retain
+        // the original marker byte sequence.
+        let racePendingKey = "nerae.workout.draft.v1.101.event-pendrace"
+        let racePendingValue = try payloadWithSyncPending("101", "event-pendrace", note: "baseline", syncPending: composedMarker)
+        legacyBackend.values[account(for: racePendingKey)] = Data(racePendingValue.utf8)
+        let racingLegacyStores = [NeraeProtectedDraftStore(backend: legacyBackend), NeraeProtectedDraftStore(backend: legacyBackend)]
+        let legacyResultLock = NSLock()
+        var legacyWins = 0
+        var legacyFailures = 0
+        DispatchQueue.concurrentPerform(iterations: 32) { index in
+            do {
+                let current = try racingLegacyStores[index % 2].readVersioned(key: racePendingKey).value
+                let update = try payloadWithSyncPending("101", "event-pendrace", note: "edit-\(index)", syncPending: composedMarker)
+                if try racingLegacyStores[index % 2].compareAndSet(key: racePendingKey, expected: current, value: update) {
+                    legacyResultLock.lock(); legacyWins += 1; legacyResultLock.unlock()
+                }
+            } catch { legacyResultLock.lock(); legacyFailures += 1; legacyResultLock.unlock() }
+        }
+        try check(legacyWins >= 1 && legacyFailures == 0)
+        try check(syncPendingBytes(try legacyStore.readVersioned(key: racePendingKey).value) == Data(composedMarker.utf8))
 
         let versionedBackend = FakeDraftBackend()
         let versionedStores = [NeraeProtectedDraftStore(backend: versionedBackend),

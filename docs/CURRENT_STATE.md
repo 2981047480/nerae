@@ -23,6 +23,7 @@
 - iOS 训练待发日志的普通和旧版写入也会保护已发送请求，阻止回退、删除和篡改；历史无法确认时保留数据并拒绝写入。Swift 合成测试和 iPhoneOS 源码类型检查通过，旧格式恢复、真实 Keychain、回执结算与手机同步仍需验证。[iOS 写入保护](evidence/P02/P02-13/ios-dispatch-bridge.md)
 - Android 草稿底层已支持版本读取和条件写入，旧草稿可保留原内容并在写入时升级；合成测试和 UTS 生成通过，现有页面仍使用旧存储接口，真实设备未验收。[Android 草稿](evidence/P02/P02-13/android-draft-versioned.md)
 - Android 旧版草稿写入会保留或拒绝变动待发字段，避免旧快照覆盖或复活待确认请求；版本化写入仍需上层正确协调。合成测试通过，设备和同步未验收。[待发保护](evidence/P02/P02-13/android-inline-pending.md)
+- iOS 草稿同样保护待发字段并保留普通旧字段的兼容性；Swift 合成测试、独立旧稿对照和 iPhoneOS 类型检查通过，真实设备与同步仍未验收。[iOS 待发保护](evidence/P02/P02-13/ios-inline-pending.md)
 - 自由训练创建请求可先固定内容再由同一接口发送，相关客户端测试和类型检查通过；持久化恢复及页面同步尚未接入。[请求准备](evidence/U02/U02-02/free-session-request.md)
 - 当前真实页面源码已用 5.33 编译为 App 和微信资源，并与四个原生桥在隔离的 iPhoneOS 样例工程中完成未签名链接；正式 AppKey、签名、设备运行和真实同步仍未完成。[iOS 构建证据](evidence/P02/P02-15/ios-real-entry-20261105.md)
 - iOS 新增内部 replay HTTPS 通道和草稿条件更新候选：本机 TLS 正反例、草稿并发／不确定写入合成测试与 iPhoneOS 源码类型检查通过。它们尚未接页面、验证完整回执或结算草稿，真实服务及手机未验证。[网络与草稿证据](evidence/P02/P02-13/ios-recovery-http-candidate.md)

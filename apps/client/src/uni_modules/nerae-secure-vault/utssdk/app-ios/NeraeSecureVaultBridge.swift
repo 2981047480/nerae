@@ -189,12 +189,14 @@ final class NeraeProtectedDraftStore {
         }
         let state = try Self.decode(data, owner: owner)
         guard let value = String(data: state.payload, encoding: .utf8) else { throw NeraeVaultError.unavailable }
+        _ = try Self.syncPendingBytes(in: state.payload, malformedError: .unavailable)
         return NeraeVersionedDraftRead(found: true, value: value, revision: state.revision)
     }
 
     func create(key: String, value: String) throws -> Bool {
         let owner = try Self.owner(key)
         guard Self.valid(value, owner: owner), let payload = value.data(using: .utf8) else { throw NeraeVaultError.invalidState }
+        _ = try Self.syncPendingBytes(in: payload, malformedError: .invalidState)
         Self.lock.lock()
         defer { Self.lock.unlock() }
         let data = try Self.encode(payload: payload, revision: "1")
@@ -216,6 +218,7 @@ final class NeraeProtectedDraftStore {
         defer { Self.lock.unlock() }
         guard let previous = try backend.read(account: owner.account) else { throw NeraeVaultError.conflict }
         let old = try Self.decode(previous, owner: owner)
+        try Self.requireLegacySyncPendingPreserved(from: old.payload, to: payload)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: payload, revision: next, owner: owner, account: owner.account, backend: backend)
     }
@@ -234,6 +237,7 @@ final class NeraeProtectedDraftStore {
         guard let previous = try backend.read(account: owner.account) else { return false }
         let old = try Self.decode(previous, owner: owner)
         guard old.payload == expectedData else { return false }
+        try Self.requireLegacySyncPendingPreserved(from: old.payload, to: data)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: data, revision: next, owner: owner, account: owner.account, backend: backend)
         return true
@@ -257,12 +261,15 @@ final class NeraeProtectedDraftStore {
               Self.valid(value, owner: owner), let newPayload = value.data(using: .utf8) else {
             throw NeraeVaultError.invalidState
         }
+        if expectedFound { _ = try Self.syncPendingBytes(in: Data(expectedValue.utf8), malformedError: .invalidState) }
+        _ = try Self.syncPendingBytes(in: newPayload, malformedError: .invalidState)
         Self.lock.lock()
         defer { Self.lock.unlock() }
         let previous = try backend.read(account: owner.account)
         let old: State
         if let previous { old = try Self.decode(previous, owner: owner) }
         else { old = State(payload: Data(), revision: "0") }
+        if previous != nil { _ = try Self.syncPendingBytes(in: old.payload, malformedError: .unavailable) }
         guard old.revision == expectedRevision, (previous != nil) == expectedFound,
               old.payload == Data(expectedValue.utf8) else { return nil }
         let next = try Self.nextRevision(old.revision)
@@ -306,6 +313,8 @@ final class NeraeProtectedDraftStore {
                   let itemOwner = try? Self.owner("nerae.workout.draft.v1.\(itemSubject).\(event)"),
                   itemOwner.account == account, let payload = String(data: decoded.payload, encoding: .utf8),
                   Self.valid(payload, owner: itemOwner) else { hasUnclassifiedItems = true; continue }
+            do { _ = try Self.syncPendingBytes(in: decoded.payload, malformedError: .unavailable) }
+            catch { hasUnclassifiedItems = true; continue }
             guard itemSubject == subject, cursor.isEmpty || before(cursor, event) else { continue }
             events.append(event)
             events.sort(by: before)
@@ -354,6 +363,48 @@ final class NeraeProtectedDraftStore {
             guard subject.utf8.elementsEqual(owner.subject.utf8), event.utf8.elementsEqual(owner.event.utf8) else { return false }
         }
         return true
+    }
+
+    /// Compatibility writers have no revision-bound authority to create,
+    /// change, or settle a dispatch marker. They may edit ordinary draft
+    /// fields only while preserving the marker's exact UTF-8 value bytes.
+    private static func requireLegacySyncPendingPreserved(from previous: Data, to proposed: Data) throws {
+        let oldValue = try syncPendingBytes(in: previous, malformedError: .unavailable)
+        let newValue = try syncPendingBytes(in: proposed, malformedError: .invalidState)
+        switch (oldValue, newValue) {
+        case (nil, nil):
+            return
+        case let (old?, new?) where old.elementsEqual(new):
+            return
+        default:
+            throw NeraeVaultError.invalidState
+        }
+    }
+
+    /// Returns nil only for an unambiguous absent field. Duplicate draft or
+    /// syncPending keys and non-string markers are not treated as absence.
+    private static func syncPendingBytes(in payload: Data, malformedError: NeraeVaultError) throws -> Data? {
+        guard let value = String(data: payload, encoding: .utf8),
+              let raw = try? JSONSerialization.jsonObject(with: payload),
+              let envelope = raw as? [String: Any],
+              let draft = envelope["draft"] as? [String: Any] else {
+            throw malformedError
+        }
+        // Foundation accepts duplicate keys. Scan only the two keys that
+        // decide whether a pending request exists, preserving compatibility
+        // with unrelated fields in older drafts.
+        var scanner = NeraeDraftPendingScanner(bytes: Array(value.utf8))
+        switch scanner.scan() {
+        case .absent:
+            guard !draft.keys.contains("syncPending") else { throw malformedError }
+            return nil
+        case .value(let bytes):
+            guard let marker = draft["syncPending"] as? String,
+                  bytes.elementsEqual(marker.utf8) else { throw malformedError }
+            return bytes
+        case .invalid:
+            throw malformedError
+        }
     }
 
     private static func validExpected(found: Bool, value: String) -> Bool {
@@ -424,6 +475,131 @@ final class NeraeProtectedDraftStore {
         guard let stored = try backend.read(account: account) else { throw NeraeVaultError.unavailable }
         let committed = try decode(stored, owner: owner)
         guard committed.revision == revision, committed.payload == payload else { throw NeraeVaultError.unavailable }
+    }
+}
+
+/// Checks only the root draft key and its syncPending field. The containing
+/// JSON is first validated by Foundation. Nested values are skipped with an
+/// explicit stack so old, deeply nested unknown fields do not recurse here.
+private struct NeraeDraftPendingScanner {
+    enum Result { case absent, value(Data), invalid }
+    let bytes: [UInt8]
+    private var index = 0
+
+    init(bytes: [UInt8]) { self.bytes = bytes }
+
+    mutating func scan() -> Result {
+        whitespace()
+        guard take(0x7b) else { return .invalid }
+        var seenDraft = false
+        var result: Result = .absent
+        whitespace()
+        if take(0x7d) { return .invalid }
+        while true {
+            whitespace()
+            guard let key = string(), colon() else { return .invalid }
+            if key == "draft" {
+                guard !seenDraft else { return .invalid }
+                seenDraft = true
+                result = draft()
+                if case .invalid = result { return .invalid }
+            } else if !skipValue() { return .invalid }
+            whitespace()
+            if take(0x7d) { break }
+            guard take(0x2c) else { return .invalid }
+        }
+        whitespace()
+        return seenDraft && index == bytes.count ? result : .invalid
+    }
+
+    private mutating func draft() -> Result {
+        whitespace()
+        guard take(0x7b) else { return .invalid }
+        var seen = false
+        var result: Result = .absent
+        whitespace()
+        if take(0x7d) { return result }
+        while true {
+            whitespace()
+            guard let key = string(), colon() else { return .invalid }
+            if key == "syncPending" {
+                guard !seen else { return .invalid }
+                seen = true
+                whitespace()
+                guard let value = string() else { return .invalid }
+                result = .value(Data(value.utf8))
+            } else if !skipValue() { return .invalid }
+            whitespace()
+            if take(0x7d) { return result }
+            guard take(0x2c) else { return .invalid }
+        }
+    }
+
+    private mutating func string() -> String? {
+        guard let range = stringRange() else { return nil }
+        var wrapped = Data([0x5b])
+        wrapped.append(contentsOf: bytes[range])
+        wrapped.append(0x5d)
+        guard let values = try? JSONSerialization.jsonObject(with: wrapped) as? [String],
+              values.count == 1 else { return nil }
+        return values[0]
+    }
+
+    private mutating func stringRange() -> Range<Int>? {
+        guard index < bytes.count, bytes[index] == 0x22 else { return nil }
+        let start = index
+        index += 1
+        while index < bytes.count {
+            let byte = bytes[index]
+            index += 1
+            if byte == 0x22 { return start..<index }
+            if byte == 0x5c {
+                guard index < bytes.count else { return nil }
+                index += 1
+            }
+        }
+        return nil
+    }
+
+    private mutating func skipValue() -> Bool {
+        whitespace()
+        guard index < bytes.count else { return false }
+        if bytes[index] == 0x22 { return stringRange() != nil }
+        if bytes[index] == 0x7b || bytes[index] == 0x5b {
+            var closes: [UInt8] = [bytes[index] == 0x7b ? 0x7d : 0x5d]
+            index += 1
+            while index < bytes.count {
+                let byte = bytes[index]
+                if byte == 0x22 {
+                    guard stringRange() != nil else { return false }
+                } else if byte == 0x7b || byte == 0x5b {
+                    closes.append(byte == 0x7b ? 0x7d : 0x5d)
+                    index += 1
+                } else if byte == 0x7d || byte == 0x5d {
+                    guard closes.popLast() == byte else { return false }
+                    index += 1
+                    if closes.isEmpty { return true }
+                } else {
+                    index += 1
+                }
+            }
+            return false
+        }
+        let start = index
+        while index < bytes.count && ![0x20, 0x09, 0x0a, 0x0d, 0x2c, 0x5d, 0x7d].contains(bytes[index]) {
+            index += 1
+        }
+        return index > start
+    }
+
+    private mutating func colon() -> Bool { whitespace(); return take(0x3a) }
+    private mutating func whitespace() {
+        while index < bytes.count && [0x20, 0x09, 0x0a, 0x0d].contains(bytes[index]) { index += 1 }
+    }
+    private mutating func take(_ byte: UInt8) -> Bool {
+        guard index < bytes.count, bytes[index] == byte else { return false }
+        index += 1
+        return true
     }
 }
 
