@@ -39,3 +39,12 @@ lower-level controller; the current page's single-owner rule narrows its
 reach. These findings are under repair and the candidate remains unmerged.
 Matching bytes at the next revision can show the content is present, but do
 not establish which writer performed the native CAS.
+
+After further isolated changes, the two prior probes passed, but a new
+independent probe found that editing while recovery read was in flight could
+clear the newer failed snapshot: the controller reported saved while reopening
+showed the older value. A subsequent persistence proof then described that
+older value and no unresolved branch remained. The same problem was reproduced
+through a single `TrainingEditorController`. The candidate remains unmerged;
+the save/recovery state transitions need a simpler, independently verified
+ownership model. This finding used synthetic ports, not a real device.

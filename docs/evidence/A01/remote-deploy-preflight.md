@@ -178,6 +178,12 @@ five-second sample. A separate project's approximately 1.5 GiB backup/restore
 directory had a recent modification time, but these observations do not
 establish the full cause of the preceding space decrease.
 
+A subsequent read-only check found approximately 2.95 GiB free. Another
+project's test directories were changing during the same period; the full
+cause of the space decrease was not established. The user was asked to finish
+the other workload or increase capacity to at least 7 GiB free before the
+database test. No Nerae database was started and no unrelated data was changed.
+
 The template-based proxy test was then bounded to 1 MiB per child-process file
 and required at least 4 GiB free for this short, non-database check. It passed
 on the host using the actual checked-in Caddy examples and cleaned only its
