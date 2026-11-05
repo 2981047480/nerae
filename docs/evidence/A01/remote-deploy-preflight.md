@@ -185,6 +185,14 @@ own synthetic files. The database persistence test's higher space guard was
 not changed, and that test remains unrun. Live Caddy coexistence and its admin
 boundary remain unresolved.
 
+A replacement Linux x86-64 candidate was built locally from commit `728db31`
+at `/private/tmp/nerae-real-deploy-candidate.20261105/out3/nerae-linux-amd64-728db3118895.tar.gz`.
+Its SHA-256 is `a1629a849ff6c35ccf8bf19eb9d5977f875c91d8142582be0cc55526b33c9dcc`.
+Archive member safety, all packaged checksums and byte-for-byte agreement of
+both proxy examples with that commit passed an offline inspection. It contains
+no environment file, has not been copied to the host, and has not been started
+or checked against a real database. It does not resolve the deployment gates.
+
 The current IP certificate was accepted by this Mac's trust store on
 2026-11-05 and is valid from 2026-11-03 20:11:57 UTC through 2026-11-10
 12:11:56 UTC. Automatic renewal and iPhone trust remain unverified.

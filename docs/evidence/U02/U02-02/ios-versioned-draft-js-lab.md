@@ -29,3 +29,13 @@ they reach protected storage. A user-visible recovery flow and an appropriate
 durability boundary are needed before this candidate is enabled. The
 candidate still needs repository import/platform-factory adaptation, project
 regression tests and actual Keychain/device verification.
+
+On 2026-11-05 a newer isolated candidate added explicit retry after a native
+write result was unknown. Independent probes then found two additional gaps:
+one failed branch could be replaced by another controller and a persistence
+proof issued, and a session change after an asynchronous read could still be
+reported as a successful retry. The former was reproduced through the public
+lower-level controller; the current page's single-owner rule narrows its
+reach. These findings are under repair and the candidate remains unmerged.
+Matching bytes at the next revision can show the content is present, but do
+not establish which writer performed the native CAS.
