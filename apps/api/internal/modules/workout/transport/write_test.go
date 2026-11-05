@@ -294,6 +294,58 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		t.Fatal("another subject received or detected the creation receipt")
 	}
 
+	// An expired transport receipt does not erase the workout's durable
+	// subject/event uniqueness or its original creation-request binding.
+	expiredCreate, err := db.ExecContext(ctx, `UPDATE transport_idempotency_record SET created_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 2 HOUR),expires_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 HOUR) WHERE actor_id=? AND method=? AND route=? AND request_key=?`, claimsA.SubjectID, "POST", "/me/sessions", []byte("create-key-0001"))
+	if err != nil {
+		t.Fatal("could not expire the synthetic creation receipt")
+	}
+	if count, err := expiredCreate.RowsAffected(); err != nil || count != 1 {
+		t.Fatal("synthetic creation receipt expiry did not affect exactly one row")
+	}
+	if got := request(http.MethodPost, "/me/sessions/replay", createBody, tokenA, "create-key-0001"); got.status != http.StatusServiceUnavailable || got.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatal("expired creation replay did not fail closed")
+	}
+	recreated := request(http.MethodPost, "/me/sessions", createBody, tokenAAgain, "create-key-0001")
+	var recoveredSession struct {
+		ID            string `json:"id"`
+		ClientEventID string `json:"clientEventId"`
+		Version       int    `json:"version"`
+	}
+	if recreated.status != http.StatusCreated || json.Unmarshal(recreated.body, &recoveredSession) != nil ||
+		recoveredSession.ID != createdSession.ID || recoveredSession.ClientEventID != createdSession.ClientEventID || recoveredSession.Version != 1 {
+		t.Fatalf("original creation did not recover the same workout after receipt expiry: %d %s", recreated.status, recreated.body)
+	}
+	changedCreation := []byte(fmt.Sprintf(`{"source":"free","date":%q,"timeZone":"Asia/Shanghai","clientEventId":"http-write-event-001"}`, date))
+	if got := request(http.MethodPost, "/me/sessions", changedCreation, tokenA, "create-changed-key-01"); got.status != http.StatusConflict {
+		t.Fatalf("changed creation request for an existing event returned %d, want 409", got.status)
+	}
+	originalDate, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		t.Fatal("could not parse the creation test date")
+	}
+	changedDate := originalDate.AddDate(0, 0, -1).Format("2006-01-02")
+	changedCreationDate := []byte(fmt.Sprintf(`{"source":"free","date":%q,"timeZone":"UTC","clientEventId":"http-write-event-001"}`, changedDate))
+	if got := request(http.MethodPost, "/me/sessions", changedCreationDate, tokenA, "create-date-key-001"); got.status != http.StatusConflict {
+		t.Fatalf("changed creation date for an existing event returned %d, want 409", got.status)
+	}
+	otherSubjectCreate := request(http.MethodPost, "/me/sessions", createBody, tokenB, "create-key-0001")
+	var otherSession struct {
+		ID string `json:"id"`
+	}
+	if otherSubjectCreate.status != http.StatusCreated || json.Unmarshal(otherSubjectCreate.body, &otherSession) != nil ||
+		otherSession.ID == "" || otherSession.ID == createdSession.ID {
+		t.Fatal("another subject did not receive its own distinct workout")
+	}
+	var otherOwner uint64
+	if err := db.QueryRowContext(ctx, `SELECT user_id FROM workout_session WHERE id=?`, otherSession.ID).Scan(&otherOwner); err != nil || fmt.Sprint(otherOwner) != claimsB.SubjectID {
+		t.Fatal("the other subject's workout did not belong to that subject")
+	}
+	var eventCount int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id=? AND client_event_id=?`, claimsA.SubjectID, []byte("http-write-event-001")).Scan(&eventCount); err != nil || eventCount != 1 {
+		t.Fatal("creation recovery created more than one workout for the event")
+	}
+
 	var sessionID uint64
 	if _, err := fmt.Sscan(createdSession.ID, &sessionID); err != nil || sessionID == 0 {
 		t.Fatal("created session ID was not numeric")
@@ -321,6 +373,44 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		len(savedDetail.ExerciseEntryKeys) != 1 || savedDetail.ExerciseEntryKeys[0] != "write-entry-001" || len(savedDetail.Sets) != 1 ||
 		savedDetail.Sets[0].RecordKey != "write-record-001" || savedDetail.Sets[0].WeightKg.String() != "42.50" || savedDetail.Sets[0].RPE.String() != "7.5" || !savedDetail.Sets[0].Completed || savedDetail.Sets[0].Name != "卧推" {
 		t.Fatalf("saved response lost schema data or decimal precision: %s", saved.body)
+	}
+	// While the original key is retained, a retry returns its historical empty
+	// version 1, not the later saved groups.
+	historicalCreate := request(http.MethodPost, "/me/sessions", createBody, tokenA, "create-key-0001")
+	var historicalDetail struct {
+		ID      string            `json:"id"`
+		Version int               `json:"version"`
+		Sets    []json.RawMessage `json:"sets"`
+	}
+	if historicalCreate.status != http.StatusCreated || !bytes.Equal(historicalCreate.body, recreated.body) ||
+		historicalCreate.headers.Get("Idempotency-Replayed") != "true" || json.Unmarshal(historicalCreate.body, &historicalDetail) != nil ||
+		historicalDetail.ID != createdSession.ID || historicalDetail.Version != 1 || len(historicalDetail.Sets) != 0 {
+		t.Fatal("unexpired creation key did not return its historical receipt")
+	}
+	agedCreateAfterSave, err := db.ExecContext(ctx, `UPDATE transport_idempotency_record SET created_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 2 HOUR),expires_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 HOUR) WHERE actor_id=? AND method=? AND route=? AND request_key=?`, claimsA.SubjectID, "POST", "/me/sessions", []byte("create-key-0001"))
+	if err != nil {
+		t.Fatal("could not expire the creation receipt after saving a group")
+	}
+	if count, err := agedCreateAfterSave.RowsAffected(); err != nil || count != 1 {
+		t.Fatal("creation receipt expiry after saving did not affect exactly one row")
+	}
+	currentOriginalKey := request(http.MethodPost, "/me/sessions", createBody, tokenA, "create-key-0001")
+	// A later independent creation-key retry returns current state; it must not
+	// reset groups or be mistaken for the historical empty creation snapshot.
+	currentCreate := request(http.MethodPost, "/me/sessions", createBody, tokenAAgain, "create-later-key-001")
+	for _, result := range []httpResult{currentOriginalKey, currentCreate} {
+		var currentDetail struct {
+			ID      string `json:"id"`
+			Version int    `json:"version"`
+			Sets    []struct {
+				RecordKey string `json:"recordKey"`
+			} `json:"sets"`
+		}
+		if result.status != http.StatusCreated || json.Unmarshal(result.body, &currentDetail) != nil ||
+			currentDetail.ID != createdSession.ID || currentDetail.Version != 2 || len(currentDetail.Sets) != 1 ||
+			currentDetail.Sets[0].RecordKey != "write-record-001" {
+			t.Fatalf("later creation retry lost current workout state: %d %s", result.status, result.body)
+		}
 	}
 	savedReplay := request(http.MethodPost, setsPath, setBody, tokenA, "sets-key-0001")
 	if savedReplay.status != http.StatusOK || !bytes.Equal(savedReplay.body, saved.body) || savedReplay.headers.Get("Idempotency-Key-Expires-At") != saved.headers.Get("Idempotency-Key-Expires-At") {
