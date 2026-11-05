@@ -28,7 +28,7 @@ private class DraftTestBackend : TrainingDraftBackend {
 
     override fun aliases(): List<String> = keys.keys.map { "$TEST_ALIAS_PREFIX$it" } + extraAliases.toList()
 
-    override fun vault(digest: String): NeraeCredentialVault {
+    override fun slot(digest: String): TrainingDraftVault {
         val storage = object : VaultStorage {
             override fun read(): ByteArray? = files[digest]?.copyOf()
             override fun writeAtomically(value: ByteArray) {
@@ -49,7 +49,12 @@ private class DraftTestBackend : TrainingDraftBackend {
         val validator = VaultPayloadValidator { value ->
             value.startsWith("{") && value.endsWith("}") && value.toByteArray(StandardCharsets.UTF_8).size <= 64 * 1024
         }
-        return NeraeCredentialVault(storage, vaultKeys, Any(), validator)
+        return TrainingDraftVault(storage, vaultKeys, validator)
+    }
+
+    fun legacyVault(digest: String): NeraeCredentialVault {
+        val slot = slot(digest)
+        return NeraeCredentialVault(slot.storage, slot.keys, Any(), slot.validator)
     }
 
     fun rawDigest(key: String): String = MessageDigest.getInstance("SHA-256")
@@ -167,7 +172,7 @@ fun main() {
 
     val mismatchedBackend = DraftTestBackend()
     val mismatchedId = mismatchedBackend.rawDigest(firstKey)
-    mismatchedBackend.vault(mismatchedId).compareAndSet(false, "", draftPayload("202", "event-foreign1"))
+    mismatchedBackend.legacyVault(mismatchedId).compareAndSet(false, "", draftPayload("202", "event-foreign1"))
     val mismatchedStore = newStore(mismatchedBackend)
     try { mismatchedStore.read(firstKey); error("wrong-owner envelope was accepted") }
     catch (_: VaultFailure) { }

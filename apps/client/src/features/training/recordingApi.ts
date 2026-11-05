@@ -154,6 +154,16 @@ export interface FreeSessionInput {
   clientEventId: string
 }
 
+/** Immutable request bytes prepared before a free-session create is dispatched. */
+export interface PreparedFreeSessionRequest {
+  readonly method: 'POST'
+  readonly path: '/me/sessions'
+  readonly idempotencyKey: string
+  readonly body: string
+}
+
+const preparedFreeSessionRequests = new WeakMap<object, { owner: RecordingApi; used: boolean }>()
+
 export interface FinishInput {
   expectedVersion: number
   date?: string
@@ -580,7 +590,7 @@ export class RecordingApi {
   }
 
   private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
-    data?: unknown, idempotencyKey?: string): Promise<{
+    data?: unknown, idempotencyKey?: string, exactBody?: string): Promise<{
       data: unknown; headers?: Readonly<Record<string, string>>; lease: RecordingLease; isSameCredential: () => boolean
     }> {
     const { subjectId, generation, accessToken, isSameCredential } = this.captureCredential()
@@ -591,7 +601,10 @@ export class RecordingApi {
       header['Idempotency-Key'] = idempotencyKey as string
     }
     let encoded: string | undefined
-    if (data !== undefined) {
+    if (exactBody !== undefined) {
+      if (data !== undefined || typeof exactBody !== 'string') throw new RecordingApiError('invalid_request')
+      encoded = exactBody
+    } else if (data !== undefined) {
       try { encoded = JSON.stringify(data) } catch { throw new RecordingApiError('invalid_request') }
       if (typeof encoded !== 'string') throw new RecordingApiError('invalid_request')
     }
@@ -679,8 +692,8 @@ export class RecordingApi {
   }
 
   private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
-    data?: unknown, idempotencyKey?: string): Promise<ScopedSessionDetail> {
-    const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey)
+    data?: unknown, idempotencyKey?: string, exactBody?: string): Promise<ScopedSessionDetail> {
+    const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey, exactBody)
     const idempotencyKeyExpiresAt = method === 'POST' ? writeExpiry(response.headers) : undefined
     let detail: WorkoutSessionDetail
     try { detail = parseSessionDetail(response.data) }
@@ -725,16 +738,46 @@ export class RecordingApi {
     return Object.freeze({ lease: Object.freeze(response.lease), ...parsed })
   }
 
-  createFreeSession(input: FreeSessionInput, idempotencyKey: string): Promise<ScopedSessionDetail> {
+  prepareFreeSessionRequest(input: FreeSessionInput, idempotencyKey: string): PreparedFreeSessionRequest {
     if (!validKey(input.clientEventId) || !validDate(input.date) || !validTimeZone(input.timeZone)) {
       throw new RecordingApiError('invalid_request')
     }
-    return this.call('POST', '/me/sessions', 201, undefined, {
-      source: 'free', date: input.date, timeZone: input.timeZone, clientEventId: input.clientEventId,
-    }, idempotencyKey).then(snapshot => {
-      if (snapshot.detail.clientEventId !== input.clientEventId) throw new RecordingApiError('reconcile_required')
+    if (!validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
+    this.captureCredential()
+    let body: string
+    try {
+      body = JSON.stringify({ source: 'free', date: input.date, timeZone: input.timeZone, clientEventId: input.clientEventId })
+    } catch { throw new RecordingApiError('invalid_request') }
+    if (typeof body !== 'string') throw new RecordingApiError('invalid_request')
+    const prepared = Object.freeze({ method: 'POST' as const, path: '/me/sessions' as const, idempotencyKey, body })
+    preparedFreeSessionRequests.set(prepared, { owner: this, used: false })
+    return prepared
+  }
+
+  /** Dispatch a request prepared by this API instance exactly once. */
+  sendPreparedFreeSessionRequest(prepared: PreparedFreeSessionRequest): Promise<ScopedSessionDetail> {
+    const proof = prepared !== null && typeof prepared === 'object' ? preparedFreeSessionRequests.get(prepared) : undefined
+    if (!proof || proof.owner !== this || proof.used || prepared.method !== 'POST' ||
+      prepared.path !== '/me/sessions' || !validIdempotencyKey(prepared.idempotencyKey) ||
+      typeof prepared.body !== 'string' || !Object.isFrozen(prepared)) {
+      throw new RecordingApiError('invalid_request')
+    }
+    proof.used = true
+    let submitted: unknown
+    try { submitted = JSON.parse(prepared.body) } catch { throw new RecordingApiError('invalid_request') }
+    if (!object(submitted) || submitted.source !== 'free' || !validKey(submitted.clientEventId) ||
+      !validDate(submitted.date) || !validTimeZone(submitted.timeZone) ||
+      Object.keys(submitted).sort().join(',') !== 'clientEventId,date,source,timeZone') {
+      throw new RecordingApiError('invalid_request')
+    }
+    return this.call('POST', prepared.path, 201, undefined, undefined, prepared.idempotencyKey, prepared.body).then(snapshot => {
+      if (snapshot.detail.clientEventId !== submitted.clientEventId) throw new RecordingApiError('reconcile_required')
       return snapshot
     }).catch(reconcileWriteResponse)
+  }
+
+  createFreeSession(input: FreeSessionInput, idempotencyKey: string): Promise<ScopedSessionDetail> {
+    return this.sendPreparedFreeSessionRequest(this.prepareFreeSessionRequest(input, idempotencyKey))
   }
 
   readSession(id: string): Promise<ScopedSessionDetail> {

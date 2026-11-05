@@ -246,6 +246,10 @@ private func recoveryBindingTests() throws {
     let first = try journal.recoveryIntent(operationKey: key, subject: "101")
     try check(first.body == body && first.idempotencyKey == "request-00000001" && first.revision == sent.revision)
     try check(!String(describing: first).contains(body) && !String(reflecting: first).contains("request-00000001"))
+    // Ordinary/legacy CAS must not undo an already-issued first-send claim.
+    try expect(.invalidState) {
+        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready)
+    }
     let restarted = NeraeVersionedTrainingJournal(legacy: legacy, current: current)
     try check(try restarted.recoveryIntent(operationKey: key, subject: "101").body == body)
     try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "0101") }
@@ -255,32 +259,29 @@ private func recoveryBindingTests() throws {
     }
     try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: uncertain)
     try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: inFlight)
+    try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: inFlight) }
 
-    let nonCanonical = try mutateRegistryEntry(inFlight, key: key) { entry in
+    let nonCanonical = try mutateRegistryEntry(uncertain, key: key) { entry in
         guard var request = entry["request"] as? [String: Any] else { throw Failure.assertion }
         request["body"] = "{ \"expectedVersion\":1,\"note\":\"test\" }"
         entry["request"] = request
     }
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: nonCanonical)
-    try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: nonCanonical, value: inFlight)
+    try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: nonCanonical) }
+    try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
     for (field, replacement) in [("body", "{\"note\":\"test\",\"expectedVersion\":1}"),
                                  ("idempotencyKey", "request-00000002"), ("path", "/me/sessions/124/finish")] {
-        let changed = try mutateRegistryEntry(inFlight, key: key) { entry in
+        let changed = try mutateRegistryEntry(uncertain, key: key) { entry in
             guard var request = entry["request"] as? [String: Any] else { throw Failure.assertion }
             request[field] = replacement
             entry["request"] = request
         }
-        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: changed)
-        try expect(.conflict) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
-        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changed, value: inFlight)
+        try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: changed) }
+        try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
     }
     for (field, replacement) in [("subjectId", "102"), ("clientEventId", "event-test-0002")] {
-        let changed = try mutateRegistryEntry(inFlight, key: key) { $0[field] = replacement }
-        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: changed)
-        try expect(.invalidState) { _ = try journal.recoveryIntent(operationKey: key, subject: "101") }
-        try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changed, value: inFlight)
+        let changed = try mutateRegistryEntry(uncertain, key: key) { $0[field] = replacement }
+        try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: changed) }
+        try check(try journal.recoveryIntent(operationKey: key, subject: "101").body == body)
     }
     let afterABA = try journal.recoveryIntent(operationKey: key, subject: "101")
     try check(afterABA.revision != first.revision && afterABA.body == first.body)
@@ -296,26 +297,28 @@ private func recoveryBindingTests() throws {
     oldCurrent.data = try PropertyListSerialization.data(fromPropertyList: v3, format: .binary, options: 0)
     let oldJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: oldCurrent)
     let oldRead = try oldJournal.read()
-    try check(oldRead.value == inFlight)
+    try check(oldRead.value == uncertain)
     try expect(.unavailable) { _ = try oldJournal.recoveryIntent(operationKey: key, subject: "101") }
-    try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: inFlight)
+    try expect(.unavailable) { try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: uncertain, value: uncertain) }
     try expect(.unavailable) { _ = try oldJournal.recoveryIntent(operationKey: key, subject: "101") }
     let migrated = try oldJournal.read()
-    try expect(.unavailable) { _ = try oldJournal.claimFirstSend(expectedRevision: migrated.revision, expectedValue: inFlight, operationKey: key, nextValue: inFlight) }
+    try expect(.unavailable) { _ = try oldJournal.claimFirstSend(expectedRevision: migrated.revision, expectedValue: uncertain, operationKey: key, nextValue: uncertain) }
     guard let migratedData = oldCurrent.data,
           let migratedObject = try PropertyListSerialization.propertyList(from: migratedData, options: [], format: nil) as? [String: Any] else { throw Failure.assertion }
     try check(migratedObject["activeDispatchEvents"] as? [String] == v3["activeDispatchEvents"] as? [String])
     try check(migratedObject["dispatchMarkers"] as? [String] == v3["dispatchMarkers"] as? [String])
-    try check((migratedObject["version"] as? NSNumber)?.intValue == 4)
+    try check((migratedObject["version"] as? NSNumber)?.intValue == 3)
 
     let raceCurrent = SyntheticBackend()
     raceCurrent.data = try PropertyListSerialization.data(fromPropertyList: v3, format: .binary, options: 0)
     let raceOne = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: raceCurrent)
     let raceTwo = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: raceCurrent)
     let observed = try raceOne.read()
-    _ = try raceOne.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: inFlight, newFound: true, newValue: inFlight)
-    try expect(.conflict) {
-        _ = try raceTwo.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: inFlight, newFound: true, newValue: inFlight)
+    try expect(.unavailable) {
+        _ = try raceOne.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: uncertain, newFound: true, newValue: uncertain)
+    }
+    try expect(.unavailable) {
+        _ = try raceTwo.compareAndSet(expectedRevision: observed.revision, expectedFound: true, expectedValue: uncertain, newFound: true, newValue: uncertain)
     }
 
     // A V3 slot without active work can migrate and retains prior history.
@@ -323,15 +326,18 @@ private func recoveryBindingTests() throws {
     idleCurrent.data = try encodedDispatchEnvelope(value: ready, historyCount: 2, activeCount: 0)
     let idleJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: idleCurrent)
     let idle = try idleJournal.read()
-    let newClaim = try idleJournal.claimFirstSend(expectedRevision: idle.revision, expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let idleWrite = try idleJournal.compareAndSet(expectedRevision: idle.revision, expectedFound: true,
+                                                  expectedValue: ready, newFound: true, newValue: ready)
+    let newClaim = try idleJournal.claimFirstSend(expectedRevision: idleWrite.revision, expectedValue: ready,
+                                                  operationKey: key, nextValue: inFlight)
     try check(try idleJournal.recoveryIntent(operationKey: key, subject: "101").revision == newClaim.revision)
     guard let idleData = idleCurrent.data,
           let idleObject = try PropertyListSerialization.propertyList(from: idleData, options: [], format: nil) as? [String: Any],
           let history = idleObject["dispatchMarkers"] as? [String] else { throw Failure.assertion }
     try check(history.count == 4 && history.contains(String(format: "%064x", 0)) && history.contains(String(format: "%064x", 1)))
 
-    // Two active events may each have valid global history markers. Replacing
-    // A's request with B's cannot borrow B's markers as A's binding.
+    // Two active events may coexist, but ordinary CAS cannot splice one
+    // request into the other operation even if both have valid markers.
     let (otherKey, otherReady, _) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002",
                                                         bodyOverride: "{\"expectedVersion\":1,\"note\":\"other\"}", path: "/me/sessions/123/finish")
     let joinedBackend = SyntheticBackend()
@@ -352,8 +358,9 @@ private func recoveryBindingTests() throws {
     guard let otherEntry = try JSONSerialization.jsonObject(with: Data(otherEntryRaw.utf8)) as? [String: Any],
           let otherRequest = otherEntry["request"] as? [String: Any] else { throw Failure.assertion }
     let spliced = try mutateRegistryEntry(bothSent, key: key) { $0["request"] = otherRequest }
-    try joined.compareAndSetLegacy(expectedFound: true, expectedValue: bothSent, value: spliced)
-    try expect(.conflict) { _ = try joined.recoveryIntent(operationKey: key, subject: "101") }
+    try expect(.invalidState) { try joined.compareAndSetLegacy(expectedFound: true, expectedValue: bothSent, value: spliced) }
+    try check(try joined.recoveryIntent(operationKey: key, subject: "101").idempotencyKey == "request-00000001")
+    try check(try joined.recoveryIntent(operationKey: otherKey, subject: "101").idempotencyKey == "request-00000002")
 
     // A malformed binding does not delete, replace, or silently trust the item.
     guard var corrupt = try PropertyListSerialization.propertyList(from: saved, options: [], format: nil) as? [String: Any],
@@ -405,63 +412,83 @@ private func dispatchMarkerTests() throws {
     let claimed = try journal.claimFirstSend(expectedRevision: initial.revision, expectedValue: ready,
                                              operationKey: key, nextValue: inFlight)
     try check(claimed.value == inFlight && claimed.revision == "2")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready)
-    let restored = try journal.read()
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: restored.revision, expectedValue: ready,
-                                       operationKey: key, nextValue: inFlight)
+    try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready) }
+    let altered = inFlight.replacingOccurrences(of: "request-00000001", with: "request-00000002")
+    try expect(.invalidState) {
+        _ = try journal.compareAndSet(expectedRevision: claimed.revision, expectedFound: true,
+                                      expectedValue: inFlight, newFound: true, newValue: altered)
     }
-    let deleted = try journal.compareAndSet(expectedRevision: restored.revision, expectedFound: true,
-                                            expectedValue: ready, newFound: false, newValue: "")
-    let recreated = try journal.compareAndSet(expectedRevision: deleted.revision, expectedFound: false,
-                                              expectedValue: "", newFound: true, newValue: ready)
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: recreated.revision, expectedValue: ready,
-                                       operationKey: key, nextValue: inFlight)
+    try expect(.invalidState) {
+        _ = try journal.compareAndSet(expectedRevision: claimed.revision, expectedFound: true,
+                                      expectedValue: inFlight, newFound: false, newValue: "")
     }
-    let changedKeyReady = ready.replacingOccurrences(of: "request-00000001", with: "request-00000002")
-    let changedKeyInFlight = inFlight.replacingOccurrences(of: "request-00000001", with: "request-00000002")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: changedKeyReady)
-    let changedKeyState = try journal.read()
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: changedKeyState.revision, expectedValue: changedKeyReady,
-                                       operationKey: key, nextValue: changedKeyInFlight)
+    try check(try journal.read().value == inFlight)
+    try check(try journal.recoveryIntent(operationKey: key, subject: "101").idempotencyKey == "request-00000001")
+
+    let versionedTransitionBackend = SyntheticBackend()
+    let versionedTransition = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: versionedTransitionBackend)
+    let uncertainStart = try versionedTransition.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                                                expectedValue: "", newFound: true, newValue: ready)
+    let uncertainClaim = try versionedTransition.claimFirstSend(expectedRevision: uncertainStart.revision,
+                                                                 expectedValue: ready, operationKey: key, nextValue: inFlight)
+    let uncertainValue = try mutateRegistryEntry(inFlight, key: key) { entry in
+        entry["state"] = "uncertain"; entry["revision"] = 3; entry.removeValue(forKey: "attemptGeneration")
     }
-    let (_, changedPathReady, changedPathInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003",
-        bodyOverride: "{\"expectedVersion\":1}", path: "/me/sessions/123/finish")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changedKeyReady, value: changedPathReady)
-    let changedPathState = try journal.read()
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: changedPathState.revision, expectedValue: changedPathReady,
-                                       operationKey: key, nextValue: changedPathInFlight)
+    let uncertainty = try versionedTransition.compareAndSet(expectedRevision: uncertainClaim.revision, expectedFound: true,
+                                                             expectedValue: inFlight, newFound: true, newValue: uncertainValue)
+    let retainedIntent = try versionedTransition.recoveryIntent(operationKey: key, subject: "101")
+    try check(uncertainty.value == uncertainValue && retainedIntent.idempotencyKey == "request-00000001" &&
+              !retainedIntent.body.isEmpty)
+    try expect(.invalidState) {
+        _ = try versionedTransition.compareAndSet(expectedRevision: uncertainty.revision, expectedFound: true,
+                                                  expectedValue: uncertainValue, newFound: true, newValue: inFlight)
     }
-    let (sameKeyOtherEvent, sameKeyReady, sameKeyInFlight) = try dispatchFixtures(event: "event-test-0002")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: changedPathReady, value: sameKeyReady)
-    let sameKeyState = try journal.read()
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: sameKeyState.revision, expectedValue: sameKeyReady,
-                                       operationKey: sameKeyOtherEvent, nextValue: sameKeyInFlight)
+
+    let (unicodeGenerationKey, _, _) = try dispatchFixtures()
+    let (_, unicodeReadyBase, _) = try dispatchFixtures()
+    let unicodeGenerationReady = try mutateRegistryEntry(unicodeReadyBase, key: unicodeGenerationKey) {
+        $0["createdGeneration"] = "generation-é"
     }
-    let reorderedBody = "{\"source\":\"free\",\"date\":\"2026-11-03\",\"clientEventId\":\"event-test-0001\"}"
-    let (_, reorderedReady, reorderedInFlight) = try dispatchFixtures(idempotencyKey: "request-00000003", bodyOverride: reorderedBody)
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: sameKeyReady, value: reorderedReady)
-    let reorderedState = try journal.read()
-    try expect(.conflict) {
-        _ = try journal.claimFirstSend(expectedRevision: reorderedState.revision, expectedValue: reorderedReady,
-                                       operationKey: key, nextValue: reorderedInFlight)
+    let unicodeInFlight = try mutateRegistryEntry(unicodeGenerationReady, key: unicodeGenerationKey) {
+        $0["state"] = "in_flight"; $0["revision"] = 2; $0["attemptGeneration"] = "attempt-1"
     }
-    let (otherKey, otherReady, otherInFlight) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: reorderedReady, value: otherReady)
-    let otherState = try journal.read()
-    let otherClaim = try journal.claimFirstSend(expectedRevision: otherState.revision, expectedValue: otherReady,
-                                                operationKey: otherKey, nextValue: otherInFlight)
-    try check(otherClaim.value == otherInFlight)
-    let (otherSubjectKey, otherSubjectReady, otherSubjectInFlight) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002", subject: "102")
-    try journal.compareAndSetLegacy(expectedFound: true, expectedValue: otherInFlight, value: otherSubjectReady)
-    let otherSubjectState = try journal.read()
-    let otherSubjectClaim = try journal.claimFirstSend(expectedRevision: otherSubjectState.revision, expectedValue: otherSubjectReady,
-                                                       operationKey: otherSubjectKey, nextValue: otherSubjectInFlight)
-    try check(otherSubjectClaim.value == otherSubjectInFlight)
+    let unicodeBackend = SyntheticBackend()
+    let unicodeJournal = NeraeVersionedTrainingJournal(legacy: SyntheticBackend(), current: unicodeBackend)
+    let unicodeBase = try unicodeJournal.compareAndSet(expectedRevision: "0", expectedFound: false,
+                                                       expectedValue: "", newFound: true, newValue: unicodeGenerationReady)
+    let unicodeGenerationClaim = try unicodeJournal.claimFirstSend(expectedRevision: unicodeBase.revision,
+                                                                  expectedValue: unicodeGenerationReady, operationKey: unicodeGenerationKey,
+                                                                  nextValue: unicodeInFlight)
+    let canonicallyEquivalentGeneration = try mutateRegistryEntry(unicodeInFlight, key: unicodeGenerationKey) {
+        $0["createdGeneration"] = "generation-e\u{301}"
+    }
+    try expect(.invalidState) {
+        _ = try unicodeJournal.compareAndSet(expectedRevision: unicodeGenerationClaim.revision, expectedFound: true,
+                                             expectedValue: unicodeInFlight, newFound: true,
+                                             newValue: canonicallyEquivalentGeneration)
+    }
+
+    // Other entries may change while an active operation remains byte-stable.
+    let (otherKey, otherReady, _) = try dispatchFixtures(event: "event-test-0002", idempotencyKey: "request-00000002")
+    var joinedEntries = try registryEntries(inFlight)
+    joinedEntries[otherKey] = try registryEntries(otherReady)[otherKey]
+    let bothReady = try jsonString(["schema": 1, "entries": joinedEntries])
+    let withOther = try journal.compareAndSet(expectedRevision: claimed.revision, expectedFound: true,
+                                              expectedValue: inFlight, newFound: true, newValue: bothReady)
+    let bothSent = try mutateRegistryEntry(bothReady, key: otherKey) { entry in
+        entry["state"] = "in_flight"; entry["revision"] = 2; entry["attemptGeneration"] = "generation-1"
+    }
+    _ = try journal.claimFirstSend(expectedRevision: withOther.revision, expectedValue: bothReady,
+                                   operationKey: otherKey, nextValue: bothSent)
+    try check(try journal.recoveryIntent(operationKey: key, subject: "101").idempotencyKey == "request-00000001")
+    try check(try journal.recoveryIntent(operationKey: otherKey, subject: "101").idempotencyKey == "request-00000002")
+    let otherEntryRaw = try registryEntries(bothSent)[otherKey]!
+    guard let otherEntry = try JSONSerialization.jsonObject(with: Data(otherEntryRaw.utf8)) as? [String: Any],
+          let otherRequest = otherEntry["request"] as? [String: Any] else { throw Failure.assertion }
+    let spliced = try mutateRegistryEntry(bothSent, key: key) { $0["request"] = otherRequest }
+    try expect(.invalidState) { try journal.compareAndSetLegacy(expectedFound: true, expectedValue: bothSent, value: spliced) }
+    try check(try journal.recoveryIntent(operationKey: key, subject: "101").idempotencyKey == "request-00000001")
+    try check(try journal.recoveryIntent(operationKey: otherKey, subject: "101").idempotencyKey == "request-00000002")
 
     let oldCurrent = SyntheticBackend()
     oldCurrent.data = try encodedEnvelope(revision: "5", found: true, value: ready)
@@ -472,7 +499,7 @@ private func dispatchMarkerTests() throws {
         _ = try oldJournal.claimFirstSend(expectedRevision: old.revision, expectedValue: ready,
                                           operationKey: key, nextValue: inFlight)
     }
-    try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: ready)
+    try expect(.unavailable) { try oldJournal.compareAndSetLegacy(expectedFound: true, expectedValue: ready, value: ready) }
     let migrated = try oldJournal.read()
     try expect(.unavailable) {
         _ = try oldJournal.claimFirstSend(expectedRevision: migrated.revision, expectedValue: ready,
@@ -528,10 +555,11 @@ private func dispatchMarkerTests() throws {
     uncertainCurrent.applyThenFail = false
     let uncertain = try uncertainJournal.read()
     try check(uncertain.value == inFlight)
-    try uncertainJournal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready)
+    try expect(.invalidState) { try uncertainJournal.compareAndSetLegacy(expectedFound: true, expectedValue: inFlight, value: ready) }
     let rewound = try uncertainJournal.read()
-    try expect(.conflict) {
-        _ = try uncertainJournal.claimFirstSend(expectedRevision: rewound.revision, expectedValue: ready,
+    try check(rewound.value == inFlight)
+    try expect(.invalidState) {
+        _ = try uncertainJournal.claimFirstSend(expectedRevision: rewound.revision, expectedValue: inFlight,
                                                 operationKey: key, nextValue: inFlight)
     }
 
@@ -755,10 +783,13 @@ private func versionedJournalTests() throws {
     let migrated = try migratedJournal.read()
     try check(migrated.revision == "1" && migrated.value == String(decoding: legacyBytes, as: UTF8.self))
     try check(migrationLegacy.data == legacyBytes && migrationCurrent.data != nil)
-    try migratedJournal.compareAndSetLegacy(expectedFound: true, expectedValue: migrated.value,
-                                            value: "{\"legacy\":\"updated\"}")
+    try expect(.unavailable) {
+        try migratedJournal.compareAndSetLegacy(expectedFound: true, expectedValue: migrated.value,
+                                                value: "{\"legacy\":\"updated\"}")
+    }
     let afterLegacyCompatibleWrite = try migratedJournal.read()
-    try check(afterLegacyCompatibleWrite.revision == "2" && migrationLegacy.data == legacyBytes)
+    try check(afterLegacyCompatibleWrite.revision == "1" && afterLegacyCompatibleWrite.value == migrated.value &&
+              migrationLegacy.data == legacyBytes)
 
     // A pre-versioned writer changing v1 after migration is detected; v2 is
     // not overwritten and stale v1 is never used as a fallback.

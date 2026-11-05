@@ -593,6 +593,10 @@ final class NeraeVersionedTrainingJournal {
               state.value.utf8.elementsEqual(expectedValue.utf8) else {
             throw NeraeVaultError.conflict
         }
+        guard state.dispatchHistoryKnown, state.activeBindingsKnown else { throw NeraeVaultError.unavailable }
+        guard Self.preservesActiveOperations(state: state, nextFound: newFound, nextValue: newValue) else {
+            throw NeraeVaultError.invalidState
+        }
         return try commitLocked(state, found: newFound, value: newValue)
     }
 
@@ -682,6 +686,10 @@ final class NeraeVersionedTrainingJournal {
         let state = try loadLocked()
         guard state.found == expectedFound, state.value.utf8.elementsEqual(expectedValue.utf8) else {
             throw NeraeVaultError.conflict
+        }
+        guard state.dispatchHistoryKnown, state.activeBindingsKnown else { throw NeraeVaultError.unavailable }
+        guard Self.preservesActiveOperations(state: state, nextFound: true, nextValue: value) else {
+            throw NeraeVaultError.invalidState
         }
         _ = try commitLocked(state, found: true, value: value)
     }
@@ -1012,6 +1020,123 @@ final class NeraeVersionedTrainingJournal {
         return (dispatchMarker("event", [operationKey]),
                 [dispatchMarker("key", [subject, path, idempotencyKey]), dispatchMarker("body", [subject, path, normalizedBody])],
                 dispatchMarker("binding-v1", [operationKey, subject, path, idempotencyKey, body]))
+    }
+
+    /// Ordinary and compatibility CAS may update other entries and may record
+    /// the one-way in_flight -> uncertain transition. They may never erase or
+    /// rewrite a first-send request or its native active binding. Unknown
+    /// historical formats fail closed because their dispatch state cannot be
+    /// reconstructed from the caller-controlled payload.
+    private static func preservesActiveOperations(state: State, nextFound: Bool, nextValue: String) -> Bool {
+        guard state.dispatchHistoryKnown, state.activeBindingsKnown else { return false }
+        if state.activeDispatchBindings.isEmpty {
+            return state.activeDispatchEvents.isEmpty
+        }
+        guard state.found, nextFound,
+              let oldEntries = journalEntries(state.value),
+              let nextEntries = journalEntries(nextValue) else { return false }
+
+        var matched = Set<String>()
+        for (operationKey, oldRaw) in oldEntries {
+            let eventMarker = dispatchMarker("event", [operationKey])
+            guard let binding = state.activeDispatchBindings[eventMarker] else { continue }
+            guard matched.insert(eventMarker).inserted,
+                  let nextRaw = nextEntries[operationKey],
+                  let oldOperation = try? jsonObject(oldRaw),
+                  let nextOperation = try? jsonObject(nextRaw),
+                  validActiveOperation(oldOperation, key: operationKey, binding: binding, history: Set(state.dispatchMarkers)),
+                  validActiveOperation(nextOperation, key: operationKey, binding: binding, history: Set(state.dispatchMarkers)),
+                  let oldRevision = safeInteger(oldOperation["revision"]),
+                  let nextRevision = safeInteger(nextOperation["revision"]),
+                  activeTransitionIsAllowed(oldOperation, nextOperation, oldRevision: oldRevision, nextRevision: nextRevision),
+                  immutableActiveFieldsEqual(oldOperation, nextOperation) else { return false }
+        }
+        return matched == Set(state.activeDispatchBindings.keys) &&
+            Set(state.activeDispatchEvents) == Set(state.activeDispatchBindings.keys)
+    }
+
+    private static func journalEntries(_ value: String) -> [String: String]? {
+        guard NeraeStrictJSON.isCanonicalJournalObject(value),
+              let root = try? jsonObject(value), Set(root.keys) == Set(["schema", "entries"]),
+              exactInteger(root["schema"], 1),
+              let entries = root["entries"] as? [String: String], entries.count <= 64,
+              entries.values.allSatisfy(NeraeStrictJSON.isCanonicalJournalObject) else { return nil }
+        return entries
+    }
+
+    private static func validActiveOperation(_ operation: [String: Any], key: String,
+                                             binding: String, history: Set<String>) -> Bool {
+        guard let state = operation["state"] as? String,
+              let revision = safeInteger(operation["revision"]),
+              let subject = operation["subjectId"] as? String,
+              let event = operation["clientEventId"] as? String,
+              let createdGeneration = operation["createdGeneration"] as? String,
+              let createdAt = safeInteger(operation["createdAt"]),
+              let expiresAt = safeInteger(operation["expiresAt"]), expiresAt > createdAt,
+              let request = operation["request"] as? [String: Any],
+              Set(request.keys) == Set(["method", "path", "idempotencyKey", "body"]),
+              request["method"] as? String == "POST",
+              let path = request["path"] as? String, validWorkoutPath(path),
+              let idempotencyKey = request["idempotencyKey"] as? String,
+              (8...128).contains(idempotencyKey.utf8.count), idempotencyKey.utf8.allSatisfy(isIdempotencyByte),
+              let body = request["body"] as? String,
+              let normalized = try? normalizedBody(body), validRequestBody(path: path, body: body, event: event),
+              exactInteger(operation["schema"], 1), validGeneration(createdGeneration), validSubject(subject),
+              (8...64).contains(event.unicodeScalars.count), !event.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let encodedEvent = event.addingPercentEncoding(withAllowedCharacters: componentCharacters),
+              key == "nerae.workout.operation.v1.\(subject).\(encodedEvent)" else { return false }
+
+        let common = Set(["schema", "subjectId", "clientEventId", "createdGeneration", "revision", "state", "createdAt", "expiresAt", "request"])
+        if state == "in_flight" {
+            guard revision == 2, Set(operation.keys) == common.union(["attemptGeneration"]),
+                  let attempt = operation["attemptGeneration"] as? String, validGeneration(attempt) else { return false }
+        } else if state == "uncertain" {
+            guard revision >= 3, Set(operation.keys) == common else { return false }
+        } else { return false }
+
+        let eventMarker = dispatchMarker("event", [key])
+        let keyMarker = dispatchMarker("key", [subject, path, idempotencyKey])
+        let bodyMarker = dispatchMarker("body", [subject, path, normalized])
+        let expectedBinding = dispatchMarker("binding-v1", [key, subject, path, idempotencyKey, body])
+        return eventMarker.utf8.count == 64 && history.contains(keyMarker) && history.contains(bodyMarker) &&
+            binding.utf8.elementsEqual(expectedBinding.utf8)
+    }
+
+    private static func activeTransitionIsAllowed(_ old: [String: Any], _ next: [String: Any],
+                                                  oldRevision: Int64, nextRevision: Int64) -> Bool {
+        guard let oldState = old["state"] as? String, let nextState = next["state"] as? String else { return false }
+        if oldState == "in_flight", nextState == "in_flight" {
+            return oldRevision == 2 && nextRevision == oldRevision &&
+                exactTextEqual(old["attemptGeneration"] as? String, next["attemptGeneration"] as? String)
+        }
+        if oldState == "in_flight", nextState == "uncertain" {
+            return oldRevision == 2 && nextRevision == 3 && next["attemptGeneration"] == nil
+        }
+        if oldState == "uncertain", nextState == "uncertain" {
+            return nextRevision == oldRevision && next["attemptGeneration"] == nil
+        }
+        return false
+    }
+
+    private static func immutableActiveFieldsEqual(_ old: [String: Any], _ next: [String: Any]) -> Bool {
+        var oldFields = old, nextFields = next
+        for key in ["state", "revision", "attemptGeneration", "request"] {
+            oldFields.removeValue(forKey: key); nextFields.removeValue(forKey: key)
+        }
+        guard exactTextEqual(old["subjectId"] as? String, next["subjectId"] as? String),
+              exactTextEqual(old["clientEventId"] as? String, next["clientEventId"] as? String),
+              exactTextEqual(old["createdGeneration"] as? String, next["createdGeneration"] as? String),
+              let oldRequest = old["request"] as? [String: Any],
+              let nextRequest = next["request"] as? [String: Any],
+              ["method", "path", "idempotencyKey", "body"].allSatisfy({
+                  exactTextEqual(oldRequest[$0] as? String, nextRequest[$0] as? String)
+              }) else { return false }
+        return equalJSON(oldFields, nextFields)
+    }
+
+    private static func exactTextEqual(_ lhs: String?, _ rhs: String?) -> Bool {
+        guard let lhs, let rhs else { return lhs == nil && rhs == nil }
+        return lhs.utf8.elementsEqual(rhs.utf8)
     }
 
     // A domain label and fixed-width lengths bind the raw UTF-8 bytes without

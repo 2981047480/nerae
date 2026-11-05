@@ -3,8 +3,9 @@
 The existing native first-send claim is exposed through the iOS secure-vault
 bridge and UTS, then injected into the App journal-storage factory. The bridge
 returns only the native revision on success and returns redacted failures on a
-conflict, invalid transition or uncertain write. Android and the Weixin/general
-fallback explicitly return `unsupported_platform` for the same interface.
+conflict, invalid transition or uncertain write. The Weixin/general fallback
+explicitly returns `unsupported_platform` for the same interface; the later
+Android bridge is documented in `../P02-18/android-first-dispatch-candidate.md`.
 
 Verification on the candidate source:
 
@@ -26,3 +27,16 @@ sync or device acceptance; the later Android internal candidate is documented
 separately. The native history limit is 8,192 markers, normally two per
 distinct request, and no safe pruning protocol has yet been implemented.
 Reaching it blocks further claims and must be addressed before production use.
+
+On 2026-11-05, both ordinary and legacy iOS journal CAS were hardened so an
+active first-send binding cannot be rolled back, deleted, or replaced by a
+different request. The one-way in-flight to uncertain transition and changes
+to unrelated entries remain possible. History or active bindings that cannot
+be reconstructed are retained and rejected, rather than guessed; this can
+require recovery for older journal formats.
+
+The integrated Swift synthetic journal and draft harnesses passed, including
+request mutation, Unicode byte identity and legacy-format cases. The bridge
+also typechecked for an arm64 iPhoneOS target. These checks use synthetic
+storage; they do not establish real Keychain persistence, process-restart
+behavior, a UTS build, receipt settlement, or synchronization on a device.

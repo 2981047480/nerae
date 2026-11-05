@@ -36,6 +36,7 @@ test('free-session creation sends the actual input with authentication and a cal
     return { statusCode: 201, data: detail() }
   })
   const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
+  const prepared = api.prepareFreeSessionRequest(input, 'create-0001')
   const created = await api.createFreeSession(input, 'create-0001')
   assert.equal(created.detail.id, '42')
   assert.equal(created.idempotencyKeyExpiresAt, defaultWriteExpiry)
@@ -43,8 +44,46 @@ test('free-session creation sends the actual input with authentication and a cal
   assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions')
   assert.equal(requests[0].header.Authorization, 'Bearer real-session-token')
   assert.equal(requests[0].header['Idempotency-Key'], 'create-0001')
+  assert.equal(requests[0].method, prepared.method)
+  assert.equal(requests[0].url, `https://api.example.org/v1${prepared.path}`)
+  assert.equal(requests[0].data, prepared.body)
   assert.deepEqual(JSON.parse(requests[0].data), { source: 'free', ...input })
   assert.ok(!('subjectId' in JSON.parse(requests[0].data)))
+})
+
+test('prepared free-session bytes are deterministic and preserve Unicode exactly', async () => {
+  const requests = []
+  const api = makeApi('https://api.example.org/v1', auth, async request => {
+    requests.push(request)
+    return { statusCode: 201, data: detail({ clientEventId: '训练-🌱-001' }) }
+  })
+  const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: '训练-🌱-001' }
+  const first = api.prepareFreeSessionRequest(input, 'create-0001')
+  const second = api.prepareFreeSessionRequest(input, 'create-0001')
+  assert.equal(first.body, second.body)
+  assert.equal(first.method, 'POST')
+  assert.equal(first.path, '/me/sessions')
+  assert.equal(first.idempotencyKey, 'create-0001')
+  assert.ok(Object.isFrozen(first))
+  await api.sendPreparedFreeSessionRequest(first)
+  assert.equal(requests[0].data, first.body)
+  assert.deepEqual(JSON.parse(first.body), { source: 'free', ...input })
+})
+
+test('prepared requests reject bad keys, forged objects, and a changed session before dispatch', async () => {
+  let calls = 0
+  const api = makeApi('https://api.example.org', auth, async () => {
+    calls++
+    return { statusCode: 201, data: detail() }
+  })
+  const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
+  assert.throws(() => api.prepareFreeSessionRequest(input, 'bad key'), apiError('invalid_request'))
+  const prepared = api.prepareFreeSessionRequest(input, 'create-0001')
+  assert.throws(() => api.sendPreparedFreeSessionRequest({ ...prepared }), apiError('invalid_request'))
+  credential.generation = 'login-2'
+  await assert.rejects(api.sendPreparedFreeSessionRequest(prepared), apiError('session_changed'))
+  assert.equal(calls, 0)
+  credential.generation = 'login-1'
 })
 
 test('saving and rereading use the same resource, version, keys and caller-owned replay token', async () => {

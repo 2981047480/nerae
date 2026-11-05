@@ -76,11 +76,17 @@ const kotlin = require(process.env.NERAE_UTS_COMPILER)
       ['NeraeAndroidTrainingDraftBridge', 'discoverTrainingDrafts'],
       ['NeraeAndroidTrainingDraftBridge', 'createTrainingDraft'],
       ['NeraeAndroidTrainingDraftBridge', 'writeTrainingDraft'],
+      ['NeraeAndroidTrainingDraftBridge', 'readVersionedTrainingDraft'],
+      ['NeraeAndroidTrainingDraftBridge', 'compareAndSetVersionedTrainingDraft'],
     ]) {
       if (!source.includes(`${bridge}.${operation}`)) throw new Error(`generated wrapper omitted ${bridge}.${operation}`)
     }
     if (!source.includes('NeraeAndroidSecureVaultBridge.claimTrainingOperationDispatch(UTSAndroid.getAppContext(), expectedRevision, expectedValue, operationKey, nextValue)')) {
       throw new Error('generated dispatch wrapper omitted or reordered its native arguments')
+    }
+    if (!source.includes('NeraeAndroidTrainingDraftBridge.readVersionedTrainingDraft(UTSAndroid.getAppContext(), key)') ||
+        !source.includes('NeraeAndroidTrainingDraftBridge.compareAndSetVersionedTrainingDraft(UTSAndroid.getAppContext(), key, expectedRevision, expectedFound, expectedValue, value)')) {
+      throw new Error('generated versioned draft wrappers omitted or reordered their native arguments')
     }
     for (const name of ['NeraeAndroidTrainingDraftStore.kt', 'NeraeAndroidSecureVaultBridge.kt', 'NativeFirstDispatchParser.kt']) {
       const copied = generated.find(file => file.endsWith(path.join('app-android', 'src', name)))

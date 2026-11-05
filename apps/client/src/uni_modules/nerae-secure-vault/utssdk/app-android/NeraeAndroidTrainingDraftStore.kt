@@ -6,23 +6,43 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.nio.CharBuffer
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.charset.CodingErrorAction
 import java.security.KeyStore
 import java.security.MessageDigest
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
 
 private const val DRAFT_KEY_PREFIX = "nerae.workout.draft.v1."
 private const val DRAFT_DIRECTORY = "nerae-training-drafts.v1"
 private const val DRAFT_FILE_PREFIX = "nerae-training-draft.v1."
 private const val DRAFT_ALIAS_PREFIX = "com.nerae.secure-vault.training-draft.aes-gcm.v1."
 private const val DRAFT_FILE_SUFFIX = ".enc"
+private val DRAFT_LEGACY_HEADER = byteArrayOf(0x4e, 0x52, 0x56, 0x41, 0x01) // NRVA v1
+private val DRAFT_VERSIONED_MAGIC = byteArrayOf(0x4e, 0x52, 0x44, 0x56, 0x02) // NRDV v2
+private const val DRAFT_NONCE_BYTES = 12
+private const val DRAFT_TAG_BYTES = 16
+private const val DRAFT_REVISION_BYTES = 8
+
+internal data class TrainingDraftVault(
+    val storage: VaultStorage,
+    val keys: VaultKeys,
+    val validator: VaultPayloadValidator
+) {
+    override fun toString(): String = "TrainingDraftVault{redacted}"
+}
+
+internal data class VersionedTrainingDraftResult(val found: Boolean, val value: String, val revision: String) {
+    override fun toString(): String = "VersionedTrainingDraftResult{redacted}"
+}
 
 /** Inventory and storage are injected so JVM tests can model uncertain I/O and orphaned state. */
 internal interface TrainingDraftBackend {
     fun ensureAvailable()
     fun fileEntries(): List<String>
     fun aliases(): List<String>
-    fun vault(digest: String): NeraeCredentialVault
+    fun slot(digest: String): TrainingDraftVault
 }
 
 internal data class TrainingDraftPayloadOwner(val subject: String, val event: String)
@@ -60,51 +80,54 @@ internal class NeraeProtectedTrainingDraftStore(
     }
 
     fun read(key: String): VaultReadResult = synchronized(processLock) {
+        val result = readVersioned(key)
+        VaultReadResult(result.found, result.value)
+    }
+
+    fun readVersioned(key: String): VersionedTrainingDraftResult = synchronized(processLock) {
         val owner = parseOwner(key)
-        val result = backend.vault(owner.digest).read()
-        if (!result.found) return@synchronized result
-        if (!validPayload(result.value, owner.subject, owner.event)) throw VaultFailure()
-        result
+        val state = readSlot(backend.slot(owner.digest))
+        if (state.found && !validPayload(state.value, owner.subject, owner.event)) throw VaultFailure()
+        VersionedTrainingDraftResult(state.found, state.value, state.revision.toString())
     }
 
     fun create(key: String, value: String): Boolean = synchronized(processLock) {
         val owner = parseOwner(key)
         if (!validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
-        val vault = backend.vault(owner.digest)
-        val previous = vault.read()
+        val slot = backend.slot(owner.digest)
+        val previous = readSlot(slot)
         if (previous.found) {
             if (!validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
             return@synchronized false
         }
-        try {
-            vault.compareAndSet(expectedFound = false, expectedValue = "", value = value)
-        } catch (failure: VaultFailure) {
-            if (failure.code == "conflict") {
-                val concurrent = vault.read()
-                if (concurrent.found && validPayload(concurrent.value, owner.subject, owner.event)) return@synchronized false
-                throw VaultFailure()
-            }
-            throw failure
-        }
-        val committed = vault.read()
-        if (!committed.found || committed.value != value || !validPayload(committed.value, owner.subject, owner.event)) {
-            throw VaultFailure()
-        }
+        persist(slot, owner, previous, value)
         true
     }
 
-    fun write(key: String, value: String) = synchronized(processLock) {
+    fun write(key: String, value: String): Unit = synchronized(processLock) {
         val owner = parseOwner(key)
         if (!validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
-        val vault = backend.vault(owner.digest)
-        val previous = vault.read()
+        val slot = backend.slot(owner.digest)
+        val previous = readSlot(slot)
         if (!previous.found) throw VaultFailure("conflict")
         if (!validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
-        vault.compareAndSet(expectedFound = true, expectedValue = previous.value, value = value)
-        val committed = vault.read()
-        if (!committed.found || committed.value != value || !validPayload(committed.value, owner.subject, owner.event)) {
-            throw VaultFailure()
-        }
+        persist(slot, owner, previous, value)
+    }
+
+    fun compareAndSetVersioned(key: String, expectedRevision: String, expectedFound: Boolean,
+                               expectedValue: String, value: String): VersionedTrainingDraftResult = synchronized(processLock) {
+        val owner = parseOwner(key)
+        val revision = parseRevision(expectedRevision)
+        if ((!expectedFound && (revision != 0L || expectedValue.isNotEmpty())) ||
+            (expectedFound && !validPayload(expectedValue, owner.subject, owner.event)) ||
+            !validPayload(value, owner.subject, owner.event)) throw VaultFailure("invalid_state")
+        val slot = backend.slot(owner.digest)
+        val previous = readSlot(slot)
+        if (previous.found && !validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
+        if (previous.revision != revision || previous.found != expectedFound ||
+            previous.value != expectedValue) throw VaultFailure("conflict")
+        val committed = persist(slot, owner, previous, value)
+        VersionedTrainingDraftResult(false, "", committed.revision.toString())
     }
 
     fun discover(subject: String, cursor: String): String = synchronized(processLock) {
@@ -136,7 +159,7 @@ internal class NeraeProtectedTrainingDraftStore(
                 continue
             }
             val result = try {
-                backend.vault(digest).read()
+                readSlot(backend.slot(digest))
             } catch (_: Exception) {
                 hasUnclassifiedItems = true
                 continue
@@ -166,6 +189,86 @@ internal class NeraeProtectedTrainingDraftStore(
     }
 
     private data class Owner(val subject: String, val event: String, val digest: String)
+    private data class DraftState(val found: Boolean, val value: String, val revision: Long) {
+        override fun toString(): String = "DraftState{redacted}"
+    }
+
+    private fun parseRevision(value: String): Long {
+        if (!value.matches(Regex("^(0|[1-9][0-9]{0,18})$"))) throw VaultFailure("invalid_state")
+        return value.toLongOrNull() ?: throw VaultFailure("invalid_state")
+    }
+
+    /** Revision and the unchanged payload are authenticated together in one file. */
+    private fun readSlot(slot: TrainingDraftVault): DraftState {
+        try {
+            val encrypted = slot.storage.read()
+            if (encrypted == null) {
+                if (slot.keys.existing() != null) throw VaultFailure()
+                return DraftState(false, "", 0)
+            }
+            val secret = slot.keys.existing() ?: throw VaultFailure()
+            val versioned = encrypted.size >= DRAFT_VERSIONED_MAGIC.size &&
+                encrypted.copyOfRange(0, DRAFT_VERSIONED_MAGIC.size).contentEquals(DRAFT_VERSIONED_MAGIC)
+            val legacy = encrypted.size >= DRAFT_LEGACY_HEADER.size &&
+                encrypted.copyOfRange(0, DRAFT_LEGACY_HEADER.size).contentEquals(DRAFT_LEGACY_HEADER)
+            if (!versioned && !legacy) throw VaultFailure()
+            val headerSize = if (versioned) DRAFT_VERSIONED_MAGIC.size + DRAFT_REVISION_BYTES else DRAFT_LEGACY_HEADER.size
+            if (encrypted.size !in (headerSize + DRAFT_NONCE_BYTES + DRAFT_TAG_BYTES)..
+                (headerSize + DRAFT_NONCE_BYTES + DRAFT_TAG_BYTES + MAX_VALUE_BYTES)) throw VaultFailure()
+            val revision = if (versioned) ByteBuffer.wrap(encrypted, DRAFT_VERSIONED_MAGIC.size, DRAFT_REVISION_BYTES).long else 0L
+            if (versioned && revision <= 0) throw VaultFailure()
+            val header = encrypted.copyOfRange(0, headerSize)
+            val nonce = encrypted.copyOfRange(headerSize, headerSize + DRAFT_NONCE_BYTES)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, secret, GCMParameterSpec(128, nonce))
+            cipher.updateAAD(header)
+            val plaintext = cipher.doFinal(encrypted, headerSize + DRAFT_NONCE_BYTES,
+                encrypted.size - headerSize - DRAFT_NONCE_BYTES)
+            if (plaintext.size !in 1..MAX_VALUE_BYTES) throw VaultFailure()
+            val value = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(plaintext)).toString()
+            if (!slot.validator.isJsonObject(value)) throw VaultFailure()
+            return DraftState(true, value, revision)
+        } catch (failure: VaultFailure) { throw failure }
+        catch (_: Exception) { throw VaultFailure() }
+    }
+
+    private fun persist(slot: TrainingDraftVault, owner: Owner, previous: DraftState, value: String): DraftState {
+        if (previous.revision == Long.MAX_VALUE) throw VaultFailure("invalid_state")
+        val payload = strictUtf8(value) ?: throw VaultFailure("invalid_state")
+        if (payload.size !in 1..MAX_VALUE_BYTES || !slot.validator.isJsonObject(value)) throw VaultFailure("invalid_state")
+        val revision = previous.revision + 1
+        val header = ByteBuffer.allocate(DRAFT_VERSIONED_MAGIC.size + DRAFT_REVISION_BYTES)
+            .put(DRAFT_VERSIONED_MAGIC).putLong(revision).array()
+        var createdKey = false
+        try {
+            val secret = if (previous.found) slot.keys.existing() ?: throw VaultFailure()
+                else {
+                    if (slot.keys.existing() != null) throw VaultFailure()
+                    slot.keys.createHardware().also { createdKey = true }
+                }
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, secret)
+            val nonce = cipher.iv ?: throw VaultFailure()
+            if (nonce.size != DRAFT_NONCE_BYTES) throw VaultFailure()
+            cipher.updateAAD(header)
+            slot.storage.writeAtomically(header + nonce + cipher.doFinal(payload))
+            val committed = readSlot(slot)
+            if (!committed.found || committed.revision != revision || committed.value != value ||
+                !validPayload(committed.value, owner.subject, owner.event)) throw VaultFailure()
+            return committed
+        } catch (failure: VaultFailure) {
+            if (createdKey) discardNewKeyIfEmpty(slot)
+            throw failure
+        } catch (_: Exception) {
+            if (createdKey) discardNewKeyIfEmpty(slot)
+            throw VaultFailure()
+        }
+    }
+
+    private fun discardNewKeyIfEmpty(slot: TrainingDraftVault) {
+        try { if (slot.storage.read() == null) slot.keys.delete() } catch (_: Exception) { /* preserve ambiguous state */ }
+    }
 
     private fun parseOwner(key: String): Owner {
         val encodedKey = strictUtf8(key)
@@ -297,10 +400,10 @@ internal class AndroidTrainingDraftBackend(private val context: Context) : Train
         throw VaultFailure()
     }
 
-    override fun vault(digest: String): NeraeCredentialVault {
+    override fun slot(digest: String): TrainingDraftVault {
         if (digest.length != 64 || digest.any { it !in '0'..'9' && it !in 'a'..'f' }) throw VaultFailure("invalid_state")
         val fileName = "$DRAFT_FILE_PREFIX$digest$DRAFT_FILE_SUFFIX"
-        return NeraeCredentialVault(
+        return TrainingDraftVault(
             AndroidVaultStorage(
                 context,
                 NeraeVaultSlot.TRAINING_OPERATION_JOURNAL,
@@ -308,7 +411,6 @@ internal class AndroidTrainingDraftBackend(private val context: Context) : Train
                 DRAFT_DIRECTORY
             ),
             AndroidVaultKeys("$DRAFT_ALIAS_PREFIX$digest"),
-            Any(),
             AndroidJsonObjectValidator
         )
     }
@@ -339,6 +441,21 @@ object NeraeAndroidTrainingDraftBridge {
     }
 
     @JvmStatic
+    fun readVersionedTrainingDraft(context: Context?, key: String?): String = withVersionedStore(context) { store ->
+        val result = store.readVersioned(key ?: throw VaultFailure("invalid_state"))
+        encodeVersioned(ok = true, found = result.found, value = result.value, revision = result.revision)
+    }
+
+    @JvmStatic
+    fun compareAndSetVersionedTrainingDraft(context: Context?, key: String?, expectedRevision: String?,
+                                             expectedFound: Boolean, expectedValue: String?, value: String?): String =
+        withVersionedStore(context) { store ->
+            if (key == null || expectedRevision == null || expectedValue == null || value == null) throw VaultFailure("invalid_state")
+            val result = store.compareAndSetVersioned(key, expectedRevision, expectedFound, expectedValue, value)
+            encodeVersioned(ok = true, revision = result.revision)
+        }
+
+    @JvmStatic
     fun discoverTrainingDrafts(context: Context?, subject: String?, cursor: String?): String = withStore(context) { store ->
         val listing = store.discover(subject ?: throw VaultFailure("invalid_state"), cursor ?: "")
         encode(ok = true, found = true, value = listing)
@@ -356,6 +473,26 @@ object NeraeAndroidTrainingDraftBridge {
             failure("unavailable")
         }
     }
+
+    private fun withVersionedStore(context: Context?, action: (NeraeProtectedTrainingDraftStore) -> String): String {
+        if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return versionedFailure("unavailable")
+        return try {
+            synchronized(processLock) {
+                action(NeraeProtectedTrainingDraftStore(AndroidTrainingDraftBackend(context), processLock, AndroidTrainingDraftPayloadValidator()))
+            }
+        } catch (problem: VaultFailure) {
+            val code = if (problem.code in setOf("conflict", "invalid_state", "unavailable")) problem.code else "unavailable"
+            versionedFailure(code)
+        } catch (_: Exception) {
+            versionedFailure("unavailable")
+        }
+    }
+
+    private fun versionedFailure(code: String): String = encodeVersioned(ok = false, errorCode = code)
+
+    private fun encodeVersioned(ok: Boolean, errorCode: String = "", found: Boolean = false,
+                                value: String = "", revision: String = ""): String = JSONObject()
+        .put("ok", ok).put("errorCode", errorCode).put("found", found).put("value", value).put("revision", revision).toString()
 
     private fun failure(code: String): String = JSONObject()
         .put("ok", false).put("errorCode", code).put("found", false).put("value", "").toString()

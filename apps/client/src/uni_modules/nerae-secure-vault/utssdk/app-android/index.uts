@@ -74,13 +74,42 @@ export function compareAndSetTrainingOperationJournal(expectedFound: boolean, ex
 function versionedFailure(errorCode: string): VersionedSecureVaultResult {
 	return { ok: false, errorCode: errorCode, found: false, value: '', revision: '' }
 }
-// The Android draft slot does not yet provide persistent revision CAS.
-export function readVersionedTrainingDraft(_key: string): VersionedSecureVaultResult { return versionedFailure('unsupported_platform') }
-export function compareAndSetVersionedTrainingDraft(_key: string, _expectedRevision: string, _expectedFound: boolean, _expectedValue: string, _value: string): VersionedSecureVaultResult { return versionedFailure('unsupported_platform') }
-
 function validRevision(revision: string): boolean {
 	return /^(0|[1-9][0-9]{0,18})$/.test(revision) &&
 		(revision.length < 19 || revision <= '9223372036854775807')
+}
+
+// Revision zero is also valid for an unchanged legacy draft.
+function decodeVersionedDraft(raw: string, isRead: boolean): VersionedSecureVaultResult {
+	try {
+		const parsed = JSON.parseObject<VersionedSecureVaultResult>(raw)
+		if (parsed == null) return versionedFailure('bridge_failure')
+		const result = parsed!
+		if (!result.ok) {
+			if (result.errorCode != 'invalid_state' && result.errorCode != 'unavailable' && result.errorCode != 'conflict') return versionedFailure('bridge_failure')
+			return versionedFailure(result.errorCode)
+		}
+		if (result.errorCode.length != 0 || !validRevision(result.revision)) return versionedFailure('bridge_failure')
+		if (isRead && (result.found == (result.value.length == 0) || (!result.found && result.revision != '0'))) return versionedFailure('bridge_failure')
+		if (!isRead && (result.found || result.value.length != 0 || result.revision == '0')) return versionedFailure('bridge_failure')
+		return result
+	} catch (_error) {
+		return versionedFailure('bridge_failure')
+	}
+}
+
+export function readVersionedTrainingDraft(key: string): VersionedSecureVaultResult {
+	try {
+		return decodeVersionedDraft(NeraeAndroidTrainingDraftBridge.readVersionedTrainingDraft(UTSAndroid.getAppContext(), key), true)
+	} catch (_error) { return versionedFailure('bridge_failure') }
+}
+
+export function compareAndSetVersionedTrainingDraft(key: string, expectedRevision: string, expectedFound: boolean, expectedValue: string, value: string): VersionedSecureVaultResult {
+	if (!validRevision(expectedRevision) || expectedFound == (expectedValue.length == 0) ||
+		(!expectedFound && expectedRevision != '0') || value.length == 0) return versionedFailure('invalid_state')
+	try {
+		return decodeVersionedDraft(NeraeAndroidTrainingDraftBridge.compareAndSetVersionedTrainingDraft(UTSAndroid.getAppContext(), key, expectedRevision, expectedFound, expectedValue, value), false)
+	} catch (_error) { return versionedFailure('bridge_failure') }
 }
 
 function decodeVersioned(raw: string, isRead: boolean): VersionedSecureVaultResult {
