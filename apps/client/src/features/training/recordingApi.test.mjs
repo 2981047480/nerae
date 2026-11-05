@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { RecordingApi, RecordingApiError, createUniRequestPort } from './recordingApi.ts'
+import { RecordingApi, RecordingApiError, acknowledgesFreeSession, createUniRequestPort } from './recordingApi.ts'
 
 const credential = { subjectId: '101', generation: 'login-1', accessToken: 'real-session-token' }
 const auth = { current: () => credential, isCurrent: (id, generation) => id === '101' && generation === 'login-1' }
@@ -68,6 +68,74 @@ test('prepared free-session bytes are deterministic and preserve Unicode exactly
   await api.sendPreparedFreeSessionRequest(first)
   assert.equal(requests[0].data, first.body)
   assert.deepEqual(JSON.parse(first.body), { source: 'free', ...input })
+})
+
+test('a create response for another date, timezone, source, or event requires reconciliation', async () => {
+  const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
+  for (const overrides of [
+    { date: '2026-10-28' },
+    { timeZone: 'UTC' },
+    { source: 'plan' },
+    { clientEventId: 'event-0002' },
+  ]) {
+    let sent = 0
+    const api = makeApi('https://api.example.org', auth, async () => {
+      sent++
+      return { statusCode: 201, data: detail(overrides) }
+    })
+    await assert.rejects(api.createFreeSession(input, 'create-0001'), apiError('reconcile_required'))
+    assert.equal(sent, 1)
+  }
+})
+
+test('an event id that cannot be safely preserved in native storage is rejected before dispatch', () => {
+  const api = makeApi('https://api.example.org', auth, async () => { throw new Error('must not send') })
+  assert.throws(() => api.prepareFreeSessionRequest({ date: '2026-10-29', timeZone: 'Asia/Shanghai',
+    clientEventId: 'event-\ud800-01' }, 'create-0001'), apiError('invalid_request'))
+})
+
+test('a creation acknowledgement is bound to the exact prepared request and issued response', async () => {
+  const api = makeApi('https://api.example.org', auth, async () => ({ statusCode: 201, data: detail() }))
+  const input = { date: '2026-10-29', timeZone: 'Asia/Shanghai', clientEventId: 'event-0001' }
+  const prepared = api.prepareFreeSessionRequest(input, 'create-0001')
+  const sameBytes = api.prepareFreeSessionRequest(input, 'create-0001')
+  const response = await api.sendPreparedFreeSessionRequest(prepared)
+  assert.equal(acknowledgesFreeSession(response, prepared), true)
+  assert.equal(acknowledgesFreeSession(response, sameBytes), false)
+  assert.equal(acknowledgesFreeSession(response, { ...prepared }), false)
+  assert.equal(acknowledgesFreeSession({ ...response }, prepared), false)
+  assert.equal(acknowledgesFreeSession(null, prepared), false)
+  assert.equal(acknowledgesFreeSession({}, undefined), false)
+})
+
+test('a session change before create acknowledgement binding is not reported as success', async () => {
+  let generation = 'login-1'
+  const changingAuth = {
+    current: () => ({ ...credential, generation }),
+    isCurrent: (subject, value) => subject === '101' && value === generation,
+  }
+  const response = detail()
+  Object.defineProperty(response, 'source', { enumerable: true, get() {
+    queueMicrotask(() => { generation = 'login-2' })
+    return 'free'
+  } })
+  const api = makeApi('https://api.example.org', changingAuth, async () => ({ statusCode: 201, data: response }))
+  await assert.rejects(api.createFreeSession({ date: '2026-10-29', timeZone: 'Asia/Shanghai',
+    clientEventId: 'event-0001' }, 'create-0001'), apiError('session_changed'))
+})
+
+test('an unexpected auth failure before create dispatch is sanitized', async () => {
+  let broken = false
+  const changingAuth = {
+    current: () => { if (broken) throw new Error('private auth state'); return credential },
+    isCurrent: auth.isCurrent,
+  }
+  const api = makeApi('https://api.example.org', changingAuth, async () => { throw new Error('must not send') })
+  const prepared = api.prepareFreeSessionRequest({ date: '2026-10-29', timeZone: 'Asia/Shanghai',
+    clientEventId: 'event-0001' }, 'create-0001')
+  broken = true
+  await assert.rejects(api.sendPreparedFreeSessionRequest(prepared), error =>
+    apiError('reconcile_required')(error) && !String(error).includes('private auth state'))
 })
 
 test('prepared requests reject bad keys, forged objects, and a changed session before dispatch', async () => {

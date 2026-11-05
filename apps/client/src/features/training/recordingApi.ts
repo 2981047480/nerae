@@ -76,7 +76,18 @@ export interface SessionListInput {
 // A snapshot is only usable in the runtime that received it from this adapter.
 // Restoring from local storage requires a fresh authenticated read.
 const issuedSnapshots = new WeakMap<object, object>()
+const creationAcknowledgements = new WeakMap<object, PreparedFreeSessionRequest>()
 const batchAcknowledgements = new WeakMap<object, { baseline: ScopedSessionDetail; version: number; sets: string; order: string }>()
+
+/**
+ * Bind a direct response to one prepared object. This is not a replay or
+ * durable settlement; callers must still recheck the lease and stored intent.
+ */
+export function acknowledgesFreeSession(response: unknown, prepared: unknown): response is ScopedSessionDetail {
+  if (response === null || typeof response !== 'object') return false
+  const original = creationAcknowledgements.get(response)
+  return original !== undefined && original === prepared
+}
 
 /** Only a validated response to this exact submitted batch may update a draft. */
 export function acknowledgesSets(
@@ -805,7 +816,9 @@ export class RecordingApi {
   }
 
   prepareFreeSessionRequest(input: FreeSessionInput, idempotencyKey: string): PreparedFreeSessionRequest {
-    if (!validKey(input.clientEventId) || !validDate(input.date) || !validTimeZone(input.timeZone)) {
+    if (!validKey(input.clientEventId) ||
+      /[\uD800-\uDFFF]/.test(input.clientEventId.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')) ||
+      !validDate(input.date) || !validTimeZone(input.timeZone)) {
       throw new RecordingApiError('invalid_request')
     }
     if (!validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
@@ -836,8 +849,16 @@ export class RecordingApi {
       Object.keys(submitted).sort().join(',') !== 'clientEventId,date,source,timeZone') {
       throw new RecordingApiError('invalid_request')
     }
+    const submittedEventId = submitted.clientEventId
+    let dispatchedCredential: ReturnType<RecordingApi['captureCredential']>
+    try { dispatchedCredential = this.captureCredential() }
+    catch (error) { return Promise.reject(error).catch(reconcileWriteResponse) }
     return this.call('POST', prepared.path, 201, undefined, undefined, prepared.idempotencyKey, prepared.body).then(snapshot => {
-      if (snapshot.detail.clientEventId !== submitted.clientEventId) throw new RecordingApiError('reconcile_required')
+      if (!replayMatches(snapshot.detail, submittedEventId, submitted, null)) {
+        throw new RecordingApiError('reconcile_required')
+      }
+      if (!dispatchedCredential.isSameCredential()) throw new RecordingApiError('session_changed')
+      creationAcknowledgements.set(snapshot, prepared)
       return snapshot
     }).catch(reconcileWriteResponse)
   }
