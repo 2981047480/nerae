@@ -28,3 +28,12 @@ applied-draft marker is removed after journal settlement but the process
 stops before the receipt is removed, a settlement retry currently requires
 the now-missing marker. Cleanup needs its own recoverable protocol and a
 tested post-cleanup UI/runtime path before either item can be pruned.
+
+An additional unmerged cleanup-state candidate passed synthetic tests for
+continuing after 128 receipts and six injected write-failure points. Independent
+review nevertheless reproduced two blockers: a cleared receipt could be
+applied again, leaving a marker with no receipt to clean, and some valid
+non-ASCII or URI-escaped event identifiers were rejected when recording a
+receipt. These findings and probes are retained in
+`/private/tmp/nerae-ios-receipt-gc-review.trnNJttc/REVIEW.md`. The permanent
+key/body history still has an 8,192-marker cap; cleanup does not remove it.
