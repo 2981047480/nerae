@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { addExercise, createRecordingDraft, switchMode, updateSet } from './recording.ts'
 import { DraftController } from './draftStorage.ts'
+import { VersionedEditorDraft } from './versionedEditorDraft.ts'
 import { SecureDraftStorage } from './secureDraftStorage.ts'
 
 const key = 'nerae.workout.draft.v1.101.event-0001'
@@ -12,13 +13,24 @@ const ok = (found = false, value = '') => ({ ok: true, errorCode: '', found, val
 const fail = errorCode => ({ ok: false, errorCode, found: false, value: '' })
 function native() {
   const values = new Map()
+  const revisions = new Map()
   return {
-    values, uncertain: false,
+    values, revisions, uncertain: false,
     discoverTrainingDrafts(subject, cursor) {
       const prefix = `nerae.workout.draft.v1.${subject}.`
       const all = [...values.keys()].filter(key => key.startsWith(prefix)).map(key => key.slice(prefix.length)).sort().filter(id => !cursor || id > cursor)
       const eventIds = all.slice(0, 100)
       return ok(true, JSON.stringify({ eventIds, nextCursor: all.length > 100 ? eventIds.at(-1) : null, hasUnclassifiedItems: false }))
+    },
+    readVersionedTrainingDraft(key) {
+      return values.has(key) ? { ...ok(true, values.get(key)), revision: revisions.get(key) || '0' } : { ...ok(), revision: '0' }
+    },
+    compareAndSetVersionedTrainingDraft(key, revision, found, before, value) {
+      const actualRevision = revisions.get(key) || '0'
+      if (values.has(key) !== found || actualRevision !== revision || (values.get(key) || '') !== before) return { ...fail('conflict'), revision: '' }
+      const next = (BigInt(revision) + 1n).toString()
+      values.set(key, value); revisions.set(key, next)
+      return this.uncertain ? { ...fail('unavailable'), revision: '' } : { ...ok(), revision: next }
     },
     readTrainingDraft(key) { return values.has(key) ? ok(true, values.get(key)) : ok() },
     createTrainingDraft(key, value) { if (values.has(key)) return fail('conflict'); values.set(key, value); return ok() },
@@ -38,61 +50,45 @@ test('one protected draft preserves both recording modes and reopens for the sam
   const storage = new SecureDraftStorage(port, '101', auth)
   assert.equal(await storage.createIfAbsent(key, envelope(draft())), 'created')
   assert.equal(await storage.createIfAbsent(key, envelope(draft())), 'exists')
-  const controller = await DraftController.load('101', 'event-0001', storage, now, auth)
+  const controller = await VersionedEditorDraft.load('101', 'event-0001', storage, now, auth)
   assert.equal(await controller.update(value => updateSet(value, 'entry-0001', 'record-001', 'reps', '8')), true)
   assert.equal(await controller.update(value => switchMode(value, 'per_set')), true)
   assert.equal(await controller.update(value => updateSet(value, 'entry-0001', 'record-001', 'weightKg', '42.5')), true)
-  const restored = await DraftController.load('101', 'event-0001', storage, now, auth)
+  controller.release()
+  const restored = await VersionedEditorDraft.load('101', 'event-0001', storage, now, auth)
   assert.equal(restored.draft.mode, 'per_set')
   assert.equal(restored.draft.exercises[0].sets[0].reps, '8')
   assert.equal(restored.draft.exercises[0].sets[0].weightKg, '42.5')
   assert.equal(await restored.update(value => switchMode(value, 'after_workout')), true)
   assert.equal(restored.draft.exercises[0].sets[0].reps, '8')
+  restored.release()
   active = 'other'
   await assert.rejects(storage.read(key), /账号已变化/)
 })
 
-test('prepared writes bind one exact snapshot and remain ordered after the account changes', async () => {
+test('versioned writes bind one snapshot and cannot claim success after logout', async () => {
   let active = 'one'
   const auth = { generation: 'one', isCurrent: (subject, generation) => subject === '101' && generation === active }
   const port = native()
   const storage = new SecureDraftStorage(port, '101', auth)
-  assert.equal(await storage.createIfAbsent(key, envelope(draft())), 'created')
-  const firstValue = envelope(updateSet(draft(), 'entry-0001', 'record-001', 'reps', '8'))
-  const secondValue = envelope(updateSet(draft(), 'entry-0001', 'record-001', 'reps', '9'))
-  const first = storage.prepareWrite(key, firstValue)
-  const second = storage.prepareWrite(key, secondValue)
-  assert.equal(JSON.stringify(first), undefined)
+  await storage.createIfAbsent(key, envelope(draft()))
+  const before = await storage.readVersioned(key)
+  const value = envelope(updateSet(draft(), 'entry-0001', 'record-001', 'reps', '8'))
+  const commit = storage.prepareVersionedWrite(key, value)
+  assert.throws(() => storage.prepareWrite(key, value), /版本化/)
   active = 'other'
-  assert.throws(() => storage.prepareWrite(key, firstValue), /账号已变化/)
-  await first()
-  await second()
-  await assert.rejects(first(), /已使用/)
-  assert.equal(port.values.get(key), secondValue)
+  await assert.rejects(commit(before), /账号已变化/)
+  await assert.rejects(commit(before), /已使用/)
+  assert.equal(port.values.get(key), value)
 })
 
-test('a queued authorized draft write completes after logout without overwriting a later accepted edit', async () => {
-  let active = true
-  const auth = { generation: 'one', isCurrent: (subject, generation) => active && subject === '101' && generation === 'one' }
+test('low-level controllers cannot bypass the versioned editor', async () => {
+  const auth = { generation: 'one', isCurrent: () => true }
   const port = native()
   const storage = new SecureDraftStorage(port, '101', auth)
   await storage.createIfAbsent(key, envelope(draft()))
-  let release
-  const slow = { read: storage.read.bind(storage), write: (draftKey, value) => new Promise(resolve => {
-    release = () => { port.writeTrainingDraft(draftKey, value); resolve() }
-  }) }
-  const first = new DraftController('101', draft(), slow, now, auth)
-  const second = new DraftController('101', draft(), storage, now, auth)
-  const writeOne = first.update(value => updateSet(value, 'entry-0001', 'record-001', 'reps', '8'))
-  const writeTwo = second.update(value => updateSet(value, 'entry-0001', 'record-001', 'reps', '9'))
-  await new Promise(resolve => setImmediate(resolve))
-  active = false
-  release()
-  assert.equal(await writeOne, false)
-  assert.equal(await writeTwo, false)
-  assert.equal(JSON.parse(port.values.get(key)).draft.exercises[0].sets[0].reps, '9')
-  assert.throws(() => second.draft, /账号已变化/)
-  await assert.rejects(storage.write(key, envelope(draft())), /账号已变化/)
+  await assert.rejects(DraftController.load('101', 'event-0001', storage, now, auth), /版本化编辑器/)
+  assert.equal(port.values.get(key), envelope(draft()))
 })
 
 test('draft keys, subject, event and per-draft UTF-8 limit are checked before native writes', async () => {
@@ -125,7 +121,7 @@ test('uncertain native write keeps the last input and never reports it saved', a
   const auth = { generation: 'one', isCurrent: () => true }
   const storage = new SecureDraftStorage(port, '101', auth)
   await storage.createIfAbsent(key, envelope(draft()))
-  const controller = await DraftController.load('101', 'event-0001', storage, now, auth)
+  const controller = await VersionedEditorDraft.load('101', 'event-0001', storage, now, auth)
   port.uncertain = true
   assert.equal(await controller.update(value => updateSet(value, 'entry-0001', 'record-001', 'reps', '9')), false)
   assert.equal(controller.status, 'storage_error')
@@ -133,11 +129,12 @@ test('uncertain native write keeps the last input and never reports it saved', a
   assert.equal(controller.draft.exercises[0].sets[0].reps, '9')
   port.uncertain = false
   assert.equal(await controller.persist(), true)
+  controller.release()
 })
 
 test('unsupported native slots fail without creating or pretending to save', async () => {
-  const port = { discoverTrainingDrafts: () => fail('unsupported_platform'), readTrainingDraft: () => fail('unsupported_platform'), createTrainingDraft: () => fail('unsupported_platform'),
-    writeTrainingDraft: () => fail('unsupported_platform') }
+  const port = { discoverTrainingDrafts: () => fail('unsupported_platform'), readVersionedTrainingDraft: () => ({ ...fail('unsupported_platform'), revision: '' }),
+    compareAndSetVersionedTrainingDraft: () => ({ ...fail('unsupported_platform'), revision: '' }) }
   const storage = new SecureDraftStorage(port, '101', { generation: 'one', isCurrent: () => true })
   await assert.rejects(storage.createIfAbsent(key, envelope(draft())), /未确认/)
   await assert.rejects(storage.read(key), /读取本机草稿失败/)

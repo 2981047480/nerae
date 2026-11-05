@@ -2,10 +2,19 @@ import { restoreDraft, type RecordingDraft } from './recording'
 
 /** This is only a local persistence port. It never authorizes server access. */
 export interface DraftStorage {
+  readonly versioned?: boolean
   read(key: string): Promise<unknown>
   write(key: string, value: string): Promise<void>
   /** Capture an already-authorized write before it enters the per-key queue. */
   prepareWrite?(key: string, value: string): () => Promise<void>
+  readVersioned?(key: string): Promise<DraftVersionState>
+  prepareVersionedWrite?(key: string, value: string): (expected: DraftVersionState) => Promise<DraftVersionState>
+}
+
+export interface DraftVersionState {
+  readonly found: boolean
+  readonly value: string
+  readonly revision: string
 }
 
 export interface AuthLease {
@@ -122,6 +131,7 @@ export class DraftController {
   private currentPersistenceProof: object | null = null
 
   constructor(subjectId: string, draft: RecordingDraft, storage: DraftStorage, now: () => Date, auth: AuthLease) {
+    if (storage.versioned === true) throw new Error('本机草稿需要版本化编辑器')
     this.subjectId = subjectId
     this.key = storageKey(subjectId, draft.clientEventId)
     this.storage = storage

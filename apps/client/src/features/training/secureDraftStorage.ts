@@ -1,16 +1,18 @@
 import type { InitialDraftStorage } from './trainingEditorController'
-import type { AuthLease } from './draftStorage'
+import type { AuthLease, DraftVersionState } from './draftStorage'
 
 /** Synchronous native operations on one protected draft slot. */
 export interface NativeDraftPort {
   discoverTrainingDrafts(subjectId: string, cursor: string): unknown
-  readTrainingDraft(key: string): unknown
-  createTrainingDraft(key: string, value: string): unknown
-  writeTrainingDraft(key: string, value: string): unknown
+  readVersionedTrainingDraft(key: string): unknown
+  compareAndSetVersionedTrainingDraft(key: string, expectedRevision: string, expectedFound: boolean,
+    expectedValue: string, value: string): unknown
 }
 
 type NativeResult = { ok: boolean; errorCode: string; found: boolean; value: string }
+type VersionedNativeResult = NativeResult & { revision: string }
 const MAX_BYTES = 64 * 1024
+const MAX_REVISION = '9223372036854775807'
 
 function byteLength(value: string): number {
   let count = 0
@@ -43,32 +45,62 @@ function assertUnicodeStrings(value: unknown): void {
   }
 }
 
-function result(value: unknown): NativeResult {
+function result(value: unknown, versioned = false, isRead = true): NativeResult | VersionedNativeResult {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('本机草稿暂不可用')
   const candidate = value as Record<string, unknown>
-  if (Object.keys(candidate).sort().join(',') !== 'errorCode,found,ok,value' ||
+  const fields = versioned ? 'errorCode,found,ok,revision,value' : 'errorCode,found,ok,value'
+  if (Object.keys(candidate).sort().join(',') !== fields ||
     typeof candidate.ok !== 'boolean' || typeof candidate.errorCode !== 'string' ||
     typeof candidate.found !== 'boolean' || typeof candidate.value !== 'string' ||
+    (versioned && typeof candidate.revision !== 'string') ||
     (candidate.ok && candidate.errorCode !== '') || (!candidate.ok && (!candidate.errorCode || candidate.found || candidate.value))) {
     throw new Error('本机草稿暂不可用')
   }
-  return candidate as NativeResult
+  if (versioned && candidate.ok && (isRead
+    ? !validState(candidate as unknown as VersionedNativeResult)
+    : candidate.found || candidate.value !== '' || !validRevision(candidate.revision) || candidate.revision === '0')) {
+    throw new Error('本机草稿暂不可用')
+  }
+  if (versioned && !candidate.ok && candidate.revision !== '') throw new Error('本机草稿暂不可用')
+  return candidate as NativeResult | VersionedNativeResult
+}
+
+function validRevision(value: unknown): value is string {
+  return typeof value === 'string' && /^(0|[1-9][0-9]{0,18})$/.test(value) &&
+    (value.length < 19 || value <= MAX_REVISION)
+}
+
+function validState(value: VersionedNativeResult): boolean {
+  return value.ok && value.errorCode === '' && validRevision(value.revision) &&
+    (value.found ? value.value.length > 0 : value.value === '' && value.revision === '0')
+}
+
+function incrementRevision(value: string): string {
+  if (!validRevision(value) || value === MAX_REVISION) throw new Error('本机草稿版本不可用')
+  const digits = Array.from(value, char => char.charCodeAt(0))
+  for (let index = digits.length - 1; index >= 0; index--) {
+    if (digits[index] < 57) { digits[index]++; return String.fromCharCode(...digits) }
+    digits[index] = 48
+  }
+  const next = `1${String.fromCharCode(...digits)}`
+  if (!validRevision(next)) throw new Error('本机草稿版本不可用')
+  return next
 }
 
 /**
- * One adapter is bound to a verified subject/session. Read and creation require
- * the active lease; a one-use prepared write may finish after logout because
- * DraftController already accepted and ordered that exact snapshot.
+ * One adapter is bound to a verified subject/session. Every mutation uses the
+ * native revision and exact predecessor bytes observed by the versioned editor.
  */
 export class SecureDraftStorage implements InitialDraftStorage {
+  readonly versioned = true
   #port: NativeDraftPort
   #subjectId: string
   #auth: AuthLease
   #generation: string
 
   constructor(port: NativeDraftPort, subjectId: string, auth: AuthLease) {
-    if (!port || typeof port.discoverTrainingDrafts !== 'function' || typeof port.readTrainingDraft !== 'function' || typeof port.createTrainingDraft !== 'function' ||
-      typeof port.writeTrainingDraft !== 'function' || !/^[1-9]\d{0,19}$/.test(subjectId) ||
+    if (!port || typeof port.discoverTrainingDrafts !== 'function' || typeof port.readVersionedTrainingDraft !== 'function' ||
+      typeof port.compareAndSetVersionedTrainingDraft !== 'function' || !/^[1-9]\d{0,19}$/.test(subjectId) ||
       !auth || typeof auth.isCurrent !== 'function' || typeof auth.generation !== 'string' || !auth.generation ||
       !auth.isCurrent(subjectId, auth.generation)) throw new Error('本机草稿暂不可用')
     this.#port = port
@@ -105,44 +137,76 @@ export class SecureDraftStorage implements InitialDraftStorage {
   }
 
   async read(key: string): Promise<unknown> {
+    return (await this.readVersioned(key)).value
+  }
+
+  async readVersioned(key: string): Promise<DraftVersionState> {
     const event = this.#key(key)
     this.#assertCurrent()
-    let read: NativeResult
-    try { read = result(this.#port.readTrainingDraft(key)) } catch { throw new Error('读取本机草稿失败') }
+    let read: VersionedNativeResult
+    try { read = result(this.#port.readVersionedTrainingDraft(key), true) as VersionedNativeResult }
+    catch { throw new Error('读取本机草稿失败') }
     this.#assertCurrent()
     if (!read.ok || !read.found || !read.value) throw new Error('读取本机草稿失败')
     this.#payload(read.value, event)
-    return read.value
+    return { found: read.found, value: read.value, revision: read.revision }
   }
 
   async createIfAbsent(key: string, value: string): Promise<'created' | 'exists'> {
     const event = this.#key(key)
     this.#payload(value, event)
     this.#assertCurrent()
-    let created: NativeResult
-    try { created = result(this.#port.createTrainingDraft(key, value)) } catch { throw new Error('创建本机草稿结果未确认') }
+    let created: VersionedNativeResult
+    try {
+      created = result(this.#port.compareAndSetVersionedTrainingDraft(key, '0', false, '', value), true, false) as VersionedNativeResult
+    } catch { throw new Error('创建本机草稿结果未确认') }
+    if (!created.ok) {
+      if (created.errorCode === 'conflict') return 'exists'
+      throw new Error('创建本机草稿结果未确认')
+    }
+    if (created.found || created.value || created.revision !== '1') throw new Error('创建本机草稿结果未确认')
+    const readback = await this.readVersioned(key)
+    if (readback.revision !== created.revision || readback.value !== value) throw new Error('创建本机草稿结果未确认')
     this.#assertCurrent()
-    if (created.ok && !created.found && !created.value) return 'created'
-    if (!created.ok && created.errorCode === 'conflict') return 'exists'
-    throw new Error('创建本机草稿结果未确认')
+    return 'created'
   }
 
-  prepareWrite(key: string, value: string): () => Promise<void> {
+  prepareVersionedWrite(key: string, value: string): (expected: DraftVersionState) => Promise<DraftVersionState> {
     const event = this.#key(key)
     this.#payload(value, event)
     this.#assertCurrent()
     let consumed = false
-    return async () => {
+    return async (expected: DraftVersionState): Promise<DraftVersionState> => {
       if (consumed) throw new Error('本机草稿写入已使用')
       consumed = true
-      let written: NativeResult
-      try { written = result(this.#port.writeTrainingDraft(key, value)) } catch { throw new Error('保存本机草稿结果未确认') }
-      if (!written.ok || written.found || written.value) throw new Error('保存本机草稿结果未确认')
+      if (!expected?.found || !expected.value || !validRevision(expected.revision)) throw new Error('本机草稿版本不可用')
+      this.#payload(expected.value, event)
+      const nextRevision = incrementRevision(expected.revision)
+      let written: VersionedNativeResult
+      try {
+        written = result(this.#port.compareAndSetVersionedTrainingDraft(key, expected.revision, true,
+          expected.value, value), true, false) as VersionedNativeResult
+      } catch { throw new Error('保存本机草稿结果未确认') }
+      this.#assertCurrent()
+      if (!written.ok || written.found || written.value || written.revision !== nextRevision) {
+        throw new Error('保存本机草稿结果未确认')
+      }
+      const readback = await this.readVersioned(key)
+      if (!this.#auth.isCurrent(this.#subjectId, this.#generation)) throw new Error('账号已变化，请重新登录后恢复草稿')
+      if (readback.revision !== nextRevision || readback.value !== value) throw new Error('保存本机草稿结果未确认')
+      return readback
     }
   }
 
+  /** Compatibility write is deliberately unavailable: callers must supply a CAS baseline. */
+  prepareWrite(_key: string, _value: string): () => Promise<void> {
+    throw new Error('本机草稿需要版本化写入')
+  }
+
   async write(key: string, value: string): Promise<void> {
-    return this.prepareWrite(key, value)()
+    void key
+    void value
+    throw new Error('本机草稿需要版本化写入')
   }
 
   #assertCurrent(): void {

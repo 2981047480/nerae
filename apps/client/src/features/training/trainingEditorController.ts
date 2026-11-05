@@ -12,6 +12,7 @@ import {
   type SetKind,
 } from './recording'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
+import { supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -60,6 +61,7 @@ class EditorOwnership {
   private inFlight = 0
   private closePromise?: Promise<void>
   private resolveClose?: () => void
+  private cleanup?: () => void
 
   constructor(
     key: string,
@@ -108,9 +110,16 @@ class EditorOwnership {
 
   isClosing(): boolean { return this.closing }
 
+  setCleanup(cleanup: () => void): void {
+    if (!this.active || this.closing || this.cleanup) throw new Error('编辑器已关闭')
+    this.cleanup = cleanup
+  }
+
   private finishClose(): void {
     if (!this.active || this.inFlight !== 0) return
     this.active = false
+    this.cleanup?.()
+    this.cleanup = undefined
     if (editorOwners.get(this.key) === this) editorOwners.delete(this.key)
     this.resolveClose?.()
     this.resolveClose = undefined
@@ -154,17 +163,17 @@ function validDate(value: string): boolean {
 
 /**
  * Local-only editor orchestration. It does not call the server or mark edits
- * as remotely saved. Every read and mutation is checked by DraftController's
- * captured authenticated subject and generation.
+ * as remotely saved. Every read and mutation is bound to the captured
+ * authenticated subject and generation.
  */
 export class TrainingEditorController {
-  private readonly local: DraftController
+  private readonly local: DraftController | VersionedEditorDraft
   private readonly ids: SecureRecordingIdProvider
   private readonly now: () => Date
   private readonly ownership: EditorOwnership
 
   private constructor(
-    local: DraftController,
+    local: DraftController | VersionedEditorDraft,
     ids: SecureRecordingIdProvider,
     now: () => Date,
     ownership: EditorOwnership,
@@ -192,11 +201,11 @@ export class TrainingEditorController {
       if (!validKey(eventId)) throw new EditorIDError()
       const today = todayInTimezone(options.timeZone, options.now())
       const draft = createRecordingDraft(eventId, options.date, options.timeZone, today)
-      const local = new DraftController(options.subjectId, draft, options.storage, options.now, options.auth)
+      const key = draftStorageKey(options.subjectId, eventId)
       if (typeof options.storage.createIfAbsent !== 'function') {
         outcome = { ok: false, reason: 'storage_unavailable' }
       } else {
-        ownership = await acquireEditorOwnership(local.key, options.subjectId, generation, options.auth)
+        ownership = await acquireEditorOwnership(key, options.subjectId, generation, options.auth)
         if (!ownership) {
           outcome = { ok: false, reason: 'already_open' }
         } else {
@@ -209,10 +218,10 @@ export class TrainingEditorController {
             // The initial snapshot is inserted by one atomic operation. Never fall
             // back to DraftController.persist(), which is an unconditional write.
             const envelope = JSON.stringify({ schema: 1, subjectId: options.subjectId, draft })
-            local.draft // Recheck the captured authenticated lease immediately before the create.
+            if (!this.isCurrent(options, generation)) throw new Error('session changed')
             let result: unknown
             let unknown = false
-            try { result = await options.storage.createIfAbsent(local.key, envelope) }
+            try { result = await options.storage.createIfAbsent(key, envelope) }
             catch { unknown = true }
 
             if (!this.isCurrent(options, generation) || !ownership.isCurrent()) {
@@ -222,11 +231,26 @@ export class TrainingEditorController {
             } else if (result === 'exists') {
               outcome = { ok: false, reason: 'already_exists' }
             } else {
-              // The port's definite `created` result is the persistence acknowledgement.
-              local.status = 'saved_locally'
-              const controller = new TrainingEditorController(local, options.ids, options.now, ownership)
-              handedOff = true
-              outcome = { ok: true, controller }
+              let local: DraftController | VersionedEditorDraft | undefined
+              try {
+                if (supportsVersionedDraft(options.storage)) {
+                  local = await VersionedEditorDraft.created(options.subjectId, draft, options.storage, options.now, options.auth)
+                  const versioned = local
+                  ownership.setCleanup(() => versioned.release())
+                } else {
+                  local = new DraftController(options.subjectId, draft, options.storage, options.now, options.auth)
+                  local.status = 'saved_locally'
+                }
+              } catch { /* creation may have committed; report an unknown outcome */ }
+              if (!this.isCurrent(options, generation) || !ownership.isCurrent()) {
+                outcome = { ok: false, reason: 'session_changed' }
+              } else if (!local) {
+                outcome = { ok: false, reason: 'outcome_unknown', eventId }
+              } else {
+                const controller = new TrainingEditorController(local, options.ids, options.now, ownership)
+                handedOff = true
+                outcome = { ok: true, controller }
+              }
             }
           }
         }
@@ -281,7 +305,10 @@ export class TrainingEditorController {
             ? { ok: false, reason: 'already_open' }
             : { ok: false, reason: 'session_changed' }
         } else {
-          const local = await DraftController.load(subjectId, clientEventId, storage, now, auth)
+          const local = supportsVersionedDraft(storage)
+            ? await VersionedEditorDraft.load(subjectId, clientEventId, storage, now, auth)
+            : await DraftController.load(subjectId, clientEventId, storage, now, auth)
+          if (local instanceof VersionedEditorDraft) ownership.setCleanup(() => local.release())
           if (!auth.isCurrent(subjectId, generation) || !ownership.isCurrent()) {
             outcome = { ok: false, reason: 'session_changed' }
           } else {
