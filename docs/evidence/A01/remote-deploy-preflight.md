@@ -104,3 +104,87 @@ duplicate forged proxy-credential and source-IP headers, and rejection of
 health and unrelated paths. Its temporary processes and configuration were
 removed on exit. This did not modify or validate coexistence with the existing
 live Caddy site, check real HTTPS from an iPhone, or deploy the API.
+
+## 2026-11-05 release preflight
+
+The QQ SMTP settings were restored locally in the Git-ignored main-project
+`.env`, with owner-only permissions. A TLS SMTP authentication check passed
+without sending a message; no credential was printed or transferred to the
+host.
+
+The server reported about 6.3 GiB free on its 59 GiB root filesystem, down from
+the earlier reading. Caddy remains active on ports 80/443 and the unrelated
+`127.0.0.1:18080` listener remains occupied. Ports 18081 and 18101 were not
+listening at the time of the check; they have not been reserved. The checked
+Nerae service/data directories were absent. A read-only disk inventory found
+substantial existing non-Nerae data under `/var/lib` and approximately 1.3 GiB
+in `/tmp/nerae-package-preflight.J47rlPJK`; nothing was deleted. The cause of
+the change in available space has not been established.
+
+An isolated, owner-only host directory
+`/tmp/nerae-release-preflight.h02Nz8zI` contains a 21 MiB server release
+candidate built from commit `cab5404`. The API source, migrations and
+then-current deployment-preflight inputs matched that integration version. Archive and
+package checksums passed on the server, all three binaries were identified as
+Linux x86-64, and `nerae-migrate check` validated all 18 migration entries.
+This check did not connect to a database, transfer SMTP credentials, start
+an API or worker, change Caddy, or create a public route.
+
+The proxy examples changed after that candidate was packaged: the staged
+archive contains the older direct-to-API gateway fragment and does not contain
+the new private-sidecar example. Do not use its proxy fragment for deployment;
+build and verify a new release with the reviewed gateway configuration first.
+
+After the user approved the exact target, the old synthetic test directory
+`/tmp/nerae-package-preflight.J47rlPJK` was removed. The check immediately
+before removal found no processes using it or mounts inside it; approximately
+1.32 GiB was recovered and root filesystem free space reached 7.50 GiB. The
+newer release archive in `/tmp/nerae-release-preflight.h02Nz8zI` remains and
+its SHA-256 still matches; the existing Caddy service remained active. An
+initial retention probe checked a nonexistent `release` subdirectory; a second
+check identified the actual `package` directory and verified the archive.
+
+The live Caddy configuration and admin endpoint were inspected without
+changing them. An unrelated local UID could read the admin configuration over
+loopback. A proxy credential in that configuration would therefore be
+exposed, and public routing and source-IP trust also depend on protecting the
+live admin boundary. No admin write was attempted.
+
+An isolated two-Caddy smoke test ran on the target host with synthetic
+credentials, separate temporary UIDs, a
+restricted Unix socket and loopback backend. Forged duplicate credential and
+source-IP headers were replaced, the health route was denied, a non-target
+route retained its isolated behavior, an unrelated UID could not access the
+socket, and the front UID could not read the sidecar config. Both temporary
+Caddy admin APIs and config autosave were disabled. The test passed again with
+the socket directory restricted to mode `2750`, then removed only its own
+temporary files. It did not modify the live Caddy service, establish real-site
+coexistence, prove the live admin boundary safe, or expose the Nerae API.
+
+The [retained smoke script](deployment-preflight/proxy-isolation-smoke.py) was
+then changed to exercise the checked-in configuration examples directly. A
+subsequent attempt on the host stopped at its minimum-free-space guard before
+starting either test proxy: free space had fallen again, from 7.50 GiB after
+the authorized cleanup to 4.50 GiB.
+The read-only inventory showed `/var/lib` at about 27 GiB and `/tmp` at about
+129 MiB; it did not establish what caused the space change. A further read-only
+directory-timestamp and short-term trend query was not executed because the
+automatic approval service returned HTTP 403. No other project's data was
+removed, and the database persistence test was not started.
+
+A later approval retry succeeded without bypassing the review. The root
+filesystem then had approximately 4.49 GiB free and was stable during a
+five-second sample. A separate project's approximately 1.5 GiB backup/restore
+directory had a recent modification time, but these observations do not
+establish the full cause of the preceding space decrease.
+
+The template-based proxy test was then bounded to 1 MiB per child-process file
+and required at least 4 GiB free for this short, non-database check. It passed
+on the host using the actual checked-in Caddy examples and cleaned only its
+own synthetic files. The database persistence test's higher space guard was
+not changed, and that test remains unrun. Live Caddy coexistence and its admin
+boundary remain unresolved.
+
+The current IP certificate was accepted by this Mac's trust store on
+2026-11-05 and is valid from 2026-11-03 20:11:57 UTC through 2026-11-10
+12:11:56 UTC. Automatic renewal and iPhone trust remain unverified.

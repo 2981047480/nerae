@@ -1,0 +1,15 @@
+# Template only: generate a protected config for the separate proxy identity.
+# Substitute the API port and a private random credential during provisioning;
+# never commit or expose the generated file or credential.
+{
+	admin off
+	persist_config off
+	auto_https off
+}
+
+http://:8080 {
+	bind unix//run/nerae-proxy/proxy.sock|0660
+	reverse_proxy 127.0.0.1:API_LOOPBACK_PORT {
+		header_up X-Nerae-Proxy-Credential REPLACE_WITH_PRIVATE_CREDENTIAL
+	}
+}

@@ -47,3 +47,14 @@ and that Chinese, space and percent-sign event IDs could be processed. The
 full Swift synthetic suite passed. This still does not prove real process
 interruption, Keychain, device, server or UI recovery; the candidate remains
 unmerged and the permanent-marker limit remains unresolved.
+
+A subsequent code review found why the key history cannot simply be dropped
+after a receipt settles. Once a server idempotency record expires, a reused
+old key with a changed request can be treated as a new operation. For example,
+the existing finish implementation accepts the current version of an already
+completed session and updates its completion time again. This is a
+code-path finding, not an end-to-end reproduction of expired retention plus
+native cleanup. The retained receipt also does not contain the separate key
+and body markers needed for precise deletion. Any bounded replacement needs
+an explicit, crash-safe identity and retention design; replay-only queries
+still fail closed and do not rerun the write.

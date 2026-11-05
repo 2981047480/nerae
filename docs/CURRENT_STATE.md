@@ -1,8 +1,10 @@
-# 当前状态 · 2026-11-04
+# 当前状态 · 2026-11-05
 
 **阶段：三端实现进行中；尚无可用业务服务或正式三端应用。**
 
 - QQ SMTP 向用户本人邮箱的测试邮件已实际送达；另一本机私有数据库／回环 TLS 测试以真实 QQ 发信完成挑战、登录及会话读取。验证码由测试程序派生，尚未经过手机手工输入，也未部署线上。[真实邮件证据](evidence/A01/real-qq-mail.md)
+- 邮箱配置已恢复到主项目中受保护且被 Git 忽略的文件；2026-11-05 QQ SMTP 加密授权检查通过，未发送新邮件。服务器上已在独立临时目录校验服务端候选包和 18 项迁移清单；数据库、服务及公网路由尚未部署。[部署预检](evidence/A01/remote-deploy-preflight.md)
+- 用户授权清理一个 Nerae 旧临时测试目录后，腾讯云根盘可用曾回升至约 7.50 GiB，随后又降至约 4.49 GiB，原因尚未证实；候选包校验完好、现有网关仍运行。项目样例在限制文件大小的隔离测试中通过私有转发和伪造请求头验证，数据库持久化测试因空间不足尚未运行。现有网关管理接口可被其他账号读取，公开路由前仍须处理管理边界；手机信任和证书自动续期未验证。[部署预检](evidence/A01/remote-deploy-preflight.md)
 - 腾讯云主机已用隔离测试库验证 API 登录入口和候选代理规则；两台合成设备在同机通过登录批准及同一训练记录的读写联测。迁移执行器在同机合成数据库通过 18 项迁移、重复执行、并发、权限隔离及失败后保留 dirty 的测试。真实服务、QQ 凭据和公网路由仍未部署，手机同步尚未接通。[部署前检查](evidence/A01/remote-deploy-preflight.md) · [迁移证据](evidence/A01/production-migration-candidate.md)
 - iOS 与 Android 已有按账号／训练分项的受保护草稿源码候选，两种记录方式共享一份草稿；创建冲突、切号、异常写入和发现分页通过合成测试，Android UTS 桥已生成。iOS 已加入内部持久 revision 和旧草稿升级候选，但 JS 编辑器尚未使用 revision。真实 Keychain／Keystore、两端真机和同步均未验收；小程序安全草稿接口仍不可用。[iOS 草稿](evidence/P02/P02-13/secure-draft-ios.md) · [iOS 草稿版本](evidence/P02/P02-13/secure-draft-revision-ios.md) · [Android 草稿](evidence/P02/P02-13/android-secure-draft-candidate.md)
 - 受保护草稿 UTS 已提供平台能力标识：iOS、Android 与通用回退各自返回不同值；匹配版资源生成和 iOS 插件链接通过。编辑器尚未使用该标识，真机行为未验证。[证据](evidence/P02/P02-13/draft-platform-capability.md)

@@ -22,7 +22,18 @@ public route. No real credential is included.
   strings and configs. It also verifies that the release's real migration
   manifest is checksum-consistent without connecting to a database.
 - `caddy-route.example`: a candidate fragment for a reviewed merge into the
-  existing Caddy site block. It is not a standalone site config.
+  existing Caddy site block. It forwards over a restricted Unix socket and
+  contains no proxy credential. It is not a standalone site config.
+- `caddy-sidecar.example`: a template for a separate private Caddy process
+  which reads the proxy credential and adds it only on the loopback API hop.
+  Its admin endpoint and config autosave are disabled. Its generated config
+  must be unreadable by the public gateway and other service users.
+- `proxy-isolation-smoke.py`: isolated synthetic front/sidecar check. It needs
+  root on a host with Caddy in order to use separate test UIDs, binds only a
+  temporary loopback listener and Unix socket, and cleans up its own test
+  directory on success. It requires at least 4 GiB free and limits each child
+  process file to 1 MiB; failed test directories are retained for diagnosis.
+  This small proxy test does not relax the separate database test's space guard.
 - `deployment-plan.md`: service isolation, ordered rollout, blockers and
   rollback boundaries.
 
@@ -44,6 +55,12 @@ group/world writable (except a sticky temporary ancestor). The tool reads the
 files in memory, emits only pass/fail classifications, and makes no network
 connections. Do not enable shell tracing or redirect secret-bearing process
 data to logs. This check does not replace the binaries' own startup validation. It only checks the files opened during this run; a later file replacement must be prevented by trusted directory ownership and checked again at startup.
+
+The live host's existing Caddy admin API was found readable by an unrelated
+local UID. Placing the proxy credential in that gateway's config would expose
+it through the admin API; even with the separate sidecar, gateway route and
+source-IP trust still depend on protecting the existing admin API. The
+isolated smoke test does not alter or validate that live management boundary.
 
 Run its synthetic tests with:
 

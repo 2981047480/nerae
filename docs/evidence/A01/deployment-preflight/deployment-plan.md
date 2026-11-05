@@ -19,10 +19,22 @@ Before exposing a route:
    Run `preflight.py` and the Go binaries' own configuration checks.
 4. Start only Nerae's worker and loopback API after dependencies are ready.
    Test authentication and database access locally before routing traffic.
-5. Review the complete existing Caddy configuration, replace the placeholder
-   in `caddy-route.example` with the reserved port, validate coexistence and
-   reload only after a rollback configuration has been preserved. Verify the
-   existing service, certificate renewal and iPhone HTTPS trust.
+5. Review the complete existing Caddy configuration. The public gateway must
+   contain no proxy credential: its candidate route forwards over a restricted
+   Unix socket to a separate Caddy identity, which owns the private credential
+   and adds it to the loopback API request. Its admin API and config autosave
+   are disabled. The gateway's existing admin API was readable by an unrelated
+   local UID; resolve its management and source-IP trust boundary before a
+   public route. Validate live coexistence and reload only after preserving a
+   rollback configuration. Verify the existing service, certificate renewal
+   and iPhone HTTPS trust.
+
+   The tested socket directory was owned by the sidecar UID, had the gateway
+   group and mode `2750`; the socket itself had mode `0660`. The sidecar's
+   generated config was readable only by its own UID. For deployment, use a
+   root-owned, group-readable config and root-controlled parent directory so
+   the sidecar can read but cannot replace its settings; this variation has not
+   yet been tested. None of these permissions have been verified live.
 
 On failure, stop only Nerae-owned processes, restore the validated prior Caddy
 configuration if it was changed, and preserve the data and protected key

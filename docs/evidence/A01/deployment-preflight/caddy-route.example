@@ -1,12 +1,12 @@
 # Candidate fragment only. Merge into the currently deployed IP/domain site
 # block after reviewing route order and validating the complete live Caddyfile.
-# Keep the existing site and certificate configuration intact.
+# This public gateway must not contain or have read access to the proxy secret.
 handle_path /nerae-api-v1/* {
 	@health path /health/*
 	respond @health 404
-	# Replace the placeholder only after reserving/checking a free loopback port.
-	reverse_proxy 127.0.0.1:API_LOOPBACK_PORT {
-		header_up X-Nerae-Proxy-Credential {$NERAE_PROXY_CREDENTIAL}
+	# A separate, restricted local Caddy owns this socket and adds the secret.
+	reverse_proxy unix//run/nerae-proxy/proxy.sock {
 		header_up X-Nerae-Trusted-Source-IP {remote_host}
+		header_up -X-Nerae-Proxy-Credential
 	}
 }
