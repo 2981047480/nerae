@@ -85,7 +85,8 @@ type StoredOperation = {
   request: JournalRequest
 }
 
-type PermitProof = { key: string; storedBytes: string; subjectId: string; generation: string; eventId: string; active: boolean }
+type PermitProof = { owner: TrainingOperationJournal; key: string; storedBytes: string; subjectId: string;
+  generation: string; eventId: string; active: boolean; dispatched: boolean; checkCurrent: () => boolean }
 const permits = new WeakMap<object, PermitProof>()
 // Used only to reject a replay result if the operation changed while the
 // network request was in progress. This is not an authorization to settle.
@@ -456,11 +457,11 @@ export class TrainingOperationJournal {
       catch (error) { throw storageFailure(error) }
       this.#assertLease(lease)
       if (!changed) throw new OperationJournalError('conflict')
-      const proof: PermitProof = { key, storedBytes: nextBytes, subjectId: lease.subjectId,
-        generation: lease.generation, eventId: clientEventId, active: true }
+      const proof: PermitProof = { owner: this, key, storedBytes: nextBytes, subjectId: lease.subjectId,
+        generation: lease.generation, eventId: clientEventId, active: true, dispatched: false, checkCurrent: () => false }
       let validForDispatch = true
       let lastCheckedAt = now
-      const permit = Object.freeze({ operation: freezeOperation(next), isCurrent: () => {
+      proof.checkCurrent = () => {
         if (!proof.active || !validForDispatch) return false
         if (!this.#leaseIsCurrent(lease)) { validForDispatch = false; return false }
         try {
@@ -469,13 +470,56 @@ export class TrainingOperationJournal {
           else lastCheckedAt = checkedAt
         } catch { validForDispatch = false }
         return validForDispatch
-      } })
+      }
+      const permit = Object.freeze({ operation: freezeOperation(next),
+        isCurrent: () => !proof.dispatched && proof.checkCurrent() })
       permits.set(permit, proof)
       return permit
     } catch (error) {
       this.#busy.delete(key)
       throw operationFailure(error)
     }
+  }
+
+  /**
+   * Invoke one caller-supplied transport for the exact native-claimed request.
+   * The callback result is not a settlement; the journal remains uncertain
+   * until a request-bound receipt is reconciled with the protected draft.
+   */
+  async dispatchFirst<T>(permit: DispatchPermit, request: JournalRequest,
+    dispatch: (request: JournalRequest, lease: Readonly<JournalCredential>, isCurrent: () => boolean) => Promise<T>): Promise<T> {
+    if (typeof dispatch !== 'function') throw new OperationJournalError('invalid_operation')
+    const proof = this.#permitProof(permit)
+    if (proof.dispatched) throw new OperationJournalError('conflict')
+    const expected = normalizeRequest(request, proof.eventId)
+    const operation = decode(proof.storedBytes)
+    if (!this.#sameRequest(operation.request, expected)) throw new OperationJournalError('conflict')
+    const lease = this.#captureLease()
+    if (lease.subjectId !== proof.subjectId || lease.generation !== proof.generation) {
+      throw new OperationJournalError('session_changed')
+    }
+    let raw: unknown
+    try { raw = await this.#storage.read(proof.key) } catch (error) { throw storageFailure(error) }
+    this.#assertLease(lease)
+    if (this.#permitProof(permit) !== proof || proof.dispatched || raw !== proof.storedBytes || !permit.isCurrent()) {
+      throw new OperationJournalError('conflict')
+    }
+    // Consume before invoking the callback, including synchronous throws and
+    // reentrant calls. The native first-send mark survives a process exit.
+    proof.dispatched = true
+    let result: T | undefined
+    let failed = false
+    let failure: unknown
+    const dispatchLease = Object.freeze({ subjectId: proof.subjectId, generation: proof.generation })
+    const isCurrent = () => proof.active && proof.dispatched && proof.checkCurrent()
+    try { result = await dispatch(expected, dispatchLease, isCurrent) }
+    catch (error) { failed = true; failure = error }
+    // Even a valid direct response is not enough to settle a separate draft.
+    // A failed transition keeps the durable in-flight request for recovery.
+    await this.markUncertain(permit)
+    this.#assertLease(lease)
+    if (failed) throw failure
+    return result as T
   }
 
   /** Call after network/transport ambiguity. No response body is accepted here. */
@@ -586,7 +630,7 @@ export class TrainingOperationJournal {
   #permitProof(permit: DispatchPermit): PermitProof {
     if (!permit || typeof permit !== 'object') throw new OperationJournalError('conflict')
     const proof = permits.get(permit as object)
-    if (!proof?.active) throw new OperationJournalError('conflict')
+    if (!proof?.active || proof.owner !== this) throw new OperationJournalError('conflict')
     return proof
   }
 }

@@ -20,6 +20,10 @@ const hooks = registerHooks({
     if (specifier === './operationJournal' && context.parentURL?.endsWith('/recordingApi.ts')) {
       return nextResolve('./operationJournal.ts', context)
     }
+    if (/^\.\/(recording|recordingApi|recordingProjection|trainingEditorController|versionedEditorDraft|draftStorage|operationJournal|secureDraftStorage)$/.test(specifier) &&
+      context.parentURL?.includes('/features/training/')) {
+      return nextResolve(`${specifier}.ts`, context)
+    }
     return nextResolve(specifier, context)
   },
 })
@@ -27,6 +31,9 @@ const featureDir = process.env.NERAE_INTEROP_CLIENT_DIR
 const { RecordingApi } = await import(pathToFileURL(path.join(featureDir, 'recordingApi.ts')).href)
 const { restoreConfirmedSession } = await import(pathToFileURL(path.join(featureDir, 'recordingProjection.ts')).href)
 const { TrainingOperationJournal } = await import(pathToFileURL(path.join(featureDir, 'operationJournal.ts')).href)
+const { TrainingEditorController } = await import(pathToFileURL(path.join(featureDir, 'trainingEditorController.ts')).href)
+const { SecureDraftStorage } = await import(pathToFileURL(path.join(featureDir, 'secureDraftStorage.ts')).href)
+const { dispatchFirstFreeSession } = await import(pathToFileURL(path.join(featureDir, 'firstFreeSessionDispatch.ts')).href)
 hooks.deregister()
 const request = async options => {
   const response = await fetch(options.url, { method: options.method, headers: options.header, body: options.data })
@@ -44,7 +51,7 @@ const assertWriteExpiry = result => {
 const make = (subjectId, accessToken, generation) => {
   const lease = { subjectId, generation }
   const credential = { ...lease, accessToken }
-  const auth = { current: () => credential, isCurrent: (id, g) => id === subjectId && g === generation }
+  const auth = { generation, current: () => credential, isCurrent: (id, g) => id === subjectId && g === generation }
   return { api: new RecordingApi(process.env.NERAE_INTEROP_URL, auth, request, lease), auth }
 }
 const first = make(process.env.NERAE_INTEROP_SUBJECT_A, process.env.NERAE_INTEROP_TOKEN_A, 'local-test-a')
@@ -163,4 +170,73 @@ const changedDuringReplay = new RecordingApi(process.env.NERAE_INTEROP_URL, agai
 assert.equal((await changedDuringReplay.replayPending(secondJournal, lostInput.clientEventId)).state, 'unresolved')
 console.log('PASS: lost create response recovered as a read-only receipt using a second synthetic session; journal retained')
 console.log('PASS: changed pending operation rejects an otherwise valid local TLS replay receipt')
+
+// Exercise the new coordinator against the same real local HTTP server. The
+// native storage ports below are synthetic; they do not model a device.
+const nativeDraftRows = new Map()
+const nativeDraft = {
+  readVersionedTrainingDraft(key) {
+    const row = nativeDraftRows.get(key)
+    return { ok: true, errorCode: '', found: !!row, value: row?.value ?? '', revision: row?.revision ?? '0' }
+  },
+  compareAndSetVersionedTrainingDraft(key, revision, found, before, value) {
+    const row = nativeDraftRows.get(key)
+    if ((row?.revision ?? '0') !== revision || !!row !== found || (row?.value ?? '') !== before) {
+      return { ok: false, errorCode: 'conflict', found: false, value: '', revision: '' }
+    }
+    const next = (BigInt(revision) + 1n).toString()
+    nativeDraftRows.set(key, { value, revision: next })
+    return { ok: true, errorCode: '', found: false, value: '', revision: next }
+  },
+  discoverTrainingDrafts() {
+    return { ok: true, errorCode: '', found: true, value: JSON.stringify({ eventIds: [], nextCursor: null, hasUnclassifiedItems: false }) }
+  },
+}
+const draftStorage = new SecureDraftStorage(nativeDraft, process.env.NERAE_INTEROP_SUBJECT_A, first.auth)
+const localNow = () => new Date(`${process.env.NERAE_INTEROP_DATE}T12:00:00Z`)
+const newEditor = async eventId => {
+  const values = [eventId, `${eventId}-entry`, `${eventId}-record`]
+  const ids = { nextId: () => values.shift() }
+  const created = await TrainingEditorController.create({ subjectId: process.env.NERAE_INTEROP_SUBJECT_A,
+    date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC', storage: draftStorage, now: localNow, auth: first.auth, ids })
+  assert.equal(created.ok, true)
+  assert.equal((await created.controller.addCustomExercise('合成测试深蹲', 'bodyweight')).ok, true)
+  return created.controller
+}
+const coordinatorEvent = 'coordinator-event-001'
+const editor = await newEditor(coordinatorEvent)
+const coordinatorJournal = new TrainingOperationJournal(storage, first.auth, { retentionMs: 60_000 })
+const prepared = first.api.prepareFreeSessionRequest({ date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC',
+  clientEventId: coordinatorEvent }, 'coordinator-create-key-001')
+const candidate = await dispatchFirstFreeSession(editor, coordinatorJournal, first.api, first.auth, prepared)
+assert.equal(candidate.state, 'receipt_candidate')
+assert.equal(candidate.receipt.detail.clientEventId, coordinatorEvent)
+assert.equal((await again.api.readSession(candidate.receipt.detail.id)).detail.clientEventId, coordinatorEvent)
+assert.equal((await coordinatorJournal.readPending(coordinatorEvent)).state, 'uncertain')
+assert.equal(editor.draft.server, undefined)
+assert.equal(editor.draft.exercises.length, 1)
+await editor.close()
+
+const lostCoordinatorEvent = 'coordinator-lost-event-001'
+const lostEditor = await newEditor(lostCoordinatorEvent)
+let coordinatorCalls = 0
+const coordinatorLostApi = new RecordingApi(process.env.NERAE_INTEROP_URL, first.auth, async options => {
+  coordinatorCalls++
+  const response = await request(options)
+  assert.equal(response.statusCode, 201)
+  throw new Error('synthetic lost response after coordinator commit')
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-a' })
+const lostPrepared = coordinatorLostApi.prepareFreeSessionRequest({ date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC',
+  clientEventId: lostCoordinatorEvent }, 'coordinator-lost-key-001')
+const lostCandidate = await dispatchFirstFreeSession(lostEditor, coordinatorJournal, coordinatorLostApi, first.auth, lostPrepared)
+assert.equal(lostCandidate.state, 'reconcile_required')
+assert.equal(coordinatorCalls, 1)
+assert.equal((await coordinatorJournal.readPending(lostCoordinatorEvent)).state, 'uncertain')
+const lostCoordinatorReceipt = await again.api.replayPending(secondJournal, lostCoordinatorEvent)
+assert.equal(lostCoordinatorReceipt.state, 'committed')
+assert.equal(lostCoordinatorReceipt.detail.clientEventId, lostCoordinatorEvent)
+assert.equal((await coordinatorJournal.readPending(lostCoordinatorEvent)).state, 'uncertain')
+assert.equal(lostEditor.draft.server, undefined)
+await lostEditor.close()
+console.log('PASS: first-send coordinator reached isolated TLS server and retained a lost-response receipt')
 console.log('PASS: actual client adapter created, saved, replayed, finished and restored both recording modes over isolated TLS HTTP')

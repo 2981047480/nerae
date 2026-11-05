@@ -201,6 +201,14 @@ export function isPreparedFreeSessionFor(request: unknown, subjectId: string, ge
   return current
 }
 
+/** Ensure the same adapter and live account prepared the request. */
+export function isPreparedFreeSessionForApi(request: unknown, api: RecordingApi,
+  subjectId: string, generation: string): request is PreparedFreeSessionRequest {
+  if (!request || typeof request !== 'object') return false
+  return preparedFreeSessionRequests.get(request)?.owner === api &&
+    isPreparedFreeSessionFor(request, subjectId, generation)
+}
+
 export interface FinishInput {
   expectedVersion: number
   date?: string
@@ -627,7 +635,7 @@ export class RecordingApi {
   }
 
   private async requestJson(method: 'GET' | 'POST', path: string, expectedStatus: number,
-    data?: unknown, idempotencyKey?: string, exactBody?: string): Promise<{
+    data?: unknown, idempotencyKey?: string, exactBody?: string, beforeSend?: () => boolean): Promise<{
       data: unknown; headers?: Readonly<Record<string, string>>; lease: RecordingLease; isSameCredential: () => boolean
     }> {
     const { subjectId, generation, accessToken, isSameCredential } = this.captureCredential()
@@ -644,6 +652,11 @@ export class RecordingApi {
     } else if (data !== undefined) {
       try { encoded = JSON.stringify(data) } catch { throw new RecordingApiError('invalid_request') }
       if (typeof encoded !== 'string') throw new RecordingApiError('invalid_request')
+    }
+    if (beforeSend) {
+      let allowed = false
+      try { allowed = isSameCredential() && beforeSend() === true } catch { /* fail closed */ }
+      if (!allowed) throw new RecordingApiError('reconcile_required')
     }
     let response: HttpResponse
     try { response = await this.request({ url: `${this.base}${path}`, method, header, ...(encoded === undefined ? {} : { data: encoded }) }) }
@@ -782,8 +795,8 @@ export class RecordingApi {
   }
 
   private async call(method: 'GET' | 'POST', path: string, expectedStatus: number, expectedId?: string,
-    data?: unknown, idempotencyKey?: string, exactBody?: string): Promise<ScopedSessionDetail> {
-    const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey, exactBody)
+    data?: unknown, idempotencyKey?: string, exactBody?: string, beforeSend?: () => boolean): Promise<ScopedSessionDetail> {
+    const response = await this.requestJson(method, path, expectedStatus, data, idempotencyKey, exactBody, beforeSend)
     const idempotencyKeyExpiresAt = method === 'POST' ? writeExpiry(response.headers) : undefined
     let detail: WorkoutSessionDetail
     try { detail = parseSessionDetail(response.data) }
@@ -847,7 +860,7 @@ export class RecordingApi {
   }
 
   /** Dispatch a request prepared by this API instance exactly once. */
-  sendPreparedFreeSessionRequest(prepared: PreparedFreeSessionRequest): Promise<ScopedSessionDetail> {
+  sendPreparedFreeSessionRequest(prepared: PreparedFreeSessionRequest, beforeSend?: () => boolean): Promise<ScopedSessionDetail> {
     const proof = prepared !== null && typeof prepared === 'object' ? preparedFreeSessionRequests.get(prepared) : undefined
     if (!proof || proof.owner !== this || proof.used || prepared.method !== 'POST' ||
       prepared.path !== '/me/sessions' || !validIdempotencyKey(prepared.idempotencyKey) ||
@@ -873,7 +886,7 @@ export class RecordingApi {
     let dispatchedCredential: ReturnType<RecordingApi['captureCredential']>
     try { dispatchedCredential = this.captureCredential() }
     catch (error) { return Promise.reject(error).catch(reconcileWriteResponse) }
-    return this.call('POST', prepared.path, 201, undefined, undefined, prepared.idempotencyKey, prepared.body).then(snapshot => {
+    return this.call('POST', prepared.path, 201, undefined, undefined, prepared.idempotencyKey, prepared.body, beforeSend).then(snapshot => {
       if (!replayMatches(snapshot.detail, submittedEventId, submitted, null)) {
         throw new RecordingApiError('reconcile_required')
       }
