@@ -1,5 +1,5 @@
 import type { SetKind, SetWrite } from './recording'
-import { samePendingSnapshot, TrainingOperationJournal } from './operationJournal'
+import { samePendingSnapshot, TrainingOperationJournal, type JournalRequest } from './operationJournal'
 
 /** Credentials come from the real identity module and are never stored here. */
 export interface RecordingCredential {
@@ -30,6 +30,19 @@ export interface ScopedSessionDetail {
 export type PendingReplayResult =
   | { readonly state: 'unresolved' }
   | { readonly state: 'committed'; readonly detail: WorkoutSessionDetail; readonly idempotencyKeyExpiresAt: string }
+
+/** A persisted intent supplied by the draft owner for read-only reconciliation. */
+export interface DraftFreeSessionReplayInput {
+  readonly subjectId: string
+  readonly clientEventId: string
+  readonly state: 'ready' | 'in_flight' | 'uncertain'
+  readonly request: JournalRequest
+}
+
+/** Historical evidence only; not authorization to settle or a current snapshot. */
+export type DraftFreeSessionReplayCandidate =
+  | { readonly state: 'unresolved' }
+  | { readonly state: 'candidate'; readonly detail: WorkoutSessionDetail; readonly idempotencyKeyExpiresAt: string }
 
 export interface WorkoutSessionSummary {
   id: string
@@ -646,7 +659,64 @@ export class RecordingApi {
     const credential = this.captureCredential()
     if (!pending || pending.subjectId !== credential.subjectId || pending.clientEventId !== clientEventId ||
       (pending.state !== 'in_flight' && pending.state !== 'uncertain')) return { state: 'unresolved' }
-    const original = pending.request
+    const receipt = await this.readReplayReceipt(pending.request, pending.clientEventId, credential)
+    if (receipt.state !== 'committed') return receipt
+    // The original request can have changed while the replay HTTP call was in
+    // flight. This point-in-time recheck cannot authorize settlement or prove
+    // that an intermediate ABA did not occur.
+    let latest
+    try { latest = await journal.readPending(clientEventId) }
+    catch {
+      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+      return { state: 'unresolved' }
+    }
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    if (!samePendingSnapshot(pending, latest)) return { state: 'unresolved' }
+    return receipt
+  }
+
+  /**
+   * Query an already-dispatched free-session intent from a protected draft.
+   * This only reads the server receipt: the caller must re-read and CAS its
+   * own draft before using it, and must fetch a fresh session before editing.
+   */
+  async replayDraftFreeSession(input: DraftFreeSessionReplayInput): Promise<DraftFreeSessionReplayCandidate> {
+    let original: JournalRequest
+    let eventId: string
+    let subjectId: string
+    try {
+      if (!object(input)) return { state: 'unresolved' }
+      const { subjectId: owner, clientEventId: event, state, request } = input
+      if (!validId(owner) || !validKey(event) ||
+        /[\uD800-\uDFFF]/.test(event.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')) ||
+        (state !== 'in_flight' && state !== 'uncertain') || !object(request)) {
+        return { state: 'unresolved' }
+      }
+      subjectId = owner
+      eventId = event
+      const { method, path, idempotencyKey, body: encoded } = request
+      if (method !== 'POST' || path !== '/me/sessions' ||
+        !validIdempotencyKey(idempotencyKey) || typeof encoded !== 'string' || encoded.length > 2048) {
+        return { state: 'unresolved' }
+      }
+      const body: unknown = JSON.parse(encoded)
+      if (!object(body) || body.source !== 'free' || body.clientEventId !== eventId ||
+        !validDate(body.date) || !validTimeZone(body.timeZone) ||
+        encoded !== JSON.stringify({ source: 'free', date: body.date, timeZone: body.timeZone, clientEventId: eventId })) {
+        return { state: 'unresolved' }
+      }
+      original = { method: 'POST', path: '/me/sessions', idempotencyKey, body: encoded }
+    } catch { return { state: 'unresolved' } }
+    const credential = this.captureCredential()
+    if (subjectId !== credential.subjectId) return { state: 'unresolved' }
+    const receipt = await this.readReplayReceipt(original, eventId, credential)
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    if (receipt.state !== 'committed') return receipt
+    return Object.freeze({ state: 'candidate', detail: receipt.detail, idempotencyKeyExpiresAt: receipt.idempotencyKeyExpiresAt })
+  }
+
+  private async readReplayReceipt(original: JournalRequest, eventId: string,
+    credential: { accessToken: string; isSameCredential: () => boolean }): Promise<PendingReplayResult> {
     const match = /^\/me\/sessions\/([1-9]\d{0,19})\/(sets|finish)$/.exec(original.path)
     if (original.method !== 'POST' || !validIdempotencyKey(original.idempotencyKey) ||
       (original.path !== '/me/sessions' && !match)) return { state: 'unresolved' }
@@ -669,21 +739,17 @@ export class RecordingApi {
     let expiry: string
     try {
       expiry = writeExpiry(response.headers)
-      detail = parseSessionDetail(response.data)
-      if (!replayMatches(detail, pending.clientEventId, submitted, match)) return { state: 'unresolved' }
+      // Materialize one JSON snapshot before validating and freezing it.
+      // A mutable transport object must not change a field between those steps.
+      const encoded = JSON.stringify(response.data, (_key, value: unknown) => {
+        if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('invalid response number')
+        return value
+      })
+      if (typeof encoded !== 'string') return { state: 'unresolved' }
+      detail = parseSessionDetail(JSON.parse(encoded))
+      if (!replayMatches(detail, eventId, submitted, match)) return { state: 'unresolved' }
     } catch { return { state: 'unresolved' } }
     if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
-    // The original request can have changed while the replay HTTP call was in
-    // flight. This point-in-time recheck cannot authorize settlement or prove
-    // that an intermediate ABA did not occur.
-    let latest
-    try { latest = await journal.readPending(clientEventId) }
-    catch {
-      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
-      return { state: 'unresolved' }
-    }
-    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
-    if (!samePendingSnapshot(pending, latest)) return { state: 'unresolved' }
     const immutable = { ...detail, sets: detail.sets.map(set => Object.freeze({ ...set })),
       exerciseEntryKeys: [...detail.exerciseEntryKeys] }
     Object.freeze(immutable.sets)

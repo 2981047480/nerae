@@ -50,6 +50,113 @@ const sentSet = { recordKey: 'record-001', exerciseEntryKey: 'entry-0001', exerc
   kind: 'weight', weightKg: 42.5, reps: 8, completed: true }
 const serverSet = { ...sentSet, resolvedExerciseName: '深蹲' }
 
+test('a stored free-session intent queries only the matching read-only receipt', async () => {
+  const identity = auth()
+  const requests = []
+  const api = new RecordingApi('https://api.example.org/v1', identity, async request => {
+    requests.push(request)
+    return { statusCode: 201, headers: headers(), data: detail() }
+  }, { subjectId: '101', generation: 'session-1' })
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001', body: JSON.stringify(createBody) }
+  const stored = { subjectId: '101', clientEventId: eventId, state: 'uncertain', request }
+  const result = await api.replayDraftFreeSession(stored)
+  assert.equal(result.state, 'candidate')
+  assert.equal(result.detail.clientEventId, eventId)
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].url, 'https://api.example.org/v1/me/sessions/replay')
+  assert.equal(requests[0].data, request.body)
+  assert.equal(requests[0].header['Idempotency-Key'], request.idempotencyKey)
+  assert.equal(stored.state, 'uncertain')
+})
+
+test('stored receipt lookup captures the exact request before the network await', async () => {
+  const identity = auth()
+  let reads = 0
+  let sent
+  const body = JSON.stringify(createBody)
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001',
+    get body() { reads++; return reads === 1 ? body : '{"source":"other"}' } }
+  const api = new RecordingApi('https://api.example.org', identity, async input => {
+    sent = input.data
+    return { statusCode: 201, headers: headers(), data: detail() }
+  }, { subjectId: '101', generation: 'session-1' })
+  const result = await api.replayDraftFreeSession({ subjectId: '101', clientEventId: eventId, state: 'in_flight', request })
+  assert.equal(result.state, 'candidate')
+  assert.equal(sent, body)
+  assert.equal(reads, 1)
+})
+
+test('stored free-session receipt lookup fails closed for changed owner, unissued state and noncanonical request', async () => {
+  const identity = auth()
+  let calls = 0
+  const api = new RecordingApi('https://api.example.org', identity, async () => {
+    calls++
+    return { statusCode: 201, headers: headers(), data: detail() }
+  }, { subjectId: '101', generation: 'session-1' })
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001', body: JSON.stringify(createBody) }
+  const base = { subjectId: '101', clientEventId: eventId, state: 'in_flight', request }
+  const invalidEvent = 'event-\ud800-01'
+  const invalid = [
+    { ...base, subjectId: '202' },
+    { ...base, state: 'ready' },
+    { ...base, clientEventId: 'other-event-01' },
+    { ...base, request: { ...request, path: '/me/sessions/42/sets' } },
+    { ...base, request: { ...request, idempotencyKey: 'bad key' } },
+    { ...base, request: { ...request, body: request.body.replace('"source":"free"', '"source":"free","source":"free"') } },
+    { ...base, request: { ...request, body: JSON.stringify({ ...createBody, extra: true }) } },
+    { ...base, clientEventId: invalidEvent, request: { ...request, body: JSON.stringify({ ...createBody, clientEventId: invalidEvent }) } },
+  ]
+  for (const item of invalid) assert.equal((await api.replayDraftFreeSession(item)).state, 'unresolved')
+  assert.equal(calls, 0)
+})
+
+test('a changing response object cannot alter a validated receipt', async () => {
+  const identity = auth()
+  const response = detail()
+  let reads = 0
+  Object.defineProperty(response, 'clientEventId', { enumerable: true,
+    get() { reads++; return reads <= 2 ? eventId : 'different-event' } })
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001', body: JSON.stringify(createBody) }
+  const api = new RecordingApi('https://api.example.org', identity,
+    async () => ({ statusCode: 201, headers: headers(), data: response }), { subjectId: '101', generation: 'session-1' })
+  const result = await api.replayDraftFreeSession({ subjectId: '101', clientEventId: eventId, state: 'uncertain', request })
+  assert.equal(result.state, 'candidate')
+  assert.equal(result.detail.clientEventId, eventId)
+  assert.equal(reads, 1)
+})
+
+test('stored free-session receipt does not survive an auth change or an unavailable replay', async () => {
+  const identity = auth()
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001', body: JSON.stringify(createBody) }
+  const stored = { subjectId: '101', clientEventId: eventId, state: 'in_flight', request }
+  let response = { statusCode: 503, headers: {}, data: {} }
+  const api = new RecordingApi('https://api.example.org', identity, async () => response,
+    { subjectId: '101', generation: 'session-1' })
+  assert.equal((await api.replayDraftFreeSession(stored)).state, 'unresolved')
+  response = { statusCode: 201, headers: headers(), data: detail({ clientEventId: 'other-event' }) }
+  assert.equal((await api.replayDraftFreeSession(stored)).state, 'unresolved')
+  const changed = new RecordingApi('https://api.example.org', identity, async () => {
+    identity.set({ subjectId: '202', generation: 'session-2', accessToken: 'other-token' })
+    return { statusCode: 201, headers: headers(), data: detail() }
+  }, { subjectId: '101', generation: 'session-1' })
+  await assert.rejects(changed.replayDraftFreeSession(stored), error => error.code === 'session_changed')
+})
+
+test('stored receipt is not released when the account changes just after receipt parsing', async () => {
+  const identity = auth()
+  const request = { method: 'POST', path: '/me/sessions', idempotencyKey: 'replay-key-001', body: JSON.stringify(createBody) }
+  const api = new RecordingApi('https://api.example.org', identity, async () => ({
+    statusCode: 201,
+    get headers() {
+      queueMicrotask(() => identity.set({ subjectId: '202', generation: 'session-2', accessToken: 'other-token' }))
+      return headers()
+    },
+    data: detail(),
+  }), { subjectId: '101', generation: 'session-1' })
+  await assert.rejects(api.replayDraftFreeSession({ subjectId: '101', clientEventId: eventId, state: 'uncertain', request }),
+    error => error.code === 'session_changed')
+})
+
 test('replay reads the journal request verbatim and never clears it', async () => {
   const { journal, store, identity } = await pending('/me/sessions', createBody)
   const before = [...store.values.values()][0]
