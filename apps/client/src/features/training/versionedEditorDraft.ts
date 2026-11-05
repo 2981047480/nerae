@@ -1,5 +1,6 @@
 import { restoreDraft, type RecordingDraft } from './recording'
 import { todayInTimezone, type AuthLease, type DraftStorage, type DraftVersionState, type LocalDraftStatus } from './draftStorage'
+import { isPreparedFreeSessionFor, type PreparedFreeSessionRequest } from './recordingApi'
 
 type VersionedStorage = DraftStorage & Required<Pick<DraftStorage, 'readVersioned' | 'prepareVersionedWrite'>>
 type Attempt = { before: DraftVersionState; value: string }
@@ -18,6 +19,9 @@ type Slot = {
 const slots = new Map<string, Slot>()
 const reservations = new Set<string>()
 const MAX_REVISION = '9223372036854775807'
+
+export class DraftStageBusyError extends Error {}
+export class DraftStageStorageError extends Error {}
 
 export function supportsVersionedDraft(storage: DraftStorage): storage is VersionedStorage {
   return storage.versioned === true && typeof storage.readVersioned === 'function' && typeof storage.prepareVersionedWrite === 'function'
@@ -45,6 +49,11 @@ function draftKey(subjectId: string, eventId: string): string {
 
 function envelope(subjectId: string, draft: RecordingDraft): string {
   return JSON.stringify({ schema: 1, subjectId, draft })
+}
+
+function pendingMarker(draft: RecordingDraft): { present: boolean; value: unknown } {
+  return { present: Object.prototype.hasOwnProperty.call(draft, 'syncPending'),
+    value: draft.syncPending }
 }
 
 function decode(raw: string, subjectId: string, eventId: string, now: () => Date): RecordingDraft {
@@ -136,9 +145,20 @@ export class VersionedEditorDraft {
 
   async update(transform: (draft: RecordingDraft) => RecordingDraft): Promise<boolean> {
     const current = this.draft
+    const pending = pendingMarker(current)
+    const eventId = current.clientEventId
+    const timeZone = current.timeZone
+    const date = current.date
+    const server = JSON.stringify(current.server)
     const next = transform(current)
-    if (next.clientEventId !== current.clientEventId || next.timeZone !== current.timeZone) {
+    if (next.clientEventId !== eventId || next.timeZone !== timeZone) {
       throw new Error('不能改变记录身份或已冻结的时区')
+    }
+    const proposedPending = pendingMarker(next)
+    if (pending.present !== proposedPending.present || (pending.present &&
+      (typeof pending.value !== 'string' || proposedPending.value !== pending.value || next.date !== date ||
+        JSON.stringify(next.server) !== server))) {
+      throw new Error('待核对的训练请求不能由普通编辑更改')
     }
     const checked = restoreDraft(next, todayInTimezone(next.timeZone, this.now()))
     this.slot.latest = envelope(this.subjectId, checked)
@@ -146,6 +166,42 @@ export class VersionedEditorDraft {
     try { this.storage.prepareVersionedWrite(this.key, this.slot.latest) }
     catch { this.slot.status = 'storage_error'; return false }
     return this.persist()
+  }
+
+  /** Persist a create intent only. This method neither claims nor sends it. */
+  async stageFreeSession(request: PreparedFreeSessionRequest): Promise<{ saved: boolean; changed: boolean }> {
+    this.assertCurrent()
+    const draft = this.draft
+    let marker: string
+    try {
+      if (!isPreparedFreeSessionFor(request, this.subjectId, this.generation) ||
+        Object.keys(request).sort().join(',') !== 'body,idempotencyKey,method,path') throw new Error('invalid')
+      const { method, path, idempotencyKey, body } = request
+      if (method !== 'POST' || path !== '/me/sessions' || typeof idempotencyKey !== 'string' ||
+        !/^[A-Za-z0-9._~-]{8,128}$/.test(idempotencyKey) || typeof body !== 'string' ||
+        body !== JSON.stringify({ source: 'free', date: draft.date, timeZone: draft.timeZone,
+          clientEventId: draft.clientEventId }) || draft.server) throw new Error('invalid')
+      marker = JSON.stringify({ schema: 1, subjectId: this.subjectId, clientEventId: this.eventId,
+        state: 'ready', request: { method, path, idempotencyKey, body } })
+    } catch { throw new Error('待发训练请求无效') }
+    const pending = pendingMarker(draft)
+    if (pending.present) {
+      if (pending.value !== marker) throw new Error('已有待核对的训练请求')
+      const saved = await this.persist()
+      return { saved: saved && isPreparedFreeSessionFor(request, this.subjectId, this.generation), changed: false }
+    }
+    if (this.slot.running || this.slot.status === 'saving') throw new DraftStageBusyError('本机草稿正在保存')
+    if (this.slot.uncertain || this.slot.status !== 'saved_locally' ||
+      this.slot.latest !== this.slot.base.value) throw new DraftStageStorageError('本机草稿尚未确认')
+    const staged = envelope(this.subjectId, { ...draft, syncPending: marker })
+    // Validate the full escaped envelope before changing the live draft.
+    // A deterministic size/format error must not install an unsaveable marker.
+    try { this.storage.prepareVersionedWrite(this.key, staged) }
+    catch { throw new Error('本机待发请求无法保存') }
+    this.slot.latest = staged
+    this.slot.sequence++
+    const saved = await this.persist()
+    return { saved: saved && isPreparedFreeSessionFor(request, this.subjectId, this.generation), changed: true }
   }
 
   async persist(): Promise<boolean> {

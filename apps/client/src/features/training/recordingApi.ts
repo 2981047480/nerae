@@ -186,7 +186,20 @@ export interface PreparedFreeSessionRequest {
   readonly body: string
 }
 
-const preparedFreeSessionRequests = new WeakMap<object, { owner: RecordingApi; used: boolean }>()
+const preparedFreeSessionRequests = new WeakMap<object, {
+  owner: RecordingApi; used: boolean; subjectId: string; generation: string; isCurrent: () => boolean
+}>()
+
+/** An unconsumed in-memory request may only be staged for its live owner/session. */
+export function isPreparedFreeSessionFor(request: unknown, subjectId: string, generation: string): request is PreparedFreeSessionRequest {
+  if (!request || typeof request !== 'object') return false
+  const proof = preparedFreeSessionRequests.get(request)
+  if (!proof || proof.used || proof.subjectId !== subjectId || proof.generation !== generation) return false
+  let current = false
+  try { current = proof.isCurrent() } catch { /* fail closed */ }
+  if (!current) proof.isCurrent = () => false
+  return current
+}
 
 export interface FinishInput {
   expectedVersion: number
@@ -822,14 +835,14 @@ export class RecordingApi {
       throw new RecordingApiError('invalid_request')
     }
     if (!validIdempotencyKey(idempotencyKey)) throw new RecordingApiError('invalid_request')
-    this.captureCredential()
+    const { subjectId, generation, isSameCredential } = this.captureCredential()
     let body: string
     try {
       body = JSON.stringify({ source: 'free', date: input.date, timeZone: input.timeZone, clientEventId: input.clientEventId })
     } catch { throw new RecordingApiError('invalid_request') }
     if (typeof body !== 'string') throw new RecordingApiError('invalid_request')
     const prepared = Object.freeze({ method: 'POST' as const, path: '/me/sessions' as const, idempotencyKey, body })
-    preparedFreeSessionRequests.set(prepared, { owner: this, used: false })
+    preparedFreeSessionRequests.set(prepared, { owner: this, used: false, subjectId, generation, isCurrent: isSameCredential })
     return prepared
   }
 
@@ -841,7 +854,14 @@ export class RecordingApi {
       typeof prepared.body !== 'string' || !Object.isFrozen(prepared)) {
       throw new RecordingApiError('invalid_request')
     }
+    let stillCurrent = false
+    let credentialError: unknown
+    try { stillCurrent = proof.isCurrent() } catch (error) { credentialError = error }
     proof.used = true
+    // Drop the captured credential comparison as soon as the request is consumed.
+    proof.isCurrent = () => false
+    if (credentialError !== undefined) return Promise.reject(credentialError).catch(reconcileWriteResponse)
+    if (!stillCurrent) return Promise.reject(new RecordingApiError('session_changed'))
     let submitted: unknown
     try { submitted = JSON.parse(prepared.body) } catch { throw new RecordingApiError('invalid_request') }
     if (!object(submitted) || submitted.source !== 'free' || !validKey(submitted.clientEventId) ||

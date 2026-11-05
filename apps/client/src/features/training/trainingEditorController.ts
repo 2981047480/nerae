@@ -12,7 +12,8 @@ import {
   type SetKind,
 } from './recording'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
-import { supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
+import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
+import type { PreparedFreeSessionRequest } from './recordingApi'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -376,6 +377,25 @@ export class TrainingEditorController {
         }
         return { ok: false, reason: 'superseded', localStatus: this.local.status }
       } catch (error) { return this.failure(error) }
+    })
+  }
+
+  /** Stage one creation request in the protected draft without sending it. */
+  async stageFreeSession(request: PreparedFreeSessionRequest): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const staged = await this.local.stageFreeSession(request)
+        try { void this.local.draft }
+        catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (staged.saved && this.local.status === 'saved_locally') return this.success(staged.changed)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: staged.changed, localStatus: this.local.status }
+        return { ok: false, reason: 'pending', changed: staged.changed, localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
     })
   }
 

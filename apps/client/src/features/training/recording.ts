@@ -44,6 +44,8 @@ export interface RecordingDraft {
   /** Added only after a real server response; version is needed for edits. */
   /** Status belongs to the confirmed server snapshot, never to local timing. */
   server?: { id: string; version: number; status?: 'in_progress' | 'completed' }
+  /** Opaque durable intent; ordinary editing cannot create or modify it. */
+  syncPending?: string
   finish: { durationMin?: number | null; rpe?: number | null; note?: string | null }
   exercises: DraftExercise[]
 }
@@ -331,6 +333,9 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
   if (!object(value) || typeof value.clientEventId !== 'string' || typeof value.date !== 'string' ||
     typeof value.timeZone !== 'string' || (value.mode !== 'after_workout' && value.mode !== 'per_set') ||
     !object(value.finish) || !Array.isArray(value.exercises)) throw new Error('草稿结构无效')
+  if (Object.prototype.hasOwnProperty.call(value, 'syncPending') && typeof value.syncPending !== 'string') {
+    throw new Error('草稿待发状态无效')
+  }
   createRecordingDraft(value.clientEventId, value.date, value.timeZone, today)
   if (value.server !== undefined && (!object(value.server) || typeof value.server.id !== 'string' ||
     !/^[1-9]\d{0,19}$/.test(value.server.id) || !Number.isSafeInteger(value.server.version) ||
