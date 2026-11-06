@@ -611,6 +611,16 @@ export class RecordingApi {
     this.request = request
   }
 
+  /** Check adapter ownership without exposing the bearer credential. */
+  isBoundToAuth(auth: RecordingAuth, lease: RecordingLease): boolean {
+    try {
+      const current = this.captureCredential()
+      return this.auth === auth && this.lease.subjectId === lease.subjectId &&
+        this.lease.generation === lease.generation && current.subjectId === lease.subjectId &&
+        current.generation === lease.generation
+    } catch { return false }
+  }
+
   private captureCredential(): { subjectId: string; generation: string; accessToken: string; isSameCredential: () => boolean } {
     const credential = this.auth.current()
     if (!credential) throw new RecordingApiError('unauthenticated')

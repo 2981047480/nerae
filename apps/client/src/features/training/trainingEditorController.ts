@@ -4,6 +4,7 @@ import {
   confirmSet,
   createRecordingDraft,
   removeUnsubmittedSet,
+  restoreDraft,
   switchMode,
   updateSet,
   type InputField,
@@ -48,6 +49,9 @@ export type CreateTrainingEditorResult =
 export type AttachTrainingEditorResult =
   | { ok: true; controller: TrainingEditorController }
   | { ok: false; reason: 'storage_unavailable' | 'session_changed' | 'already_open' | 'invalid_input' }
+export type RestoreTrainingEditorResult =
+  | { ok: true; controller: TrainingEditorController }
+  | { ok: false; reason: 'local_exists' | 'local_unsynced' | 'storage_unavailable' | 'outcome_unknown' | 'session_changed' | 'invalid_input' }
 
 class EditorIDError extends Error {}
 class EditorValidationError extends Error {}
@@ -183,6 +187,77 @@ export class TrainingEditorController {
     this.ids = ids
     this.now = now
     this.ownership = ownership
+  }
+
+  /** Install a validated cloud draft only when both local slots are empty. */
+  static async restoreIntoEmptySlot(
+    subjectId: string, draft: RecordingDraft, storage: InitialDraftStorage, now: () => Date,
+    auth: AuthLease, ids: SecureRecordingIdProvider,
+  ): Promise<RestoreTrainingEditorResult> {
+    let generation: string
+    try {
+      generation = auth.generation
+      if (!generation || !auth.isCurrent(subjectId, generation)) return { ok: false, reason: 'session_changed' }
+    } catch { return { ok: false, reason: 'session_changed' } }
+    if (!supportsVersionedDraft(storage) || typeof storage.createIfAbsent !== 'function') {
+      return { ok: false, reason: 'storage_unavailable' }
+    }
+    const state: { ownership: EditorOwnership | null; releaseOperation: (() => void) | null;
+      releaseReservation: (() => void) | null; handedOff: boolean } = {
+      ownership: null, releaseOperation: null, releaseReservation: null, handedOff: false,
+    }
+    let outcome: RestoreTrainingEditorResult | undefined
+    try {
+      const restore = async (): Promise<RestoreTrainingEditorResult> => {
+        const checked = restoreDraft(draft, todayInTimezone(draft.timeZone, now()))
+        const key = draftStorageKey(subjectId, checked.clientEventId)
+        const owner = await acquireEditorOwnership(key, subjectId, generation, auth)
+        state.ownership = owner
+        if (!owner) return { ok: false, reason: 'local_exists' }
+        state.releaseOperation = owner.begin()
+        if (!state.releaseOperation || !owner.isCurrent()) return { ok: false, reason: 'session_changed' }
+        // A dirty in-memory slot can survive a failed write after its editor
+        // closes. Reserve before touching native storage so it remains intact.
+        state.releaseReservation = VersionedEditorDraft.reserveEmptyForCreation(subjectId, checked.clientEventId)
+        if (!state.releaseReservation) return { ok: false, reason: 'local_unsynced' }
+        const value = JSON.stringify({ schema: 1, subjectId, draft: checked })
+        let result: unknown
+        try { result = await storage.createIfAbsent(key, value) }
+        catch { return { ok: false, reason: owner.isCurrent() ? 'outcome_unknown' : 'session_changed' } }
+        if (!owner.isCurrent()) return { ok: false, reason: 'session_changed' }
+        if (result === 'exists') return { ok: false, reason: 'local_exists' }
+        if (result !== 'created') return { ok: false, reason: 'outcome_unknown' }
+        // Release and acquire the regular open reservation without yielding.
+        state.releaseReservation()
+        state.releaseReservation = null
+        let local: VersionedEditorDraft
+        try { local = await VersionedEditorDraft.created(subjectId, checked, storage, now, auth) }
+        catch { return { ok: false, reason: owner.isCurrent() ? 'outcome_unknown' : 'session_changed' } }
+        try { owner.setCleanup(() => local.release()) }
+        catch { local.release(); return { ok: false, reason: 'session_changed' } }
+        if (!owner.isCurrent()) return { ok: false, reason: 'session_changed' }
+        const controller = new TrainingEditorController(local, ids, now, owner)
+        state.handedOff = true
+        return { ok: true, controller }
+      }
+      outcome = await restore()
+    } catch {
+      let current = false
+      try { current = auth.isCurrent(subjectId, generation) } catch { /* fail closed */ }
+      outcome = { ok: false, reason: current ? 'invalid_input' : 'session_changed' }
+    } finally {
+      state.releaseReservation?.()
+      state.releaseOperation?.()
+      if (state.ownership && !state.handedOff) await state.ownership.close()
+    }
+    if (!outcome) return { ok: false, reason: 'storage_unavailable' }
+    let current = false
+    try { current = auth.isCurrent(subjectId, generation) } catch { /* fail closed */ }
+    if (!current) {
+      if (state.ownership && state.handedOff) await state.ownership.close()
+      return { ok: false, reason: 'session_changed' }
+    }
+    return outcome
   }
 
   /** Begin a user-requested local draft and persist the initial empty snapshot. */

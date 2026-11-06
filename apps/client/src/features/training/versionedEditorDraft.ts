@@ -94,6 +94,19 @@ export class VersionedEditorDraft {
     this.assertCurrent()
   }
 
+  /** Reserve an empty process-local slot before an atomic external restore. */
+  static reserveEmptyForCreation(subjectId: string, eventId: string): (() => void) | null {
+    const key = draftKey(subjectId, eventId)
+    if (slots.has(key) || reservations.has(key)) return null
+    reservations.add(key)
+    let active = true
+    return () => {
+      if (!active) return
+      active = false
+      reservations.delete(key)
+    }
+  }
+
   static async load(subjectId: string, eventId: string, storage: VersionedStorage,
     now: () => Date, auth: AuthLease): Promise<VersionedEditorDraft> {
     return this.open(subjectId, eventId, storage, now, auth)
