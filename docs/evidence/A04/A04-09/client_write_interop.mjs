@@ -20,7 +20,7 @@ const hooks = registerHooks({
     if (specifier === './operationJournal' && context.parentURL?.endsWith('/recordingApi.ts')) {
       return nextResolve('./operationJournal.ts', context)
     }
-    if (/^\.\/(recording|recordingApi|recordingProjection|trainingEditorController|versionedEditorDraft|draftStorage|operationJournal|secureDraftStorage)$/.test(specifier) &&
+    if (/^\.\/(recording|recordingApi|recordingProjection|trainingEditorController|versionedEditorDraft|draftStorage|operationJournal|secureDraftStorage|cloudSessionRestore|freeSessionIntent|syncFreeSessionCreate)$/.test(specifier) &&
       context.parentURL?.includes('/features/training/')) {
       return nextResolve(`${specifier}.ts`, context)
     }
@@ -34,6 +34,8 @@ const { TrainingOperationJournal } = await import(pathToFileURL(path.join(featur
 const { TrainingEditorController } = await import(pathToFileURL(path.join(featureDir, 'trainingEditorController.ts')).href)
 const { SecureDraftStorage } = await import(pathToFileURL(path.join(featureDir, 'secureDraftStorage.ts')).href)
 const { dispatchFirstFreeSession } = await import(pathToFileURL(path.join(featureDir, 'firstFreeSessionDispatch.ts')).href)
+const { restoreCloudSessionToLocalDraft } = await import(pathToFileURL(path.join(featureDir, 'cloudSessionRestore.ts')).href)
+const { syncFreeSessionCreate } = await import(pathToFileURL(path.join(featureDir, 'syncFreeSessionCreate.ts')).href)
 hooks.deregister()
 const request = async options => {
   const response = await fetch(options.url, { method: options.method, headers: options.header, body: options.data })
@@ -173,8 +175,7 @@ console.log('PASS: changed pending operation rejects an otherwise valid local TL
 
 // Exercise the new coordinator against the same real local HTTP server. The
 // native storage ports below are synthetic; they do not model a device.
-const nativeDraftRows = new Map()
-const nativeDraft = {
+const makeNativeDraft = nativeDraftRows => ({
   readVersionedTrainingDraft(key) {
     const row = nativeDraftRows.get(key)
     return { ok: true, errorCode: '', found: !!row, value: row?.value ?? '', revision: row?.revision ?? '0' }
@@ -191,7 +192,9 @@ const nativeDraft = {
   discoverTrainingDrafts() {
     return { ok: true, errorCode: '', found: true, value: JSON.stringify({ eventIds: [], nextCursor: null, hasUnclassifiedItems: false }) }
   },
-}
+})
+const nativeDraftRows = new Map()
+const nativeDraft = makeNativeDraft(nativeDraftRows)
 const draftStorage = new SecureDraftStorage(nativeDraft, process.env.NERAE_INTEROP_SUBJECT_A, first.auth)
 const localNow = () => new Date(`${process.env.NERAE_INTEROP_DATE}T12:00:00Z`)
 const newEditor = async eventId => {
@@ -239,4 +242,55 @@ assert.equal((await coordinatorJournal.readPending(lostCoordinatorEvent)).state,
 assert.equal(lostEditor.draft.server, undefined)
 await lostEditor.close()
 console.log('PASS: first-send coordinator reached isolated TLS server and retained a lost-response receipt')
+
+// A second synthetic session has its own empty protected-storage fixture.
+// Restore an already completed server record, including both saved sets.
+const secondDeviceRows = new Map()
+const secondDraftStorage = new SecureDraftStorage(makeNativeDraft(secondDeviceRows),
+  process.env.NERAE_INTEROP_SUBJECT_A, again.auth)
+const restoredOnOtherSession = await restoreCloudSessionToLocalDraft({ sessionId: finished.detail.id,
+  lease: { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-again' },
+  auth: again.auth, draftLease: again.auth, api: again.api, storage: secondDraftStorage,
+  ids: { nextId: () => 'unused-restored-id' }, now: localNow })
+assert.equal(restoredOnOtherSession.ok, true)
+assert.equal(restoredOnOtherSession.controller.draft.clientEventId, createInput.clientEventId)
+assert.equal(restoredOnOtherSession.controller.draft.server.version, finished.detail.version)
+assert.deepEqual(restoredOnOtherSession.controller.draft.exercises[0].sets.map(set => [set.weightKg, set.reps]),
+  [['42.5', '8'], ['45', '6']])
+await restoredOnOtherSession.controller.close()
+console.log('PASS: second synthetic session restored a server workout into its own local draft')
+
+// The server commits a create but its response is lost. Reopen the protected
+// slot under a second synthetic session and send the same key and body again.
+const retryEvent = 'sync-retry-create-event-001'
+const retryEditor = await newEditor(retryEvent)
+const attempts = []
+const lostRetryApi = new RecordingApi(process.env.NERAE_INTEROP_URL, first.auth, async options => {
+  attempts.push({ body: options.data, key: options.header['Idempotency-Key'] })
+  const response = await request(options)
+  assert.equal(response.statusCode, 201)
+  throw new Error('synthetic lost create response')
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-a' })
+assert.equal((await syncFreeSessionCreate(retryEditor, lostRetryApi, first.auth,
+  () => 'sync-retry-create-key-001')).state, 'retry')
+assert.ok(retryEditor.draft.syncPending)
+await retryEditor.close()
+const reopenedStorage = new SecureDraftStorage(makeNativeDraft(nativeDraftRows),
+  process.env.NERAE_INTEROP_SUBJECT_A, again.auth)
+const reopened = await TrainingEditorController.attach(process.env.NERAE_INTEROP_SUBJECT_A, retryEvent,
+  reopenedStorage, localNow, again.auth, { nextId: () => 'unused-retry-id' })
+assert.equal(reopened.ok, true)
+const retryApi = new RecordingApi(process.env.NERAE_INTEROP_URL, again.auth, async options => {
+  attempts.push({ body: options.data, key: options.header['Idempotency-Key'] })
+  return request(options)
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-again' })
+assert.equal((await syncFreeSessionCreate(reopened.controller, retryApi, again.auth,
+  () => { throw new Error('a retry must reuse the stored key') })).state, 'created')
+assert.deepEqual(attempts[0], attempts[1])
+assert.equal(reopened.controller.draft.syncPending, undefined)
+assert.equal(reopened.controller.draft.exercises.length, 1)
+const retryReadback = await again.api.readSession(reopened.controller.draft.server.id)
+assert.equal(retryReadback.detail.clientEventId, retryEvent)
+await reopened.controller.close()
+console.log('PASS: same-key create recovered after a lost response in a second synthetic session')
 console.log('PASS: actual client adapter created, saved, replayed, finished and restored both recording modes over isolated TLS HTTP')

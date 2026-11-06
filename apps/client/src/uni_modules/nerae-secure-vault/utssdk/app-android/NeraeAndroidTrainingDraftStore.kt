@@ -455,9 +455,14 @@ object NeraeAndroidTrainingDraftBridge {
 
     @JvmStatic
     fun writeTrainingDraft(context: Context?, key: String?, value: String?): String = withStore(context) { store ->
-        if (key == null || value == null) throw VaultFailure("invalid_state")
-        store.write(key, value)
-        encode(ok = true)
+        rejectLegacyDraftWrite(store, key, value)
+    }
+
+    // An unconditional writer could restore stale input after a pending
+    // marker was cleared. App writes must use the revision-bound CAS entry.
+    @Suppress("UNUSED_PARAMETER")
+    internal fun rejectLegacyDraftWrite(store: NeraeProtectedTrainingDraftStore, key: String?, value: String?): Nothing {
+        throw VaultFailure("unavailable")
     }
 
     @JvmStatic

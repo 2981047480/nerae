@@ -1,6 +1,7 @@
 import { restoreDraft, type RecordingDraft } from './recording'
 import { todayInTimezone, type AuthLease, type DraftStorage, type DraftVersionState, type LocalDraftStatus } from './draftStorage'
-import { isPreparedFreeSessionFor, type PreparedFreeSessionRequest } from './recordingApi'
+import { acknowledgesFreeSession, isPreparedFreeSessionFor, type PreparedFreeSessionRequest, type ScopedSessionDetail } from './recordingApi'
+import { freeSessionMarker, pendingFreeSession } from './freeSessionIntent'
 
 type VersionedStorage = DraftStorage & Required<Pick<DraftStorage, 'readVersioned' | 'prepareVersionedWrite'>>
 type Attempt = { before: DraftVersionState; value: string }
@@ -194,8 +195,7 @@ export class VersionedEditorDraft {
         !/^[A-Za-z0-9._~-]{8,128}$/.test(idempotencyKey) || typeof body !== 'string' ||
         body !== JSON.stringify({ source: 'free', date: draft.date, timeZone: draft.timeZone,
           clientEventId: draft.clientEventId }) || draft.server) throw new Error('invalid')
-      marker = JSON.stringify({ schema: 1, subjectId: this.subjectId, clientEventId: this.eventId,
-        state: 'ready', request: { method, path, idempotencyKey, body } })
+      marker = freeSessionMarker(this.subjectId, this.eventId, request)
     } catch { throw new Error('待发训练请求无效') }
     const pending = pendingMarker(draft)
     if (pending.present) {
@@ -215,6 +215,37 @@ export class VersionedEditorDraft {
     this.slot.sequence++
     const saved = await this.persist()
     return { saved: saved && isPreparedFreeSessionFor(request, this.subjectId, this.generation), changed: true }
+  }
+
+  /** Atomically bind a verified pristine create response and clear its intent. */
+  async acknowledgeFreeSession(request: PreparedFreeSessionRequest, response: ScopedSessionDetail): Promise<boolean> {
+    this.assertCurrent()
+    const current = this.draft
+    const pending = pendingFreeSession(current, this.subjectId)
+    const detail = response?.detail
+    if (!pending || current.syncPending !== freeSessionMarker(this.subjectId, this.eventId, request) ||
+      !acknowledgesFreeSession(response, request) || response.lease.subjectId !== this.subjectId ||
+      response.lease.generation !== this.generation || !detail || detail.clientEventId !== this.eventId ||
+      detail.date !== current.date || detail.timeZone !== current.timeZone || detail.source !== 'free' ||
+      detail.status !== 'in_progress' || detail.version !== 1 || detail.recordedAt !== null ||
+      detail.sets.length !== 0 || detail.exerciseEntryKeys.length !== 0 ||
+      [detail.durationMin, detail.rpe, detail.note].some(value => value !== null && value !== undefined)) {
+      throw new Error('训练创建结果需要核对')
+    }
+    if (this.slot.running || this.slot.status === 'saving') throw new DraftStageBusyError('本机草稿正在保存')
+    if (this.slot.uncertain || this.slot.status !== 'saved_locally' || this.slot.latest !== this.slot.base.value) {
+      throw new DraftStageStorageError('本机草稿尚未确认')
+    }
+    const { syncPending: _pending, ...rest } = current
+    const proposed = { ...rest, server: { id: detail.id, version: detail.version, status: detail.status } }
+    const checked = restoreDraft(proposed, todayInTimezone(proposed.timeZone, this.now()))
+    const value = envelope(this.subjectId, checked)
+    try { this.storage.prepareVersionedWrite(this.key, value) }
+    catch { throw new DraftStageStorageError('本机草稿无法保存') }
+    // Both changes enter the same versioned slot; later local input remains.
+    this.slot.latest = value
+    this.slot.sequence++
+    return this.persist()
   }
 
   async persist(): Promise<boolean> {

@@ -360,6 +360,7 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		ID                string   `json:"id"`
 		Status            string   `json:"status"`
 		Version           int      `json:"version"`
+		UpdatedAt         string   `json:"updatedAt"`
 		ExerciseEntryKeys []string `json:"exerciseEntryKeys"`
 		Sets              []struct {
 			RecordKey string      `json:"recordKey"`
@@ -369,7 +370,7 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 			Name      string      `json:"resolvedExerciseName"`
 		} `json:"sets"`
 	}
-	if err := json.Unmarshal(saved.body, &savedDetail); err != nil || savedDetail.ID != createdSession.ID || savedDetail.Version != 2 || savedDetail.Status != "in_progress" ||
+	if err := json.Unmarshal(saved.body, &savedDetail); err != nil || savedDetail.ID != createdSession.ID || savedDetail.Version != 2 || savedDetail.Status != "in_progress" || savedDetail.UpdatedAt == "" ||
 		len(savedDetail.ExerciseEntryKeys) != 1 || savedDetail.ExerciseEntryKeys[0] != "write-entry-001" || len(savedDetail.Sets) != 1 ||
 		savedDetail.Sets[0].RecordKey != "write-record-001" || savedDetail.Sets[0].WeightKg.String() != "42.50" || savedDetail.Sets[0].RPE.String() != "7.5" || !savedDetail.Sets[0].Completed || savedDetail.Sets[0].Name != "卧推" {
 		t.Fatalf("saved response lost schema data or decimal precision: %s", saved.body)
@@ -419,6 +420,31 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	setsOnly := request(http.MethodPost, setsPath+"/replay", setBody, tokenA, "sets-key-0001")
 	if setsOnly.status != saved.status || !bytes.Equal(setsOnly.body, saved.body) || setsOnly.headers.Get("Idempotency-Replayed") != "true" {
 		t.Fatal("sets replay-only route did not return the committed receipt")
+	}
+	agedSets, err := db.ExecContext(ctx, `UPDATE transport_idempotency_record SET created_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 2 HOUR),expires_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 HOUR) WHERE actor_id=? AND method=? AND route=? AND request_key=?`, claimsA.SubjectID, "POST", setsPath, []byte("sets-key-0001"))
+	if err != nil {
+		t.Fatal("could not expire the synthetic sets receipt")
+	}
+	if count, err := agedSets.RowsAffected(); err != nil || count != 1 {
+		t.Fatal("synthetic sets receipt expiry did not affect exactly one row")
+	}
+	expiredSetsReplay := request(http.MethodPost, setsPath, setBody, tokenAAgain, "sets-key-0001")
+	if expiredSetsReplay.status != http.StatusPreconditionFailed || expiredSetsReplay.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatalf("expired identical sets write did not fail on its stale expectedVersion: %d %s", expiredSetsReplay.status, expiredSetsReplay.body)
+	}
+	setsAfterExpiredReplay := request(http.MethodGet, "/me/sessions/"+createdSession.ID, nil, tokenA, "")
+	var setsAfterExpiredDetail struct {
+		Version   int    `json:"version"`
+		UpdatedAt string `json:"updatedAt"`
+		Sets      []struct {
+			RecordKey string      `json:"recordKey"`
+			WeightKg  json.Number `json:"weightKg"`
+		} `json:"sets"`
+	}
+	if setsAfterExpiredReplay.status != http.StatusOK || json.Unmarshal(setsAfterExpiredReplay.body, &setsAfterExpiredDetail) != nil ||
+		setsAfterExpiredDetail.Version != 2 || setsAfterExpiredDetail.UpdatedAt != savedDetail.UpdatedAt || len(setsAfterExpiredDetail.Sets) != 1 ||
+		setsAfterExpiredDetail.Sets[0].RecordKey != "write-record-001" || setsAfterExpiredDetail.Sets[0].WeightKg.String() != "42.50" {
+		t.Fatalf("expired identical sets write changed persisted state: %d %s", setsAfterExpiredReplay.status, setsAfterExpiredReplay.body)
 	}
 
 	otherBody := []byte(strings.Replace(string(setBody), "42.50", "43.00", 1))
@@ -483,10 +509,12 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		t.Fatalf("finish failed or omitted expiry header: %d %s", finished.status, finished.body)
 	}
 	var finishedDetail struct {
-		Status  string `json:"status"`
-		Version int    `json:"version"`
+		Status     string `json:"status"`
+		Version    int    `json:"version"`
+		RecordedAt string `json:"recordedAt"`
+		UpdatedAt  string `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(finished.body, &finishedDetail); err != nil || finishedDetail.Status != "completed" || finishedDetail.Version != 3 {
+	if err := json.Unmarshal(finished.body, &finishedDetail); err != nil || finishedDetail.Status != "completed" || finishedDetail.Version != 3 || finishedDetail.RecordedAt == "" || finishedDetail.UpdatedAt == "" {
 		t.Fatalf("finish response was not a complete confirmation: %s", finished.body)
 	}
 	finishReplay := request(http.MethodPost, finishPath, finishBody, tokenA, "finish-key-0001")
@@ -507,6 +535,10 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 	if got := request(http.MethodPost, finishPath+"/replay", finishBody, tokenA, "finish-key-0001"); got.status != http.StatusServiceUnavailable || got.headers.Get("Idempotency-Replayed") != "" {
 		t.Fatal("expired replay-only receipt did not fail closed")
 	}
+	expiredFinishReplay := request(http.MethodPost, finishPath, finishBody, tokenAAgain, "finish-key-0001")
+	if expiredFinishReplay.status != http.StatusPreconditionFailed || expiredFinishReplay.headers.Get("Idempotency-Replayed") != "" {
+		t.Fatalf("expired identical finish write did not fail on its stale expectedVersion: %d %s", expiredFinishReplay.status, expiredFinishReplay.body)
+	}
 
 	readback := request(http.MethodGet, "/me/sessions/"+createdSession.ID, nil, tokenA, "")
 	if readback.status != http.StatusOK {
@@ -517,13 +549,15 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		ClientEventID string `json:"clientEventId"`
 		Status        string `json:"status"`
 		Version       int    `json:"version"`
+		RecordedAt    string `json:"recordedAt"`
+		UpdatedAt     string `json:"updatedAt"`
 		Sets          []struct {
 			Weight json.Number `json:"weightKg"`
 			Key    string      `json:"recordKey"`
 		} `json:"sets"`
 	}
 	if err := json.Unmarshal(readback.body, &readDetail); err != nil || readDetail.ID != createdSession.ID || readDetail.ClientEventID != "http-write-event-001" ||
-		readDetail.Status != "completed" || readDetail.Version != 3 || len(readDetail.Sets) != 1 || readDetail.Sets[0].Key != "write-record-001" || readDetail.Sets[0].Weight.String() != "42.50" {
+		readDetail.Status != "completed" || readDetail.Version != 3 || readDetail.RecordedAt != finishedDetail.RecordedAt || readDetail.UpdatedAt != finishedDetail.UpdatedAt || len(readDetail.Sets) != 1 || readDetail.Sets[0].Key != "write-record-001" || readDetail.Sets[0].Weight.String() != "42.50" {
 		t.Fatalf("HTTP readback differed from acknowledged write: %s", readback.body)
 	}
 
@@ -625,8 +659,20 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		if !bytes.Contains(output, []byte("PASS: first-send coordinator reached isolated TLS server")) {
 			t.Fatal("first-send coordinator interoperability did not run")
 		}
+		if !bytes.Contains(output, []byte("PASS: second synthetic session restored a server workout")) {
+			t.Fatal("cloud restore interoperability did not run")
+		}
+		if !bytes.Contains(output, []byte("PASS: same-key create recovered after a lost response")) {
+			t.Fatal("same-key create recovery interoperability did not run")
+		}
+		var retryEvents int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id=? AND client_event_id=?`,
+			claimsA.SubjectID, []byte("sync-retry-create-event-001")).Scan(&retryEvents); err != nil || retryEvents != 1 {
+			t.Fatal("same-key create recovery did not preserve exactly one workout")
+		}
 		t.Log("PASS: actual client adapter created, saved, replayed, finished and restored over isolated TLS HTTP")
 		t.Log("PASS: actual client read-only receipt recovery after a lost create response")
+		t.Log("PASS: cross-session create retry and cloud draft restore interoperability")
 	}
 	clearAdultForTest(t, ctx, db, auth, tokenA)
 	for _, item := range []struct {

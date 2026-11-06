@@ -76,7 +76,7 @@ export interface SessionListInput {
 // A snapshot is only usable in the runtime that received it from this adapter.
 // Restoring from local storage requires a fresh authenticated read.
 const issuedSnapshots = new WeakMap<object, object>()
-const creationAcknowledgements = new WeakMap<object, PreparedFreeSessionRequest>()
+const creationAcknowledgements = new WeakMap<object, { request: PreparedFreeSessionRequest; isCurrent: () => boolean }>()
 const batchAcknowledgements = new WeakMap<object, { baseline: ScopedSessionDetail; version: number; sets: string; order: string }>()
 
 /**
@@ -86,7 +86,8 @@ const batchAcknowledgements = new WeakMap<object, { baseline: ScopedSessionDetai
 export function acknowledgesFreeSession(response: unknown, prepared: unknown): response is ScopedSessionDetail {
   if (response === null || typeof response !== 'object') return false
   const original = creationAcknowledgements.get(response)
-  return original !== undefined && original === prepared
+  if (!original || original.request !== prepared) return false
+  try { return original.isCurrent() } catch { return false }
 }
 
 /** Only a validated response to this exact submitted batch may update a draft. */
@@ -901,7 +902,7 @@ export class RecordingApi {
         throw new RecordingApiError('reconcile_required')
       }
       if (!dispatchedCredential.isSameCredential()) throw new RecordingApiError('session_changed')
-      creationAcknowledgements.set(snapshot, prepared)
+      creationAcknowledgements.set(snapshot, { request: prepared, isCurrent: dispatchedCredential.isSameCredential })
       return snapshot
     }).catch(reconcileWriteResponse)
   }

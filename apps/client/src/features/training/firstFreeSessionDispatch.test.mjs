@@ -6,6 +6,7 @@ import { SecureOperationJournalStorage } from './secureOperationJournalStorage.t
 import { OperationJournalError, TrainingOperationJournal } from './operationJournal.ts'
 import { RecordingApi } from './recordingApi.ts'
 import { dispatchFirstFreeSession } from './firstFreeSessionDispatch.ts'
+import { syncFreeSessionCreate } from './syncFreeSessionCreate.ts'
 
 let fixtureSequence = 0
 const date = '2026-11-03'
@@ -22,7 +23,8 @@ function fixture() {
   const auth = { get generation() { return generation },
     current: () => ({ subjectId: '101', generation, accessToken: token }),
     isCurrent: (subject, candidate) => subject === '101' && candidate === generation,
-    change() { generation = 'generation-2'; token = 'synthetic-token-2' } }
+    change() { generation = 'generation-2'; token = 'synthetic-token-2' },
+    rotateToken() { token = 'synthetic-token-rotated' } }
   const rows = new Map()
   const draftNative = {
     rows,
@@ -246,4 +248,172 @@ test('a transport guard must synchronously return true', async () => {
     await assert.rejects(f.api.sendPreparedFreeSessionRequest(f.prepared(), guard), error => error.code === 'reconcile_required')
     assert.equal(f.calls(), 0)
   }
+})
+
+function createdResponse(f, changes = {}) {
+  return { statusCode: 201, headers: { 'Idempotency-Key-Expires-At': '2030-01-01T00:00:00Z' },
+    data: { id: '42', clientEventId: f.eventId, date, timeZone: 'Asia/Shanghai', status: 'in_progress', source: 'free', version: 1,
+      createdAt: '2026-11-03T00:00:00Z', updatedAt: '2026-11-03T00:00:00Z', recordedAt: null,
+      sets: [], exerciseEntryKeys: [], ...changes } }
+}
+
+test('creation response updates the same protected draft without erasing entered groups', async () => {
+  const f = fixture()
+  const editor = await editorFor(f)
+  const result = await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')
+  assert.equal(result.state, 'created')
+  assert.equal(f.calls(), 1)
+  assert.deepEqual(editor.draft.server, { id: '42', version: 1, status: 'in_progress' })
+  assert.equal(editor.draft.syncPending, undefined)
+  assert.equal(editor.draft.exercises[0].sets[0].reps, '8')
+  const stored = JSON.parse([...f.rows.values()][0].value).draft
+  assert.equal(stored.syncPending, undefined)
+  assert.deepEqual(stored.server, editor.draft.server)
+  assert.equal(stored.exercises[0].sets[0].reps, '8')
+  await editor.close()
+})
+
+test('lost response followed by a new login retries the same request and keeps local input', async () => {
+  const f = fixture()
+  const requests = []
+  f.setTransport(async request => { requests.push(request); throw new Error('response lost') })
+  const editor = await editorFor(f)
+  assert.equal((await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')).state, 'retry')
+  const marker = editor.draft.syncPending
+  assert.ok(marker)
+  await editor.close()
+  f.auth.change()
+  const reopened = await TrainingEditorController.attach('101', f.eventId,
+    new SecureDraftStorage(f.draftNative, '101', f.auth), now, f.auth, f.ids)
+  assert.equal(reopened.ok, true)
+  const nextApi = new RecordingApi('https://api.example.org', f.auth, async request => {
+    requests.push(request)
+    return createdResponse(f)
+  }, { subjectId: '101', generation: 'generation-2' })
+  const retry = await syncFreeSessionCreate(reopened.controller, nextApi, f.auth, () => { throw new Error('must reuse key') })
+  assert.equal(retry.state, 'created')
+  assert.equal(requests.length, 2)
+  assert.equal(requests[0].data, requests[1].data)
+  assert.equal(requests[0].header['Idempotency-Key'], requests[1].header['Idempotency-Key'])
+  assert.equal(JSON.parse(marker).request.body, requests[1].data)
+  assert.equal(reopened.controller.draft.exercises[0].sets[0].reps, '8')
+  assert.equal(reopened.controller.draft.syncPending, undefined)
+  await reopened.controller.close()
+})
+
+test('edits made while creating a session survive the response', async () => {
+  const f = fixture()
+  let release
+  let started
+  const sent = new Promise(resolve => { started = resolve })
+  f.setTransport(async () => {
+    started()
+    await new Promise(resolve => { release = resolve })
+    return createdResponse(f)
+  })
+  const editor = await editorFor(f)
+  const saving = syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')
+  await sent
+  assert.equal((await editor.editGroup('entry-0001', 'record-001', 'reps', '9')).ok, true)
+  release()
+  assert.equal((await saving).state, 'created')
+  assert.equal(editor.draft.exercises[0].sets[0].reps, '9')
+  assert.equal(JSON.parse([...f.rows.values()][0].value).draft.exercises[0].sets[0].reps, '9')
+  await editor.close()
+})
+
+test('repeated save while creation is in flight does not send a second request', async () => {
+  const f = fixture()
+  let release
+  let started
+  const sent = new Promise(resolve => { started = resolve })
+  f.setTransport(async () => { started(); await new Promise(resolve => { release = resolve }); return createdResponse(f) })
+  const editor = await editorFor(f)
+  const first = syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')
+  await sent
+  assert.equal((await syncFreeSessionCreate(editor, f.api, f.auth, () => 'another-create-key')).state, 'busy')
+  release()
+  assert.equal((await first).state, 'created')
+  assert.equal(f.calls(), 1)
+  await editor.close()
+})
+
+test('a failed local acknowledgement retains the original intent until the local write is confirmed', async () => {
+  const f = fixture()
+  const editor = await editorFor(f)
+  const originalWrite = f.draftNative.compareAndSetVersionedTrainingDraft
+  f.setTransport(async () => {
+    let failOnce = true
+    f.draftNative.compareAndSetVersionedTrainingDraft = function (...args) {
+      if (failOnce) { failOnce = false; return fail('unavailable') }
+      return originalWrite.apply(this, args)
+    }
+    return createdResponse(f)
+  })
+  assert.equal((await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')).state, 'local_error')
+  const beforeRetry = JSON.parse([...f.rows.values()][0].value).draft
+  assert.ok(beforeRetry.syncPending)
+  assert.equal(beforeRetry.server, undefined)
+  assert.equal(editor.localStatus, 'storage_error')
+  assert.equal((await editor.retryLocalSave()).ok, true)
+  const committed = JSON.parse([...f.rows.values()][0].value).draft
+  assert.equal(committed.syncPending, undefined)
+  assert.equal(committed.server.id, '42')
+  assert.equal(committed.exercises[0].sets[0].reps, '8')
+  assert.equal(f.calls(), 1)
+  await editor.close()
+})
+
+test('a token replacement after the response cannot apply the previous acknowledgement', async () => {
+  const f = fixture()
+  const editor = await editorFor(f)
+  const send = f.api.sendPreparedFreeSessionRequest.bind(f.api)
+  f.api.sendPreparedFreeSessionRequest = (...args) => send(...args).then(result => {
+    f.auth.rotateToken()
+    return result
+  })
+  assert.equal((await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')).state, 'session_changed')
+  const stored = JSON.parse([...f.rows.values()][0].value).draft
+  assert.ok(stored.syncPending)
+  assert.equal(stored.server, undefined)
+  await editor.close()
+})
+
+test('a newer remote create snapshot cannot overwrite an unresolved local draft', async () => {
+  const f = fixture()
+  f.setTransport(async () => createdResponse(f, { version: 2, updatedAt: '2026-11-03T00:01:00Z',
+    exerciseEntryKeys: ['remote-entry-01'], sets: [{ recordKey: 'remote-record-01', exerciseEntryKey: 'remote-entry-01',
+      exerciseName: '远端动作', resolvedExerciseName: '远端动作', setIndex: 1, kind: 'bodyweight', reps: 5 }] }))
+  const editor = await editorFor(f)
+  const result = await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')
+  assert.equal(result.state, 'reconcile_required')
+  assert.equal(editor.draft.server, undefined)
+  assert.ok(editor.draft.syncPending)
+  assert.equal(editor.draft.exercises[0].sets[0].reps, '8')
+  await editor.close()
+})
+
+test('an account change during create keeps the original draft pending', async () => {
+  const f = fixture()
+  f.setTransport(async () => { f.auth.change(); return createdResponse(f) })
+  const editor = await editorFor(f)
+  const result = await syncFreeSessionCreate(editor, f.api, f.auth, () => 'create-key-0001')
+  assert.equal(result.state, 'session_changed')
+  const stored = JSON.parse([...f.rows.values()][0].value).draft
+  assert.ok(stored.syncPending)
+  assert.equal(stored.server, undefined)
+  await editor.close()
+})
+
+test('a forged acknowledgement cannot clear a pending create request', async () => {
+  const f = fixture()
+  const editor = await editorFor(f)
+  const prepared = f.prepared()
+  assert.equal((await editor.stageFreeSession(prepared)).ok, true)
+  const marker = editor.draft.syncPending
+  assert.equal((await editor.acknowledgeFreeSession(prepared, { lease: { subjectId: '101', generation: 'generation-1' },
+    detail: createdResponse(f).data })).ok, false)
+  assert.equal(editor.draft.syncPending, marker)
+  assert.equal(editor.draft.server, undefined)
+  await editor.close()
 })

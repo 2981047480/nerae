@@ -14,7 +14,7 @@ import {
 } from './recording'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
 import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
-import type { PreparedFreeSessionRequest } from './recordingApi'
+import type { PreparedFreeSessionRequest, ScopedSessionDetail } from './recordingApi'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -466,6 +466,25 @@ export class TrainingEditorController {
         if (staged.saved && this.local.status === 'saved_locally') return this.success(staged.changed)
         if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: staged.changed, localStatus: this.local.status }
         return { ok: false, reason: 'pending', changed: staged.changed, localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
+    })
+  }
+
+  /** Apply a verified creation response without replacing later local input. */
+  async acknowledgeFreeSession(request: PreparedFreeSessionRequest, response: ScopedSessionDetail): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.acknowledgeFreeSession(request, response)
+        try { void this.local.draft }
+        catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: true, localStatus: this.local.status }
+        return { ok: false, reason: 'pending', changed: true, localStatus: this.local.status }
       } catch (error) {
         if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
         if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }

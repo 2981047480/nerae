@@ -218,7 +218,21 @@ private fun verifyPendingGuard() {
     println("PASS: Android inline pending guard, migration, UTF-8, malformed fields and competing writes")
 }
 
+private fun verifyLegacyBridgeCannotOverwriteVersionedDraft() {
+    val backend = VersionedDraftTestBackend()
+    val store = NeraeProtectedTrainingDraftStore(backend, Any(), VersionedDraftTestValidator())
+    val stale = value("before-sync")
+    val latest = value("confirmed")
+    check(store.create(key, stale))
+    val initial = store.readVersioned(key)
+    store.compareAndSetVersioned(key, initial.revision, true, initial.value, latest)
+    val committed = store.readVersioned(key)
+    expect("unavailable") { NeraeAndroidTrainingDraftBridge.rejectLegacyDraftWrite(store, key, stale) }
+    check(store.readVersioned(key) == committed)
+}
+
 fun main() {
+    verifyLegacyBridgeCannotOverwriteVersionedDraft()
     verifyPendingGuard()
     val legacyBackend = VersionedDraftTestBackend()
     val legacyPayload = value("旧草稿 e\u0301")

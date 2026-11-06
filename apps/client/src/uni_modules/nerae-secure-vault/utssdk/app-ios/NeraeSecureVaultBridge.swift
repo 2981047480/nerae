@@ -1479,8 +1479,13 @@ public final class NeraeSecureVaultBridge: NSObject {
     }
 
     @objc public static func writeTrainingDraft(_ key: String, _ value: String) -> String {
-        do { try trainingDrafts.write(key: key, value: value); return encode(ok: true) }
-        catch { return encodeFailure(error) }
+        writeTrainingDraft(in: trainingDrafts, key: key, value: value)
+    }
+
+    /// Unversioned writes can restore a stale draft after a pending marker is
+    /// cleared. App callers must use the revision-bound CAS entry instead.
+    static func writeTrainingDraft(in store: NeraeProtectedDraftStore, key: String, value: String) -> String {
+        encodeFailure(NeraeVaultError.unavailable)
     }
 
     @objc public static func readVersionedTrainingDraft(_ key: String) -> String {

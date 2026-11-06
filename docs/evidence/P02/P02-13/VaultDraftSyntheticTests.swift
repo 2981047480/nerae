@@ -553,6 +553,14 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         let afterBridgeWrite = try versionedStores[0].readVersioned(key: versionedKey)
         try check(afterBridgeWrite.revision == "9" && Data(afterBridgeWrite.value.utf8) == Data(c.utf8))
 
+        // A compatibility caller holding pre-sync bytes must not overwrite
+        // a newer marker-free draft after a request has been settled.
+        let staleBridgeWrite = try decodeBridge(NeraeSecureVaultBridge.writeTrainingDraft(
+            in: versionedStores[0], key: versionedKey, value: a))
+        try check(staleBridgeWrite["ok"] as? Bool == false && staleBridgeWrite["errorCode"] as? String == "unavailable")
+        let afterRejectedLegacyWrite = try versionedStores[0].readVersioned(key: versionedKey)
+        try check(afterRejectedLegacyWrite.revision == "9" && Data(afterRejectedLegacyWrite.value.utf8) == Data(c.utf8))
+
         // Corrupt, unknown-version, invalid UTF-8, and exhausted revisions are
         // retained and fail closed instead of being reset or overwritten.
         let corruptBackend = FakeDraftBackend()
