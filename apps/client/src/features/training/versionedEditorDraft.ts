@@ -1,7 +1,10 @@
 import { restoreDraft, type RecordingDraft } from './recording'
 import { todayInTimezone, type AuthLease, type DraftStorage, type DraftVersionState, type LocalDraftStatus } from './draftStorage'
-import { acknowledgesFreeSession, isPreparedFreeSessionFor, type PreparedFreeSessionRequest, type ScopedSessionDetail } from './recordingApi'
+import { acknowledgesFreeSession, encodePendingSetsBody, isPreparedFreeSessionFor, isPreparedSetsFor,
+  type PreparedFreeSessionRequest, type PreparedSetsRequest, type RecordingApi, type RecordingAuth, type ScopedSessionDetail } from './recordingApi'
 import { freeSessionMarker, pendingFreeSession } from './freeSessionIntent'
+import { applyPendingSetsAcknowledgement, captureOrderedInputs, type OrderedPreparation } from './recordingProjection'
+import { pendingSets, setsMarker } from './setsIntent'
 
 type VersionedStorage = DraftStorage & Required<Pick<DraftStorage, 'readVersioned' | 'prepareVersionedWrite'>>
 type Attempt = { before: DraftVersionState; value: string }
@@ -174,6 +177,18 @@ export class VersionedEditorDraft {
         JSON.stringify(next.server) !== server))) {
       throw new Error('待核对的训练请求不能由普通编辑更改')
     }
+    const pendingBatch = pendingSets(current, this.subjectId)
+    if (pendingBatch) {
+      for (const item of pendingBatch.submitted) {
+        const beforeExercise = current.exercises.find(exercise => exercise.exerciseEntryKey === item.exerciseEntryKey)
+        const afterExercise = next.exercises.find(exercise => exercise.exerciseEntryKey === item.exerciseEntryKey)
+        const beforeGroup = beforeExercise?.sets.find(group => group.recordKey === item.recordKey)
+        const afterGroup = afterExercise?.sets.find(group => group.recordKey === item.recordKey)
+        if (!beforeExercise || !afterExercise || !beforeGroup || !afterGroup ||
+          beforeExercise.kind !== afterExercise.kind || JSON.stringify(beforeExercise.identity) !== JSON.stringify(afterExercise.identity) ||
+          beforeGroup.setIndex !== afterGroup.setIndex) throw new Error('正在同步的训练组不能删除或改变身份')
+      }
+    }
     const checked = restoreDraft(next, todayInTimezone(next.timeZone, this.now()))
     this.slot.latest = envelope(this.subjectId, checked)
     this.slot.sequence++
@@ -243,6 +258,56 @@ export class VersionedEditorDraft {
     try { this.storage.prepareVersionedWrite(this.key, value) }
     catch { throw new DraftStageStorageError('本机草稿无法保存') }
     // Both changes enter the same versioned slot; later local input remains.
+    this.slot.latest = value
+    this.slot.sequence++
+    return this.persist()
+  }
+
+  /** Stage one validated set request before any network call. */
+  async stageSetsRequest(request: PreparedSetsRequest, prepared: OrderedPreparation, baseline: ScopedSessionDetail,
+    api: RecordingApi, auth: RecordingAuth): Promise<boolean> {
+    this.assertCurrent()
+    const draft = this.draft
+    const today = todayInTimezone(draft.timeZone, this.now())
+    const submitted = captureOrderedInputs(prepared, draft, baseline, auth, today)
+    if (!submitted || !prepared.ok || prepared.state !== 'send' ||
+      !isPreparedSetsFor(request, this.subjectId, this.generation, api) || !draft.server ||
+      request.path !== `/me/sessions/${draft.server.id}/sets` || prepared.expectedVersion !== draft.server.version ||
+      request.body !== encodePendingSetsBody(prepared.expectedVersion, prepared.exerciseEntryKeys, prepared.sets)) {
+      throw new Error('待发训练组请求无效')
+    }
+    const marker = setsMarker(this.subjectId, this.eventId, request, submitted)
+    const pending = pendingMarker(draft)
+    if (pending.present) {
+      if (pending.value !== marker) throw new Error('已有待核对的训练请求')
+      return this.persist()
+    }
+    if (this.slot.running || this.slot.status === 'saving') throw new DraftStageBusyError('本机草稿正在保存')
+    if (this.slot.uncertain || this.slot.status !== 'saved_locally' || this.slot.latest !== this.slot.base.value) {
+      throw new DraftStageStorageError('本机草稿尚未确认')
+    }
+    const staged = envelope(this.subjectId, { ...draft, syncPending: marker })
+    try { this.storage.prepareVersionedWrite(this.key, staged) }
+    catch { throw new DraftStageStorageError('本机待发请求无法保存') }
+    this.slot.latest = staged
+    this.slot.sequence++
+    const saved = await this.persist()
+    return saved && isPreparedSetsFor(request, this.subjectId, this.generation, api)
+  }
+
+  /** Persist a request-bound set receipt and clear its intent in one CAS. */
+  async acknowledgeSets(response: ScopedSessionDetail, auth: RecordingAuth): Promise<boolean> {
+    this.assertCurrent()
+    const current = this.draft
+    const result = applyPendingSetsAcknowledgement(current, response, auth, todayInTimezone(current.timeZone, this.now()))
+    if (!result.ok) throw new Error(result.message)
+    if (this.slot.running || this.slot.status === 'saving') throw new DraftStageBusyError('本机草稿正在保存')
+    if (this.slot.uncertain || this.slot.status !== 'saved_locally' || this.slot.latest !== this.slot.base.value) {
+      throw new DraftStageStorageError('本机草稿尚未确认')
+    }
+    const value = envelope(this.subjectId, result.draft)
+    try { this.storage.prepareVersionedWrite(this.key, value) }
+    catch { throw new DraftStageStorageError('本机草稿无法保存') }
     this.slot.latest = value
     this.slot.sequence++
     return this.persist()

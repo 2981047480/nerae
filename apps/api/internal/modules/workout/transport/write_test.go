@@ -665,10 +665,26 @@ func TestWorkoutHTTPWrite(t *testing.T) {
 		if !bytes.Contains(output, []byte("PASS: same-key create recovered after a lost response")) {
 			t.Fatal("same-key create recovery interoperability did not run")
 		}
+		if !bytes.Contains(output, []byte("PASS: protected set coordinator saved both modes")) {
+			t.Fatal("set coordinator interoperability did not run")
+		}
 		var retryEvents int
 		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workout_session WHERE user_id=? AND client_event_id=?`,
 			claimsA.SubjectID, []byte("sync-retry-create-event-001")).Scan(&retryEvents); err != nil || retryEvents != 1 {
 			t.Fatal("same-key create recovery did not preserve exactly one workout")
+		}
+		for _, item := range []struct {
+			event string
+			want  int
+		}{
+			{"sync-retry-sets-event-001", 1}, {"sync-batch-sets-event-001", 2},
+		} {
+			var sessions, sets int
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT w.id), COUNT(s.record_key)
+				FROM workout_session w LEFT JOIN set_record s ON s.session_id=w.id
+				WHERE w.user_id=? AND w.client_event_id=?`, claimsA.SubjectID, []byte(item.event)).Scan(&sessions, &sets); err != nil || sessions != 1 || sets != item.want {
+				t.Fatal("set coordinator did not preserve the expected session and set count")
+			}
 		}
 		t.Log("PASS: actual client adapter created, saved, replayed, finished and restored over isolated TLS HTTP")
 		t.Log("PASS: actual client read-only receipt recovery after a lost create response")

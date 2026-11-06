@@ -14,7 +14,9 @@ import {
 } from './recording'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
 import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
-import type { PreparedFreeSessionRequest, ScopedSessionDetail } from './recordingApi'
+import type { PreparedFreeSessionRequest, PreparedSetsRequest, RecordingApi, RecordingAuth, ScopedSessionDetail } from './recordingApi'
+import type { OrderedPreparation } from './recordingProjection'
+import { pendingSets } from './setsIntent'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -493,6 +495,43 @@ export class TrainingEditorController {
     })
   }
 
+  /** Preserve a prepared set write with the draft before sending it. */
+  async stageSetsRequest(request: PreparedSetsRequest, prepared: OrderedPreparation, baseline: ScopedSessionDetail,
+    api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.stageSetsRequest(request, prepared, baseline, api, auth)
+        try { void this.local.draft } catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return { ok: false, reason: 'pending', localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
+    })
+  }
+
+  /** Merge only an exact request-bound set receipt into the latest draft. */
+  async acknowledgeSets(response: ScopedSessionDetail, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.acknowledgeSets(response, auth)
+        try { void this.local.draft } catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: true, localStatus: this.local.status }
+        return { ok: false, reason: 'pending', changed: true, localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
+    })
+  }
+
   async setMode(mode: RecordingMode): Promise<EditorResult> {
     return this.withOwnership(() => this.mutate(draft => switchMode(draft, mode)))
   }
@@ -547,6 +586,12 @@ export class TrainingEditorController {
         const set = exercise.sets.find(item => item.recordKey === recordKey)
         if (!set) return this.success(false)
         if (set.persisted) return this.invalid()
+        if (draft.server && Object.prototype.hasOwnProperty.call(draft, 'syncPending')) {
+          const pending = pendingSets(draft, this.ownership.subjectId)
+          if (!pending || pending.submitted.some(item => item.exerciseEntryKey === exerciseEntryKey && item.recordKey === recordKey)) {
+            return this.invalid('该组正在同步，请稍后再试。')
+          }
+        }
         return await this.mutate(current => removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
       } catch (error) { return this.failure(error) }
     })

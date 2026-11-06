@@ -3,9 +3,10 @@ import {
   type DraftExercise, type DraftSet, type ExerciseIdentity, type GroupIssue, type RecordingDraft, type SetWrite,
 } from './recording'
 import {
-  acknowledgesSets, isIssuedSnapshot, matchesSetPayload, parseSessionDetail,
-  type RecordingAuth, type RecordingLease, type ScopedSessionDetail, type ServerSet, type WorkoutSessionDetail,
+  acknowledgesPendingSets, acknowledgesSets, encodePendingSetsBody, isIssuedSnapshot, matchesSetPayload, parseSessionDetail,
+  type RecordingAuth, type RecordingLease, type ScopedSessionDetail, type ServerSet, type SetPayload, type WorkoutSessionDetail,
 } from './recordingApi'
+import { pendingSets } from './setsIntent'
 
 type ProjectionFailure = {
   ok: false
@@ -29,6 +30,37 @@ export type OrderedPreparation = ProjectionFailure | PreparedBatch | { ok: true;
 type ValidBase = { ok: true; draft: RecordingDraft; snapshot: WorkoutSessionDetail }
 type PreparationProof = { baseline: ScopedSessionDetail; lease: RecordingLease; clientEventId: string; submitted: Map<string, DraftSet> }
 const preparationProofs = new WeakMap<object, PreparationProof>()
+
+export interface SubmittedSetInput {
+  exerciseEntryKey: string
+  recordKey: string
+  weightKg: string
+  reps: string
+  seconds: string
+  rpe: string
+  confirmed: boolean
+}
+
+/** Capture exact user inputs only from an unchanged, adapter-issued preparation. */
+export function captureOrderedInputs(prepared: OrderedPreparation, draft: RecordingDraft,
+  baseline: ScopedSessionDetail, auth: RecordingAuth, today: string): SubmittedSetInput[] | null {
+  try {
+    if (!prepared || !prepared.ok || prepared.state !== 'send') return null
+    const proof = preparationProofs.get(prepared)
+    if (!proof || proof.baseline !== baseline || proof.clientEventId !== draft.clientEventId ||
+      !validateBase(draft, baseline, proof.lease, auth, today).ok) return null
+    const captured: SubmittedSetInput[] = []
+    for (const write of prepared.sets) {
+      const current = draft.exercises.find(exercise => exercise.exerciseEntryKey === write.exerciseEntryKey)
+        ?.sets.find(set => set.recordKey === write.recordKey)
+      const submitted = proof.submitted.get(write.recordKey)
+      if (!current || !submitted || JSON.stringify(current) !== JSON.stringify(submitted)) return null
+      captured.push({ exerciseEntryKey: write.exerciseEntryKey, recordKey: write.recordKey, weightKg: submitted.weightKg,
+        reps: submitted.reps, seconds: submitted.seconds, rpe: submitted.rpe, confirmed: submitted.confirmed })
+    }
+    return captured
+  } catch { return null }
+}
 
 export type AcknowledgementResult = ProjectionFailure | { ok: true; draft: RecordingDraft }
 
@@ -198,6 +230,88 @@ export function applySetsAcknowledgement(
       sets: exercise.sets.map(group => changed.get(group.recordKey) || group) })) }
   try { restoreDraft(draft, today) } catch { return failure('invalid_draft') }
   if (!auth.isCurrent(proof.lease.subjectId, proof.lease.generation)) return failure('session_changed')
+  return { ok: true, draft }
+}
+
+/** Apply an exact pending set receipt, keeping edits made after submission. */
+export function applyPendingSetsAcknowledgement(
+  current: RecordingDraft, response: ScopedSessionDetail, auth: RecordingAuth, today: string,
+): AcknowledgementResult {
+  let credential
+  try {
+    credential = auth.current()
+    if (!credential || !auth.isCurrent(credential.subjectId, credential.generation)) return failure('session_changed')
+  } catch { return failure('session_changed') }
+  let local: RecordingDraft
+  try { local = restoreDraft(current, today) } catch { return failure('invalid_draft') }
+  const marker = local.syncPending
+  const pending = pendingSets(local, credential.subjectId)
+  if (!pending || typeof marker !== 'string' || !local.server ||
+    !acknowledgesPendingSets(response, marker, credential.subjectId, credential.generation) ||
+    response.lease.subjectId !== credential.subjectId || response.lease.generation !== credential.generation) {
+    return failure('reconcile_required')
+  }
+  let detail: WorkoutSessionDetail
+  try {
+    if (encodePendingSetsBody(pending.expectedVersion, pending.exerciseEntryKeys, pending.sets) !== pending.request.body) {
+      return failure('reconcile_required')
+    }
+    detail = parseSessionDetail(response.detail)
+  } catch { return failure('reconcile_required') }
+  if (detail.id !== local.server.id || detail.clientEventId !== local.clientEventId || detail.source !== 'free' ||
+    detail.date !== local.date || detail.timeZone !== local.timeZone || detail.status === 'skipped' ||
+    (local.server.status !== undefined && detail.status !== local.server.status) ||
+    (detail.version !== pending.expectedVersion && detail.version !== pending.expectedVersion + 1) ||
+    detail.exerciseEntryKeys.length !== pending.exerciseEntryKeys.length ||
+    detail.exerciseEntryKeys.some((key, index) => key !== pending.exerciseEntryKeys[index])) return failure('reconcile_required')
+  const submitted = new Map((pending.sets as SetPayload[]).map(set => [set.recordKey, set]))
+  const originalInputs = new Map(pending.submitted.map(set => [set.recordKey, set]))
+  const remote = new Map(detail.sets.map(set => [set.recordKey, set]))
+  const seen = new Set<string>()
+  const changed = new Map<string, DraftSet>()
+  for (const exercise of local.exercises) {
+    for (const group of exercise.sets) {
+      const saved = remote.get(group.recordKey)
+      const write = submitted.get(group.recordKey)
+      if (!saved) {
+        if (group.persisted || write) return failure('reconcile_required')
+        continue
+      }
+      if ((!group.persisted && !write) || saved.exerciseEntryKey !== exercise.exerciseEntryKey ||
+        saved.setIndex !== group.setIndex || !sameIdentity(exercise, saved)) return failure('reconcile_required')
+      const checked = validateDraftSet(exercise, group)
+      if (write) {
+        if (!matchesSetPayload(write, saved)) return failure('reconcile_required')
+        const matches = Boolean(checked.value && matchesSetPayload(checked.value, saved))
+        const original = originalInputs.get(group.recordKey)
+        if (!original) return failure('reconcile_required')
+        const sameInput = group.weightKg === original.weightKg && group.reps === original.reps &&
+          group.seconds === original.seconds && group.rpe === original.rpe && group.confirmed === original.confirmed
+        changed.set(group.recordKey, { ...group, persisted: true, dirty: !matches,
+          confirmed: sameInput ? true : group.confirmed })
+      } else if (!group.dirty && (!checked.value || !matchesSetPayload(checked.value, saved))) {
+        return failure('reconcile_required')
+      }
+      seen.add(group.recordKey)
+    }
+  }
+  if (seen.size !== remote.size || [...submitted.keys()].some(key => !seen.has(key))) return failure('reconcile_required')
+  const knownEntries = new Set(detail.exerciseEntryKeys)
+  const localOrder = local.exercises.map(exercise => exercise.exerciseEntryKey).filter(key => knownEntries.has(key))
+  if (localOrder.length !== detail.exerciseEntryKeys.length ||
+    localOrder.some((key, index) => key !== detail.exerciseEntryKeys[index])) return failure('reconcile_required')
+  const { syncPending: _pending, ...rest } = local
+  const draft: RecordingDraft = { ...rest, server: { id: detail.id, version: detail.version, status: detail.status },
+    exercises: local.exercises.map(exercise => ({ ...exercise,
+      ...(exercise.identity.source === 'catalog' && detail.sets.some(set => set.exerciseEntryKey === exercise.exerciseEntryKey)
+        ? { resolvedExerciseName: detail.sets.find(set => set.exerciseEntryKey === exercise.exerciseEntryKey)?.resolvedExerciseName }
+        : {}),
+      sets: exercise.sets.map(group => changed.get(group.recordKey) || group) })) }
+  try { restoreDraft(draft, today) } catch { return failure('invalid_draft') }
+  try {
+    if (!auth.isCurrent(credential.subjectId, credential.generation) ||
+      !acknowledgesPendingSets(response, marker, credential.subjectId, credential.generation)) return failure('session_changed')
+  } catch { return failure('session_changed') }
   return { ok: true, draft }
 }
 

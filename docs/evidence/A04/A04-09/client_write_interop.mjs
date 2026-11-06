@@ -20,7 +20,7 @@ const hooks = registerHooks({
     if (specifier === './operationJournal' && context.parentURL?.endsWith('/recordingApi.ts')) {
       return nextResolve('./operationJournal.ts', context)
     }
-    if (/^\.\/(recording|recordingApi|recordingProjection|trainingEditorController|versionedEditorDraft|draftStorage|operationJournal|secureDraftStorage|cloudSessionRestore|freeSessionIntent|syncFreeSessionCreate)$/.test(specifier) &&
+    if (/^\.\/(recording|recordingApi|recordingProjection|trainingEditorController|versionedEditorDraft|draftStorage|operationJournal|secureDraftStorage|cloudSessionRestore|freeSessionIntent|syncFreeSessionCreate|setsIntent|syncPendingSets)$/.test(specifier) &&
       context.parentURL?.includes('/features/training/')) {
       return nextResolve(`${specifier}.ts`, context)
     }
@@ -36,6 +36,7 @@ const { SecureDraftStorage } = await import(pathToFileURL(path.join(featureDir, 
 const { dispatchFirstFreeSession } = await import(pathToFileURL(path.join(featureDir, 'firstFreeSessionDispatch.ts')).href)
 const { restoreCloudSessionToLocalDraft } = await import(pathToFileURL(path.join(featureDir, 'cloudSessionRestore.ts')).href)
 const { syncFreeSessionCreate } = await import(pathToFileURL(path.join(featureDir, 'syncFreeSessionCreate.ts')).href)
+const { syncPendingSets } = await import(pathToFileURL(path.join(featureDir, 'syncPendingSets.ts')).href)
 hooks.deregister()
 const request = async options => {
   const response = await fetch(options.url, { method: options.method, headers: options.header, body: options.data })
@@ -198,7 +199,7 @@ const nativeDraft = makeNativeDraft(nativeDraftRows)
 const draftStorage = new SecureDraftStorage(nativeDraft, process.env.NERAE_INTEROP_SUBJECT_A, first.auth)
 const localNow = () => new Date(`${process.env.NERAE_INTEROP_DATE}T12:00:00Z`)
 const newEditor = async eventId => {
-  const values = [eventId, `${eventId}-entry`, `${eventId}-record`]
+  const values = [eventId, `${eventId}-entry`, `${eventId}-record`, `${eventId}-record-2`]
   const ids = { nextId: () => values.shift() }
   const created = await TrainingEditorController.create({ subjectId: process.env.NERAE_INTEROP_SUBJECT_A,
     date: process.env.NERAE_INTEROP_DATE, timeZone: 'UTC', storage: draftStorage, now: localNow, auth: first.auth, ids })
@@ -293,4 +294,59 @@ const retryReadback = await again.api.readSession(reopened.controller.draft.serv
 assert.equal(retryReadback.detail.clientEventId, retryEvent)
 await reopened.controller.close()
 console.log('PASS: same-key create recovered after a lost response in a second synthetic session')
+
+// Use the durable set coordinator with a real local server and two synthetic
+// logins. A discarded response models a network interruption, not a device.
+const setRetryEvent = 'sync-retry-sets-event-001'
+const setEditor = await newEditor(setRetryEvent)
+const setEntry = `${setRetryEvent}-entry`
+const setRecord = `${setRetryEvent}-record`
+assert.equal((await setEditor.editGroup(setEntry, setRecord, 'reps', '8')).ok, true)
+assert.equal((await setEditor.setMode('per_set')).ok, true)
+assert.equal((await setEditor.confirmGroup(setEntry, setRecord)).ok, true)
+assert.equal((await syncFreeSessionCreate(setEditor, first.api, first.auth, () => 'sync-sets-create-key-001')).state, 'created')
+const setAttempts = []
+const lostSetApi = new RecordingApi(process.env.NERAE_INTEROP_URL, first.auth, async options => {
+  if (!options.url.endsWith('/sets')) return request(options)
+  setAttempts.push({ body: options.data, key: options.header['Idempotency-Key'] })
+  const response = await request(options)
+  assert.equal(response.statusCode, 200)
+  throw new Error('synthetic lost set response')
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-a' })
+const selected = { mode: 'per_set', exerciseEntryKey: setEntry, recordKey: setRecord }
+assert.equal((await syncPendingSets(setEditor, lostSetApi, first.auth, selected,
+  () => 'sync-retry-sets-key-001', localNow)).state, 'retry')
+const retained = JSON.parse(setEditor.draft.syncPending).request
+await setEditor.close()
+const reopenedSets = await TrainingEditorController.attach(process.env.NERAE_INTEROP_SUBJECT_A, setRetryEvent,
+  reopenedStorage, localNow, again.auth, { nextId: () => 'unused-retry-sets-id' })
+assert.equal(reopenedSets.ok, true)
+const replayRequests = []
+const setRecoveryApi = new RecordingApi(process.env.NERAE_INTEROP_URL, again.auth, async options => {
+  if (options.url.endsWith('/sets/replay')) replayRequests.push({ body: options.data, key: options.header['Idempotency-Key'] })
+  return request(options)
+}, { subjectId: process.env.NERAE_INTEROP_SUBJECT_A, generation: 'local-test-again' })
+assert.equal((await syncPendingSets(reopenedSets.controller, setRecoveryApi, again.auth, selected,
+  () => { throw new Error('recovery must reuse the stored set key') }, localNow)).state, 'recovered')
+assert.deepEqual(setAttempts[0], replayRequests[0])
+assert.deepEqual(setAttempts[0], { body: retained.body, key: retained.idempotencyKey })
+assert.equal(reopenedSets.controller.draft.syncPending, undefined)
+assert.equal(reopenedSets.controller.draft.exercises[0].sets[0].persisted, true)
+assert.equal((await again.api.readSession(reopenedSets.controller.draft.server.id)).detail.sets[0].reps, 8)
+await reopenedSets.controller.close()
+
+const batchEvent = 'sync-batch-sets-event-001'
+const batchEditor = await newEditor(batchEvent)
+const batchEntry = `${batchEvent}-entry`
+assert.equal((await batchEditor.editGroup(batchEntry, `${batchEvent}-record`, 'reps', '6')).ok, true)
+assert.equal((await batchEditor.addGroup(batchEntry)).ok, true)
+assert.equal((await batchEditor.editGroup(batchEntry, `${batchEvent}-record-2`, 'reps', '10')).ok, true)
+assert.equal((await syncFreeSessionCreate(batchEditor, first.api, first.auth, () => 'sync-batch-create-key-001')).state, 'created')
+assert.equal((await syncPendingSets(batchEditor, first.api, first.auth, { mode: 'after_workout' },
+  () => 'sync-batch-sets-key-001', localNow)).state, 'saved')
+const batchRead = await again.api.readSession(batchEditor.draft.server.id)
+assert.deepEqual(batchRead.detail.sets.map(set => set.reps), [6, 10])
+assert.ok(batchEditor.draft.exercises[0].sets.every(set => set.persisted && !set.dirty))
+await batchEditor.close()
+console.log('PASS: protected set coordinator saved both modes and recovered a lost response across synthetic logins')
 console.log('PASS: actual client adapter created, saved, replayed, finished and restored both recording modes over isolated TLS HTTP')

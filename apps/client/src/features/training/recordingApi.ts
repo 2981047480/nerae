@@ -1,5 +1,6 @@
-import type { SetKind, SetWrite } from './recording'
+import type { RecordingDraft, SetKind, SetWrite } from './recording'
 import { samePendingSnapshot, TrainingOperationJournal, type JournalRequest } from './operationJournal'
+import { pendingSets } from './setsIntent'
 
 /** Credentials come from the real identity module and are never stored here. */
 export interface RecordingCredential {
@@ -78,6 +79,7 @@ export interface SessionListInput {
 const issuedSnapshots = new WeakMap<object, object>()
 const creationAcknowledgements = new WeakMap<object, { request: PreparedFreeSessionRequest; isCurrent: () => boolean }>()
 const batchAcknowledgements = new WeakMap<object, { baseline: ScopedSessionDetail; version: number; sets: string; order: string }>()
+const pendingSetsAcknowledgements = new WeakMap<object, { marker: string; subjectId: string; generation: string; isCurrent: () => boolean }>()
 
 /**
  * Bind a direct response to one prepared object. This is not a replay or
@@ -103,6 +105,14 @@ export function acknowledgesSets(
 }
 export function isIssuedSnapshot(value: unknown): value is ScopedSessionDetail {
   return value !== null && typeof value === 'object' && issuedSnapshots.has(value)
+}
+
+/** A set receipt is usable only with the exact retained intent and live login. */
+export function acknowledgesPendingSets(response: unknown, marker: string, subjectId: string, generation: string): response is ScopedSessionDetail {
+  if (!response || typeof response !== 'object') return false
+  const proof = pendingSetsAcknowledgements.get(response)
+  if (!proof || proof.marker !== marker || proof.subjectId !== subjectId || proof.generation !== generation) return false
+  try { return proof.isCurrent() } catch { return false }
 }
 
 export interface HttpRequest {
@@ -185,6 +195,16 @@ export interface PreparedFreeSessionRequest {
   readonly path: '/me/sessions'
   readonly idempotencyKey: string
   readonly body: string
+}
+
+export interface PreparedSetsRequest extends JournalRequest {}
+const preparedSetsRequests = new WeakMap<object, { owner: RecordingApi; subjectId: string; generation: string; isCurrent: () => boolean }>()
+
+export function isPreparedSetsFor(request: unknown, subjectId: string, generation: string, api?: RecordingApi): request is PreparedSetsRequest {
+  if (!request || typeof request !== 'object') return false
+  const proof = preparedSetsRequests.get(request)
+  if (!proof || proof.subjectId !== subjectId || proof.generation !== generation || (api && proof.owner !== api)) return false
+  try { return proof.isCurrent() } catch { return false }
 }
 
 const preparedFreeSessionRequests = new WeakMap<object, {
@@ -375,6 +395,20 @@ function setPayload(raw: unknown): SetPayload {
     ...(raw.seconds === undefined ? {} : { seconds: raw.seconds as number }),
     ...(raw.rpe === undefined ? {} : { rpe: raw.rpe as number | null }),
   }
+}
+
+/** Canonical wire body for an ordinary set write without deletion or restore. */
+export function encodePendingSetsBody(expectedVersion: number, exerciseEntryKeys: string[], sets: unknown[]): string {
+  if (!validVersion(expectedVersion) || !Array.isArray(sets) || sets.length < 1 || sets.length > 200) {
+    throw new RecordingApiError('invalid_request')
+  }
+  const order = keyList(exerciseEntryKeys, 2000, true, 'invalid_request')
+  const clean = sets.map(setPayload)
+  const records = new Set(clean.map(set => set.recordKey))
+  if (records.size !== clean.length || clean.some(set => !order.includes(set.exerciseEntryKey))) {
+    throw new RecordingApiError('invalid_request')
+  }
+  return JSON.stringify({ expectedVersion, exerciseEntryKeys: order, sets: clean })
 }
 
 /** Fail closed on a malformed response before its version or IDs reach a draft. */
@@ -916,10 +950,64 @@ export class RecordingApi {
     return this.call('GET', `/me/sessions/${id}`, 200, id)
   }
 
+  /** Freeze the exact set request before the protected draft stages it. */
+  preparePendingSetsRequest(id: string, input: SetBatchInput, idempotencyKey: string,
+    baseline: ScopedSessionDetail): PreparedSetsRequest {
+    if (!validId(id) || !validIdempotencyKey(idempotencyKey) || !isIssuedSnapshot(baseline) ||
+      issuedSnapshots.get(baseline) !== this || baseline.detail.id !== id ||
+      baseline.detail.version !== input?.expectedVersion || input.deleteRecordKeys !== undefined ||
+      input.restoreRecordKeys !== undefined || !Array.isArray(input.sets)) throw new RecordingApiError('invalid_request')
+    const credential = this.captureCredential()
+    if (baseline.lease.subjectId !== credential.subjectId || baseline.lease.generation !== credential.generation) {
+      throw new RecordingApiError('session_changed')
+    }
+    const body = encodePendingSetsBody(input.expectedVersion, input.exerciseEntryKeys, input.sets)
+    const request = Object.freeze({ method: 'POST' as const, path: `/me/sessions/${id}/sets`, idempotencyKey, body })
+    preparedSetsRequests.set(request, { owner: this, subjectId: credential.subjectId,
+      generation: credential.generation, isCurrent: credential.isSameCredential })
+    return request
+  }
+
+  /** Send exactly the set request retained in this draft against a fresh baseline. */
+  async sendPendingSets(draft: RecordingDraft, baseline: ScopedSessionDetail, beforeSend?: () => boolean): Promise<ScopedSessionDetail> {
+    const credential = this.captureCredential()
+    const pending = pendingSets(draft, credential.subjectId)
+    if (!pending || typeof draft.syncPending !== 'string' ||
+      encodePendingSetsBody(pending.expectedVersion, pending.exerciseEntryKeys, pending.sets) !== pending.request.body) {
+      throw new RecordingApiError('invalid_request')
+    }
+    const marker = draft.syncPending
+    const response = await this.saveBatch(draft.server!.id, { expectedVersion: pending.expectedVersion,
+      exerciseEntryKeys: pending.exerciseEntryKeys, sets: pending.sets.map(setPayload) },
+    pending.request.idempotencyKey, baseline, { expectedBody: pending.request.body, beforeSend })
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    pendingSetsAcknowledgements.set(response, { marker, subjectId: credential.subjectId,
+      generation: credential.generation, isCurrent: credential.isSameCredential })
+    return response
+  }
+
+  /** Recover an existing receipt without redoing the write. */
+  async replayDraftSets(draft: RecordingDraft): Promise<ScopedSessionDetail | null> {
+    const credential = this.captureCredential()
+    const pending = pendingSets(draft, credential.subjectId)
+    if (!pending || typeof draft.syncPending !== 'string' ||
+      encodePendingSetsBody(pending.expectedVersion, pending.exerciseEntryKeys, pending.sets) !== pending.request.body) return null
+    const marker = draft.syncPending
+    const replay = await this.readReplayReceipt(pending.request, draft.clientEventId, credential)
+    if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+    if (replay.state !== 'committed') return null
+    const response = Object.freeze({ lease: Object.freeze({ subjectId: credential.subjectId, generation: credential.generation }),
+      detail: replay.detail, idempotencyKeyExpiresAt: replay.idempotencyKeyExpiresAt })
+    pendingSetsAcknowledgements.set(response, { marker, subjectId: credential.subjectId,
+      generation: credential.generation, isCurrent: credential.isSameCredential })
+    return response
+  }
+
   /** Caller supplies the projected order from the latest complete snapshot.
    * A 412 must be reconciled with a fresh read, never retried blindly.
    */
-  saveBatch(id: string, input: SetBatchInput, idempotencyKey: string, baseline: ScopedSessionDetail): Promise<ScopedSessionDetail> {
+  saveBatch(id: string, input: SetBatchInput, idempotencyKey: string, baseline: ScopedSessionDetail,
+    options?: { expectedBody?: string; beforeSend?: () => boolean }): Promise<ScopedSessionDetail> {
     if (!validId(id) || !input || !validVersion(input.expectedVersion) || !isIssuedSnapshot(baseline) ||
       issuedSnapshots.get(baseline) !== this || baseline.detail.id !== id || baseline.detail.version !== input.expectedVersion) {
       throw new RecordingApiError('invalid_request')
@@ -992,13 +1080,15 @@ export class RecordingApi {
       expected.size !== baseline.detail.sets.length ||
       [...expected.values()].some(item => item.write && (!item.previous || !matchesSetPayload(item.write, item.previous)))
     if (mustChange && expectedVersion === Number.MAX_SAFE_INTEGER) throw new RecordingApiError('invalid_request')
-    return this.call('POST', `/me/sessions/${id}/sets`, 200, id, {
+    const body = {
       expectedVersion,
       exerciseEntryKeys: order,
       ...(cleanSets === undefined ? {} : { sets: cleanSets }),
       ...(deleted === undefined ? {} : { deleteRecordKeys: deleted }),
       ...(restored === undefined ? {} : { restoreRecordKeys: restored }),
-    }, idempotencyKey).then(snapshot => {
+    }
+    if (options?.expectedBody !== undefined && JSON.stringify(body) !== options.expectedBody) throw new RecordingApiError('invalid_request')
+    return this.call('POST', `/me/sessions/${id}/sets`, 200, id, body, idempotencyKey, undefined, options?.beforeSend).then(snapshot => {
       if (!this.auth.isCurrent(snapshot.lease.subjectId, snapshot.lease.generation)) {
         throw new RecordingApiError('session_changed')
       }

@@ -10,6 +10,8 @@ const required = ['NERAE_INTEROP_URL', 'NERAE_INTEROP_CLIENT_DIR', 'NERAE_INTERO
 if (required.some(name => !process.env[name])) throw new Error('isolated interop setup incomplete')
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (/^\.\/(recording|recordingApi|recordingProjection|operationJournal|setsIntent)$/.test(specifier) &&
+      context.parentURL?.includes('/features/training/')) return nextResolve(`${specifier}.ts`, context)
     if (specifier === './recording' && /\/(recordingApi|recordingProjection|draftStorage)\.ts$/.test(context.parentURL || '')) {
       return nextResolve('./recording.ts', context)
     }

@@ -33,9 +33,9 @@ export async function syncFreeSessionCreate(
     const initial = editor.draft
     if (!isCurrent()) return { state: 'session_changed' }
     if (editor.localStatus !== 'saved_locally') return { state: 'local_error' }
-    if (initial.server) return { state: Object.hasOwn(initial, 'syncPending') ? 'reconcile_required' : 'existing' }
+    if (initial.server) return { state: Object.prototype.hasOwnProperty.call(initial, 'syncPending') ? 'reconcile_required' : 'existing' }
 
-    const hasPending = Object.hasOwn(initial, 'syncPending')
+    const hasPending = Object.prototype.hasOwnProperty.call(initial, 'syncPending')
     const pending = hasPending ? pendingFreeSession(initial, subjectId) : null
     if (hasPending && !pending) return { state: 'reconcile_required' }
     let request: PreparedFreeSessionRequest
