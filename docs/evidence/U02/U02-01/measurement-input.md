@@ -2,5 +2,6 @@
 
 - 状态：候选，未接受。自由训练自定义动作可在本机选择合计、每只器械、左右分开、自重、自重加负重、自重减助力或手填记录重量，并写入既有格式 2 测量对象。
 - 左右：先填一侧时，另一侧在被单独修改前使用相同数值；明确标成未做的一侧不进入累计。体重：修改一次会更新本次训练中所有自重组的体重，不改手填记录重量，也不写入身体数据曲线。
-- 未做：计划带入、动作库身份、历史重量带入、教练只看计算结果、标准动作同名。服务端合同与累计口径原本已接受这些方法，本轮没有改 OpenAPI。
-- 验证：`vue-tsc --noEmit -p apps/client/tsconfig.json` 通过。`apps/client/src/features/training/*.test.mjs` 456 项通过，覆盖先填右侧、未做后再填写不恢复旧数，以及未做一侧草稿残留重量不阻断冲突复核。`scripts/plan.py check` 通过。Go `./internal/modules/workout/domain` 与 `transport` 通过；无测试库时数据库用例按原设计跳过。允许 esbuild 安装脚本后，小程序资源 `uni build -p mp-weixin` 完成。`uni build -p app` 仍报找不到 `@dcloudio/uni-uts-v1`，没有产出 `app-service.js`。没有 iOS 模拟器或真机。这些通过项不是界面验收。
+- 组明细：自重加负重显示「自重 70 kg＋负重 10 kg＝记录重量 80 kg」；自重减助力显示「自重 70 kg－助力 20 kg＝记录重量 50 kg」。缺一项时不编造记录重量。
+- 未做：计划带入、动作库身份、历史重量带入、教练只看计算结果、体重曲线，以及修改体重时是否跟随手填记录重量。服务端合同与累计口径原本已接受这些方法，本轮没有改 OpenAPI。
+- 本轮验证：`vue-tsc --noEmit -p apps/client/tsconfig.json` 通过。`apps/client/src/features/training/*.test.mjs` 457 项通过。没有重跑 Foundation 门禁、Go 测试或资源编译。此前 `uni build -p app` 仍找不到 `@dcloudio/uni-uts-v1`，没有 `app-service.js`。没有 iOS 模拟器或真机。这些通过项不是界面验收。

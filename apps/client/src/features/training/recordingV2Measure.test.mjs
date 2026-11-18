@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { addExercise, addSet, createRecordingDraft, setExerciseMeasure, setSideState, updateSet } from './recording.ts'
 import { prepareRecordingV2Batch } from './recordingV2Projection.ts'
-import { measurementFromSet, draftFieldsFromMeasurement, validV2DraftSet } from './recordingV2Measure.ts'
+import { measurementFromSet, draftFieldsFromMeasurement, describeDraftSet, validV2DraftSet } from './recordingV2Measure.ts'
 import { recordingV2ConflictRows } from './recordingV2ConflictPlan.ts'
 
 const today = '2026-11-16'
@@ -120,4 +120,17 @@ test('a not-performed side ignores stored weight when it is restored or compared
   const removed = recordingV2ConflictRows(removedDraft, removedRemote)
   assert.ok(Array.isArray(removed))
   assert.equal(removed.length, 0)
+})
+
+test('added load and assistance show both inputs and the record weight', () => {
+  const blank = { recordKey: 'record-001', setIndex: 1, weightKg: '', reps: '10', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: false }
+  const added = describeDraftSet({ kind: 'weight', measure: 'bodyweight_extra' }, { ...blank, bodyweightKg: '70', adjustmentKg: '10' })
+  assert.equal(added, '自重 70 kg＋负重 10 kg＝记录重量 80 kg × 10 次')
+  const assisted = describeDraftSet({ kind: 'weight', measure: 'bodyweight_assisted' }, { ...blank, bodyweightKg: '70', adjustmentKg: '20' })
+  assert.equal(assisted, '自重 70 kg－助力 20 kg＝记录重量 50 kg × 10 次')
+  const precise = describeDraftSet({ kind: 'weight', measure: 'bodyweight_extra' }, { ...blank, bodyweightKg: '70.5', adjustmentKg: '0.25', reps: '8' })
+  assert.equal(precise, '自重 70.5 kg＋负重 0.25 kg＝记录重量 70.75 kg × 8 次')
+  const missing = describeDraftSet({ kind: 'weight', measure: 'bodyweight_extra' }, { ...blank, bodyweightKg: '70', adjustmentKg: '', reps: '' })
+  assert.equal(missing, '自重 70 kg＋负重 重量未填 × 次数未填')
+  assert.equal(missing.includes('记录重量'), false)
 })

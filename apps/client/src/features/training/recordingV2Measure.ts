@@ -188,6 +188,31 @@ function weightText(value: string | undefined): string {
   return text(value) ? `${text(value)} kg` : '重量未填'
 }
 
+/** Exact kilogram arithmetic for display. Missing or illegal text stays missing. */
+function scaledKilograms(value: string | undefined): bigint | null {
+  const raw = text(value)
+  if (!weightPattern.test(raw)) return null
+  const [whole, fraction = ''] = raw.split('.')
+  return BigInt(whole) * 100n + BigInt((fraction + '00').slice(0, 2))
+}
+
+function kilogramsFromScaled(value: bigint): string {
+  const whole = value / 100n
+  const fraction = value % 100n
+  if (fraction === 0n) return `${whole}`
+  if (fraction % 10n === 0n) return `${whole}.${fraction / 10n}`
+  return `${whole}.${fraction.toString().padStart(2, '0')}`
+}
+
+function recordWeightText(bodyweight: string | undefined, adjustment: string | undefined, subtract: boolean): string | null {
+  const base = scaledKilograms(bodyweight)
+  const extra = scaledKilograms(adjustment)
+  if (base === null || extra === null) return null
+  const total = subtract ? base - extra : base + extra
+  if (total < 0n) return null
+  return `${kilogramsFromScaled(total)} kg`
+}
+
 function sideText(weight: string | undefined, reps: string | undefined, state: SideState | undefined): string {
   if (state === 'not_performed') return '未做'
   if (!text(weight) && !text(reps)) return '未填写'
@@ -204,7 +229,10 @@ export function describeDraftSet(exercise: Pick<DraftExercise, 'measure' | 'kind
   if (measure === 'bodyweight') return `自重 ${weightText(set.bodyweightKg)} × ${reps}`
   if (measure === 'bodyweight_extra' || measure === 'bodyweight_assisted') {
     const label = measure === 'bodyweight_extra' ? '负重' : '助力'
-    return `自重 ${weightText(set.bodyweightKg)} · ${label} ${weightText(set.adjustmentKg)} × ${reps}`
+    const sign = measure === 'bodyweight_extra' ? '＋' : '－'
+    const record = recordWeightText(set.bodyweightKg, set.adjustmentKg, measure === 'bodyweight_assisted')
+    const parts = `自重 ${weightText(set.bodyweightKg)}${sign}${label} ${weightText(set.adjustmentKg)}`
+    return `${record ? `${parts}＝记录重量 ${record}` : parts} × ${reps}`
   }
   return `${weightText(set.weightKg)} × ${reps}`
 }
