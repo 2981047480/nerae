@@ -164,18 +164,26 @@ function sessionBodyweight(draft: RecordingDraft): string {
 
 function touchSet(set: DraftSet, field: InputField, value: string): DraftSet {
   const next: DraftSet = { ...set, [field]: value, confirmed: false, dirty: true }
-  if (field === 'leftWeightKg' || field === 'leftReps') {
-    if (next.leftState === 'not_performed') next.leftState = 'performed'
-    if ((next.rightState ?? 'unknown') === 'unknown') {
-      if (field === 'leftWeightKg') next.rightWeightKg = value
-      else next.rightReps = value
-    }
+  const side = field.startsWith('left') ? 'left' : field.startsWith('right') ? 'right' : null
+  if (!side) return next
+  const other = side === 'left' ? 'right' : 'left'
+  const otherState = (other === 'left' ? next.leftState : next.rightState) ?? 'unknown'
+  // The first side the user types is copied to the other side until that side is edited on its own.
+  if (otherState === 'unknown') {
+    if (field.endsWith('WeightKg')) {
+      if (other === 'left') next.leftWeightKg = value
+      else next.rightWeightKg = value
+    } else if (other === 'left') next.leftReps = value
+    else next.rightReps = value
   }
-  if (field === 'rightWeightKg' || field === 'rightReps') {
-    const weight = (field === 'rightWeightKg' ? value : next.rightWeightKg || '').trim()
-    const reps = (field === 'rightReps' ? value : next.rightReps || '').trim()
-    next.rightState = weight || reps ? 'performed' : 'unknown'
-  }
+  const ownWeight = (side === 'left' ? next.leftWeightKg : next.rightWeightKg) ?? ''
+  const ownReps = (side === 'left' ? next.leftReps : next.rightReps) ?? ''
+  const ownState = ownWeight.trim() || ownReps.trim() ? 'performed' : 'unknown'
+  if (side === 'left') {
+    if (ownState === 'unknown') delete next.leftState
+    else next.leftState = ownState
+  } else if (ownState === 'unknown') delete next.rightState
+  else next.rightState = ownState
   return next
 }
 
@@ -317,7 +325,7 @@ export function setExerciseMeasure(draft: RecordingDraft, exerciseEntryKey: stri
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
 }
 
-/** Mark one side as not performed, or return it to an entered value. The other side is left alone. */
+/** Mark one side not performed, or return it to an empty entry. Old numbers are not restored. */
 export function setSideState(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string, side: V2SideName, state: SideState): RecordingDraft {
   if (draft.recordFormat !== 2) throw new Error('记录格式不支持此操作')
   if (side !== 'left' && side !== 'right') throw new Error('记录输入无效')
@@ -328,6 +336,11 @@ export function setSideState(draft: RecordingDraft, exerciseEntryKey: string, re
   const key = side === 'left' ? 'leftState' : 'rightState'
   if ((set[key] ?? 'unknown') === state) return draft
   const updated: DraftSet = { ...set, [key]: state, confirmed: false, dirty: true }
+  // 未做 and a return to 未填写 both drop that side's numbers. The wire never stores them for 未做.
+  if (state === 'not_performed' || state === 'unknown') {
+    if (side === 'left') { updated.leftWeightKg = ''; updated.leftReps = '' }
+    else { updated.rightWeightKg = ''; updated.rightReps = '' }
+  }
   if (state === 'unknown') delete updated[key]
   const changed = { ...target, sets: target.sets.map(item => item === set ? updated : item) }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }

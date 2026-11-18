@@ -149,7 +149,7 @@ function sideFields(prefix: 'left' | 'right', side: V2Side | undefined): Partial
   const weightKey = prefix === 'left' ? 'leftWeightKg' : 'rightWeightKg'
   const repsKey = prefix === 'left' ? 'leftReps' : 'rightReps'
   const stateKey = prefix === 'left' ? 'leftState' : 'rightState'
-  if (side.state === 'not_performed') return { [stateKey]: 'not_performed', [weightKey]: side.weightKg ?? '', [repsKey]: side.reps === undefined ? '' : String(side.reps) }
+  if (side.state === 'not_performed') return { [stateKey]: 'not_performed', [weightKey]: '', [repsKey]: '' }
   return {
     [stateKey]: 'performed',
     [weightKey]: side.weightKg ?? '',
@@ -209,17 +209,13 @@ export function describeDraftSet(exercise: Pick<DraftExercise, 'measure' | 'kind
   return `${weightText(set.weightKg)} × ${reps}`
 }
 
-/** Signature of the fields that change the saved measurement. Confirmation stays explicit. */
+/** Compare the measurement that would be saved, not leftover draft text the wire drops. */
 export function setValueSignature(set: DraftSet, measure: V2Measure): string {
-  const common = [text(set.rpe), set.confirmed]
-  if (measure === 'sides') {
-    return JSON.stringify([text(set.leftWeightKg), text(set.leftReps), set.leftState ?? 'unknown', text(set.rightWeightKg), text(set.rightReps), set.rightState ?? 'unknown', ...common])
+  const exercise: DraftExercise = {
+    exerciseEntryKey: 'entry-signature', identity: { source: 'custom', exerciseName: '签名' },
+    kind: 'weight', ...(measure === 'total' ? {} : { measure }), sets: [],
   }
-  if (measure === 'bodyweight') return JSON.stringify([text(set.bodyweightKg), text(set.reps), ...common])
-  if (measure === 'bodyweight_extra' || measure === 'bodyweight_assisted') {
-    return JSON.stringify([text(set.bodyweightKg), text(set.adjustmentKg), text(set.reps), ...common])
-  }
-  return JSON.stringify([text(set.weightKg), text(set.reps), ...common])
+  return JSON.stringify([measurementFromSet(exercise, set), text(set.rpe), set.confirmed])
 }
 
 export function measurementCarry(source: DraftSet): Partial<DraftSet> {
