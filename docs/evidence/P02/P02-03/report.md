@@ -1,5 +1,6 @@
 # P02-03 Android 安装链路进度
 
+- 2026-11-18：没有单独推进本卡。与 P02-02 同一次 `pnpm --filter @nerae/client build:app` 在 App 资源里生成了 13 个 Kotlin 源文件；详见 [P02-02 资源编译](../P02-02/report.md)。本环境没有 Android SDK、`sdkmanager`、Gradle、`adb` 或 Android 设备，没有 DCloud Android 离线 SDK，没有产出或签名 APK。真机未跑。本卡仍未接受。
 - 2026-11-15：对本轮草稿版本及组恢复改动，使用 Kotlin 1.9.24、Corretto 17 和 Android API 35 复跑 `P02-13/verify-draft-android.sh`，合成存储回归退出 0；使用本轮 5.33 App 资源生成的 Android `index.kt` 运行 `P02-13/verify-generated-draft-versioned.sh`，桥接签名检查退出 0。另以独立 JVM 合成用例验证版本 1→2、旧版本降写拒绝、重复 schema 拒绝和待发标记保留。Android 框架 JSON、DCloud 运行时链接、设备 Keystore、APK 与真机仍未验证。
 - 状态：partial；Project Lead，`gpt-6.1-terra`，推理等级未由运行时报告。代码基线是 `a8cd57fd69261871d59c8281f3e5c9ef73428c4b` 加本轮未提交的登录页改动，尚无接受提交。
 - 为复验现有原生模块，在本轮临时目录恢复 Corretto 17 与 Kotlin 1.9.24，分别核对了官方提供的 SHA-256；系统 Android SDK 使用本机已有 API 35。没有改系统工具链或项目依赖锁。

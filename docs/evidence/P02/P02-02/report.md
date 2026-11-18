@@ -1,5 +1,17 @@
 # P02-02 iPhone 构建与签名进度
 
+## 2026-11-18 资源编译（partial，未签装）
+
+- 状态：partial，未接受。基线 `cc76a602790050127405030c07cd78d423ae1eec`（PR #2 已合并进 main）。执行者是 Cursor cloud agent（Grok 4.7）。环境是 Linux x86_64、glibc 2.39、Node v22.23.4、pnpm 11.5.3。`python3 scripts/plan.py ready` 列出 L01-02、L01-03、L01-04、P02-02、P02-03。L01 是外部取证。本步做 P02-02 的 App 资源编译；P02-03 只共享这一步的 Kotlin 源文件，没有单独做 APK。没有改 U02-04 的产品行为。
+- 失败现场：`@dcloudio/uni-uts-v1@3.0.0-5030320261023001` 已在 `apps/client/package.json` 和 `pnpm-lock.yaml`。`pnpm install --frozen-lockfile` 之后，`require.resolve('@dcloudio/uni-uts-v1')` 能找到包，但 `require` 抛出 `Cannot find module '@dcloudio/uts-linux-x64-gnu'`。该可选包的 `package.json` 写着 `"libc": ["gnu"]`，pnpm 11.5.3 用 detect-libc 的 `glibc` 比较，判定不兼容并跳过。`uni build -p app` 因此打印 `Cannot find module: @dcloudio/uni-uts-v1`，进程退出码是 0，且没有 `app-service.js`。退出码不能当作这次构建成功。
+- 改动：`pnpm-workspace.yaml` 的 `supportedArchitectures.libc` 设为 `current` 和 `gnu`。锁文件没有改。`current` 仍按本机选择 glibc 或 musl；`gnu` 用来接受 DCloud 的标记。macOS 上 darwin 绑定没有 libc 字段，这条设置不替换它们。
+- 安装：删掉 `node_modules` 后执行 `pnpm install --frozen-lockfile`，退出 0，安装 530 个包。`@dcloudio/uts` 下出现 `@dcloudio/uts-linux-x64-gnu` 链接，直接加载 `@dcloudio/uni-uts-v1` 成功。若保留改配置前的 `node_modules`，同一命令会显示 Already up to date，不会补上这个包。
+- 资源构建：`pnpm --filter @nerae/client build:app` 退出 0，编译器自报 5.33（vue3），并打印 `DONE Build complete`。`apps/client/dist/build/app/app-service.js` 为 403401 字节，SHA-256 `e64b8e94f336f3dc976772651e24428304e00d82de9917066cb206ea820aeaf3`。包内含 `neraeDeviceKey`、`neraeRandom`、`neraeHttps`、`neraeSecureVault` 四个 `initUTSProxyFunction` 代理。同目录 `uni_modules` 有 17 个 Swift 文件和 13 个 Kotlin 文件。产物被 gitignore，不是可安装的 ipa 或 apk，也没有链到 DCloud 离线 SDK。
+- 模拟器：未跑。本机没有 `xcodebuild`、`xcrun`、`simctl` 或 Xcode。
+- 真机：未跑。没有 iPhone，没有 Android 设备，没有 `adb`。没有签名身份、描述文件或登录的 Apple 团队。
+- 仍缺的外部条件：DCloud iOS AppKey（`apps/client/src/manifest.json` 的 `app-plus` 仍是空对象，AppID 仍是 `__UNI__9D1F11A`）、与该 AppID 匹配的 Bundle ID、免费 Apple Personal Team 在 Xcode 中的登录、开发证书和描述文件、5.33 iOS 离线 SDK 的未签名或签名链接、Android 离线 SDK / JDK 以外的 Android SDK、Android 签名和真机。GitHub Foundation 本轮没有跑，不能写成通过。资源编译不是界面验收。
+- 下方 2026-11-15 记录是当时 Mac 上的未签名诊断链接，不覆盖本段。
+
 - 2026-11-15：在原独立 SDK 诊断工程放入本轮复制、移除恢复和新的 iOS 草稿存储源码，以独立 DerivedData 重建。第一次干净构建退出 65：样例工程仍指定已移除的 `AppIcon` 资源；第二次仅对诊断构建传入 `ASSETCATALOG_COMPILER_APPICON_NAME=`，未签名构建退出 0。输出主程序为 arm64，包内 `app-service.js` SHA-256 为 `cfb29e2aa00631d67a0932c396b8b94bfe316138ce0902ac10ad8c48c80c077b`，与本轮 App 资源一致；新存储保护符号存在于 `HBuilder.debug.dylib`。SDK 自带库仍有缺少构建时调试模块的警告。两次脱敏构建日志保留于 `/private/tmp/nerae-u01.yKzJLI/xcode-local-undo-unsigned*.log`。此结果只证明诊断工程可编译链接，未签名、未安装、未验证 AppKey 或真机运行。
 - 状态：partial；Project Lead，`gpt-6.1-terra`，推理等级未由运行时报告。源码基线为 `a8cd57fd69261871d59c8281f3e5c9ef73428c4b` 加本轮未提交的 U01-01 改动。
 - 用户提供的 5.33 离线 SDK 压缩包 SHA-256 与先前记录一致；检查了 8,114 个归档路径及解压空间，在本轮独立临时目录解压。5.33 客户端 App 资源与四个生成的 iOS UTS 插件装入隔离 SDK 工程，本地 CocoaPods Core 加四插件安装退出 0。
