@@ -11,7 +11,8 @@ const pageURL = new URL('./index.vue', import.meta.url)
 const gateURL = new URL('../../features/auth/appEntrySession.ts', import.meta.url)
 const vueURL = import.meta.resolve('vue')
 const current = { runtime: null, authMounts: 0, panelMounts: 0, authEmit: null, panelEmit: null,
-  backHandler: null, showHandler: null, trainingEmit: null, trainingCanLeave: true, recordingApi: null, syncFn: null }
+  backHandler: null, showHandler: null, trainingEmit: null, trainingCanLeave: true, recordingApi: null, syncFn: null,
+  recentMounts: 0, recentApi: null, recentEmit: null }
 globalThis.__neraeEntryTest = current
 
 const AuthStub = defineComponent({
@@ -36,6 +37,15 @@ const PanelStub = defineComponent({
     return () => h('approval-panel')
   },
 })
+const RecentStub = defineComponent({
+  props: ['session', 'api'], emits: ['session-changed'],
+  setup(props, { emit }) {
+    current.recentMounts++
+    current.recentApi = props.api
+    current.recentEmit = emit
+    return () => h('home-recent-records')
+  },
+})
 const TrainingStub = defineComponent({
   props: ['session', 'timeZone', 'recordingApi'], emits: ['exit', 'session-changed', 'draft-closed'],
   setup(props, { emit, expose }) {
@@ -47,6 +57,7 @@ const TrainingStub = defineComponent({
 })
 current.AuthStub = AuthStub
 current.PanelStub = PanelStub
+current.RecentStub = RecentStub
 current.TrainingStub = TrainingStub
 
 registerHooks({ resolve(specifier, context, nextResolve) {
@@ -55,6 +66,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
     if (specifier === '@dcloudio/uni-app') return { url: 'data:text/javascript,export const onBackPress = callback => { globalThis.__neraeEntryTest.backHandler = callback };export const onShow = callback => { globalThis.__neraeEntryTest.showHandler = callback }', shortCircuit: true }
     if (specifier.endsWith('/AuthEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.AuthStub', shortCircuit: true }
     if (specifier.endsWith('/DeviceApprovalPanel.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.PanelStub', shortCircuit: true }
+    if (specifier.endsWith('/HomeRecentRecords.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.RecentStub', shortCircuit: true }
     if (specifier.endsWith('/TrainingEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.TrainingStub', shortCircuit: true }
     if (specifier.endsWith('/appEntrySession')) return { url: gateURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeAuthRuntime')) return { url: 'data:text/javascript,export const createAppAuthRuntime = () => { if (!globalThis.__neraeEntryTest.runtime) throw Error(); return globalThis.__neraeEntryTest.runtime }', shortCircuit: true }
@@ -66,6 +78,9 @@ registerHooks({ resolve(specifier, context, nextResolve) {
 // Compile the actual page with stubs for native and child-component boundaries.
 // The test supplies a non-secret URL; it does not exercise uni-app preprocessing.
 const source = readFileSync(pageURL, 'utf8').replace('import.meta.env.VITE_NERAE_API_BASE', "'https://api.example.test/v1'")
+assert.equal(source.includes('本次计划'), false)
+assert.equal(source.includes('教练反馈'), false)
+assert.equal(source.includes('HomeRecentRecords'), true)
 const descriptor = parse(source, { filename: 'index.vue' }).descriptor
 const compiled = compileScript(descriptor, { id: 'nerae-entry-test', inlineTemplate: true }).content
 const javascript = ts.transpileModule(compiled, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
@@ -218,4 +233,63 @@ test('signed-in app retries protected drafts on reconnect and foreground, and re
     current.showHandler();await flush();assert.equal(calls,3)
   } finally {app.unmount();globalThis.uni=previous;current.syncFn=null}
   assert.equal(removed,true)
+})
+
+function signedInSession(subjectId = '101') {
+  let stored = JSON.stringify({ schema: 1, subjectId, accessToken: 'synthetic-token' })
+  const user = { id: subjectId, nickname: '', roles: ['student'], ageVerified: true }
+  return new AuthSessionCoordinator({
+    readAuthenticationState: () => ({ ok: true, errorCode: '', found: !!stored, value: stored }),
+    writeAuthenticationState: value => { stored = value; return { ok: true, errorCode: '', found: false, value: '' } },
+    clearAuthenticationState: () => { stored = ''; return { ok: true, errorCode: '', found: false, value: '' } },
+  }, async () => ({ status: 'valid', user }))
+}
+
+test('the signed-in home reads recent records without replacing the existing entry', async () => {
+  const session = signedInSession()
+  const recordingApi = { id: 'home-history' }
+  current.recentMounts = 0
+  current.recentApi = null
+  current.trainingCanLeave = true
+  current.backHandler = null
+  current.runtime = { session, approvals: {}, createRecordingApi: () => recordingApi }
+  const { root, app } = mount()
+  await flush()
+  assert.equal(current.recentMounts, 1)
+  assert.equal(current.recentApi, recordingApi)
+  assert.ok(find(root, node => node.type === 'home-recent-records'))
+  assert.ok(find(root, node => node.type === 'button' && node.text === '开始记录'))
+  assert.equal(find(root, node => node.text === '本次计划'), undefined)
+  assert.equal(find(root, node => node.text === '教练反馈'), undefined)
+  find(root, node => node.type === 'button' && node.text === '开始记录').props.onClick()
+  await flush()
+  assert.equal(find(root, node => node.type === 'home-recent-records'), undefined)
+  assert.equal(current.backHandler({ from: 'backbutton' }), true)
+  await flush()
+  assert.equal(current.recentMounts, 2)
+  assert.ok(find(root, node => node.type === 'home-recent-records'))
+  current.recentEmit('session-changed')
+  await flush()
+  assert.equal(find(root, node => node.type === 'home-recent-records'), undefined)
+  assert.ok(find(root, node => node.text === '登录状态已变化'))
+  app.unmount()
+})
+
+test('a home history client that cannot be opened is a read failure, not an empty history', async () => {
+  const session = signedInSession()
+  let opened = 0
+  current.recentMounts = 0
+  current.runtime = { session, approvals: {}, createRecordingApi() { opened++; if (opened === 1) throw new Error('unavailable'); return { id: 'retried' } } }
+  const { root, app } = mount()
+  await flush()
+  assert.equal(current.recentMounts, 0)
+  assert.ok(find(root, node => node.text === '暂时无法读取云端记录，请稍后重试。'))
+  assert.equal(find(root, node => node.text === '还没有已保存到云端的训练。'), undefined)
+  assert.ok(find(root, node => node.type === 'button' && node.text === '开始记录'))
+  find(root, node => node.type === 'button' && node.text === '重试云端记录').props.onClick()
+  await flush()
+  assert.equal(current.recentMounts, 1)
+  assert.equal(current.recentApi.id, 'retried')
+  assert.equal(find(root, node => node.text === '暂时无法读取云端记录，请稍后重试。'), undefined)
+  app.unmount()
 })
