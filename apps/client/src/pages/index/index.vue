@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { onBackPress, onShow } from '@dcloudio/uni-app'
 import AuthEntry from '../../features/auth/AuthEntry.vue'
 import DeviceApprovalPanel from '../../features/auth/DeviceApprovalPanel.vue'
+import HomeRecentRecords from '../../features/training/HomeRecentRecords.vue'
 import TrainingEntry from '../../features/training/TrainingEntry.vue'
 import { AppEntrySession } from '../../features/auth/appEntrySession'
 import type { PublicSession } from '../../features/auth/sessionCoordinator'
@@ -33,6 +34,8 @@ const trainingTimeZone = shallowRef('')
 const trainingEntry = shallowRef<InstanceType<typeof TrainingEntry> | null>(null)
 const trainingApi = shallowRef<RecordingApi | null>(null)
 const trainingError = shallowRef('')
+const homeHistoryApi = shallowRef<RecordingApi | null>(null)
+const homeHistoryError = shallowRef('')
 const syncMessage = ref('')
 const gate = runtime ? new AppEntrySession(runtime.session, onSessionChanged) : null
 let alive = true
@@ -79,8 +82,26 @@ function onSessionChanged(): void {
   trainingOpen.value = false
   trainingEntry.value = null
   trainingApi.value = null
+  homeHistoryApi.value = null
+  homeHistoryError.value = ''
   authenticated.value = null
   sessionChanged.value = true
+}
+
+function openHomeHistory(): void {
+  const session = authenticated.value
+  if (!runtime || !session || !runtime.session.isCurrent(session.subjectId, session.generation)) {
+    onSessionChanged()
+    return
+  }
+  try {
+    homeHistoryApi.value = runtime.createRecordingApi()
+    homeHistoryError.value = ''
+  } catch {
+    homeHistoryApi.value = null
+    if (!runtime.session.isCurrent(session.subjectId, session.generation)) onSessionChanged()
+    else homeHistoryError.value = '暂时无法读取云端记录，请稍后重试。'
+  }
 }
 
 function startTraining(): void {
@@ -130,6 +151,7 @@ function onAuthenticated(session: PublicSession): void {
   authenticated.value = session
   sessionChanged.value = false
   syncGeneration++
+  openHomeHistory()
   requestBackgroundSync()
 }
 
@@ -172,6 +194,10 @@ onBeforeUnmount(() => {
         <text v-if="trainingError" role="alert">{{ trainingError }}</text>
         <button class="entry-page__button" @click="startTraining">开始记录</button>
       </view>
+      <text v-if="homeHistoryError" class="entry-page__alert" role="alert">{{ homeHistoryError }}</text>
+      <button v-if="homeHistoryError" class="entry-page__retry" @click="openHomeHistory">重试云端记录</button>
+      <HomeRecentRecords v-else-if="homeHistoryApi && authenticated" :key="authenticated.subjectId + ':' + authenticated.generation"
+        :session="runtime.session" :api="homeHistoryApi" @session-changed="onSessionChanged" />
       <DeviceApprovalPanel :session="runtime.session" :approvals="runtime.approvals" @session-changed="onSessionChanged" />
     </view>
   </view>
@@ -188,4 +214,7 @@ onBeforeUnmount(() => {
 .entry-page__button:active { background: var(--nerae-primary-pressed); }
 .entry-page__button:focus-visible { outline: 2px solid var(--nerae-border-control); outline-offset: 2px; }
 .entry-page__button::after { border: 0; }
+.entry-page__alert { color: var(--nerae-text); font-size: 24rpx; line-height: 1.5; }
+.entry-page__retry { margin: 0; background: var(--nerae-surface-subtle); color: var(--nerae-text); font-size: 24rpx; }
+.entry-page__retry::after { border: 0; }
 </style>
