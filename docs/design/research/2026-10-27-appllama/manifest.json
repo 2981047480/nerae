@@ -1,0 +1,1560 @@
+{
+  "date": "2026-10-27",
+  "source": "Appllama MCP",
+  "requested_unique": 91,
+  "downloaded": 91,
+  "screens": [
+    {
+      "screen_ref": "1031660123/oth_3ugd6",
+      "name": "Home Progress Feed",
+      "flow": "Home",
+      "app": {
+        "app_id": "1031660123",
+        "name": "BODi Fitness: Home Workouts"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/1031660123/oth_3ugd6.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "edbad512ec3c01d9ccc87e0f8b61daeddcfc17b271eea75c5bc7e633a99ae5ec",
+      "bytes": 734924
+    },
+    {
+      "screen_ref": "1037595083/oth_jmh0q",
+      "name": "Workout Start Map",
+      "flow": "Workout Tracking",
+      "app": {
+        "app_id": "1037595083",
+        "name": "StepsApp Pedometer"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1037595083/oth_jmh0q.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c50e7079b1641b6060a788c09390c887de626e6bbac134e65e94b8358e7010c7",
+      "bytes": 1270746
+    },
+    {
+      "screen_ref": "1048454034/oth_eap1a",
+      "name": "Workout Exercise List",
+      "flow": "My Plan",
+      "app": {
+        "app_id": "1048454034",
+        "name": "Gymverse: Gym Workout Planner"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/1048454034/oth_eap1a.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a7767e4576763890ca04c66f4c82389ea8d9a865fe641bc446200d64582b9b3f",
+      "bytes": 1110746
+    },
+    {
+      "screen_ref": "1048454034/oth_uqlz0",
+      "name": "Activity Dashboard",
+      "flow": "Progress",
+      "app": {
+        "app_id": "1048454034",
+        "name": "Gymverse: Gym Workout Planner"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/1048454034/oth_uqlz0.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "33576e85cf421823a21628dc54f53c0629b73f39ab68b5275ddfac1a7b9898c9",
+      "bytes": 589244
+    },
+    {
+      "screen_ref": "1136617388/oth_9hvwq",
+      "name": "Workout Goal Type Picker",
+      "flow": "Workout Setup",
+      "app": {
+        "app_id": "1136617388",
+        "name": "Running Walking Tracker Goals"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1136617388/oth_9hvwq.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "ba956a7e7f4171c6975fc5937a5755b402abfebb8b27ee6175570b806919d8f0",
+      "bytes": 414654
+    },
+    {
+      "screen_ref": "1265489771/oth_4q887",
+      "name": "Programs Home",
+      "flow": "Program Discovery",
+      "app": {
+        "app_id": "1265489771",
+        "name": "Calisteniapp: Fit & Strong"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1265489771/oth_4q887.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "508296e3adc3fbe0010440b54811a4bb0a6c32afcfc739613c684b1ed51a81e8",
+      "bytes": 1091982
+    },
+    {
+      "screen_ref": "1266612768/oth_w4pk7",
+      "name": "Workout Library",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1266612768",
+        "name": "Lose Weight at Home in 30 Days"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1266612768/oth_w4pk7.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "1d0e17198c298b57258c56bb26f49497471e0cf0b3e1e0a518ea9af57e9f4014",
+      "bytes": 618982
+    },
+    {
+      "screen_ref": "1274601042/oth_r1ace",
+      "name": "Home - Featured Workouts",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1274601042",
+        "name": "iFIT Workouts"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/1274601042/oth_r1ace.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "12adf3bdcd85e8af8e84e6ed6c34dcec2f7a312132faa899a2e18e24721c276e",
+      "bytes": 1078120
+    },
+    {
+      "screen_ref": "1274601042/oth_xr6yt",
+      "name": "Workout Duration Filter",
+      "flow": "Workout Search",
+      "app": {
+        "app_id": "1274601042",
+        "name": "iFIT Workouts"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1274601042/oth_xr6yt.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "09be2f2ad331d55f9849ff279793c929b082b5e847a3f555aedbd41df9629d9e",
+      "bytes": 767422
+    },
+    {
+      "screen_ref": "1313192037/oth_5w9db",
+      "name": "Gym Home",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1313192037",
+        "name": "Home Workout - No Equipments"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1313192037/oth_5w9db.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "96d358fda6929d3c61df14b687dd37d5e0f98ae4fe55a98056c0eb78f13612d3",
+      "bytes": 1190554
+    },
+    {
+      "screen_ref": "1313192037/oth_skfn9",
+      "name": "Workout Calendar",
+      "flow": "Progress Tracking",
+      "app": {
+        "app_id": "1313192037",
+        "name": "Home Workout - No Equipments"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1313192037/oth_skfn9.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c95fc5df8d1ac2421646411639cc2b8959f1f57aee4b8904ee3fefae38a79d9d",
+      "bytes": 660474
+    },
+    {
+      "screen_ref": "1357527742/oth_kf2ca",
+      "name": "Today Workout",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1357527742",
+        "name": "Workout for Women: Fit at Home"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/1357527742/oth_kf2ca.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "e854e9c4a8f4bd57582f24d88db938e18c489adc2622a6c54dbbd035d19f038e",
+      "bytes": 1165262
+    },
+    {
+      "screen_ref": "1439828095/onb_cvt07",
+      "name": "Home Tutorial Coachmark",
+      "flow": "Onboarding",
+      "app": {
+        "app_id": "1439828095",
+        "name": "SHRED: Gym & Home Workouts"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1439828095/onb_cvt07.webp",
+      "width": 1080,
+      "height": 2336,
+      "sha256": "203d137c355e81b9d7b930834349b86f71521f2135e05a3919b62f871b772bc3",
+      "bytes": 196540
+    },
+    {
+      "screen_ref": "1439828095/oth_fhlb3",
+      "name": "Workout Countdown",
+      "flow": "Camera Workout",
+      "app": {
+        "app_id": "1439828095",
+        "name": "SHRED: Gym & Home Workouts"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1439828095/oth_fhlb3.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "442bf4aa5a2e3798f844e22cd975a6c18e4ad6ef7e839ad1515808661735f08a",
+      "bytes": 925474
+    },
+    {
+      "screen_ref": "1439828095/oth_rkkxy",
+      "name": "Home Feed",
+      "flow": "Home",
+      "app": {
+        "app_id": "1439828095",
+        "name": "SHRED: Gym & Home Workouts"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/1439828095/oth_rkkxy.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "05999ae3c3c9d388db763c0b2b67df1c6b2551479ce95856a7a292da33fcfefb",
+      "bytes": 1018752
+    },
+    {
+      "screen_ref": "1442473191/oth_cze4x",
+      "name": "For You Home",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1442473191",
+        "name": "FitOn Workouts & Fitness Plans"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/1442473191/oth_cze4x.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a2c6616576d9f20315f08246aeb88b3dc36f19cb6c1bad69cf6523905c8d84c6",
+      "bytes": 806126
+    },
+    {
+      "screen_ref": "1442473191/oth_n91on",
+      "name": "Programs Home",
+      "flow": "Programs",
+      "app": {
+        "app_id": "1442473191",
+        "name": "FitOn Workouts & Fitness Plans"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1442473191/oth_n91on.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "05dcd9a5cf4491b6548c98fe5f20e8133edc7f0c2450acf1f4557e20abfbe06c",
+      "bytes": 870158
+    },
+    {
+      "screen_ref": "1446735127/oth_h0ot0",
+      "name": "Dashboard Home",
+      "flow": "Dashboard",
+      "app": {
+        "app_id": "1446735127",
+        "name": "EvolveYou: Strength For Women"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/1446735127/oth_h0ot0.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c35bc24a1e54e57f3fc3f81c302b4e97cdd60cd3a600819d810a338d4345faf8",
+      "bytes": 1305634
+    },
+    {
+      "screen_ref": "1458862350/oth_402k3",
+      "name": "Personalized Program",
+      "flow": "Trainer",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-trainer"
+      ],
+      "path": "references/1458862350/oth_402k3.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "ae18c248892a30e2afe3834357730acf580a0e22735c0b7759c0aff5b8bf778f",
+      "bytes": 523676
+    },
+    {
+      "screen_ref": "1458862350/oth_6efix",
+      "name": "Trainer Preferences",
+      "flow": "Trainer",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-trainer"
+      ],
+      "path": "references/1458862350/oth_6efix.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "dd333b6791002c8354711faa5df648c9123bd127b975be4ec1764d6c26a8ecdc",
+      "bytes": 614548
+    },
+    {
+      "screen_ref": "1458862350/oth_8ih5w",
+      "name": "Muscle Group Filter",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_8ih5w.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "8a17d26c1f661629a1842d3d76ac4b9cf1b464a7fdc58aece62abd6cdaef2a9b",
+      "bytes": 451508
+    },
+    {
+      "screen_ref": "1458862350/oth_9z8li",
+      "name": "Filtered Add Exercise",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_9z8li.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "ec1df108ddbff4acecea15c941a796ba1a759d6b60150c373996eb55f3f550ae",
+      "bytes": 539338
+    },
+    {
+      "screen_ref": "1458862350/oth_g6sj7",
+      "name": "Exercise Options Sheet",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_g6sj7.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "2baa45f295bfcb668ecb95bc6c3e946137c198a89aee5843c4245522cc11802a",
+      "bytes": 625416
+    },
+    {
+      "screen_ref": "1458862350/oth_mqfut",
+      "name": "Create Routine Empty",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_mqfut.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "db00008a9c6ba6e98c6cc7f70e713d867b48648cd80701048d66ef9fa0ecee7f",
+      "bytes": 923442
+    },
+    {
+      "screen_ref": "1458862350/oth_qmkxh",
+      "name": "Workout Home",
+      "flow": "Workout",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1458862350/oth_qmkxh.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "bf085b4793bb57376ba37aad89f394b5ab4879cd1f8fd6124d885bdb79a7095a",
+      "bytes": 791552
+    },
+    {
+      "screen_ref": "1458862350/oth_rbs7y",
+      "name": "Routine Exercise Editor",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_rbs7y.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "9787e1b7e502961465bc247cd637cc253b14783b526e12c7a1f31874893ed1e7",
+      "bytes": 431680
+    },
+    {
+      "screen_ref": "1458862350/oth_t7svp",
+      "name": "Add Exercise",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_t7svp.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "d0fe4d21e89bff0958060d45c5358d970350c8ac0d6f9fa53b979983ff2b39ff",
+      "bytes": 452174
+    },
+    {
+      "screen_ref": "1458862350/oth_wga4o",
+      "name": "Training Science",
+      "flow": "Trainer",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-trainer"
+      ],
+      "path": "references/1458862350/oth_wga4o.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "87136cc77529b0f95a206be49cad63b4a7d6d45493ff8c5d867ff8db99f69bd6",
+      "bytes": 464386
+    },
+    {
+      "screen_ref": "1458862350/oth_x4esb",
+      "name": "Routine Exercise Editor",
+      "flow": "Routine Builder",
+      "app": {
+        "app_id": "1458862350",
+        "name": "Hevy - Workout Tracker Gym Log"
+      },
+      "queries": [
+        "hevy-builder"
+      ],
+      "path": "references/1458862350/oth_x4esb.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "effa8e9ec594262bd42392df69c9b0c898ce3d8f9823cb9b131222430340bf3c",
+      "bytes": 456534
+    },
+    {
+      "screen_ref": "1462277793/oth_7av9x",
+      "name": "Workout Day Detail",
+      "flow": "Workout Session",
+      "app": {
+        "app_id": "1462277793",
+        "name": "Alpha Progression Gym Tracker"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/1462277793/oth_7av9x.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "4f5ac8d092ddf39678d641ee30ab3e92e72e7d1b8876fffb1650d65b0ffe6e03",
+      "bytes": 739944
+    },
+    {
+      "screen_ref": "1463386686/oth_d5ud5",
+      "name": "Workouts Home",
+      "flow": "Workouts",
+      "app": {
+        "app_id": "1463386686",
+        "name": "Fitify: Home Workout, AI Coach"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/1463386686/oth_d5ud5.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "f7efdac4f50aa76c0cb7fe884cd837cba544778a8ceaaf645055d71a5a995de4",
+      "bytes": 883776
+    },
+    {
+      "screen_ref": "1488020055/oth_1l8vd",
+      "name": "Workout Home",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "1488020055",
+        "name": "Alive by Whitney Simmons"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/1488020055/oth_1l8vd.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "56e2d7a019afa689006c98fa583c491d7429981efd7759d77f97d2ecec960cb8",
+      "bytes": 1321524
+    },
+    {
+      "screen_ref": "1492688256/oth_21inm",
+      "name": "Workout Exercise List",
+      "flow": "Training Plan",
+      "app": {
+        "app_id": "1492688256",
+        "name": "STRNG"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1492688256/oth_21inm.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a8196245a67455c051eb99a63af3cd492b985d89980fe90f9475b3a39f059ef5",
+      "bytes": 390866
+    },
+    {
+      "screen_ref": "1502936453/oth_a16lg",
+      "name": "Workout Overview",
+      "flow": "Workout Overview",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "keyword-3",
+        "ladder-overview"
+      ],
+      "path": "references/1502936453/oth_a16lg.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "71a3c0ed2dfe708e3f645ce3594a083eb5a1f7ee2e53080d3277b7f54e1b0c46",
+      "bytes": 606254
+    },
+    {
+      "screen_ref": "1502936453/oth_b0ete",
+      "name": "Welcome Workout",
+      "flow": "Workout Overview",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "ladder-overview"
+      ],
+      "path": "references/1502936453/oth_b0ete.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "0d41af4cabec47bc7ba0869b397daf7caac661729c2dcd2d35d768ab53c006b2",
+      "bytes": 1414912
+    },
+    {
+      "screen_ref": "1502936453/oth_eooir",
+      "name": "Workout Overview",
+      "flow": "Workout Overview",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "keyword-2",
+        "ladder-overview"
+      ],
+      "path": "references/1502936453/oth_eooir.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "77fc96744aaf5fdb1d91004cc1fc1865a5a85256ab24d1f0092e88ecd8eba6b5",
+      "bytes": 682268
+    },
+    {
+      "screen_ref": "1502936453/oth_j2t76",
+      "name": "Home",
+      "flow": "Workout Overview",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "ladder-overview"
+      ],
+      "path": "references/1502936453/oth_j2t76.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "679a6c305e63b85e3aa63dd1c912b5fb315188f3deae0d5234acaae4dc1c8e5d",
+      "bytes": 1220624
+    },
+    {
+      "screen_ref": "1502936453/oth_mqcn5",
+      "name": "Workout Overview",
+      "flow": "Workout Overview",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "ladder-overview"
+      ],
+      "path": "references/1502936453/oth_mqcn5.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "8c455889bc5b3ac700e07f1ee543ae66cd73a48bbf1a58136216d57c722e7826",
+      "bytes": 693070
+    },
+    {
+      "screen_ref": "1502936453/oth_z1l85",
+      "name": "Workout Discovery",
+      "flow": "Discover",
+      "app": {
+        "app_id": "1502936453",
+        "name": "LADDER Strength Training Plans"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/1502936453/oth_z1l85.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "42e769987beb48cd13156120c7f2dbba748477034158fb54d30c96d83b55684d",
+      "bytes": 1022104
+    },
+    {
+      "screen_ref": "1523442465/oth_tul2o",
+      "name": "Workout Detail",
+      "flow": "Training Programs",
+      "app": {
+        "app_id": "1523442465",
+        "name": "Move With Us"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1523442465/oth_tul2o.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "f7f6afb8af28e633445920d79cec7cfa283b0b66119f6ca7f88520df416193c2",
+      "bytes": 893078
+    },
+    {
+      "screen_ref": "1529354455/oth_d9ji6",
+      "name": "Saved Programs Empty",
+      "flow": "Program Library",
+      "app": {
+        "app_id": "1529354455",
+        "name": "Boostcamp: Workout Programs"
+      },
+      "queries": [
+        "boostcamp-programs"
+      ],
+      "path": "references/1529354455/oth_d9ji6.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "fb5e04b2ca2bfe198fa4fe169fda41015cb80d308a8400a39c3eef6d9e3f32be",
+      "bytes": 369222
+    },
+    {
+      "screen_ref": "1529354455/oth_dj8c6",
+      "name": "Published Programs Empty",
+      "flow": "Program Library",
+      "app": {
+        "app_id": "1529354455",
+        "name": "Boostcamp: Workout Programs"
+      },
+      "queries": [
+        "boostcamp-programs"
+      ],
+      "path": "references/1529354455/oth_dj8c6.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "cb0bda54d80212e58b39987d2c3c472d042fbae84242548cec3885e1e30baa79",
+      "bytes": 356762
+    },
+    {
+      "screen_ref": "1529354455/oth_mosxv",
+      "name": "Program Library",
+      "flow": "Program Library",
+      "app": {
+        "app_id": "1529354455",
+        "name": "Boostcamp: Workout Programs"
+      },
+      "queries": [
+        "boostcamp-programs"
+      ],
+      "path": "references/1529354455/oth_mosxv.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "9f33fe24552f5eb9fd6f9f391d6a8c105577a8b6edec70c7b92372360feba724",
+      "bytes": 700952
+    },
+    {
+      "screen_ref": "1529354455/oth_yozhp",
+      "name": "Private Program Library",
+      "flow": "Program Library",
+      "app": {
+        "app_id": "1529354455",
+        "name": "Boostcamp: Workout Programs"
+      },
+      "queries": [
+        "boostcamp-programs"
+      ],
+      "path": "references/1529354455/oth_yozhp.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "9f33fe24552f5eb9fd6f9f391d6a8c105577a8b6edec70c7b92372360feba724",
+      "bytes": 700952
+    },
+    {
+      "screen_ref": "1542181484/oth_62ttk",
+      "name": "Workout Details",
+      "flow": "Workout Details",
+      "app": {
+        "app_id": "1542181484",
+        "name": "Dancebit: Home Dance Workouts"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1542181484/oth_62ttk.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "bd50ee0dc5e5a4fb799a2f6cca2769ed74da909dea0747293aa07e794c52b320",
+      "bytes": 769690
+    },
+    {
+      "screen_ref": "1542181484/oth_ne6x6",
+      "name": "Today Home",
+      "flow": "Home Feed",
+      "app": {
+        "app_id": "1542181484",
+        "name": "Dancebit: Home Dance Workouts"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1542181484/oth_ne6x6.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "fc8fb7a52c180710447ada534632964d7ac2b41984eb78d49999394d488d55cb",
+      "bytes": 660646
+    },
+    {
+      "screen_ref": "1543571755/oth_jg4w7",
+      "name": "Workout History",
+      "flow": "Workouts",
+      "app": {
+        "app_id": "1543571755",
+        "name": "Athlytic: Fitness & Recovery"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/1543571755/oth_jg4w7.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "9515f481ddd19589d49591b42120b284072b5a6c2a13e123ef3adc85aae0d3d5",
+      "bytes": 595688
+    },
+    {
+      "screen_ref": "1552207792/oth_vrmbu",
+      "name": "Workout Overview",
+      "flow": "Workout",
+      "app": {
+        "app_id": "1552207792",
+        "name": "Zing AI: Home & Gym Workouts"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1552207792/oth_vrmbu.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a48757c1a80cd6960fc09d3cdf311fd96050f9530e98f934133fb0e763089733",
+      "bytes": 1085864
+    },
+    {
+      "screen_ref": "1574460221/oth_ftekg",
+      "name": "Profile Dashboard",
+      "flow": "Profile & Settings",
+      "app": {
+        "app_id": "1574460221",
+        "name": "JustFit: Lazy Workout & Fit"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/1574460221/oth_ftekg.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "21a064e17f91ae700a92ef4212452a4343bf5c999859966c71609dfcc5ac740e",
+      "bytes": 777628
+    },
+    {
+      "screen_ref": "1578636146/oth_fphbo",
+      "name": "Workout Equipment Filter",
+      "flow": "Workout Search",
+      "app": {
+        "app_id": "1578636146",
+        "name": "FORM: Strength, Pilates, Gym"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/1578636146/oth_fphbo.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "173eb7a82577e05f98724fac1991d69d78bd427114523ecab30f6ccc40add50a",
+      "bytes": 429342
+    },
+    {
+      "screen_ref": "1635707277/oth_ma2ua",
+      "name": "Workout Plan Library",
+      "flow": "Plan Selection",
+      "app": {
+        "app_id": "1635707277",
+        "name": "Light: Chair Yoga Plan"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/1635707277/oth_ma2ua.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "0ed0b5436435a848ec8bf141a0b8db6a9edfce1d5eba942389d4518807242b74",
+      "bytes": 752444
+    },
+    {
+      "screen_ref": "1635707277/oth_ozev3",
+      "name": "Workout Challenges",
+      "flow": "Challenges",
+      "app": {
+        "app_id": "1635707277",
+        "name": "Light: Chair Yoga Plan"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1635707277/oth_ozev3.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "62573cc92ec62733b2cfa79a519529015b2a88b5708e23cef9ee532c07c9544e",
+      "bytes": 1505194
+    },
+    {
+      "screen_ref": "1669413773/oth_x7tn4",
+      "name": "Workout Countdown",
+      "flow": "Workout Session",
+      "app": {
+        "app_id": "1669413773",
+        "name": "LazyFit: Workout For Beginners"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/1669413773/oth_x7tn4.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "da806b40dbd9a13bc7d014303aa825922a426cf8c7bbb686b863fd2617f8e0e4",
+      "bytes": 823644
+    },
+    {
+      "screen_ref": "341232718/oth_7a36b",
+      "name": "Health Habits Diary",
+      "flow": "Diary",
+      "app": {
+        "app_id": "341232718",
+        "name": "MyFitnessPal: Calorie Counter"
+      },
+      "queries": [
+        "mfp-diary"
+      ],
+      "path": "references/341232718/oth_7a36b.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a48a5c12dc0c74cd86596cefde794d175620c3ccdcc8f778927fe780e3a53156",
+      "bytes": 405756
+    },
+    {
+      "screen_ref": "341232718/oth_izyh7",
+      "name": "Today Diary Meal List",
+      "flow": "Diary",
+      "app": {
+        "app_id": "341232718",
+        "name": "MyFitnessPal: Calorie Counter"
+      },
+      "queries": [
+        "mfp-diary"
+      ],
+      "path": "references/341232718/oth_izyh7.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "6258a4aa2ae2e88a23a7d4531619c4cfb11a7d84bb49497317b1b5b1682a4e89",
+      "bytes": 929442
+    },
+    {
+      "screen_ref": "341232718/oth_pwfk2",
+      "name": "Breakfast Entry Details",
+      "flow": "Diary",
+      "app": {
+        "app_id": "341232718",
+        "name": "MyFitnessPal: Calorie Counter"
+      },
+      "queries": [
+        "mfp-diary"
+      ],
+      "path": "references/341232718/oth_pwfk2.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a897e31d9c98dd5fd3eb13f0ce32a3f4b1951d3bc5f4e20793a1e088852d34f3",
+      "bytes": 553786
+    },
+    {
+      "screen_ref": "341232718/oth_ultcg",
+      "name": "Today Diary Overview",
+      "flow": "Diary",
+      "app": {
+        "app_id": "341232718",
+        "name": "MyFitnessPal: Calorie Counter"
+      },
+      "queries": [
+        "mfp-diary"
+      ],
+      "path": "references/341232718/oth_ultcg.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "0101c94bb1863fb1e362b9ed56a91b29158457802ac8fd852ed03dea246643ea",
+      "bytes": 488132
+    },
+    {
+      "screen_ref": "341232718/oth_xbbwd",
+      "name": "Meal Log Reminder Modal",
+      "flow": "Diary",
+      "app": {
+        "app_id": "341232718",
+        "name": "MyFitnessPal: Calorie Counter"
+      },
+      "queries": [
+        "mfp-diary"
+      ],
+      "path": "references/341232718/oth_xbbwd.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "5b4e3f375b7540d115cd87cf585329459ed74f610fe4973e84d5be2553c17c0e",
+      "bytes": 326922
+    },
+    {
+      "screen_ref": "408047715/oth_zbgj5",
+      "name": "Home Dashboard",
+      "flow": "Home Dashboard",
+      "app": {
+        "app_id": "408047715",
+        "name": "TrainingPeaks: Plan Train Lift"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/408047715/oth_zbgj5.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c5590d0bbc5cecc27a887dfb727c6b24c4f1a1787857bade076990844d7ee5f3",
+      "bytes": 560470
+    },
+    {
+      "screen_ref": "464254577/oth_1ar1s",
+      "name": "Workout Set Entry",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_1ar1s.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "cb4ec4e6c9cc7aff0d0015bcbcc53571125ef63b4abd827623d3ee1102234299",
+      "bytes": 553448
+    },
+    {
+      "screen_ref": "464254577/oth_50pwy",
+      "name": "Rest Timer Overlay",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_50pwy.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "408f28a247133113e79ddc06c1950bd848e909e949c1767b216bdef56c35a950",
+      "bytes": 436436
+    },
+    {
+      "screen_ref": "464254577/oth_9m42h",
+      "name": "Workout Templates",
+      "flow": "Start Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-start"
+      ],
+      "path": "references/464254577/oth_9m42h.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c4f927a0d39d283282c8a721cbfeba440f248e21cbc45dc250ff8a970ee7abbc",
+      "bytes": 406206
+    },
+    {
+      "screen_ref": "464254577/oth_aje36",
+      "name": "Template Preview",
+      "flow": "Start Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-start"
+      ],
+      "path": "references/464254577/oth_aje36.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "e98dc7c44f5a6a384e1324f85ffa12c48e7f9086d76f5ef67f1b04f9788322c5",
+      "bytes": 476762
+    },
+    {
+      "screen_ref": "464254577/oth_ddm5s",
+      "name": "Active Workout",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_ddm5s.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "72af00e638bb5a857e3d043e5f90eaedb80f0d70ad9b8a6ca9b1e137a1ef0401",
+      "bytes": 604672
+    },
+    {
+      "screen_ref": "464254577/oth_h8pxa",
+      "name": "Active Workout Sets",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_h8pxa.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "0fcb90eb24540f7f6c49171043c30cb931f832a2c7dbcec21d7f8c2062c46292",
+      "bytes": 591346
+    },
+    {
+      "screen_ref": "464254577/oth_jce54",
+      "name": "Empty Active Workout",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_jce54.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "981ed13e0afbe7315f39874b5009140f595354ac485b8de6318f36ded9cec2c0",
+      "bytes": 860154
+    },
+    {
+      "screen_ref": "464254577/oth_qse1t",
+      "name": "Exercise Picker",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_qse1t.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "ec7a12978d5ca02fde5535191d36f1f77473fa787c876e278befda712d279ddc",
+      "bytes": 416214
+    },
+    {
+      "screen_ref": "464254577/oth_rf3x6",
+      "name": "Start Workout Home",
+      "flow": "Start Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-start",
+        "semantic-1"
+      ],
+      "path": "references/464254577/oth_rf3x6.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "1a4f6e84e0b831a04dc0ffbf8bb5d6ff6e20e6b3c8fc7e962cfd6046597793a6",
+      "bytes": 544484
+    },
+    {
+      "screen_ref": "464254577/oth_s9pyg",
+      "name": "Active Workout Log",
+      "flow": "Active Workout",
+      "app": {
+        "app_id": "464254577",
+        "name": "Strong Workout Tracker Gym Log"
+      },
+      "queries": [
+        "strong-active"
+      ],
+      "path": "references/464254577/oth_s9pyg.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "80dede298421751775df291d6be204d4e6308a1f8590b9234554ae4e13794d98",
+      "bytes": 512152
+    },
+    {
+      "screen_ref": "527219710/oth_37xoe",
+      "name": "Home Workout Feed",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "527219710",
+        "name": "Sworkit Fitness & Wellness App"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/527219710/oth_37xoe.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "a3a9b4bf09538732e32a9810714e59f86c603f2d2d180a4ade2e3bba43a7a8e8",
+      "bytes": 1517936
+    },
+    {
+      "screen_ref": "527219710/oth_8h3wv",
+      "name": "Workout Collections",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "527219710",
+        "name": "Sworkit Fitness & Wellness App"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/527219710/oth_8h3wv.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "e7a35cde36e362f5d9f0e4ac87cd74e3297f7476847f0326e672c4526dda2721",
+      "bytes": 1389710
+    },
+    {
+      "screen_ref": "527219710/oth_fdxs8",
+      "name": "Workout Time Setup",
+      "flow": "Workout Setup",
+      "app": {
+        "app_id": "527219710",
+        "name": "Sworkit Fitness & Wellness App"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/527219710/oth_fdxs8.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "4cc4f23e710b3b716b918c6f7df29f83f4eff1e4d10c8582319c727118cea97e",
+      "bytes": 390276
+    },
+    {
+      "screen_ref": "6444850772/oth_tj20f",
+      "name": "Progress Dashboard",
+      "flow": "Progress Tracking",
+      "app": {
+        "app_id": "6444850772",
+        "name": "Dancefitme: Fun weight loss"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/6444850772/oth_tj20f.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "fb2289c75234325874bb3b005cd1e44befe44bdc1c4c460adf55860d0d26e24a",
+      "bytes": 691924
+    },
+    {
+      "screen_ref": "6450723685/oth_8soq9",
+      "name": "Today Task Dashboard",
+      "flow": "Daily Tasks",
+      "app": {
+        "app_id": "6450723685",
+        "name": "75 Days Challenge Tough & Soft"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/6450723685/oth_8soq9.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "84b141ad28cec064bd962e63cf6e089ac632e8e21aabcb651da0b86ffeae0825",
+      "bytes": 1762584
+    },
+    {
+      "screen_ref": "6473512692/oth_4m8xc",
+      "name": "Workout Result Summary",
+      "flow": "Exercise Logging",
+      "app": {
+        "app_id": "6473512692",
+        "name": "Cal Scanner AI Calorie Tracker"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/6473512692/oth_4m8xc.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "fd980227a8f04e96019b6ad162bcfb440b48170e1c2fbb76ce61ef70e695613c",
+      "bytes": 426888
+    },
+    {
+      "screen_ref": "6477621228/oth_vfdlu",
+      "name": "Workout Calendar",
+      "flow": "Calendar and Streaks",
+      "app": {
+        "app_id": "6477621228",
+        "name": "growwithjo: home workouts"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/6477621228/oth_vfdlu.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "df0bb360233d32350508f5e44e081efbf70f1a0c45e9f63569ee08d8f82b6874",
+      "bytes": 680208
+    },
+    {
+      "screen_ref": "6484069035/oth_hyhw8",
+      "name": "Home Plan Overview",
+      "flow": "Home",
+      "app": {
+        "app_id": "6484069035",
+        "name": "Chair Yoga for Seniors at Home"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/6484069035/oth_hyhw8.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "887dfd5055bf6f0296e8fda5cec22f6c74c6b03d4419a7828e5bf96cb7b2315c",
+      "bytes": 1012942
+    },
+    {
+      "screen_ref": "6484069035/oth_ta8yp",
+      "name": "Home Health Kit",
+      "flow": "Home",
+      "app": {
+        "app_id": "6484069035",
+        "name": "Chair Yoga for Seniors at Home"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/6484069035/oth_ta8yp.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c794213dbeb7820f361e3802d985ce7d2e7f7bb4eaac33cc0bdb77967c747433",
+      "bytes": 609924
+    },
+    {
+      "screen_ref": "650276551/oth_naxyg",
+      "name": "Workout Extras",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "650276551",
+        "name": "Seven: 7 Minute Workout"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/650276551/oth_naxyg.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "45f3b0872d56826d35ad39a519d7b0a756a08c5407766adbc1fe7c5414a5099d",
+      "bytes": 527994
+    },
+    {
+      "screen_ref": "650276551/oth_xpsq1",
+      "name": "Workouts Home",
+      "flow": "Workout Discovery",
+      "app": {
+        "app_id": "650276551",
+        "name": "Seven: 7 Minute Workout"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/650276551/oth_xpsq1.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "2acd11a06918c191d5fbcc79618b11a550533aafc4f4b834dc9494387d81d0ce",
+      "bytes": 566366
+    },
+    {
+      "screen_ref": "6596760204/onb_s8rkk",
+      "name": "Workout Plan Home",
+      "flow": "Onboarding",
+      "app": {
+        "app_id": "6596760204",
+        "name": "SheFit: Home Workout for Women"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/6596760204/onb_s8rkk.webp",
+      "width": 1080,
+      "height": 2336,
+      "sha256": "ee4898d8f1879c008c67ed0b108ae71b5f48009a42ee14d8eecd8b66c8a01262",
+      "bytes": 465764
+    },
+    {
+      "screen_ref": "6596760204/oth_iwzbo",
+      "name": "Workout Summary",
+      "flow": "Workout Completion",
+      "app": {
+        "app_id": "6596760204",
+        "name": "SheFit: Home Workout for Women"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/6596760204/oth_iwzbo.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "ebab62dfa20e70642462ef2691798547b1b6b8de6fb14cd88f7b04c851c18997",
+      "bytes": 593696
+    },
+    {
+      "screen_ref": "6747844405/oth_hn1pk",
+      "name": "Workout Home",
+      "flow": "Workout",
+      "app": {
+        "app_id": "6747844405",
+        "name": "Home Workouts & Fitness | Luvu"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/6747844405/oth_hn1pk.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "0727673080b5305e80d7c1b04a8960ae0fcbbf3533027212f4f03da722ba7177",
+      "bytes": 1523094
+    },
+    {
+      "screen_ref": "6795489364/oth_c8qyo",
+      "name": "Workout Settings",
+      "flow": "Workout Recording",
+      "app": {
+        "app_id": "6795489364",
+        "name": "Amble: Step Counter & Race"
+      },
+      "queries": [
+        "keyword-2"
+      ],
+      "path": "references/6795489364/oth_c8qyo.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "c310a3b2ea215c3e5cc8bfbb6e2cd377f1fd6cbf6bdbbe13e544247d6dc2fc52",
+      "bytes": 327258
+    },
+    {
+      "screen_ref": "6795489364/oth_j722x",
+      "name": "Workout Activity Chat",
+      "flow": "Activity Details",
+      "app": {
+        "app_id": "6795489364",
+        "name": "Amble: Step Counter & Race"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/6795489364/oth_j722x.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "f3b8a10669a1a7b83674a9ef18c47ce01f0e90a93650d9a6bfb1ee54bd59ce8b",
+      "bytes": 295974
+    },
+    {
+      "screen_ref": "806995720/oth_zl9eb",
+      "name": "Daily Plan Home",
+      "flow": "Workout Session",
+      "app": {
+        "app_id": "806995720",
+        "name": "7 Minute Workout: Exercise App"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/806995720/oth_zl9eb.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "abd5b06734310e55152b109c056ba33b748a082ecefe057dc28e99ea4158c9fe",
+      "bytes": 905624
+    },
+    {
+      "screen_ref": "839285684/oth_ta66r",
+      "name": "Yoga Calendar Home",
+      "flow": "Yoga Challenge",
+      "app": {
+        "app_id": "839285684",
+        "name": "Workout for Women: Home & Gym"
+      },
+      "queries": [
+        "semantic-3"
+      ],
+      "path": "references/839285684/oth_ta66r.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "34577486c404c687e1ba69486e2f12acad73c1cb9b962082ce50ac10bb569546",
+      "bytes": 1090316
+    },
+    {
+      "screen_ref": "869058995/onb_k3o68",
+      "name": "At-Home Weight Loss",
+      "flow": "Onboarding",
+      "app": {
+        "app_id": "869058995",
+        "name": "Aaptiv: #1 Audio Fitness App"
+      },
+      "queries": [
+        "semantic-2"
+      ],
+      "path": "references/869058995/onb_k3o68.webp",
+      "width": 1080,
+      "height": 2336,
+      "sha256": "598182511ae1958173cbd202deb03a454660c151d12e84581669b9bdf0bbc136",
+      "bytes": 872060
+    },
+    {
+      "screen_ref": "875063456/oth_jo2rk",
+      "name": "Today Home",
+      "flow": "Today",
+      "app": {
+        "app_id": "875063456",
+        "name": "Elevate - Brain Training Games"
+      },
+      "queries": [
+        "semantic-1"
+      ],
+      "path": "references/875063456/oth_jo2rk.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "8537572b3e6ee0a63c1840d5d91a2eac94a7162bd0b883877c1c9f779f00178d",
+      "bytes": 569802
+    },
+    {
+      "screen_ref": "996680141/oth_4i13s",
+      "name": "Workout Activity Calendar",
+      "flow": "Progress Tracking",
+      "app": {
+        "app_id": "996680141",
+        "name": "Jump Rope Training | Crossrope"
+      },
+      "queries": [
+        "keyword-1"
+      ],
+      "path": "references/996680141/oth_4i13s.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "56f7c6a5c967588b3a97765ef21daa7a431779f3793d800221818872ea4627a6",
+      "bytes": 535272
+    },
+    {
+      "screen_ref": "996680141/oth_bj1ou",
+      "name": "Workout Filter Preferences",
+      "flow": "Workout Filtering",
+      "app": {
+        "app_id": "996680141",
+        "name": "Jump Rope Training | Crossrope"
+      },
+      "queries": [
+        "keyword-3"
+      ],
+      "path": "references/996680141/oth_bj1ou.webp",
+      "width": 1170,
+      "height": 2532,
+      "sha256": "832724d736b33e70774ea5e67ac24da501a0b426007d68990591f3f700b38d45",
+      "bytes": 543204
+    }
+  ],
+  "errors": [],
+  "note": "Reference screenshots retain the Appllama watermark; never product assets."
+}

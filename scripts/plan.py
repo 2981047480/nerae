@@ -239,7 +239,7 @@ def packet(task, doc):
     if kind(task) == 'integration':
         lines += ['', '集成卡：只接线/验证；填写integration_result，列全部直接依赖、实际集成提交与同版本证据。不新增业务。']
     if task.get('onboarding_probe'):
-        lines += ['', '陌生agent上手卡：不预载聊天历史；填写onboarding_result的真实额外上下文请求/返工/边界与复跑记录，不预填成功。']
+        lines += ['', '陌生执行者上手卡：不预载聊天历史；填写onboarding_result的真实额外上下文请求/返工/边界与复跑记录，不预填成功。']
     lines += ['', '## 返回报告',
               f"报告目录：docs/evidence/{task['parent']}/{task['id']}/（必须在写入白名单内）。",
               'status: success / partial / blocked / failed；列实际模型/推理、基线和提交、改动文件、命令退出码、截图/日志证据、未通过项、用户影响、建议下一步与需 Lead 决策。',
@@ -272,7 +272,7 @@ def main():
         print('预测依赖层；不等于已放行，并发上限与外部条件仍需 Lead 核对。')
         for i,group in enumerate(waves(tasks),1): print(str(i)+': '+', '.join(group))
     elif args.command == 'catalog':
-        print('# 开发任务目录\n\n由 `scripts/plan.py catalog` 从 tasks.json 生成；JSON是唯一状态源。work_package不能直接派发；task/integration才是执行卡，单卡不超过3有效人日。估工不含外部等待，不是agent运行时间或日历承诺。D01第三轮UI按小卡推进，正式U01–U07仍待工程与已接受设计基线。\n')
+        print('# 开发任务目录\n\n由 `scripts/plan.py catalog` 从 tasks.json 生成；JSON是唯一状态源。work_package不能直接派发；task/integration才是执行卡，单卡不超过3有效人日。估工不含外部等待，不是agent运行时间或日历承诺。微信小程序、iOS与Android App同步纳入；正式U01–U08等待工程、R05实施规格和依赖证据。\n')
         print('| ID | 用户结果 / 任务 | 类型/工作包 | 开始依赖 | 接受前置 | 人日假设 | 状态 |')
         print('|---|---|---|---|---|---|---|')
         for t in doc['tasks']:

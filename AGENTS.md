@@ -4,7 +4,7 @@
 
 先读 `docs/CURRENT_STATE.md`，再用 `docs/tasks/tasks.json` 的任务 ID 和 inputs 定界。若存在 `RETRO.md`，只读相关条目。用户最新指令优先于项目默认流程。项目当前处于契约修订与开发规划阶段，不把未来目录当作已存在应用。
 
-真源：PRD 定义产品边界；APP_FLOW 定义用户任务/日期/恢复规则；OpenAPI 定义 wire contract；ER 定义持久化和事务不变量；ENGINEERING_STANDARDS 定义工程规则、DEFINITION_OF_DONE 定义接受证据；UI_SPEC 指向当前第三轮规格，docs/design/round-03/ 是逐项设计决定与执行文稿，具体视觉接受以实际证据为准，旧稿不作基线；DECISION_LOG 记录取舍；tasks.json 定义依赖与写入范围。冲突先报告并收敛，不自行任选一份。旧审核、旧 diagrams、市场资料是历史证据，不覆盖当前规格。
+真源：PRD 定义产品边界；APP_FLOW 定义用户任务/日期/恢复规则；OpenAPI 定义 wire contract；ER 定义持久化和事务不变量；ENGINEERING_STANDARDS 定义工程规则、DEFINITION_OF_DONE 定义接受证据；UI_SPEC 指向当前用户确认的白底白灰黑色彩要求，细则见 docs/design/MONOCHROME_COLOR_SYSTEM.md；docs/design/round-05/ 的内容与流程可作参考，旧配色不作当前基线。训练记录的后续用户决定和合同冲突仍须与集成工作区同步，具体视觉接受以实际证据为准。DECISION_LOG 记录取舍；tasks.json 定义依赖与写入范围。冲突先报告并收敛，不自行任选一份。旧审核、旧 diagrams、市场资料是历史证据，不覆盖当前规格。
 
 ## 产品与实现边界
 
@@ -13,6 +13,12 @@
 - 保留 uni-app Vue3/TS + Go/Gin 模块化单体；不引入微服务、外部模型 Router、常驻代理路由服务或自动升档模型。
 - 健康采集同意与关系授权分开。撤权/结束即时阻止未来访问、AI与通知；客户端角色、内容标签和缓存均不授予权限。
 - 改业务前读相关代码。领域规则在服务端统一实现，页面不直连数据库或模型；现有 API 的 operationId 不随意改。
+
+## 强制视觉要求
+
+- Nerae 全部自有界面必须遵循 `docs/design/MONOCHROME_COLOR_SYSTEM.md`：默认浅色页面白底，以白、灰、黑组织文字、主操作与层次，装饰性卡片及分隔线使用用户认可的浅灰细线；不得自行恢复旧橙色主操作或将页面染成蓝、紫、褐等其他主题色。适用学员端、教练端、iOS、Android、小程序及运营后台。真实内容素材与平台系统自带控件按其实际要求处理，不强制修改或伪造。
+- 首页「最近记录」的动作图和名称之间不放竖线；去线后以图文及数据对齐保持平衡，见色彩系统基准。此要求不意味着其他页面的所有竖线都要删除。
+- 界面状态与操作必须清楚可辨，不能仅依赖灰度或极浅边框；按色彩系统及完成定义检查文字与必要控件对比度、状态和适用平台的实际截图。未通过或无所需证据不得标记该 UI 范围 / 三端验收通过。具体色值仍需按实际页面验证，旧样机不因本规则自动改色或通过。
 
 ## 委派与集成
 
@@ -24,7 +30,7 @@
 - 任务开始登记真实 owner/model/reasoning/base revision；不得声称使用不可用的模型。优先策略在 tasks.json，实际路由只用原生工具。
 - agent 返回 status、提交/文件、命令退出码、证据、风险和需决策项；独立 review 后才 accepted。Lead 串行集成并在合并后的同一版本重测接缝。
 
-工作包只用于路线图与最终接受；只有≤3有效人日的task/integration执行卡可派发。当前用户已明确授权第三轮逐项推导、详尽文稿与 UI 实现：D01 按小卡推进，执行者限定为现有 DeepSeek Harness / OpenCode Go / deepseek-v4.1-flash，Lead 负责判断与验收，不引入新 Router 或自动换模型；U01–U07 正式业务界面卡仍等待工程与设计基线。本轮设计推理不得进入产品。首批执行卡由ready计算，不将未细拆工作包直接分给agent。每小批有独立集成卡，七项完成清单、同一接受提交证据、真实review模式通过后才能accepted。详见docs/DEFINITION_OF_DONE.md。
+工作包只用于路线图与最终接受；只有≤3有效人日的task/integration执行卡可派发。用户已授权 Lead 直接实现并继续第五轮设计，覆盖第三轮的指定 DeepSeek 执行者限制；不委派。当前 R05 范围见 docs/design/round-05/BRIEF.md；保留 R04 默认训练后记录、可切换每组完成后记录，两模式共享记录，禁止训练播放器及任何训练/休息倒计时。U01–U07 正式业务界面卡仍等待工程与设计基线。本轮设计推理不得进入产品。首批执行卡由ready计算，不将未细拆工作包直接分给agent。每小批有独立集成卡，七项完成清单、同一接受提交证据、真实review模式通过后才能accepted。详见docs/DEFINITION_OF_DONE.md。
 
 ## 验证与上下文预算
 

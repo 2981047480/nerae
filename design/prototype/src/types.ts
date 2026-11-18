@@ -63,16 +63,6 @@ export interface SessionExercise {
   sets: SessionSet[]
 }
 
-export interface RestState {
-  id: string
-  durationMs: number
-  endsAt: number | null
-  remainingMs: number | null
-  paused: boolean
-  nextSetId: string
-  startedAt: number
-}
-
 export interface SetConflict {
   setId: string
   exerciseName: string
@@ -95,7 +85,8 @@ export interface SessionState {
   status: 'in_progress' | 'complete'
   completedAt: string | null
   exercises: SessionExercise[]
-  rest: RestState | null
+  selectedExerciseId?: string
+  trainingDate?: string
   conflicts: SetConflict[]
 }
 
@@ -521,6 +512,7 @@ export interface PersistedState {
   stack: Screen[]
   selection: SelectionState
   sessionSequence: number
+  recordingMode: 'after' | 'set'
   coachSnapshots: Record<string, CoachState>
   activeCoachStudentId: string
   auth: AuthState

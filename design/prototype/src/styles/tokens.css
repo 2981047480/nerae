@@ -1,28 +1,12 @@
 :root {
-  /* 色彩角色：安静浅底、深蓝灰主色、少量暖陶强调 */
-  --canvas: #f3f2ee;
-  --surface: #ffffff;
-  --ink: #192f39;
-  --muted: #5e6b70;
-  --line: #d9ddda;
-  --line-strong: #c4cbc7;
-  --accent: #c97857;
-  --on-accent: #0d1b21;
-
-  --focus-canvas: #162a33;
-  --focus-surface: #223c46;
-  --focus-line: #35505b;
-  --focus-text: #f1f0ea;
-  --focus-muted: #a9b8bd;
-
-  --positive: #276f53;
-  --positive-on-dark: #8ec7ac;
-  --warning: #805c22;
-  --error: #a23f3d;
-  --error-on-dark: #f0a5a2;
+  /* Appearance colors are semantic roles initialized from state/palette.ts. */
+  --focus-canvas: #202328;
+  --focus-surface: #30343b;
+  --focus-line: #50545c;
+  --focus-text: #ffffff;
+  --focus-muted: #c3c6ce;
 
   --photo-scrim: rgba(8, 18, 23, 0.74);
-  --scrim: rgba(16, 27, 32, 0.5);
 
   /* 字体：中文系统无衬线，数字兼容现代无衬线，全部本地，无外部字体请求 */
   --font-sans:
@@ -63,8 +47,8 @@
 
   --gutter: 20px;
   --container: 1240px;
-  --radius-lg: 16px;
-  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-md: 10px;
   --radius-sm: 6px;
 
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);

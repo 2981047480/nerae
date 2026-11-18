@@ -21,7 +21,7 @@ async function savedStore(): Promise<Store> {
 }
 
 function completeSessionWithInputs(store: Store): void {
-  while (!store.isComplete.value) {
+  while (store.currentEntry.value) {
     const entry = store.currentEntry.value
     if (!entry) throw new Error('no current entry')
     const input = store.state.inputs[entry.set.id] ?? { weightKg: '', reps: '', seconds: '' }
@@ -32,8 +32,8 @@ function completeSessionWithInputs(store: Store): void {
       if (!input.reps) store.setInputValue(entry.set.id, 'reps', '10')
     }
     expect(store.completeCurrentSet()).toBe(true)
-    store.skipRest()
   }
+  expect(store.saveTrainingLog()).toBe(true)
 }
 
 beforeEach(() => {
@@ -138,7 +138,7 @@ describe('持久化当前对象与替换历史', () => {
     const store = await loadStore()
     expect(store.requestStartPlan('plan-dumbbell')).toBe('replace')
     store.confirmReplaceAndStart()
-    const archived = store.state.records.find((record) => record.id.startsWith('archived-session-20261024-strength'))
+    const archived = store.state.records.find((record) => record.id === 'session-20261024-strength')
     expect(archived).toBeTruthy()
     expect(archived!.partial).toBe(true)
     expect(archived!.sets).toHaveLength(3)
@@ -202,7 +202,7 @@ describe('持久化当前对象与替换历史', () => {
     expect(store.requestStartPlan('plan-core')).toBe('replace')
     store.confirmReplaceAndStart()
 
-    const archived = store.state.records.filter((record) => record.id.startsWith('archived-session-plan-dumbbell'))
+    const archived = store.state.records.filter((record) => record.id.startsWith('session-plan-dumbbell'))
     expect(archived).toHaveLength(2)
     expect(new Set(archived.map((record) => record.id)).size).toBe(2)
     for (const record of archived) {
@@ -242,11 +242,11 @@ describe('持久化当前对象与替换历史', () => {
     store.confirmReplaceAndStart()
     expect(store.state.student.planVersion).toBe(versionBefore + 1)
     expect(JSON.stringify(store.state.student.schedule)).not.toBe(scheduleBefore)
-    const archived = store.state.records.filter((record) => record.id.startsWith('archived-session-plan-dumbbell'))
+    const archived = store.state.records.filter((record) => record.id.startsWith('session-plan-dumbbell'))
     expect(archived).toHaveLength(1)
     expect(archived[0]!.partial).toBe(false)
     expect(archived[0]!.sets).toHaveLength(12)
-    expect(store.recordRows.value.filter((record) => record.id.startsWith('archived-session-plan-dumbbell'))).toHaveLength(1)
+    expect(store.recordRows.value.filter((record) => record.id.startsWith('session-plan-dumbbell'))).toHaveLength(1)
     expect(store.doneSets.value).toBe(0)
     store.resetPreview()
   })
@@ -1003,38 +1003,22 @@ describe('fix03 引用完整生命周期', () => {
   })
 })
 
-describe('fix03 动效合同', () => {
-  it('休息暂停后继续首帧不先增大再跳回，随后按真实时间递减', async () => {
+describe('R04 记录不驱动训练计时', () => {
+  it('记录一组后无休息状态和后台 interval，等待不改变输入', async () => {
+    const interval = vi.spyOn(window, 'setInterval')
     const store = await loadStore()
     const entry = store.currentEntry.value!
     store.setInputValue(entry.set.id, 'weightKg', '12.5')
     store.setInputValue(entry.set.id, 'reps', '10')
     expect(store.completeCurrentSet()).toBe(true)
-    expect(store.state.session.rest).not.toBeNull()
-    store.pauseRest()
-    const paused = store.restRemainingMs.value
-    expect(paused).toBeGreaterThan(0)
-    await vi.advanceTimersByTimeAsync(5500)
-    store.resumeRest()
-    const firstFrame = store.restRemainingMs.value
-    expect(firstFrame).toBeLessThanOrEqual(paused + 1000)
-    expect(firstFrame).toBeGreaterThan(0)
-    await vi.advanceTimersByTimeAsync(1300)
-    expect(store.restRemainingMs.value).toBeLessThan(firstFrame)
+    expect(store.state.session).not.toHaveProperty('rest')
+    expect(interval).not.toHaveBeenCalled()
+    const recorded = JSON.stringify(entry.set)
+    await vi.advanceTimersByTimeAsync(120000)
+    expect(JSON.stringify(entry.set)).toBe(recorded)
+    expect(store.logMessage.text).toContain('第 4 组已记录')
     store.resetPreview()
-  })
-
-  it('完成组后即时状态保留确认标记，进入休息分支仍可见', async () => {
-    const store = await loadStore()
-    const entry = store.currentEntry.value!
-    store.setInputValue(entry.set.id, 'weightKg', '42.5')
-    store.setInputValue(entry.set.id, 'reps', '11')
-    expect(store.completeCurrentSet()).toBe(true)
-    expect(store.ui.justCompletedSetId).toBe(entry.set.id)
-    expect(store.state.session.rest).not.toBeNull()
-    await vi.advanceTimersByTimeAsync(100)
-    expect(store.ui.justCompletedSetId).toBe(entry.set.id)
-    store.resetPreview()
+    interval.mockRestore()
   })
 })
 
@@ -1223,7 +1207,7 @@ describe('fix06 单位与换场恢复', () => {
       expect(entry.exercise.kind).toBe('duration')
       store.setInputValue(entry.set.id, 'seconds', '40')
       expect(store.completeCurrentSet()).toBe(true)
-      store.skipRest()
+
     }
     // 鸟狗式 2 组 10 次/侧，无 kg 输入
     for (let i = 0; i < 2; i += 1) {
@@ -1234,7 +1218,7 @@ describe('fix06 单位与换场恢复', () => {
       expect(store.completeCurrentSet()).toBe(true)
       expect(entry.set.weightKg).toBeNull()
       expect(entry.set.reps).toBe(10)
-      store.skipRest()
+
     }
     const bird = store.state.session.exercises.find((item) => item.name === '鸟狗式')!
     expect(bird.lastRef.dateLabel).toBe('暂无可比较参考')
@@ -1247,7 +1231,7 @@ describe('fix06 单位与换场恢复', () => {
       expect(store.completeCurrentSet()).toBe(true)
       expect(entry.set.seconds).toBe(30)
       expect(entry.set.reps).toBeNull()
-      store.skipRest()
+
     }
     store.resetPreview()
   })
@@ -1268,7 +1252,7 @@ describe('fix06 单位与换场恢复', () => {
     expect(store.completeCurrentSet()).toBe(true)
     expect(first.set.weightKg).toBeNull()
     expect(first.set.reps).toBe(8)
-    store.skipRest()
+
     store.resetPreview()
   })
 
@@ -1312,7 +1296,7 @@ describe('fix06 单位文字出口', () => {
         store.setInputValue(entry.set.id, 'reps', '10')
       }
       expect(store.completeCurrentSet()).toBe(true)
-      store.skipRest()
+
     }
     const side = store.currentEntry.value!
     expect(side.exercise.name).toBe('侧桥')
@@ -1343,7 +1327,7 @@ describe('fix07 可比较记录序列', () => {
     const birdAtStart = store.state.session.exercises.find((item) => item.name === '鸟狗式')!
     expect(birdAtStart.kind).toBe('bodyweightPerSide')
     expect(birdAtStart.lastRef.dateLabel).toBe('暂无可比较参考')
-    while (!store.isComplete.value) {
+    while (store.currentEntry.value) {
       const entry = store.currentEntry.value!
       if (entry.exercise.kind === 'duration' || entry.exercise.kind === 'durationPerSide') {
         store.setInputValue(entry.set.id, 'seconds', entry.exercise.name === '平板支撑' ? '45' : entry.exercise.name === '侧桥' ? '30' : '40')
@@ -1351,8 +1335,9 @@ describe('fix07 可比较记录序列', () => {
         store.setInputValue(entry.set.id, 'reps', '10')
       }
       expect(store.completeCurrentSet()).toBe(true)
-      store.skipRest()
+
     }
+    expect(store.saveTrainingLog()).toBe(true)
     store.leaveTraining()
     store.setRecordsExercise('鸟狗式')
     const chart = store.recordChart.value

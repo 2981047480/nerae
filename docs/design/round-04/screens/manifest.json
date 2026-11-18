@@ -1,0 +1,290 @@
+[
+  {
+    "name": "record-set-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/record-set-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 26055,
+    "sha256": "b699eb015d808e3d481c1871fd58574f9124326a0aab8283d36b087e841bf088"
+  },
+  {
+    "name": "record-after-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/record-after-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 23515,
+    "sha256": "6f497912f8c23f52f302a895ea64bb47db5248fcd816082f26622a249014a35e"
+  },
+  {
+    "name": "record-incomplete-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 218,
+    "file": "screens/record-incomplete-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 22703,
+    "sha256": "d370ec19bae0838a21cbb2726242bfd89ff73d6d18b56c78435cbf3dfa6ea081"
+  },
+  {
+    "name": "record-saved-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/record-saved-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 23514,
+    "sha256": "0de3518dfebaf60fdc167b99d00318be8e4deff4b8650474cd5493b0847bc249"
+  },
+  {
+    "name": "record-set-320",
+    "clientWidth": 305,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 740,
+    "innerWidth": 320,
+    "scrollWidth": 305,
+    "scrollY": 0,
+    "file": "screens/record-set-320.jpg",
+    "format": "jpg",
+    "pixelWidth": 305,
+    "pixelHeight": 705,
+    "bytes": 20768,
+    "sha256": "fb60100e8ea633d19980d1808e0b1a679da7e1c0c89b629f8828fbdde5f3030d"
+  },
+  {
+    "name": "record-set-large-text",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/record-set-large-text.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 36876,
+    "sha256": "4c5a378d3f050b93eab0975697fbf66d4a80a7ba8b47137e2427c0703bcb31e0"
+  },
+  {
+    "name": "record-set-large-text-fields",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 468.5,
+    "file": "screens/record-set-large-text-fields.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 33299,
+    "sha256": "2baf458cab8d3c4eb95090e65d6dabbc1fe98bdf0a8a25ba736f03f7621140e3"
+  },
+  {
+    "name": "today-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "今天"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/today-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 24501,
+    "sha256": "d61d0d48f7e4743b3ff1a91093fd98a9e06a5d7bf629a1c0fe722886b01c41b1"
+  },
+  {
+    "name": "today-desktop",
+    "clientWidth": 1265,
+    "dpr": 2,
+    "headings": [
+      "今天"
+    ],
+    "innerHeight": 720,
+    "innerWidth": 1280,
+    "scrollWidth": 1265,
+    "scrollY": 0,
+    "file": "screens/today-desktop.jpg",
+    "format": "jpg",
+    "pixelWidth": 1265,
+    "pixelHeight": 712,
+    "bytes": 37952,
+    "sha256": "84d9ba40e6ad228a2e282b3fad9c6908026c45f04434b4b38fbc34a1ef938fa7"
+  },
+  {
+    "name": "explore-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "发现"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/explore-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 27477,
+    "sha256": "01da98bc4547d8a1b1e2f45a8a3813a70d2385c9aa1631d88890d14098ab830b"
+  },
+  {
+    "name": "plan-detail-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "上肢拉力与划船"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/plan-detail-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 29225,
+    "sha256": "3d7c1d828d6b95a21096cc8c549887ae6596beb7a273ec1e7c2f0b01a68c06ef"
+  },
+  {
+    "name": "records-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "记录"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/records-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 28632,
+    "sha256": "6a8305bc0dc2d8c32bafc970e48e91a537fbba7fbfb4b9b2935ba53009a1aeda"
+  },
+  {
+    "name": "messages-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "消息"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/messages-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 32359,
+    "sha256": "5a99fe96fee877f2014002c75672c153494bfc6c1b84054f0bbabc149a7f7960"
+  },
+  {
+    "name": "coach-review-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "力量基础 · 第 4 周"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/coach-review-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 32961,
+    "sha256": "342e8ed94a79019523d6737eea4e0927c61a171d021b5b56a2ba5d2a2878d44a"
+  },
+  {
+    "name": "coach-todo-mobile",
+    "clientWidth": 375,
+    "dpr": 1,
+    "headings": [
+      "待办"
+    ],
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "scrollY": 0,
+    "file": "screens/coach-todo-mobile.jpg",
+    "format": "jpg",
+    "pixelWidth": 375,
+    "pixelHeight": 812,
+    "bytes": 23860,
+    "sha256": "1474f5d86f1b944d0d31922bb1644ec0f7b4220a8495fafefbb1e9246aa62583"
+  },
+  {
+    "name": "record-after-desktop",
+    "clientWidth": 1265,
+    "dpr": 2,
+    "headings": [
+      "上肢力量"
+    ],
+    "innerHeight": 720,
+    "innerWidth": 1280,
+    "scrollWidth": 1265,
+    "scrollY": 0,
+    "file": "screens/record-after-desktop.jpg",
+    "format": "jpg",
+    "pixelWidth": 1265,
+    "pixelHeight": 712,
+    "bytes": 27620,
+    "sha256": "55eb564ffd43d8a8596dd1222faef0ccda28a8b5695e1bc1b0997bc3852c2c48"
+  }
+]

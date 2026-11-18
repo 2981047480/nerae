@@ -288,7 +288,7 @@ function apply(): void {
 
 .template-btn--active {
   border-color: var(--ink);
-  background: rgba(25, 47, 57, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
 }
 
 .template-name {
@@ -322,7 +322,7 @@ function apply(): void {
   padding: var(--sp-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .status-block--error {

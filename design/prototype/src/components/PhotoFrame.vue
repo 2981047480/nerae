@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { ImageOff } from '@lucide/vue'
 
 const props = withDefaults(
@@ -13,6 +13,7 @@ const props = withDefaults(
 )
 
 const failed = ref(false)
+watch(() => props.src, () => { failed.value = false })
 </script>
 
 <template>
@@ -48,8 +49,8 @@ const failed = ref(false)
 
 .photo--failed {
   background:
-    linear-gradient(135deg, rgba(25, 47, 57, 0.06) 25%, transparent 25%) -8px 0/16px 16px,
-    linear-gradient(225deg, rgba(25, 47, 57, 0.06) 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(135deg, rgba(var(--ink-rgb), 0.06) 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(225deg, rgba(var(--ink-rgb), 0.06) 25%, transparent 25%) -8px 0/16px 16px,
     #e8e8e3;
 }
 

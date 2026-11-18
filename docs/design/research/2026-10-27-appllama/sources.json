@@ -1,0 +1,2922 @@
+{
+  "date": "2026-10-27",
+  "source": "Appllama MCP",
+  "queries": [
+    {
+      "key": "strong-start",
+      "response": {
+        "app": {
+          "app_id": "464254577",
+          "name": "Strong Workout Tracker Gym Log"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_rf3x6",
+            "name": "Start Workout Home",
+            "flow": "Start Workout",
+            "section": "other-tabs",
+            "position": 1,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#293136",
+              "#35A7FF",
+              "#EBF6FF",
+              "#000000"
+            ],
+            "ui_elements": [
+              "Search Icon",
+              "Blue Quick Start CTA",
+              "Template Card Grid",
+              "Add Template Control",
+              "Five-Tab Bottom Nav"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_9m42h",
+            "name": "Workout Templates",
+            "flow": "Start Workout",
+            "section": "other-tabs",
+            "position": 2,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#293136",
+              "#EBF6FF",
+              "#35A7FF",
+              "#000000"
+            ],
+            "ui_elements": [
+              "Centered Nav Title",
+              "Search Icon",
+              "Add Template Tile",
+              "Two-Column Card Grid",
+              "Card Overflow Menus",
+              "Five-Tab Bottom Nav"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_aje36",
+            "name": "Template Preview",
+            "flow": "Start Workout",
+            "section": "other-tabs",
+            "position": 12,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#7F7F7F",
+            "colors": [
+              "#7F7F7F",
+              "#FFFFFF",
+              "#14181B",
+              "#35A7FF",
+              "#E9EAEA"
+            ],
+            "ui_elements": [
+              "Dimmed Backdrop",
+              "Rounded Template Modal",
+              "Exercise Thumbnail List",
+              "Close Icon",
+              "Blue Start Workout CTA",
+              "Five-Tab Bottom Nav"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          }
+        ],
+        "total": 3,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1445
+        }
+      }
+    },
+    {
+      "key": "strong-active",
+      "response": {
+        "app": {
+          "app_id": "464254577",
+          "name": "Strong Workout Tracker Gym Log"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_jce54",
+            "name": "Empty Active Workout",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 3,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#EBF6FF",
+              "#FFEEEF",
+              "#7F7F7F",
+              "#2ECD70"
+            ],
+            "ui_elements": [
+              "Sheet Drag Handle",
+              "Rest Timer Icon",
+              "Green Finish CTA",
+              "Workout Meta Row",
+              "Pale Blue Add CTA",
+              "Pale Red Cancel CTA"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_qse1t",
+            "name": "Exercise Picker",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#EBF6FF",
+              "#7F7F7F",
+              "#EEEEEF",
+              "#35A7FF"
+            ],
+            "ui_elements": [
+              "Dimmed Backdrop",
+              "Rounded Modal Sheet",
+              "Search Field",
+              "Filter Chips",
+              "Alphabet Index Rail",
+              "Exercise Thumbnail List",
+              "Multi-Select Checks",
+              "New and Add Actions"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_ddm5s",
+            "name": "Active Workout",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 5,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E9EAEA",
+              "#EBF6FF",
+              "#FFEEEF",
+              "#2ECD70"
+            ],
+            "ui_elements": [
+              "Sheet Drag Handle",
+              "Green Finish CTA",
+              "Workout Meta Row",
+              "Exercise Set Tables",
+              "Inline Set Inputs",
+              "Add Set Rows",
+              "Blue Add Exercise CTA",
+              "Red Cancel Workout CTA"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_50pwy",
+            "name": "Rest Timer Overlay",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 6,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#1F2525",
+              "#293136",
+              "#35A7FF",
+              "#2ECD70"
+            ],
+            "ui_elements": [
+              "Timer Toast Bubble",
+              "Completed Set Check",
+              "Dark Timer Panel",
+              "Circular Pause Control",
+              "Minus Plus Steppers",
+              "Reset and Skip Buttons",
+              "Green Finish CTA"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_h8pxa",
+            "name": "Active Workout Sets",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 7,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#EAFAF0",
+              "#E9EAEA",
+              "#EBF6FF",
+              "#2ECD70"
+            ],
+            "ui_elements": [
+              "Green Finish CTA",
+              "Completed Set Rows",
+              "Green Success Tint",
+              "Exercise Set Tables",
+              "Add Set Rows",
+              "Add Exercise CTA",
+              "Cancel Workout CTA"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_s9pyg",
+            "name": "Active Workout Log",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 13,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E9EAEA",
+              "#7F7F7F",
+              "#EBF6FF",
+              "#2ECD70"
+            ],
+            "ui_elements": [
+              "Green Finish CTA",
+              "Workout Meta Row",
+              "Multi-Set Tables",
+              "Numeric Input Pills",
+              "Set Check Controls",
+              "Add Set Rows",
+              "Exercise Edit Menus"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_1ar1s",
+            "name": "Workout Set Entry",
+            "flow": "Active Workout",
+            "section": "other-tabs",
+            "position": 14,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E9EAEA",
+              "#7F7F7F",
+              "#EBF6FF",
+              "#FFEEEF"
+            ],
+            "ui_elements": [
+              "Elapsed Time Header",
+              "Green Finish CTA",
+              "Multi-Set Tables",
+              "Numeric Input Pills",
+              "Add Set Rows",
+              "Add Exercise CTA",
+              "Cancel Workout CTA"
+            ],
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          }
+        ],
+        "total": 7,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1447
+        }
+      }
+    },
+    {
+      "key": "hevy-trainer",
+      "response": {
+        "app": {
+          "app_id": "1458862350",
+          "name": "Hevy - Workout Tracker Gym Log"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_6efix",
+            "name": "Trainer Preferences",
+            "flow": "Trainer",
+            "section": "other-tabs",
+            "position": 17,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#FFD60A"
+            ],
+            "ui_elements": [
+              "Title Selector",
+              "Segmented Toggle Pills",
+              "Preference Chips",
+              "Feature Row List",
+              "Blue Start CTA",
+              "Secondary CTA Link",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_402k3",
+            "name": "Personalized Program",
+            "flow": "Trainer",
+            "section": "other-tabs",
+            "position": 18,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#E5E7EB"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Program Summary Card",
+              "Metric Card Grid",
+              "Strength Bar Charts",
+              "Factor Info Cards",
+              "Blue Save CTA",
+              "Secondary CTA Link"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_wga4o",
+            "name": "Training Science",
+            "flow": "Trainer",
+            "section": "other-tabs",
+            "position": 19,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#E5E7EB"
+            ],
+            "ui_elements": [
+              "Notification Cards",
+              "Science Info Card",
+              "Blue Learn More Pill",
+              "Training Curve Chart",
+              "Blue Save CTA",
+              "Secondary CTA Link"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          }
+        ],
+        "total": 3,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1447
+        }
+      }
+    },
+    {
+      "key": "boostcamp-programs",
+      "response": {
+        "app": {
+          "app_id": "1529354455",
+          "name": "Boostcamp: Workout Programs"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_mosxv",
+            "name": "Program Library",
+            "flow": "Program Library",
+            "section": "other-tabs",
+            "position": 6,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#161616",
+            "colors": [
+              "#161616",
+              "#262626",
+              "#222222",
+              "#FFC400",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Segmented Library Tabs",
+              "Create Program Card",
+              "Program List Cards",
+              "Overflow Menu Icons",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1529354455",
+              "name": "Boostcamp: Workout Programs"
+            }
+          },
+          {
+            "screen_id": "oth_yozhp",
+            "name": "Private Program Library",
+            "flow": "Program Library",
+            "section": "other-tabs",
+            "position": 15,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#161616",
+            "colors": [
+              "#161616",
+              "#262626",
+              "#222222",
+              "#5D5C5A",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Segmented Library Tabs",
+              "Create Program Card",
+              "Private Program Cards",
+              "Program Thumbnail",
+              "Overflow Menu Icons",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1529354455",
+              "name": "Boostcamp: Workout Programs"
+            }
+          },
+          {
+            "screen_id": "oth_dj8c6",
+            "name": "Published Programs Empty",
+            "flow": "Program Library",
+            "section": "other-tabs",
+            "position": 16,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#161616",
+            "colors": [
+              "#161616",
+              "#262626",
+              "#353534",
+              "#7A7874",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Segmented Library Tabs",
+              "Centered Empty Graphic",
+              "Empty State Message",
+              "Create Program Button",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1529354455",
+              "name": "Boostcamp: Workout Programs"
+            }
+          },
+          {
+            "screen_id": "oth_d9ji6",
+            "name": "Saved Programs Empty",
+            "flow": "Program Library",
+            "section": "other-tabs",
+            "position": 24,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#161616",
+            "colors": [
+              "#161616",
+              "#262626",
+              "#343332",
+              "#A6A4A0",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Segmented Library Tabs",
+              "Centered Empty Graphic",
+              "Empty State Message",
+              "Bottom Tab Bar",
+              "PRO Badge"
+            ],
+            "app": {
+              "app_id": "1529354455",
+              "name": "Boostcamp: Workout Programs"
+            }
+          }
+        ],
+        "total": 4,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1446
+        }
+      }
+    },
+    {
+      "key": "keyword-1",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_skfn9",
+            "name": "Workout Calendar",
+            "flow": "Progress Tracking",
+            "section": "other-tabs",
+            "position": 84,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F6F7F9",
+              "#0A73FF",
+              "#111111",
+              "#D9DEE7"
+            ],
+            "ui_elements": [
+              "Calendar Month Grid",
+              "Selected Date Marker",
+              "Workout Day Summary",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1313192037",
+              "name": "Home Workout - No Equipments"
+            }
+          },
+          {
+            "screen_id": "oth_fhlb3",
+            "name": "Workout Countdown",
+            "flow": "Camera Workout",
+            "section": "other-tabs",
+            "position": 38,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#030505",
+            "colors": [
+              "#030505",
+              "#FF1D89",
+              "#FF7338",
+              "#F2F2F0"
+            ],
+            "ui_elements": [
+              "Minimal Black Canvas",
+              "Large Two-Tone Count",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1439828095",
+              "name": "SHRED: Gym & Home Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_vfdlu",
+            "name": "Workout Calendar",
+            "flow": "Calendar and Streaks",
+            "section": "other-tabs",
+            "position": 18,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E8FCEB",
+              "#F3F3F3",
+              "#89735D",
+              "#69B5FC"
+            ],
+            "ui_elements": [
+              "Stylized Brand Logo",
+              "Mint Announcement Banner",
+              "Monthly Calendar Grid",
+              "Month Navigation Chevrons",
+              "Selected Brown Date",
+              "Blue Activity Dot Markers",
+              "Green Streak Prompt",
+              "Today's Workout Section",
+              "Add Video Action",
+              "Bottom Tab Navigation"
+            ],
+            "app": {
+              "app_id": "6477621228",
+              "name": "growwithjo: home workouts"
+            }
+          },
+          {
+            "screen_id": "oth_21inm",
+            "name": "Workout Exercise List",
+            "flow": "Training Plan",
+            "section": "other-tabs",
+            "position": 15,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#1D1D1D",
+            "colors": [
+              "#1D1D1D",
+              "#978D7E",
+              "#766E61",
+              "#34322E",
+              "#4F4C48"
+            ],
+            "ui_elements": [
+              "Exercise List Cards",
+              "Swap Exercise Icons",
+              "Start Workout CTA",
+              "Section Headers"
+            ],
+            "app": {
+              "app_id": "1492688256",
+              "name": "STRNG"
+            }
+          },
+          {
+            "screen_id": "oth_4i13s",
+            "name": "Workout Activity Calendar",
+            "flow": "Progress Tracking",
+            "section": "other-tabs",
+            "position": 16,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F3F3F8",
+              "#E8E8E8",
+              "#222222",
+              "#DCEFE5"
+            ],
+            "ui_elements": [
+              "Statistics Header Tabs",
+              "Monthly Calendar Grid",
+              "Date Navigation Labels",
+              "Weekly Day Labels",
+              "Workout Activity Summary",
+              "Bottom Workout Tip Card"
+            ],
+            "app": {
+              "app_id": "996680141",
+              "name": "Jump Rope Training | Crossrope"
+            }
+          },
+          {
+            "screen_id": "oth_ozev3",
+            "name": "Workout Challenges",
+            "flow": "Challenges",
+            "section": "other-tabs",
+            "position": 13,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#101615",
+              "#525756",
+              "#726B66",
+              "#120C3A"
+            ],
+            "ui_elements": [
+              "Segmented Content Tabs",
+              "Photo Challenge Cards",
+              "Image Text Overlays",
+              "Card Action Pills",
+              "Bottom Tab Navigation"
+            ],
+            "app": {
+              "app_id": "1635707277",
+              "name": "Light: Chair Yoga Plan"
+            }
+          },
+          {
+            "screen_id": "oth_vrmbu",
+            "name": "Workout Overview",
+            "flow": "Workout",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#695DB0",
+              "#F0EFF6",
+              "#000000",
+              "#A35FEA"
+            ],
+            "ui_elements": [
+              "Purple Gradient Header",
+              "Large Workout Timer",
+              "Muscle Group Subtitle",
+              "Save Music Share Actions",
+              "Rounded Close Control",
+              "Coach Progress Card",
+              "Purple Milestone Track",
+              "Equipment Chip Carousel",
+              "Warm-Up Toggle",
+              "Black Start Workout CTA",
+              "Gray Adapt Workout CTA"
+            ],
+            "app": {
+              "app_id": "1552207792",
+              "name": "Zing AI: Home & Gym Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_jmh0q",
+            "name": "Workout Start Map",
+            "flow": "Workout Tracking",
+            "section": "other-tabs",
+            "position": 8,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#263B4E",
+            "colors": [
+              "#263B4E",
+              "#1C2A38",
+              "#283848",
+              "#00EA10",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Map Background",
+              "Workout Mode Sheet",
+              "Sport Icon Selector",
+              "Metric Option Tiles",
+              "Green Start CTA",
+              "Close Round Button"
+            ],
+            "app": {
+              "app_id": "1037595083",
+              "name": "StepsApp Pedometer"
+            }
+          },
+          {
+            "screen_id": "oth_8h3wv",
+            "name": "Workout Collections",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#F7F7F7",
+            "colors": [
+              "#F7F7F7",
+              "#FFFFFF",
+              "#2D3E4D",
+              "#FF8615",
+              "#8A817F"
+            ],
+            "ui_elements": [
+              "Top App Bar",
+              "Sectioned Card Feed",
+              "Horizontal Filter Chips",
+              "Bottom Tab Navigation"
+            ],
+            "app": {
+              "app_id": "527219710",
+              "name": "Sworkit Fitness & Wellness App"
+            }
+          },
+          {
+            "screen_id": "oth_x7tn4",
+            "name": "Workout Countdown",
+            "flow": "Workout Session",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#FFFFFF",
+              "#1C1C1E",
+              "#D6C4AE",
+              "#8B6844"
+            ],
+            "ui_elements": [
+              "Centered Get Ready",
+              "Preview Image Card",
+              "Large Countdown Timer",
+              "Guidance Pill Control",
+              "Skip Pill Control",
+              "Right Rail Controls"
+            ],
+            "app": {
+              "app_id": "1669413773",
+              "name": "LazyFit: Workout For Beginners"
+            }
+          }
+        ],
+        "total": 1274,
+        "next_cursor": "eyJ2IjoxLCJ1IjoiMTVmOGU0ZDIzZTJmZmJkZCIsInQiOiJzZWFyY2hfc2NyZWVucyIsInEiOiI1MTc0YTA2ODQwZGY4NWJjYmY0ZDIzMjUiLCJvIjoxMCwiaHciOjIwLCJleHAiOjE3OTMwNzYxNjZ9.nmJ-1mn93S5OZdIpiTg5SKEX-hc",
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1443
+        }
+      }
+    },
+    {
+      "key": "keyword-2",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_tul2o",
+            "name": "Workout Detail",
+            "flow": "Training Programs",
+            "section": "other-tabs",
+            "position": 5,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#EDEDE6",
+              "#55504E",
+              "#B8BA9D",
+              "#1E1614"
+            ],
+            "ui_elements": [
+              "Workout Video Player",
+              "Media Control Overlay",
+              "Workout Meta Panel",
+              "Favorite Heart Icon",
+              "Outline Add CTA",
+              "Sage Start CTA",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1523442465",
+              "name": "Move With Us"
+            }
+          },
+          {
+            "screen_id": "oth_jg4w7",
+            "name": "Workout History",
+            "flow": "Workouts",
+            "section": "other-tabs",
+            "position": 32,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#09080E",
+            "colors": [
+              "#09080E",
+              "#1D0E23",
+              "#35183C",
+              "#706176",
+              "#C9C3CA"
+            ],
+            "ui_elements": [
+              "Progress History Tabs",
+              "History Empty State",
+              "Gradient Dark Background",
+              "Floating Bottom Nav"
+            ],
+            "app": {
+              "app_id": "1543571755",
+              "name": "Athlytic: Fitness & Recovery"
+            }
+          },
+          {
+            "screen_id": "oth_62ttk",
+            "name": "Workout Details",
+            "flow": "Workout Details",
+            "section": "other-tabs",
+            "position": 16,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#EDE9F1",
+              "#E27EA5",
+              "#6253A6",
+              "#C75B9F"
+            ],
+            "ui_elements": [
+              "Compact Top Bar",
+              "Description Section",
+              "Target Area Card",
+              "Related Dance Carousel",
+              "Gradient Try CTA",
+              "Calendar Outline Button"
+            ],
+            "app": {
+              "app_id": "1542181484",
+              "name": "Dancebit: Home Dance Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_c8qyo",
+            "name": "Workout Settings",
+            "flow": "Workout Recording",
+            "section": "other-tabs",
+            "position": 29,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#F5F5F9",
+            "colors": [
+              "#F5F5F9",
+              "#FFFFFF",
+              "#252B39",
+              "#60D500",
+              "#E5E5EA"
+            ],
+            "ui_elements": [
+              "Dark Map Backdrop",
+              "Rounded White Sheet",
+              "Workout Settings Heading",
+              "Three Settings Cards",
+              "Activity Mode Icons",
+              "Green Toggle Switches",
+              "Top Right Close Icon"
+            ],
+            "app": {
+              "app_id": "6795489364",
+              "name": "Amble: Step Counter & Race"
+            }
+          },
+          {
+            "screen_id": "oth_xr6yt",
+            "name": "Workout Duration Filter",
+            "flow": "Workout Search",
+            "section": "other-tabs",
+            "position": 14,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#141F39",
+            "colors": [
+              "#141F39",
+              "#000718",
+              "#29334A",
+              "#28E1A5",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Dark Navy Background",
+              "Back Arrow Navigation",
+              "Rounded Search Field",
+              "Mint Active Filters Tab",
+              "Sort By Segmented Tab",
+              "Expanded Duration Panel",
+              "Accordion Chevron Icon",
+              "Vertical Checkbox List",
+              "Mint Checked All Option",
+              "Outlined Empty Checkboxes",
+              "Duration Range Labels",
+              "Collapsed Trainer Section",
+              "Fixed Bottom Action Bar",
+              "Clear All Text Action",
+              "Mint Show Results CTA",
+              "Four-Tab Bottom Nav"
+            ],
+            "app": {
+              "app_id": "1274601042",
+              "name": "iFIT Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_w4pk7",
+            "name": "Workout Library",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "position": 1,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F4F4",
+              "#111111",
+              "#F28B72",
+              "#21C982"
+            ],
+            "ui_elements": [
+              "Top Category Tabs",
+              "Workout Hero Card",
+              "Exercise Thumbnails",
+              "Section Header",
+              "Bottom Navigation"
+            ],
+            "app": {
+              "app_id": "1266612768",
+              "name": "Lose Weight at Home in 30 Days"
+            }
+          },
+          {
+            "screen_id": "oth_eooir",
+            "name": "Workout Overview",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#35332C",
+              "#181816",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Sectioned Exercise List",
+              "Exercise Thumbnail Rows",
+              "Coach Avatar Badges",
+              "Rounded Neon CTA",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_naxyg",
+            "name": "Workout Extras",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "position": 15,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E5E4EA",
+              "#038CFE",
+              "#F97938",
+              "#C7B8AF"
+            ],
+            "ui_elements": [
+              "Instructor Card Carousel",
+              "Seven Hub Promo Card",
+              "Rounded All Workouts CTA",
+              "Sectioned Scroll Layout",
+              "Floating Bottom Nav"
+            ],
+            "app": {
+              "app_id": "650276551",
+              "name": "Seven: 7 Minute Workout"
+            }
+          },
+          {
+            "screen_id": "oth_iwzbo",
+            "name": "Workout Summary",
+            "flow": "Workout Completion",
+            "section": "other-tabs",
+            "position": 14,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#FF0868",
+              "#F7F7F7",
+              "#F5A3AA",
+              "#EA1B69"
+            ],
+            "ui_elements": [
+              "Medal Success Icon",
+              "Great Job Header",
+              "Stat Tiles",
+              "Pink Pill CTA",
+              "Outline Secondary CTA"
+            ],
+            "app": {
+              "app_id": "6596760204",
+              "name": "SheFit: Home Workout for Women"
+            }
+          },
+          {
+            "screen_id": "oth_9hvwq",
+            "name": "Workout Goal Type Picker",
+            "flow": "Workout Setup",
+            "section": "other-tabs",
+            "position": 2,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F1F2F6",
+              "#19C763",
+              "#000000",
+              "#FFA500"
+            ],
+            "ui_elements": [
+              "Goal Stepper Controls",
+              "Metric Dropdown Row",
+              "Popover Metric Menu",
+              "Colored Metric Icons",
+              "Selected Check Badge",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1136617388",
+              "name": "Running Walking Tracker Goals"
+            }
+          }
+        ],
+        "total": 1274,
+        "next_cursor": "eyJ2IjoxLCJ1IjoiMTVmOGU0ZDIzZTJmZmJkZCIsInQiOiJzZWFyY2hfc2NyZWVucyIsInEiOiI1MTc0YTA2ODQwZGY4NWJjYmY0ZDIzMjUiLCJvIjoyMCwiaHciOjMwLCJleHAiOjE3OTMwNzYyMDF9.j-GrL8dapfhW40UciDUwjTQrits",
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1441
+        }
+      }
+    },
+    {
+      "key": "keyword-3",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_j722x",
+            "name": "Workout Activity Chat",
+            "flow": "Activity Details",
+            "section": "other-tabs",
+            "position": 21,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#F5F5F9",
+            "colors": [
+              "#F5F5F9",
+              "#FFFFFF",
+              "#E4F5DC",
+              "#202020",
+              "#DCDCE3"
+            ],
+            "ui_elements": [
+              "Workout Header Card",
+              "Compare Action Pill",
+              "White Activity Message",
+              "Elevation Graph Card",
+              "Green Insight Bubbles",
+              "Reaction Emoji Row",
+              "Rounded Message Composer",
+              "Bottom Microphone Icon"
+            ],
+            "app": {
+              "app_id": "6795489364",
+              "name": "Amble: Step Counter & Race"
+            }
+          },
+          {
+            "screen_id": "oth_7av9x",
+            "name": "Workout Day Detail",
+            "flow": "Workout Session",
+            "section": "other-tabs",
+            "position": 11,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#EDEDED",
+            "colors": [
+              "#EDEDED",
+              "#FFFFFF",
+              "#008BF5",
+              "#000000",
+              "#C9C9C9"
+            ],
+            "ui_elements": [
+              "Day overflow menu",
+              "Body muscle diagram",
+              "Rounded start pill",
+              "Exercise preview card",
+              "Share and help links"
+            ],
+            "app": {
+              "app_id": "1462277793",
+              "name": "Alpha Progression Gym Tracker"
+            }
+          },
+          {
+            "screen_id": "oth_ma2ua",
+            "name": "Workout Plan Library",
+            "flow": "Plan Selection",
+            "section": "other-tabs",
+            "position": 16,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#E6F4FF",
+              "#FFE6CA",
+              "#120C3A",
+              "#FFEEF9"
+            ],
+            "ui_elements": [
+              "Segmented Content Tabs",
+              "Pastel Plan Cards",
+              "Coach Photo Cutouts",
+              "Dark Join CTAs",
+              "Bottom Tab Navigation"
+            ],
+            "app": {
+              "app_id": "1635707277",
+              "name": "Light: Chair Yoga Plan"
+            }
+          },
+          {
+            "screen_id": "oth_fdxs8",
+            "name": "Workout Time Setup",
+            "flow": "Workout Setup",
+            "section": "other-tabs",
+            "position": 12,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F7F7F7",
+              "#2D3E4D",
+              "#FF8615",
+              "#E3E7EA"
+            ],
+            "ui_elements": [
+              "Segmented Level Tabs",
+              "Circular Time Dial",
+              "Orange Dial Handle",
+              "Toggle Switch Rows",
+              "Rounded Primary CTA"
+            ],
+            "app": {
+              "app_id": "527219710",
+              "name": "Sworkit Fitness & Wellness App"
+            }
+          },
+          {
+            "screen_id": "oth_eap1a",
+            "name": "Workout Exercise List",
+            "flow": "My Plan",
+            "section": "other-tabs",
+            "position": 3,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#252E3B",
+            "colors": [
+              "#252E3B",
+              "#171D28",
+              "#FFE000",
+              "#FFFFFF",
+              "#545151"
+            ],
+            "ui_elements": [
+              "Weekly Calendar Strip",
+              "Exercise Image Cards",
+              "Muscle Map Thumbnails",
+              "Plan Edit Icon",
+              "Sticky Start CTA",
+              "Five-Tab Bottom Nav"
+            ],
+            "app": {
+              "app_id": "1048454034",
+              "name": "Gymverse: Gym Workout Planner"
+            }
+          },
+          {
+            "screen_id": "oth_z1l85",
+            "name": "Workout Discovery",
+            "flow": "Discover",
+            "section": "other-tabs",
+            "position": 23,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#0F0F10",
+            "colors": [
+              "#0F0F10",
+              "#202125",
+              "#2B2B28",
+              "#FFFFFF",
+              "#E6FF00"
+            ],
+            "ui_elements": [
+              "Category Filter Chips",
+              "Workout Card Grid",
+              "Photo Thumbnail Cards",
+              "Section View-All Links",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_4m8xc",
+            "name": "Workout Result Summary",
+            "flow": "Exercise Logging",
+            "section": "other-tabs",
+            "position": 15,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F4F2",
+              "#24B6B0",
+              "#E7F7F5",
+              "#1B1B1B"
+            ],
+            "ui_elements": [
+              "Back Nav Icon",
+              "Workout Summary Card",
+              "Calorie Burn Total",
+              "Exercise Breakdown",
+              "AI Insight Card",
+              "Dismiss Icon",
+              "Log Exercise CTA"
+            ],
+            "app": {
+              "app_id": "6473512692",
+              "name": "Cal Scanner AI Calorie Tracker"
+            }
+          },
+          {
+            "screen_id": "oth_bj1ou",
+            "name": "Workout Filter Preferences",
+            "flow": "Workout Filtering",
+            "section": "other-tabs",
+            "position": 12,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#71CC98",
+              "#F2F2F6",
+              "#EEEEEF",
+              "#000000"
+            ],
+            "ui_elements": [
+              "Category Selection Chips",
+              "Fire Difficulty Chips",
+              "Workout Search Field",
+              "Sort Segmented Control",
+              "Completion Checkboxes",
+              "Mint Results CTA"
+            ],
+            "app": {
+              "app_id": "996680141",
+              "name": "Jump Rope Training | Crossrope"
+            }
+          },
+          {
+            "screen_id": "oth_a16lg",
+            "name": "Workout Overview",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 3,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#2B2A28",
+              "#1C1B1C",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Sectioned Exercise List",
+              "Exercise Thumbnail Rows",
+              "Coach Tip Card",
+              "Rounded Neon CTA",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_fphbo",
+            "name": "Workout Equipment Filter",
+            "flow": "Workout Search",
+            "section": "other-tabs",
+            "position": 20,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#F8F9FA",
+            "colors": [
+              "#F8F9FA",
+              "#FFFFFF",
+              "#7B7C7C",
+              "#E7ECEF",
+              "#F3F5F7"
+            ],
+            "ui_elements": [
+              "Centered Filters Heading",
+              "Back Arrow Navigation",
+              "Top Clear Filters Icon",
+              "Pale Gray Filter Canvas",
+              "Workout Type Section",
+              "Prenatal Workout Option",
+              "Postnatal Workout Option",
+              "Expanded Equipment Group",
+              "Four Selected Count",
+              "Dumbbells Checked Row",
+              "Light Weights Checked",
+              "Pilates Ball Checked",
+              "Booty Band Checked",
+              "Other Equipment Options",
+              "Right-Aligned Checkmarks",
+              "Thin Section Dividers",
+              "Disabled No Results CTA"
+            ],
+            "app": {
+              "app_id": "1578636146",
+              "name": "FORM: Strength, Pilates, Gym"
+            }
+          }
+        ],
+        "total": 1274,
+        "next_cursor": "eyJ2IjoxLCJ1IjoiMTVmOGU0ZDIzZTJmZmJkZCIsInQiOiJzZWFyY2hfc2NyZWVucyIsInEiOiI1MTc0YTA2ODQwZGY4NWJjYmY0ZDIzMjUiLCJvIjozMCwiaHciOjQwLCJleHAiOjE3OTMwNzYyMjh9.u2MOZMltT1c-wS_cWQ2czaXaHlI",
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1439
+        }
+      }
+    },
+    {
+      "key": "semantic-1",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_ftekg",
+            "name": "Profile Dashboard",
+            "flow": "Profile & Settings",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.4254,
+            "app": {
+              "app_id": "1574460221",
+              "name": "JustFit: Lazy Workout & Fit"
+            }
+          },
+          {
+            "screen_id": "onb_cvt07",
+            "name": "Home Tutorial Coachmark",
+            "flow": "Onboarding",
+            "section": "onboarding",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#161414",
+            "similarity": 0.4272,
+            "app": {
+              "app_id": "1439828095",
+              "name": "SHRED: Gym & Home Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_hyhw8",
+            "name": "Home Plan Overview",
+            "flow": "Home",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.415,
+            "app": {
+              "app_id": "6484069035",
+              "name": "Chair Yoga for Seniors at Home"
+            }
+          },
+          {
+            "screen_id": "oth_n91on",
+            "name": "Programs Home",
+            "flow": "Programs",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3996,
+            "app": {
+              "app_id": "1442473191",
+              "name": "FitOn Workouts & Fitness Plans"
+            }
+          },
+          {
+            "screen_id": "oth_qmkxh",
+            "name": "Workout Home",
+            "flow": "Workout",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3885,
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_5w9db",
+            "name": "Gym Home",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3852,
+            "app": {
+              "app_id": "1313192037",
+              "name": "Home Workout - No Equipments"
+            }
+          },
+          {
+            "screen_id": "oth_jo2rk",
+            "name": "Today Home",
+            "flow": "Today",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3868,
+            "app": {
+              "app_id": "875063456",
+              "name": "Elevate - Brain Training Games"
+            }
+          },
+          {
+            "screen_id": "oth_ne6x6",
+            "name": "Today Home",
+            "flow": "Home Feed",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3861,
+            "app": {
+              "app_id": "1542181484",
+              "name": "Dancebit: Home Dance Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_rf3x6",
+            "name": "Start Workout Home",
+            "flow": "Start Workout",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.383,
+            "app": {
+              "app_id": "464254577",
+              "name": "Strong Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_4q887",
+            "name": "Programs Home",
+            "flow": "Program Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "similarity": 0.3845,
+            "app": {
+              "app_id": "1265489771",
+              "name": "Calisteniapp: Fit & Strong"
+            }
+          }
+        ],
+        "total": 2774,
+        "next_cursor": "WyI0ZmU0ZTc2My1iMmZiLTQ5NTItODU3Mi00NDgzZWY4ZmI3MjQiLDEwLCI4NzFmZTJmMzlkMjhjYTAyZmM2NzkyNTNkNjU2MzNlNCIsMTc5MzA3NDM2OF0jBd9I8_zxD9C-UmkLeEFcQB8E5g",
+        "suggested_queries": [],
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1444
+        }
+      }
+    },
+    {
+      "key": "semantic-2",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_3ugd6",
+            "name": "Home Progress Feed",
+            "flow": "Home",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3825,
+            "app": {
+              "app_id": "1031660123",
+              "name": "BODi Fitness: Home Workouts"
+            }
+          },
+          {
+            "screen_id": "onb_k3o68",
+            "name": "At-Home Weight Loss",
+            "flow": "Onboarding",
+            "section": "onboarding",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.387,
+            "app": {
+              "app_id": "869058995",
+              "name": "Aaptiv: #1 Audio Fitness App"
+            }
+          },
+          {
+            "screen_id": "oth_zl9eb",
+            "name": "Daily Plan Home",
+            "flow": "Workout Session",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3794,
+            "app": {
+              "app_id": "806995720",
+              "name": "7 Minute Workout: Exercise App"
+            }
+          },
+          {
+            "screen_id": "oth_cze4x",
+            "name": "For You Home",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3964,
+            "app": {
+              "app_id": "1442473191",
+              "name": "FitOn Workouts & Fitness Plans"
+            }
+          },
+          {
+            "screen_id": "oth_d5ud5",
+            "name": "Workouts Home",
+            "flow": "Workouts",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3744,
+            "app": {
+              "app_id": "1463386686",
+              "name": "Fitify: Home Workout, AI Coach"
+            }
+          },
+          {
+            "screen_id": "oth_xpsq1",
+            "name": "Workouts Home",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3698,
+            "app": {
+              "app_id": "650276551",
+              "name": "Seven: 7 Minute Workout"
+            }
+          },
+          {
+            "screen_id": "oth_ta8yp",
+            "name": "Home Health Kit",
+            "flow": "Home",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3987,
+            "app": {
+              "app_id": "6484069035",
+              "name": "Chair Yoga for Seniors at Home"
+            }
+          },
+          {
+            "screen_id": "oth_8soq9",
+            "name": "Today Task Dashboard",
+            "flow": "Daily Tasks",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#222224",
+            "similarity": 0.3774,
+            "app": {
+              "app_id": "6450723685",
+              "name": "75 Days Challenge Tough & Soft"
+            }
+          },
+          {
+            "screen_id": "oth_1l8vd",
+            "name": "Workout Home",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3735,
+            "app": {
+              "app_id": "1488020055",
+              "name": "Alive by Whitney Simmons"
+            }
+          },
+          {
+            "screen_id": "oth_tj20f",
+            "name": "Progress Dashboard",
+            "flow": "Progress Tracking",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3691,
+            "app": {
+              "app_id": "6444850772",
+              "name": "Dancefitme: Fun weight loss"
+            }
+          }
+        ],
+        "total": 2774,
+        "next_cursor": "WyI0ZmU0ZTc2My1iMmZiLTQ5NTItODU3Mi00NDgzZWY4ZmI3MjQiLDIwLCI4NzFmZTJmMzlkMjhjYTAyZmM2NzkyNTNkNjU2MzNlNCIsMTc5MzA3NDM2OF1qEQ2-MgXXpQSkiCPOIpdtVFmuAw",
+        "suggested_queries": [],
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1442
+        }
+      }
+    },
+    {
+      "key": "semantic-3",
+      "response": {
+        "screens": [
+          {
+            "screen_id": "oth_rkkxy",
+            "name": "Home Feed",
+            "flow": "Home",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#030505",
+            "similarity": 0.3929,
+            "app": {
+              "app_id": "1439828095",
+              "name": "SHRED: Gym & Home Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_r1ace",
+            "name": "Home - Featured Workouts",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000718",
+            "similarity": 0.3635,
+            "app": {
+              "app_id": "1274601042",
+              "name": "iFIT Workouts"
+            }
+          },
+          {
+            "screen_id": "oth_37xoe",
+            "name": "Home Workout Feed",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#F7F7F7",
+            "similarity": 0.3677,
+            "app": {
+              "app_id": "527219710",
+              "name": "Sworkit Fitness & Wellness App"
+            }
+          },
+          {
+            "screen_id": "oth_uqlz0",
+            "name": "Activity Dashboard",
+            "flow": "Progress",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#252E3B",
+            "similarity": 0.3632,
+            "app": {
+              "app_id": "1048454034",
+              "name": "Gymverse: Gym Workout Planner"
+            }
+          },
+          {
+            "screen_id": "oth_hn1pk",
+            "name": "Workout Home",
+            "flow": "Workout",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#C07958",
+            "similarity": 0.3663,
+            "app": {
+              "app_id": "6747844405",
+              "name": "Home Workouts & Fitness | Luvu"
+            }
+          },
+          {
+            "screen_id": "oth_h0ot0",
+            "name": "Dashboard Home",
+            "flow": "Dashboard",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3658,
+            "app": {
+              "app_id": "1446735127",
+              "name": "EvolveYou: Strength For Women"
+            }
+          },
+          {
+            "screen_id": "oth_zbgj5",
+            "name": "Home Dashboard",
+            "flow": "Home Dashboard",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3672,
+            "app": {
+              "app_id": "408047715",
+              "name": "TrainingPeaks: Plan Train Lift"
+            }
+          },
+          {
+            "screen_id": "onb_s8rkk",
+            "name": "Workout Plan Home",
+            "flow": "Onboarding",
+            "section": "onboarding",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "similarity": 0.3653,
+            "app": {
+              "app_id": "6596760204",
+              "name": "SheFit: Home Workout for Women"
+            }
+          },
+          {
+            "screen_id": "oth_ta66r",
+            "name": "Yoga Calendar Home",
+            "flow": "Yoga Challenge",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#0F292B",
+            "similarity": 0.3603,
+            "app": {
+              "app_id": "839285684",
+              "name": "Workout for Women: Home & Gym"
+            }
+          },
+          {
+            "screen_id": "oth_kf2ca",
+            "name": "Today Workout",
+            "flow": "Workout Discovery",
+            "section": "other-tabs",
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FCFAFA",
+            "similarity": 0.3576,
+            "app": {
+              "app_id": "1357527742",
+              "name": "Workout for Women: Fit at Home"
+            }
+          }
+        ],
+        "total": 2774,
+        "next_cursor": "WyI0ZmU0ZTc2My1iMmZiLTQ5NTItODU3Mi00NDgzZWY4ZmI3MjQiLDMwLCI4NzFmZTJmMzlkMjhjYTAyZmM2NzkyNTNkNjU2MzNlNCIsMTc5MzA3NDM2OF09BnFVfCtxrKnl1LIVfbDu4OZNLQ",
+        "suggested_queries": [],
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1438
+        }
+      }
+    },
+    {
+      "key": "mfp-diary",
+      "response": {
+        "app": {
+          "app_id": "341232718",
+          "name": "MyFitnessPal: Calorie Counter"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_xbbwd",
+            "name": "Meal Log Reminder Modal",
+            "flow": "Diary",
+            "section": "other-tabs",
+            "position": 1,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#3A3A3A",
+            "colors": [
+              "#3A3A3A",
+              "#FFFFFF",
+              "#F2F3F7",
+              "#007AFF",
+              "#F56B57"
+            ],
+            "ui_elements": [
+              "Dimmed Modal Overlay",
+              "Meal Prompt Card",
+              "Meal Category Rows",
+              "Pale Blue Log Pills",
+              "Bottom Tab Bar",
+              "Blue Floating FAB"
+            ],
+            "app": {
+              "app_id": "341232718",
+              "name": "MyFitnessPal: Calorie Counter"
+            }
+          },
+          {
+            "screen_id": "oth_ultcg",
+            "name": "Today Diary Overview",
+            "flow": "Diary",
+            "section": "other-tabs",
+            "position": 6,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F2F3F7",
+              "#EAF5FF",
+              "#007AFF",
+              "#FFD35A"
+            ],
+            "ui_elements": [
+              "Date Selector Row",
+              "Premium Pill",
+              "Gradient Tip Card",
+              "Calorie Summary Card",
+              "Macro Summary Card",
+              "Bottom Tab Bar",
+              "Blue Floating FAB"
+            ],
+            "app": {
+              "app_id": "341232718",
+              "name": "MyFitnessPal: Calorie Counter"
+            }
+          },
+          {
+            "screen_id": "oth_izyh7",
+            "name": "Today Diary Meal List",
+            "flow": "Diary",
+            "section": "other-tabs",
+            "position": 7,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F2F3F7",
+              "#007AFF",
+              "#EAF5FF",
+              "#4C637A"
+            ],
+            "ui_elements": [
+              "Meal Log Rows",
+              "Complete Diary Link",
+              "Ad Banner",
+              "Habit Section Header",
+              "Bottom Tab Bar",
+              "Blue Floating FAB"
+            ],
+            "app": {
+              "app_id": "341232718",
+              "name": "MyFitnessPal: Calorie Counter"
+            }
+          },
+          {
+            "screen_id": "oth_7a36b",
+            "name": "Health Habits Diary",
+            "flow": "Diary",
+            "section": "other-tabs",
+            "position": 8,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F2F3F7",
+              "#007AFF",
+              "#EAF5FF",
+              "#D8DCE3"
+            ],
+            "ui_elements": [
+              "Habit List Cards",
+              "Chevron Row Links",
+              "Notes Input Card",
+              "Premium Pill",
+              "Bottom Tab Bar",
+              "Blue Floating FAB"
+            ],
+            "app": {
+              "app_id": "341232718",
+              "name": "MyFitnessPal: Calorie Counter"
+            }
+          },
+          {
+            "screen_id": "oth_pwfk2",
+            "name": "Breakfast Entry Details",
+            "flow": "Diary",
+            "section": "other-tabs",
+            "position": 12,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F2F3F7",
+              "#20BDB3",
+              "#007AFF",
+              "#EAF5FF"
+            ],
+            "ui_elements": [
+              "Circular Calorie Gauge",
+              "Macro Metrics Row",
+              "Action Shortcut Tiles",
+              "Ad Banner",
+              "Food Entry Cards",
+              "Blue Log More CTA"
+            ],
+            "app": {
+              "app_id": "341232718",
+              "name": "MyFitnessPal: Calorie Counter"
+            }
+          }
+        ],
+        "total": 5,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1440
+        }
+      }
+    },
+    {
+      "key": "ladder-overview",
+      "response": {
+        "app": {
+          "app_id": "1502936453",
+          "name": "LADDER Strength Training Plans"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_j2t76",
+            "name": "Home",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 1,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#3F3A36",
+              "#1A1A1A",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Ladder Header Bar",
+              "Workout Hero Card",
+              "Coach Avatar Row",
+              "Rounded Neon CTA",
+              "Bottom Tab Bar"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_b0ete",
+            "name": "Welcome Workout",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 2,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#4C4744",
+              "#232322",
+              "#FFFFFF",
+              "#E6FF00"
+            ],
+            "ui_elements": [
+              "Full-Bleed Coach Photo",
+              "Workout Title Block",
+              "Workout Meta Icons",
+              "Rounded Neon CTA",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_a16lg",
+            "name": "Workout Overview",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 3,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#2B2A28",
+              "#1C1B1C",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Sectioned Exercise List",
+              "Exercise Thumbnail Rows",
+              "Coach Tip Card",
+              "Rounded Neon CTA",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_eooir",
+            "name": "Workout Overview",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#35332C",
+              "#181816",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Sectioned Exercise List",
+              "Exercise Thumbnail Rows",
+              "Coach Avatar Badges",
+              "Rounded Neon CTA",
+              "Top Close Control"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          },
+          {
+            "screen_id": "oth_mqcn5",
+            "name": "Workout Overview",
+            "flow": "Workout Overview",
+            "section": "other-tabs",
+            "position": 5,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#000000",
+            "colors": [
+              "#000000",
+              "#161615",
+              "#373531",
+              "#E6FF00",
+              "#FFFFFF"
+            ],
+            "ui_elements": [
+              "Cooldown Exercise List",
+              "Exercise Thumbnail Rows",
+              "Rounded Neon CTA",
+              "Top Close Control",
+              "Vertical Scroll Cue"
+            ],
+            "app": {
+              "app_id": "1502936453",
+              "name": "LADDER Strength Training Plans"
+            }
+          }
+        ],
+        "total": 5,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1436
+        }
+      }
+    },
+    {
+      "key": "hevy-builder",
+      "response": {
+        "app": {
+          "app_id": "1458862350",
+          "name": "Hevy - Workout Tracker Gym Log"
+        },
+        "screens": [
+          {
+            "screen_id": "oth_mqfut",
+            "name": "Create Routine Empty",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 2,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#9CA3AF",
+              "#111827"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Disabled Save Button",
+              "Routine Title Field",
+              "Center Dumbbell Icon",
+              "Empty State Copy",
+              "Blue Add Exercise CTA"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_t7svp",
+            "name": "Add Exercise",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 3,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#FF5A1F"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Search Field",
+              "Filter Chips",
+              "Exercise List Rows",
+              "Exercise Thumbnails",
+              "Circular Add Icons",
+              "Sticky Bottom CTA"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_rbs7y",
+            "name": "Routine Exercise Editor",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 4,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#D0D5DD"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Routine Title Field",
+              "Exercise Header Row",
+              "Rest Timer Row",
+              "Set Table Columns",
+              "Gray Add Set Button",
+              "Blue Add Exercise CTA"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_g6sj7",
+            "name": "Exercise Options Sheet",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 5,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#787878",
+              "#0A8DFF",
+              "#F04438",
+              "#111827"
+            ],
+            "ui_elements": [
+              "Dimmed Overlay",
+              "Bottom Action Sheet",
+              "Sheet Drag Handle",
+              "Exercise Option Rows",
+              "Red Destructive Row",
+              "Set Table Columns"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_8ih5w",
+            "name": "Muscle Group Filter",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 6,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#787878",
+              "#0A8DFF",
+              "#D0D5DD"
+            ],
+            "ui_elements": [
+              "Dimmed Overlay",
+              "Rounded Modal Sheet",
+              "Sheet Drag Handle",
+              "Muscle Icon Rows",
+              "Blue Checkmark",
+              "Divider Lines"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_9z8li",
+            "name": "Filtered Add Exercise",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 7,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#E5E7EB"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Search Field",
+              "Active Filter Chip",
+              "Exercise List Rows",
+              "Body Part Thumbnails",
+              "Circular Add Icons"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          },
+          {
+            "screen_id": "oth_x4esb",
+            "name": "Routine Exercise Editor",
+            "flow": "Routine Builder",
+            "section": "other-tabs",
+            "position": 8,
+            "kind": "image",
+            "media_url": "[redacted-reference-url]",
+            "codec": null,
+            "compatible_media_url": null,
+            "width": null,
+            "height": null,
+            "duration_ms": null,
+            "dominant_color": "#FFFFFF",
+            "colors": [
+              "#FFFFFF",
+              "#F4F6F8",
+              "#0A8DFF",
+              "#111827",
+              "#D0D5DD"
+            ],
+            "ui_elements": [
+              "Header Nav Bar",
+              "Routine Title Field",
+              "Exercise Header Row",
+              "Rest Timer Row",
+              "Gray Add Set Button",
+              "Blue Add Exercise CTA"
+            ],
+            "app": {
+              "app_id": "1458862350",
+              "name": "Hevy - Workout Tracker Gym Log"
+            }
+          }
+        ],
+        "total": 7,
+        "next_cursor": null,
+        "note": "Media URLs in this response are first-party appllama.io links that expire in about 60 minutes. Fetch what you need promptly, or re-request the page for fresh links.",
+        "credits": {
+          "spent": 1,
+          "remaining_this_month": 1437
+        }
+      }
+    }
+  ]
+}

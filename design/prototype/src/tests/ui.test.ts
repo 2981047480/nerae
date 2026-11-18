@@ -115,7 +115,7 @@ describe('应用结构与未知过渡根节点', () => {
     wrapper.unmount()
   })
 
-  it('完成第 4 组后，休息反馈指向刚完成的组与值', async () => {
+  it('记录第 4 组后反馈指向该组，页面不显示休息计时器', async () => {
     const { wrapper, store } = await mountApp()
     store.jumpToScenario('training')
     await flushPromises()
@@ -127,15 +127,16 @@ describe('应用结构与未知过渡根节点', () => {
     await nextTick()
     const text = document.body.textContent ?? ''
     expect(text).toContain('第 4 组已记录')
-    expect(text).toContain('12.5 kg × 10 次')
+    expect(document.querySelector<HTMLInputElement>('[aria-label="哑铃卧推 第 4 组重量 kg"]')?.value).toBe('12.5')
+    expect(text).not.toContain('倒计时')
     expect(store.state.session.exercises[0]!.sets[3]!.completedAt).not.toBeNull()
     expect(
       Date.parse(store.state.session.exercises[0]!.sets[3]!.completedAt!),
     ).toBeGreaterThan(Date.parse('2026-10-24T19:12:00+08:00'))
     console.info(
-      '[fix-evidence] rest-feedback',
+      '[r04-evidence] logging-feedback',
       JSON.stringify({
-        text: document.querySelector('.rest-recorded')?.textContent?.replace(/\s+/g, ' ').trim(),
+        text: document.querySelector('.log-result')?.textContent?.replace(/\s+/g, ' ').trim(),
         completedAt: store.state.session.exercises[0]!.sets[3]!.completedAt,
       }),
     )
@@ -143,14 +144,12 @@ describe('应用结构与未知过渡根节点', () => {
     wrapper.unmount()
   })
 
-  it('今天进度只表达已完成组数，当前动作与组数只在主操作出现一次', async () => {
+  it('首页以记录为主操作，不进入训练播放器', async () => {
     const { wrapper } = await mountApp()
-    const progress = document.querySelector('.hero-progress-text')?.textContent?.replace(/\s+/g, ' ').trim()
-    expect(progress).toBe('已完成 3 / 12 组')
-    const cta = document.querySelector('.hero-cta')
-    expect(cta?.textContent).toContain('哑铃卧推')
-    expect(cta?.textContent).toContain('第 4 组')
-    expect(cta?.querySelector('.hero-cta-nowrap')?.textContent).toContain('第 4 组')
+    const cta = document.querySelector('.journal-primary')
+    expect(cta?.textContent).toContain('继续填写')
+    expect(document.querySelector('.hero-media')).toBeNull()
+    expect(document.body.textContent).not.toContain('开始这次训练')
     wrapper.unmount()
   })
 
@@ -231,26 +230,21 @@ describe('应用结构与未知过渡根节点', () => {
     wrapper.unmount()
   })
 
-  it('搜索只有一套自定义清除入口，摘要不重复搜索词', async () => {
+  it('发现可直接搜索，清除条件可恢复列表', async () => {
     const { wrapper, store } = await mountApp()
     store.jumpToScenario('explore')
     await flushPromises()
-    await nextTick()
-    const searchToggle = Array.from(document.querySelectorAll('button')).find(
-      (button) => button.getAttribute('aria-label') === '搜索内容',
-    )
-    expect(searchToggle).toBeTruthy()
-    searchToggle!.click()
-    await nextTick()
-    await nextTick()
-    const input = document.querySelector<HTMLInputElement>('.search-input')
+    const input = document.querySelector<HTMLInputElement>('.library-search input')!
     expect(input).toBeTruthy()
-    expect(input!.getAttribute('type')).toBe('text')
-    input!.value = '平板'
-    input!.dispatchEvent(new Event('input', { bubbles: true }))
+    input.value = '平板'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
     await nextTick()
-    expect(document.querySelectorAll('button[aria-label="清除搜索"]')).toHaveLength(1)
-    expect(document.querySelector('.filter-summary')?.textContent).not.toContain('平板')
+    expect(document.querySelector('.library-caption')?.textContent).not.toContain('平板')
+    expect(store.ui.exploreQuery).toBe('平板')
+    const clear = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === '清除条件')!
+    clear.click()
+    await nextTick()
+    expect(input.value).toBe('')
     store.resetPreview()
     wrapper.unmount()
   })
@@ -288,48 +282,17 @@ describe('应用结构与未知过渡根节点', () => {
     wrapper.unmount()
   })
 
-  it('进入训练时正常模式有标题接续，减少动态效果时不生成', async () => {
+  it('记录页直接显示填写界面，不生成播放器标题飞入层', async () => {
     const { wrapper, store } = await mountApp()
-    const animate = vi.fn(() => ({ onfinish: null }))
-    ;(Element.prototype as any).animate = animate
-    store.jumpToScenario('today')
-    await flushPromises()
-    await nextTick()
-    const originalRect = HTMLElement.prototype.getBoundingClientRect
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      if (this.hasAttribute('data-training-title')) {
-        return {
-          x: 16,
-          y: 20,
-          left: 16,
-          top: 20,
-          width: 96,
-          height: 20,
-          right: 112,
-          bottom: 40,
-          toJSON: () => ({}),
-        } as DOMRect
-      }
-      return originalRect.call(this)
-    })
-    store.ui.focusOrigin = { x: 20, y: 220, width: 180, height: 44, text: '上肢力量' }
     store.enterTraining()
     await flushPromises()
     await nextTick()
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(document.querySelector('.session-focus-ghost')).toBeTruthy()
-    expect(animate).toHaveBeenCalled()
-    document.querySelector('.session-focus-ghost')?.remove()
-    store.resetPreview()
-    await flushPromises()
-    await nextTick()
-    store.setReduceMotion(true)
-    store.ui.focusOrigin = { x: 20, y: 220, width: 180, height: 44, text: '上肢力量' }
-    store.enterTraining()
-    await flushPromises()
-    await nextTick()
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(document.querySelector('.log-mode')).toBeTruthy()
     expect(document.querySelector('.session-focus-ghost')).toBeNull()
+    expect(document.querySelector('.training-rest')).toBeNull()
+    store.setReduceMotion(true)
+    await nextTick()
+    expect(document.documentElement.dataset.motion).toBe('reduced')
     wrapper.unmount()
   })
 

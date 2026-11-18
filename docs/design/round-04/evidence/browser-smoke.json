@@ -1,0 +1,262 @@
+{
+  "checkedAt": "2026-10-27T07:15:37.012Z",
+  "before": {
+    "duplicateIds": [],
+    "mode": "训练后记录",
+    "scrollWidth": 1265,
+    "sets": [
+      {
+        "id": "s-a1-1",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-2",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-3",
+        "values": [
+          "12.5",
+          "9"
+        ]
+      },
+      {
+        "id": "s-a1-4",
+        "values": [
+          "15",
+          "8"
+        ]
+      },
+      {
+        "id": "log-set-2-1793084112132",
+        "values": [
+          "17.5",
+          "7"
+        ]
+      },
+      {
+        "id": "s-a2-1",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a2-2",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a2-3",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-1",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-2",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-3",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a4-1",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "id": "s-a4-2",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "id": "log-set-4-1793084205655",
+        "values": [
+          "12"
+        ]
+      }
+    ],
+    "timerControls": [],
+    "width": 1265
+  },
+  "perSet": {
+    "duplicateIds": [],
+    "mode": "每组完成后记录",
+    "scrollWidth": 1265,
+    "sets": [
+      {
+        "id": "s-a1-1",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-2",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-3",
+        "values": [
+          "12.5",
+          "9"
+        ]
+      },
+      {
+        "id": "s-a1-4",
+        "values": [
+          "15",
+          "8"
+        ]
+      },
+      {
+        "id": "log-set-2-1793084112132",
+        "values": [
+          "17.5",
+          "7"
+        ]
+      }
+    ],
+    "timerControls": [],
+    "width": 1265
+  },
+  "afterReload": {
+    "duplicateIds": [],
+    "mode": "训练后记录",
+    "scrollWidth": 1265,
+    "sets": [
+      {
+        "id": "s-a1-1",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-2",
+        "values": [
+          "12.5",
+          "10"
+        ]
+      },
+      {
+        "id": "s-a1-3",
+        "values": [
+          "12.5",
+          "9"
+        ]
+      },
+      {
+        "id": "s-a1-4",
+        "values": [
+          "15",
+          "8"
+        ]
+      },
+      {
+        "id": "log-set-2-1793084112132",
+        "values": [
+          "17.5",
+          "7"
+        ]
+      },
+      {
+        "id": "s-a2-1",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a2-2",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a2-3",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-1",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-2",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a3-3",
+        "values": [
+          "",
+          ""
+        ]
+      },
+      {
+        "id": "s-a4-1",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "id": "s-a4-2",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "id": "log-set-4-1793084205655",
+        "values": [
+          "12"
+        ]
+      }
+    ],
+    "timerControls": [],
+    "width": 1265
+  },
+  "checks": {
+    "sameIdsAndInputsAfterReload": true,
+    "perSetValuesMatch": true,
+    "noDuplicateIds": true,
+    "noTimerControls": true,
+    "consoleErrors": []
+  }
+}

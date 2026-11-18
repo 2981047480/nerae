@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import PhotoFrame from '../components/PhotoFrame.vue'
 import {
   ArrowRight,
   CalendarClock,
@@ -46,9 +47,9 @@ function priceLabel(value: number, unit: string): string {
 </script>
 
 <template>
-  <div v-if="coach" class="screen screen--wide coach-detail">
-    <section class="coach-hero">
-      <div class="avatar coach-avatar" aria-hidden="true">{{ coach.name.slice(0, 1) }}</div>
+  <div v-if="coach" class="screen screen--wide coach-detail studio-coach-detail">
+    <section class="studio-coach-cover">
+      <div class="studio-coach-cover-copy">
       <div class="coach-identity">
         <p class="coach-kicker">教练 · {{ coach.modes.join(' · ') }}</p>
         <h1 class="coach-name">{{ coach.name }}</h1>
@@ -66,8 +67,11 @@ function priceLabel(value: number, unit: string): string {
           <MessageCircle :size="16" aria-hidden="true" />
           预约咨询
         </button>
-        <p class="coach-action-note">咨询为站内文字；不会自动建立服务关系，也不收款。</p>
+        <p v-if="activePackage" class="studio-cover-offer">{{ activePackage.name }} · {{ priceLabel(activePackage.priceYuan, activePackage.priceUnit) }}</p>
+        <p class="coach-action-note">先聊目标与安排，咨询不自动建立服务关系。</p>
       </div>
+      </div>
+      <div class="studio-coach-cover-image"><PhotoFrame src="/assets/training-dumbbells.webp" alt="哑铃与器械，训练内容示意" eager /><span>内容示意 · 非教练肖像或服务场地</span></div>
     </section>
 
     <div v-if="unavailable" class="banner banner--warning" role="alert">
@@ -79,6 +83,11 @@ function priceLabel(value: number, unit: string): string {
 
     <div class="coach-body">
       <section class="coach-main" aria-labelledby="services-title">
+        <section v-if="activePackage" class="studio-service-deliverables" aria-label="当前服务交付内容">
+          <h2>这个服务，具体为你做什么</h2>
+          <p>{{ activePackage.name }} · {{ activePackage.cycle }}</p>
+          <ul><li v-for="(include, index) in activePackage.includes" :key="include"><span class="num">{{ String(index + 1).padStart(2, '0') }}</span>{{ include }}</li></ul>
+        </section>
         <header class="group-head">
           <h2 id="services-title" class="group-title">服务与价格</h2>
           <span class="group-meta num">{{ packages.length }} 个服务包</span>
@@ -113,9 +122,6 @@ function priceLabel(value: number, unit: string): string {
             </span>
             <span class="package-summary">{{ pack.summary }}</span>
             <span class="package-meta num">{{ pack.cycle }} · {{ pack.goals.join(' / ') }}</span>
-            <span v-if="pack.includes.length" class="package-includes">
-              {{ pack.includes.join('；') }}
-            </span>
           </button>
         </div>
 
@@ -165,6 +171,7 @@ function priceLabel(value: number, unit: string): string {
           <button type="button" class="btn btn--block consult-secondary" :disabled="!activePackage" @click="consult">
             带着「{{ activePackage?.name ?? '服务包' }}」咨询
           </button>
+          <p class="studio-price-note">{{ activePackage ? `${priceLabel(activePackage.priceYuan, activePackage.priceUnit)} · ${activePackage.cycle}` : '暂时没有可咨询的服务' }}。平台内不收款；具体服务由双方明确确认。</p>
         </section>
 
         <section class="side-panel side-panel--quiet" aria-labelledby="confirm-title">
@@ -434,7 +441,7 @@ function priceLabel(value: number, unit: string): string {
 }
 
 .side-panel--quiet {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 
 .side-title {

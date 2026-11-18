@@ -1,1168 +1,144 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { ArrowLeft, Plus, Check, ChevronDown, Trash2, ArrowRight, AlertCircle } from '@lucide/vue'
+import BaseSheet from '../components/BaseSheet.vue'
 import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  Clock3,
-  Minus,
-  Pause,
-  Play,
-  Plus,
-  SkipForward,
-} from '@lucide/vue'
-import PhotoFrame from '../components/PhotoFrame.vue'
-import {
-  adjustInput,
-  completeCurrentSet,
-  currentEntry,
-  currentInput,
-  doneSets,
-  extendRest,
-  isComplete,
-  leaveTraining,
-  pauseRest,
-  progressPercent,
-  restClock,
-  restNextLabel,
-  restRemainingMs,
-  resumeRest,
-  activeConflict,
-  resolveSetConflict,
-  sessionGroups,
-  setInputValue,
-  skipRest,
-  state,
-  storageState,
-  retryPersist,
-  totalSets,
-  ui,
+  state, leaveTraining, storageState, retryPersist, setInputValue,
+  logInput, logErrors, logMessage, recordLogSet, saveTrainingLog,
+  setRecordingMode, setTrainingDate, localToday, usePreviousLogSet,
+  addLogSet, addLogExercise, removeLogSet, removeLogExercise,
+  activeConflict, resolveSetConflict, doneSets,
 } from '../state/store'
-import {
-  hasErrors,
-  referenceText,
-} from '../utils/training'
-import {
-  formatTime,
-  isBodyweightKind,
-  isDurationKind,
-  isPerSideKind,
-  setValueLabel,
-} from '../utils/format'
+import { isBodyweightKind, isDurationKind, isPerSideKind, lastReferenceLabel } from '../utils/format'
+import type { LoadKind, SessionExercise, SessionSet, SetInput } from '../types'
 
-const detailsOpen = ref(false)
+const selected = ref<string | undefined>(state.session.selectedExerciseId ?? state.session.exercises.find(e => e.sets.some(s => s.status === 'pending'))?.id ?? state.session.exercises[0]?.id)
+const mode = computed(() => state.recordingMode)
+const addOpen = ref(false)
+const name = ref('')
+const kind = ref<LoadKind>('weight')
+const addError = ref('')
+const dateError = ref('')
+const pendingDelete = ref<{exerciseId:string;setId?:string}|null>(null)
+const removed = ref<{exerciseId:string; exercise?:SessionExercise; set?:SessionSet; position:number; inputs:Record<string,SetInput>}|null>(null)
+watch(selected,id=>{ state.session.selectedExerciseId=id },{immediate:true})
+const visible = computed(() => mode.value === 'after' ? state.session.exercises : state.session.exercises.filter(e => e.id === selected.value))
+const filledCount = computed(() => state.session.exercises.reduce((sum,e) => sum+e.sets.filter(s => Object.values(logInput(e,s)).some(v=>v.trim())).length,0))
+const choices = ['哑铃卧推','高位下拉','深蹲','罗马尼亚硬拉','坐姿划船','哑铃肩推','俯卧撑','平板支撑']
 
-const entry = currentEntry
-const input = currentInput
-const rest = computed(() => state.session.rest)
-const isResting = computed(() => Boolean(rest.value))
-
-const errorList = computed(() => Object.values(ui.trainingErrors).filter(Boolean) as string[])
-const hasError = computed(() => hasErrors(ui.trainingErrors))
-
-const lastCompleted = computed(() => {
-  const all = state.session.exercises.flatMap((exercise) =>
-    exercise.sets
-      .filter((set) => set.status === 'done' && set.completedAt)
-      .map((set) => ({ exercise, set })),
-  )
-  all.sort(
-    (a, b) => Date.parse(a.set.completedAt ?? '') - Date.parse(b.set.completedAt ?? ''),
-  )
-  return all[all.length - 1] ?? null
-})
-
-const currentSets = computed(() => entry.value?.exercise.sets ?? [])
-
-const progressLabel = computed(() => `${doneSets.value} / ${totalSets.value} 组`)
-
-const restPercent = computed(() => {
-  const currentRest = rest.value
-  if (!currentRest) return 0
-  const total = currentRest.durationMs || 1
-  return Math.min(100, Math.max(0, ((total - restRemainingMs.value) / total) * 100))
-})
-
-const restPaused = computed(() => Boolean(rest.value?.paused))
-
-const noHistory = computed(() => state.preview.training === 'no-history')
-const syncPending = computed(() => state.preview.training === 'sync-pending')
-const syncFailed = computed(() => state.preview.training === 'sync-failed' || !storageState.ok)
-const hasConflict = computed(() => Boolean(activeConflict.value))
-
-const completionFacts = computed(() => {
-  const completed = state.session.exercises.reduce(
-    (sum, exercise) => sum + exercise.sets.filter((set) => set.status === 'done').length,
-    0,
-  )
-  return { sets: completed, total: totalSets.value, exercises: state.session.exercises.length }
-})
-
-function onInput(field: 'weightKg' | 'reps' | 'seconds', event: Event): void {
-  const value = (event.target as HTMLInputElement).value
-  if (!entry.value) return
-  setInputValue(entry.value.set.id, field, value)
+function input(_e:SessionExercise,s:SessionSet,field:keyof SetInput,event:Event) {
+  setInputValue(s.id,field,(event.target as HTMLInputElement).value)
+  delete logErrors[s.id]
+  logMessage.text = ''
 }
-
-function submitSet(): void {
-  completeCurrentSet()
-}
-
-function formatSetSummary(): string {
-  if (!lastCompleted.value) return ''
-  return setValueLabel(lastCompleted.value.exercise.kind, lastCompleted.value.set)
-}
-
-function completionTime(): string {
-  return state.session.completedAt ? formatTime(state.session.completedAt) : '—'
-}
-
-const exerciseValues = computed(() =>
-  sessionGroups.value.map((group) => {
-    const completedSets = group.sets.filter((set) => set.status === 'done')
-    return {
-      ...group,
-      completedSets,
-      target: `${group.exercise.sets.length} 组 × ${group.exercise.targetText}`,
-    }
-  }),
-)
-
-const focus = computed(() => {
-  const value = entry.value
-  if (!value) return null
-  return {
-    exercise: value.exercise,
-    set: value.set,
-    exerciseIndex: state.session.exercises.findIndex((item) => item.id === value.exercise.id) + 1,
-    doneCount: state.inputs[value.set.id] ? value.exercise.sets.filter((item) => item.status === 'done').length : 0,
+function changeDate(event:Event) {
+  const field=event.target as HTMLInputElement
+  if(setTrainingDate(field.value)) dateError.value=''
+  else {
+    field.value=state.session.trainingDate ?? localToday()
+    dateError.value='请选择今天或更早的有效训练日期。'
   }
-})
-
-const usesDuration = computed(() =>
-  focus.value ? isDurationKind(focus.value.exercise.kind) : false,
-)
-const usesWeight = computed(() =>
-  focus.value
-    ? !isDurationKind(focus.value.exercise.kind) &&
-      !isBodyweightKind(focus.value.exercise.kind)
-    : false,
-)
-const usesReps = computed(() =>
-  focus.value ? !isDurationKind(focus.value.exercise.kind) : false,
-)
-const repSide = computed(() =>
-  focus.value ? isPerSideKind(focus.value.exercise.kind) : false,
-)
-const repLabel = computed(() =>
-  focus.value?.exercise.kind === 'breath' ? '呼吸次数' : '次数',
-)
-
-const exerciseImage = computed(() => {
-  const equipment = focus.value?.exercise.equipment ?? ''
-  if (equipment.includes('高位下拉') || equipment.includes('划船器') || equipment.includes('龙门架')) {
-    return { src: '/assets/explore-featured.webp', alt: '训练者用弹力带完成上肢拉力动作' }
+}
+function previous(exercise:SessionExercise) {
+  for(const set of exercise.sets) {
+    if(set.status === 'pending' && !Object.values(logInput(exercise,set)).some(v=>v.trim())) usePreviousLogSet(set.id)
   }
-  if (equipment.includes('瑜伽垫')) {
-    return { src: '/assets/explore-plank.webp', alt: '训练者在瑜伽垫上完成核心动作' }
+}
+function createExercise() {
+  const id = addLogExercise(name.value,kind.value)
+  if(!id) {addError.value='请输入 1–60 字的动作名称（最多 30 个动作）。';return}
+  selected.value=id; addOpen.value=false;name.value='';addError.value=''
+}
+function removeConfirmed() {
+  if(!pendingDelete.value) return
+  const target=pendingDelete.value
+  const exercise=state.session.exercises.find(e=>e.id===target.exerciseId)
+  if(!exercise) return
+  const set=exercise.sets.find(s=>s.id===target.setId)
+  const ids=target.setId?[target.setId]:exercise.sets.map(s=>s.id)
+  const snapshot={exerciseId:exercise.id,exercise:target.setId?undefined:exercise,set,position:target.setId?exercise.sets.findIndex(s=>s.id===target.setId):state.session.exercises.indexOf(exercise),inputs:Object.fromEntries(ids.filter(id=>state.inputs[id]).map(id=>[id,state.inputs[id]]))}
+  if(target.setId) removeLogSet(target.setId)
+  else removeLogExercise(target.exerciseId)
+  const remaining=state.session.exercises.find(e=>e.id===target.exerciseId)
+  const deleted=target.setId?!remaining?.sets.some(s=>s.id===target.setId):!remaining
+  if(deleted) removed.value=JSON.parse(JSON.stringify(snapshot))
+  if(!state.session.exercises.some(e=>e.id===selected.value)) selected.value=state.session.exercises[0]?.id
+  pendingDelete.value=null
+}
+function undo() {
+  if(!removed.value) return
+  const item=removed.value
+  if(item.exercise && !state.session.exercises.some(e=>e.id===item.exerciseId)) state.session.exercises.splice(item.position,0,item.exercise)
+  else if(item.set) {
+    const exercise=state.session.exercises.find(e=>e.id===item.exerciseId)
+    if(exercise && !exercise.sets.some(s=>s.id===item.set!.id)) { exercise.sets.splice(item.position,0,item.set);exercise.sets.forEach((s,i)=>{s.index=i+1}) }
   }
-  return { src: '/assets/training-dumbbells.webp', alt: '训练用的哑铃' }
-})
-
-const focusExerciseNumber = computed(() => {
-  const value = focus.value
-  if (!value) return 0
-  return state.session.exercises.findIndex((item) => item.id === value.exercise.id) + 1
-})
-
+  Object.assign(state.inputs,item.inputs)
+  selected.value=item.exerciseId
+  removed.value=null
+}
+async function save() {
+  const ok=saveTrainingLog()
+  if(!ok) {
+    const bad=Object.keys(logErrors).find(id=>Object.values(logErrors[id]??{}).some(Boolean))
+    if(bad) selected.value=state.session.exercises.find(e=>e.sets.some(s=>s.id===bad))?.id
+    await nextTick()
+    document.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus()
+  }
+}
 </script>
 
 <template>
-  <div class="training focus-scope on-dark">
-    <header class="training-top">
-      <button class="training-exit" type="button" @click="leaveTraining">
-        <ArrowLeft :size="19" aria-hidden="true" />
-        <span>退出</span>
-      </button>
-      <div class="training-title">
-        <span class="training-plan">{{ state.session.planTitle }}</span>
-        <span class="training-day" data-training-title>{{ state.session.dayTitle }}</span>
-      </div>
-      <span class="training-progress num">{{ progressLabel }}</span>
+  <main id="main" class="log-page" tabindex="-1">
+    <header class="log-nav">
+      <button type="button" class="icon-btn" aria-label="返回，保留记录草稿" @click="leaveTraining"><ArrowLeft :size="21" /></button>
+      <span>训练记录</span>
+      <span class="log-local">{{ state.session.status==='complete' && storageState.ok?'已保存':'本机草稿' }}</span>
     </header>
-    <div class="training-bar" aria-hidden="true">
-      <span :style="{ width: `${isComplete ? 100 : progressPercent}%` }" />
-    </div>
-
-    <main id="main" class="training-main" tabindex="-1">
-      <template v-if="isComplete">
-        <section class="complete-block" aria-labelledby="complete-title">
-          <p class="focus-kicker">{{ state.session.dateLabel }} · 最后一组 {{ completionTime() }}</p>
-          <h1 id="complete-title" class="complete-title">训练完成</h1>
-          <p class="complete-facts num">
-            {{ completionFacts.sets }} 组记录完成 · {{ completionFacts.exercises }} 个动作
-          </p>
-          <p v-if="storageState.ok" class="complete-saved">
-            <Check :size="15" aria-hidden="true" />
-            记录已保存在本机
-          </p>
-          <div v-else class="storage-alert" role="alert">
-            <p>{{ storageState.message }}</p>
-            <button type="button" class="storage-retry" @click="retryPersist()">重试保存</button>
-          </div>
-          <button class="btn btn--accent complete-cta" type="button" @click="leaveTraining">
-            回到今天
-          </button>
-        </section>
-
-        <section class="records" aria-labelledby="complete-records-title">
-          <header class="section-head">
-            <h2 id="complete-records-title" class="section-title">本次记录</h2>
-            <span class="section-meta num">{{ completionFacts.sets }} / {{ completionFacts.total }} 组</span>
-          </header>
-          <div v-for="group in exerciseValues" :key="group.exercise.id" class="record-group">
-            <div class="record-head">
-              <h3 class="record-name">{{ group.exercise.name }}</h3>
-              <span class="record-target num">{{ group.target }}</span>
+    <div class="log-content">
+      <div class="log-heading"><p class="eyebrow">TRAINING LOG</p><h1>{{ state.session.dayTitle }}</h1>
+        <label class="log-date">训练日期 <input type="date" aria-label="训练日期" :max="localToday()" :value="state.session.trainingDate ?? localToday()" :aria-invalid="Boolean(dateError)" @change="changeDate" /></label>
+        <p v-if="dateError" class="field-error" role="alert">{{ dateError }}</p>
+      </div>
+      <div class="log-mode" role="group" aria-label="记录方式">
+        <button type="button" :aria-pressed="mode==='after'" @click="setRecordingMode('after')">训练后记录</button>
+        <button type="button" :aria-pressed="mode==='set'" @click="setRecordingMode('set')">每组完成后记录</button>
+      </div>
+      <p class="log-mode-help">{{ mode==='after' ? '按实际完成填写，空白组不会计入记录。' : '练完一组，记下一组。也可以随时换个动作。' }}</p>
+      <div v-if="!storageState.ok || state.preview.training==='sync-failed'" class="log-error" role="alert"><AlertCircle :size="18"/><span>未能保存到本机，当前输入仍保留。</span><button type="button" @click="retryPersist">重试</button></div>
+      <section v-if="activeConflict" class="log-conflict" role="alert"><h2>这组有另一份记录</h2><p>{{ activeConflict.exerciseName }} · 第 {{ activeConflict.setIndex }} 组</p><p>本机 {{ activeConflict.localText }} · 另一份 {{ activeConflict.remoteText }}</p><div class="btn-row"><button type="button" class="btn" @click="resolveSetConflict('local')">保留本机记录</button><button type="button" class="btn btn--ghost" @click="resolveSetConflict('remote')">采用另一份</button></div></section>
+      <div v-if="removed" class="log-undo" role="status"><span>已移除，保存后更新记录。</span><button type="button" @click="undo">撤销</button></div>
+      <nav v-if="mode==='set' && state.session.exercises.length" class="exercise-picker" aria-label="选择要记录的动作">
+        <button v-for="(e,i) in state.session.exercises" :key="e.id" type="button" :aria-pressed="selected===e.id" @click="selected=e.id"><span class="num">{{ String(i+1).padStart(2,'0') }}</span>{{ e.name }}<Check v-if="e.sets.length && e.sets.every(s=>s.status==='done')" :size="14" /></button>
+      </nav>
+      <section v-for="exercise in visible" :key="exercise.id" class="log-exercise" :data-exercise="exercise.id">
+        <header class="log-exercise-head"><span class="exercise-index num">{{ String(state.session.exercises.indexOf(exercise)+1).padStart(2,'0') }}</span>
+          <div class="log-exercise-title"><h2>{{ exercise.name }}</h2><p v-if="exercise.lastRef.dateLabel!=='暂无可比较参考'">上次 {{ lastReferenceLabel(exercise.lastRef,exercise.kind) }}</p><p v-else>暂无历史参考</p></div>
+          <button type="button" class="icon-btn log-remove" :aria-label="`移除动作 ${exercise.name}`" @click="pendingDelete={exerciseId:exercise.id}"><Trash2 :size="17" /></button>
+        </header>
+        <div class="log-table" :class="{'log-table--duration':isDurationKind(exercise.kind),'log-table--bodyweight':isBodyweightKind(exercise.kind),'log-table--each':mode==='set'}">
+          <div class="log-table-labels"><span>组</span><span v-if="!isDurationKind(exercise.kind) && !isBodyweightKind(exercise.kind)">重量 <small>kg</small></span><span>{{ isDurationKind(exercise.kind)?'实际秒数':exercise.kind==='breath'?'呼吸次数':isPerSideKind(exercise.kind)?'次数 / 侧':'次数' }}</span><span class="sr-only">操作</span></div>
+          <div v-for="set in exercise.sets" :key="set.id" class="log-set" :class="{'log-set--recorded':set.status==='done'}" :data-set="set.id">
+            <div class="log-set-fields"><span class="set-index num">{{ set.index }}</span>
+              <input v-if="!isDurationKind(exercise.kind) && !isBodyweightKind(exercise.kind)" type="text" inputmode="decimal" autocomplete="off" placeholder="—" :aria-label="`${exercise.name} 第 ${set.index} 组重量 kg`" :aria-invalid="Boolean(logErrors[set.id]?.weightKg)" :value="logInput(exercise,set).weightKg" @input="input(exercise,set,'weightKg',$event)" />
+              <input v-if="!isDurationKind(exercise.kind)" type="text" inputmode="numeric" autocomplete="off" placeholder="—" :aria-label="`${exercise.name} 第 ${set.index} 组${exercise.kind==='breath'?'呼吸次数':'次数'}`" :aria-invalid="Boolean(logErrors[set.id]?.reps)" :value="logInput(exercise,set).reps" @input="input(exercise,set,'reps',$event)" />
+              <input v-else type="text" inputmode="numeric" autocomplete="off" placeholder="—" :aria-label="`${exercise.name} 第 ${set.index} 组实际秒数`" :aria-invalid="Boolean(logErrors[set.id]?.seconds)" :value="logInput(exercise,set).seconds" @input="input(exercise,set,'seconds',$event)" />
+              <button type="button" class="icon-btn log-remove" :aria-label="`移除 ${exercise.name} 第 ${set.index} 组`" @click="pendingDelete={exerciseId:exercise.id,setId:set.id}"><Trash2 :size="15" /></button>
             </div>
-            <ul class="record-sets">
-              <li v-for="set in group.completedSets" :key="set.id" class="record-row">
-                <span class="record-set num">第 {{ set.index }} 组</span>
-                <span class="record-value num">{{ setValueLabel(group.exercise.kind, set) }}</span>
-                <span class="record-time num">{{ set.completedAt ? formatTime(set.completedAt) : '' }}</span>
-              </li>
-              <li v-if="!group.completedSets.length" class="record-empty">没有记录</li>
-            </ul>
+            <p v-if="Object.values(logErrors[set.id]??{}).some(Boolean)" class="field-error" role="alert">{{ Object.values(logErrors[set.id]??{}).filter(Boolean).join('；') }}</p>
+            <button v-if="mode==='set'" type="button" :aria-label="`${exercise.name} 第 ${set.index} 组${set.status==='done'?'更新记录':'记下这组'}`" class="log-record-set" :class="{'log-record-set--done':set.status==='done'}" @click="recordLogSet(set.id)"><Check v-if="set.status==='done'" :size="15"/>{{ set.status==='done'?'更新':'记下' }}</button>
           </div>
-        </section>
-      </template>
-
-      <template v-else-if="isResting">
-        <section class="rest-block" aria-labelledby="rest-title">
-          <p class="focus-kicker">组间休息</p>
-          <h1 id="rest-title" class="rest-title" aria-live="polite">
-            <span class="num">{{ restClock }}</span>
-            <span v-if="restPaused" class="rest-paused">已暂停</span>
-          </h1>
-          <div class="rest-track" aria-hidden="true">
-            <span :style="{ width: `${restPercent}%` }" />
-          </div>
-          <p class="rest-next">
-            下一组 · <strong>{{ restNextLabel }}</strong>
-          </p>
-          <p
-            v-if="lastCompleted"
-            class="rest-recorded num"
-            :class="{ 'rest-recorded--just': ui.justCompletedSetId === lastCompleted.set.id }"
-          >
-            <Check :size="14" aria-hidden="true" />
-            {{ lastCompleted.exercise.name }} 第 {{ lastCompleted.set.index }} 组已记录 · {{ formatSetSummary() }}
-          </p>
-          <p class="rest-default">休息结束后自动进入下一组，不需要额外操作。</p>
-          <div class="rest-actions">
-            <button class="btn btn--ghost" type="button" @click="restPaused ? resumeRest() : pauseRest()">
-              <Play v-if="restPaused" :size="16" aria-hidden="true" />
-              <Pause v-else :size="16" aria-hidden="true" />
-              {{ restPaused ? '继续计时' : '暂停' }}
-            </button>
-            <button class="btn btn--ghost" type="button" @click="extendRest(15)">
-              <Clock3 :size="16" aria-hidden="true" />
-              加 15 秒
-            </button>
-          </div>
-          <button class="rest-skip" type="button" @click="skipRest">
-            <SkipForward :size="15" aria-hidden="true" />
-            提前结束休息
-          </button>
-        </section>
-
-        <section class="records records--compact" aria-labelledby="rest-records-title">
-          <header class="section-head">
-            <h2 id="rest-records-title" class="section-title">本次记录</h2>
-            <span class="section-meta num">{{ doneSets }} / {{ totalSets }} 组</span>
-          </header>
-          <div v-for="group in exerciseValues" :key="group.exercise.id" class="record-group">
-            <div class="record-head">
-              <h3 class="record-name">{{ group.exercise.name }}</h3>
-              <span class="record-target num">{{ group.progress.done }} / {{ group.progress.total }} 组</span>
-            </div>
-            <ul class="record-sets">
-              <li v-for="set in group.completedSets" :key="set.id" class="record-row">
-                <span class="record-set num">第 {{ set.index }} 组</span>
-                <span class="record-value num">{{ setValueLabel(group.exercise.kind, set) }}</span>
-                <span class="record-time num">{{ set.completedAt ? formatTime(set.completedAt) : '' }}</span>
-              </li>
-            </ul>
-          </div>
-        </section>
-      </template>
-
-      <template v-else>
-        <section v-if="hasConflict && activeConflict" class="conflict-block" aria-labelledby="conflict-title">
-          <p class="focus-kicker">同一组有两条记录</p>
-          <h2 id="conflict-title" class="conflict-title">先确认保留哪一条</h2>
-          <p class="conflict-text">
-            {{ activeConflict.exerciseName }} 第 {{ activeConflict.setIndex }} 组：本机是
-            <strong class="num">{{ activeConflict.localText }}</strong>，
-            另一台设备在 {{ activeConflict.remoteAt }} 记录为
-            <strong class="num">{{ activeConflict.remoteText }}</strong>。
-          </p>
-          <p class="conflict-note">确认后这一组只记录一次，不会新增一组；另一条不会留在本次记录里。</p>
-          <div class="conflict-actions">
-            <button type="button" class="btn btn--accent" @click="resolveSetConflict('local')">保留本机记录</button>
-            <button type="button" class="btn btn--ghost" @click="resolveSetConflict('remote')">采用另一台设备的记录</button>
-          </div>
-        </section>
-
-        <div v-if="syncPending || syncFailed" class="sync-block" :class="{ 'sync-block--error': syncFailed }" role="status">
-          <p class="sync-title">{{ syncFailed ? '已记录，但还没有保存到本机' : '已记录，待保存' }}</p>
-          <p class="sync-text">
-            这一组的事实已经在本次记录中；保存失败不会自动新增一组。可以重试保存，已输入的数值保留。
-          </p>
-          <button type="button" class="storage-retry" @click="retryPersist()">重试保存</button>
         </div>
-
-        <section v-if="focus" class="focus-block" aria-labelledby="exercise-title">
-          <p class="focus-kicker num">
-            动作 {{ focusExerciseNumber }} / {{ state.session.exercises.length }} · 第 {{ focus.set.index }} 组
-          </p>
-          <div class="focus-head">
-            <div class="focus-heading">
-              <h1 id="exercise-title" class="focus-title">{{ focus.exercise.name }}</h1>
-              <p v-if="!noHistory" class="focus-reference num">{{ referenceText(focus.exercise) }}</p>
-              <p v-else class="focus-reference">第一次记录这个动作，没有上次参考。</p>
-              <p class="focus-target num">
-                目标 {{ focus.exercise.targetText }} · 休息 {{ focus.exercise.restSeconds }} 秒
-              </p>
-            </div>
-            <figure class="focus-photo">
-              <PhotoFrame :src="exerciseImage.src" :alt="exerciseImage.alt" />
-            </figure>
-          </div>
-
-          <div class="metrics" :class="{ 'metrics--single': usesDuration || !usesWeight }">
-            <div v-if="usesWeight" class="metric">
-              <div class="metric-head">
-                <span class="metric-label">重量</span>
-                <span class="metric-hint">kg</span>
-              </div>
-              <div class="metric-value-row">
-                <input
-                  class="metric-input num"
-                  :value="input?.weightKg ?? ''"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  aria-label="重量，千克"
-                  :aria-invalid="Boolean(ui.trainingErrors.weightKg)"
-                  @input="onInput('weightKg', $event)"
-                />
-                <span class="metric-unit">kg</span>
-              </div>
-              <div class="metric-controls">
-                <button type="button" aria-label="减少重量" @click="adjustInput('weightKg', -1.25)">
-                  <Minus :size="18" aria-hidden="true" />
-                </button>
-                <button type="button" aria-label="增加重量" @click="adjustInput('weightKg', 1.25)">
-                  <Plus :size="18" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            <div v-if="usesReps" class="metric">
-              <div class="metric-head">
-                <span class="metric-label">{{ repLabel }}<template v-if="repSide">（每侧）</template></span>
-                <span class="metric-hint">{{ focus.exercise.kind === 'breath' ? '次呼吸' : '次' }}</span>
-              </div>
-              <div class="metric-value-row">
-                <input
-                  class="metric-input num"
-                  :value="input?.reps ?? ''"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  aria-label="完成次数"
-                  :aria-invalid="Boolean(ui.trainingErrors.reps)"
-                  @input="onInput('reps', $event)"
-                />
-                <span class="metric-unit">次</span>
-              </div>
-              <div class="metric-controls">
-                <button type="button" aria-label="减少一次" @click="adjustInput('reps', -1)">
-                  <Minus :size="18" aria-hidden="true" />
-                </button>
-                <button type="button" aria-label="增加一次" @click="adjustInput('reps', 1)">
-                  <Plus :size="18" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            <div v-if="usesDuration" class="metric metric--duration">
-              <div class="metric-head">
-                <span class="metric-label">完成时长</span>
-                <span class="metric-hint">秒</span>
-              </div>
-              <div class="metric-value-row">
-                <input
-                  class="metric-input num"
-                  :value="input?.seconds ?? ''"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  aria-label="完成秒数"
-                  :aria-invalid="Boolean(ui.trainingErrors.seconds)"
-                  @input="onInput('seconds', $event)"
-                />
-                <span class="metric-unit">秒</span>
-              </div>
-              <div class="metric-controls">
-                <button type="button" aria-label="减少五秒" @click="adjustInput('seconds', -5)">
-                  <Minus :size="18" aria-hidden="true" />
-                </button>
-                <button type="button" aria-label="增加五秒" @click="adjustInput('seconds', 5)">
-                  <Plus :size="18" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="errorList.length" class="form-alert" role="alert">
-            <p>{{ errorList[0] }}</p>
-          </div>
-
-          <button class="btn btn--accent complete-cta" type="button" :aria-disabled="hasError || hasConflict" :disabled="hasConflict" @click="submitSet">
-            <Check :size="18" aria-hidden="true" />
-            完成第 {{ focus.set.index }} 组
-          </button>
-          <p class="save-hint">记录会保存在本机，退出后可从这里继续。</p>
-          <p v-if="syncPending" class="sync-inline">本组已记录，等待保存；重试不会增加组数。</p>
-          <div v-if="!storageState.ok" class="storage-alert" role="alert">
-            <p>{{ storageState.message }}</p>
-            <button type="button" class="storage-retry" @click="retryPersist()">重试保存</button>
-          </div>
-
-          <section class="set-list" aria-labelledby="set-list-title">
-            <header class="section-head">
-              <h2 id="set-list-title" class="section-title">本次记录</h2>
-              <span class="section-meta num">{{ focus.exercise.sets.filter((set) => set.status === 'done').length }} / {{ focus.exercise.sets.length }} 组</span>
-            </header>
-            <ul>
-              <li
-                v-for="set in currentSets"
-                :key="set.id"
-                class="set-row"
-                :class="{ 'set-row--done': set.status === 'done', 'set-row--just': ui.justCompletedSetId === set.id }"
-              >
-                <span class="set-index num">第 {{ set.index }} 组</span>
-                <span class="set-value num">{{ set.status === 'done' ? setValueLabel(focus.exercise.kind, set) : '待记录' }}</span>
-                <span class="set-state">
-                  <Check v-if="set.status === 'done'" :size="14" aria-hidden="true" />
-                  <span v-if="set.completedAt" class="set-time num">{{ formatTime(set.completedAt) }}</span>
-                </span>
-              </li>
-            </ul>
-          </section>
-
-          <section class="details">
-            <button
-              type="button"
-              class="details-toggle"
-              :aria-expanded="detailsOpen"
-              aria-controls="exercise-details"
-              @click="detailsOpen = !detailsOpen"
-            >
-              <span>动作说明 · {{ focus.exercise.equipment }}</span>
-              <ChevronDown :size="16" aria-hidden="true" :class="{ 'details-icon--open': detailsOpen }" />
-            </button>
-            <div v-show="detailsOpen" id="exercise-details" class="details-body">
-              <p>{{ focus.exercise.cue }}</p>
-            </div>
-          </section>
-        </section>
-      </template>
-    </main>
-  </div>
+        <div class="log-exercise-actions"><button type="button" :disabled="exercise.sets.length>=30" @click="addLogSet(exercise.id)"><Plus :size="16"/>添加一组</button><button v-if="exercise.lastRef.dateLabel!=='暂无可比较参考'" type="button" @click="previous(exercise)">空白组沿用上次</button></div>
+        <details v-if="exercise.cue" class="log-cue"><summary>动作提示<ChevronDown :size="14"/></summary><p>{{ exercise.cue }}</p></details>
+      </section>
+      <div v-if="!state.session.exercises.length" class="log-empty"><h2>这次练了什么？</h2><p>先添加一个动作，再填实际完成的组。</p></div>
+      <button type="button" class="log-add-exercise" @click="addOpen=true"><Plus :size="20"/>添加动作</button>
+      <p v-if="logMessage.text" class="log-result" :class="{'log-result--error':logMessage.error}" :role="logMessage.error?'alert':'status'">{{ logMessage.text }}</p>
+      <p class="log-footnote">只记实际完成的数据。退出后可继续填写。</p>
+    </div>
+    <footer class="log-savebar"><div><strong class="num">{{ filledCount }} 组</strong><span>{{ state.session.status==='complete' && storageState.ok?'已保存到本机':mode==='set'?`${doneSets} 组已记下`:'待保存' }}</span></div><button type="button" class="btn btn--accent" :disabled="Boolean(activeConflict)" @click="save">{{ state.session.status==='complete'?'更新记录':'保存记录' }}<ArrowRight :size="17"/></button></footer>
+    <BaseSheet :open="addOpen" title="添加动作" @close="addOpen=false"><form id="add-exercise-form" class="log-add-form" @submit.prevent="createExercise"><label>动作名称<input v-model="name" maxlength="60" placeholder="搜索或填写动作名称" autofocus /></label><div class="log-suggestions"><button v-for="choice in choices" :key="choice" type="button" @click="name=choice;kind=choice==='平板支撑'?'duration':choice==='俯卧撑'?'bodyweight':'weight'">{{ choice }}</button></div><label>记录内容<select v-model="kind"><option value="weight">重量与次数</option><option value="perSide">重量与每侧次数</option><option value="bodyweight">自重次数</option><option value="bodyweightPerSide">自重每侧次数</option><option value="duration">实际秒数</option><option value="durationPerSide">每侧实际秒数</option><option value="breath">呼吸次数</option></select></label><p v-if="addError" class="field-error" role="alert">{{ addError }}</p></form><template #footer><button type="submit" form="add-exercise-form" class="btn btn--accent">添加动作</button></template></BaseSheet>
+    <BaseSheet :open="Boolean(pendingDelete)" :title="pendingDelete?.setId?'移除这一组？':'移除这个动作？'" @close="pendingDelete=null"><p>该项不会计入本次记录。移除后可撤销。</p><template #footer><button type="button" class="btn btn--ghost" @click="pendingDelete=null">保留</button><button type="button" class="btn" @click="removeConfirmed">确认移除</button></template></BaseSheet>
+  </main>
 </template>
-
-<style scoped>
-.training {
-  min-height: 100dvh;
-  background: var(--focus-canvas);
-  color: var(--focus-text);
-}
-
-.training-top {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-2);
-  width: 100%;
-  max-width: 900px;
-  margin-inline: auto;
-  padding: calc(8px + env(safe-area-inset-top)) var(--sp-4) 8px;
-  background: var(--focus-canvas);
-}
-
-@media (max-width: 1080px) {
-  .training-top {
-    padding-right: 92px;
-  }
-}
-
-@media (max-width: 560px) {
-  .training-progress {
-    display: none;
-  }
-}
-
-.training-exit {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 44px;
-  color: var(--focus-text);
-  font-size: var(--text-14);
-  font-weight: 500;
-}
-
-.training-title {
-  min-width: 0;
-  text-align: center;
-  line-height: 1.25;
-}
-
-.training-plan {
-  display: block;
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.training-day {
-  display: block;
-  margin-top: 1px;
-  color: var(--focus-text);
-  font-size: var(--text-14);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.training-progress {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  white-space: nowrap;
-}
-
-.training-bar {
-  height: 2px;
-  background: var(--focus-surface);
-}
-
-.training-bar span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 300ms var(--ease-out);
-}
-
-.training-main {
-  width: 100%;
-  max-width: 720px;
-  margin-inline: auto;
-  padding: var(--sp-5) var(--gutter) calc(var(--sp-9) + env(safe-area-inset-bottom));
-}
-
-.focus-kicker {
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
-
-.focus-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  margin-top: 6px;
-}
-
-.focus-heading {
-  min-width: 0;
-}
-
-.focus-title {
-  color: var(--focus-text);
-  font-size: clamp(1.875rem, 8vw, 2.5rem);
-  font-weight: 600;
-  line-height: 1.18;
-  letter-spacing: -0.02em;
-}
-
-.focus-reference {
-  margin-top: 8px;
-  color: var(--focus-muted);
-  font-size: var(--text-14);
-  line-height: 1.5;
-}
-
-.focus-target {
-  margin-top: 2px;
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-  line-height: 1.5;
-}
-
-.focus-photo {
-  flex: none;
-  width: 64px;
-  height: 64px;
-  margin: 2px 0 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--focus-surface);
-}
-
-@media (min-width: 480px) {
-  .focus-photo {
-    width: 88px;
-    height: 88px;
-  }
-}
-
-.metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-3);
-  margin-top: var(--sp-6);
-}
-
-.metrics--single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.metric {
-  padding: 14px 14px 0;
-  border: 1px solid var(--focus-line);
-  border-radius: var(--radius-lg);
-  background: var(--focus-surface);
-  overflow: hidden;
-}
-
-.metric--duration {
-  max-width: 100%;
-}
-
-.metric-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-
-.metric-label {
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-  line-height: 1.4;
-}
-
-.metric-hint {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-}
-
-.metric-value-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.metric-input {
-  min-height: 44px;
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: var(--focus-text);
-  font-size: clamp(2.125rem, 9vw, 2.75rem);
-  line-height: 1.2;
-  font-weight: 500;
-  text-align: left;
-}
-
-.metric-input:focus {
-  outline: none;
-  border-bottom-color: var(--accent);
-}
-
-.metric-input[aria-invalid='true'] {
-  border-bottom-color: var(--error-on-dark);
-}
-
-.metric-unit {
-  flex: none;
-  color: var(--focus-muted);
-  font-size: var(--text-14);
-}
-
-.metric-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: 10px -14px 0;
-  border-top: 1px solid var(--focus-line);
-}
-
-.metric-controls button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  color: var(--focus-text);
-}
-
-.metric-controls button + button {
-  border-left: 1px solid var(--focus-line);
-}
-
-.metric-controls button:active {
-  background: rgba(241, 240, 234, 0.08);
-}
-
-.form-alert {
-  margin-top: var(--sp-3);
-  padding: 10px 12px;
-  border-left: 2px solid var(--error-on-dark);
-  color: var(--error-on-dark);
-  font-size: var(--text-13);
-  line-height: 1.5;
-}
-
-.complete-cta {
-  width: 100%;
-  margin-top: var(--sp-5);
-  min-height: 56px;
-  font-size: var(--text-16);
-}
-
-.storage-alert {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-top: var(--sp-3);
-  padding: 10px 12px;
-  border-left: 2px solid var(--error-on-dark);
-  color: var(--error-on-dark);
-  font-size: var(--text-13);
-  line-height: 1.5;
-}
-
-.storage-retry {
-  flex: none;
-  min-height: 44px;
-  color: var(--focus-text);
-  font-size: var(--text-13);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-}
-
-.save-hint {
-  margin-top: 10px;
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  line-height: 1.5;
-  text-align: center;
-}
-
-.set-list {
-  margin-top: var(--sp-7);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--focus-line);
-}
-
-.section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: 4px;
-}
-
-.section-title {
-  color: var(--focus-text);
-  font-size: var(--text-16);
-  font-weight: 600;
-}
-
-.section-meta {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  white-space: nowrap;
-}
-
-.set-row {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-3);
-  min-height: 46px;
-  border-bottom: 1px solid var(--focus-line);
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-}
-
-.set-row--done {
-  color: var(--focus-text);
-}
-
-.set-row--just {
-  animation: set-confirm 160ms var(--ease-out);
-}
-
-@keyframes set-confirm {
-  0% {
-    background: rgba(201, 120, 87, 0.22);
-  }
-  100% {
-    background: transparent;
-  }
-}
-
-.set-index {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-}
-
-.set-value {
-  font-size: var(--text-14);
-}
-
-.set-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--positive-on-dark);
-}
-
-.set-time {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-}
-
-.details {
-  margin-top: var(--sp-4);
-  border-top: 1px solid var(--focus-line);
-}
-
-.details-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 52px;
-  color: var(--focus-muted);
-  font-size: var(--text-14);
-  text-align: left;
-}
-
-.details-icon--open {
-  transform: rotate(180deg);
-}
-
-.details-body {
-  max-width: 62ch;
-  padding-bottom: var(--sp-2);
-  color: var(--focus-muted);
-  font-size: var(--text-14);
-  line-height: 1.65;
-}
-
-/* 休息 */
-.rest-block {
-  padding: var(--sp-5) 0 var(--sp-6);
-}
-
-.rest-title {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 4px;
-  color: var(--focus-text);
-  font-size: clamp(3.5rem, 16vw, 4.5rem);
-  font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
-
-.rest-paused {
-  font-size: var(--text-14);
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--focus-muted);
-}
-
-.rest-track {
-  height: 2px;
-  margin-top: var(--sp-5);
-  background: var(--focus-line);
-  overflow: hidden;
-}
-
-.rest-track span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 900ms linear;
-}
-
-.rest-next {
-  margin-top: var(--sp-4);
-  color: var(--focus-muted);
-  font-size: var(--text-15);
-  line-height: 1.5;
-}
-
-.rest-next strong {
-  color: var(--focus-text);
-  font-weight: 600;
-}
-
-.rest-recorded--just {
-  animation: set-confirm 160ms var(--ease-out);
-}
-
-.rest-recorded {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  color: var(--positive-on-dark);
-  font-size: var(--text-13);
-}
-
-.rest-default {
-  margin-top: var(--sp-4);
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-  line-height: 1.55;
-}
-
-.rest-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-2);
-  margin-top: var(--sp-6);
-}
-
-.rest-skip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 44px;
-  margin-top: var(--sp-2);
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-}
-
-.records {
-  margin-top: var(--sp-7);
-}
-
-.records--compact {
-  border-top: 1px solid var(--focus-line);
-  padding-top: var(--sp-4);
-}
-
-.record-group {
-  border-top: 1px solid var(--focus-line);
-}
-
-.record-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  padding: 12px 0 4px;
-}
-
-.record-name {
-  color: var(--focus-text);
-  font-size: var(--text-15);
-  font-weight: 600;
-}
-
-.record-target {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  white-space: nowrap;
-}
-
-.record-row {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
-  gap: var(--sp-3);
-  min-height: 40px;
-  align-items: center;
-  border-bottom: 1px solid rgba(53, 80, 91, 0.55);
-  font-size: var(--text-13);
-}
-
-.record-set {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-}
-
-.record-value {
-  color: var(--focus-text);
-}
-
-.record-time {
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-}
-
-.record-empty {
-  padding: 8px 0;
-  color: var(--focus-muted);
-  font-size: var(--text-13);
-}
-
-/* 完成 */
-.complete-block {
-  padding: var(--sp-5) 0 var(--sp-6);
-}
-
-.complete-title {
-  margin-top: 4px;
-  color: var(--focus-text);
-  font-size: clamp(2.125rem, 9vw, 2.75rem);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-.complete-facts {
-  margin-top: 10px;
-  color: var(--focus-muted);
-  font-size: var(--text-15);
-  line-height: 1.5;
-}
-
-.complete-saved {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  color: var(--positive-on-dark);
-  font-size: var(--text-13);
-}
-
-.complete-cta {
-  margin-top: var(--sp-5);
-}
-
-@media (min-width: 768px) {
-  .training-main {
-    padding-top: var(--sp-6);
-  }
-
-  .focus-title {
-    font-size: 2.5rem;
-  }
-
-  .metrics {
-    gap: var(--sp-4);
-  }
-
-  .complete-cta {
-    width: auto;
-    min-width: 220px;
-  }
-
-}
-
-.conflict-block {
-  margin-bottom: var(--sp-5);
-  padding: var(--sp-4);
-  border: 1px solid rgba(128, 92, 34, 0.45);
-  border-radius: var(--radius-md);
-  background: rgba(128, 92, 34, 0.08);
-}
-
-.conflict-title {
-  margin-top: 2px;
-  font-size: var(--text-18);
-  font-weight: 600;
-}
-
-.conflict-text {
-  margin-top: var(--sp-2);
-  color: var(--focus-text);
-  font-size: var(--text-14);
-  line-height: 1.65;
-}
-
-.conflict-note {
-  margin-top: var(--sp-2);
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  line-height: 1.55;
-}
-
-.conflict-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
-
-.sync-block {
-  margin-bottom: var(--sp-4);
-  padding: var(--sp-3);
-  border: 1px solid var(--focus-line);
-  border-radius: var(--radius-md);
-  background: var(--focus-surface);
-}
-
-.sync-block--error {
-  border-color: var(--error-on-dark);
-}
-
-.sync-title {
-  color: var(--focus-text);
-  font-size: var(--text-14);
-  font-weight: 600;
-}
-
-.sync-text {
-  margin-top: 2px;
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  line-height: 1.55;
-}
-
-.sync-block .storage-retry {
-  margin-top: var(--sp-2);
-}
-
-.sync-inline {
-  margin-top: 4px;
-  color: var(--focus-muted);
-  font-size: var(--text-12);
-  line-height: 1.5;
-}
-
-.sync-block {
-  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
-}
-</style>

@@ -1,0 +1,78 @@
+{
+  "scope": "App visual preview; 6 boards / 30 phone states; sample content only",
+  "assets": [
+    {
+      "file": "01-discover.png",
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1934667,
+      "sha256": "9fe45b4a33454bef94b3a94098aab9192042a2e6e6f36be855641c9bc2890471",
+      "method": "built-in image_gen"
+    },
+    {
+      "file": "02-service.png",
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1748296,
+      "sha256": "4f8532224e8442feeff8114b46ebfab6dc83b6d869d41c9dd75040011439da79",
+      "method": "built-in image_gen"
+    },
+    {
+      "file": "03-recording.jpg",
+      "format": "JPEG",
+      "width": 1672,
+      "height": 968,
+      "bytes": 167796,
+      "sha256": "1076b7573a0f1c027c0f5ca8335a0dcf354554100c688c29ddf2d12fe6420085",
+      "method": "code-native HTML rendered via CUA screenshot"
+    },
+    {
+      "file": "04-diet-ai.png",
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1932389,
+      "sha256": "0b20624c3b2545e5cd937669fb3f726ac2c9ea6b87f1763aa36a781816e09aae",
+      "method": "built-in image_gen"
+    },
+    {
+      "file": "05-coach.png",
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1772379,
+      "sha256": "4b0892417c58f933a2ef3be1445e3ac80e6db89ab589ac3a6395888e611cff81",
+      "method": "built-in image_gen"
+    },
+    {
+      "file": "06-entry-recovery.png",
+      "format": "PNG",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1702179,
+      "sha256": "35b24225bb03cdb7e7ea71859e5dabc3c478d51fc1770e62849f88901444e683",
+      "method": "built-in image_gen"
+    }
+  ],
+  "sourceIntegrity": {
+    "matchedFiles": 52,
+    "allMatch": true,
+    "baseline": "../manifest.json"
+  },
+  "recordBoardReview": {
+    "phones": 5,
+    "overlapWithBottomNavigation": false,
+    "sameValuesAcrossModes": true,
+    "blankSetNotCounted": true,
+    "actualSetsAfterSaving": 6,
+    "chartUnit": "kg",
+    "chartValues": [
+      10,
+      11.25,
+      12.5,
+      12.5
+    ]
+  }
+}

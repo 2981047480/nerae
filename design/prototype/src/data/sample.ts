@@ -134,7 +134,7 @@ export function createSeedSession(): SessionState {
     status: 'in_progress',
     completedAt: null,
     exercises: createExercises(),
-    rest: null,
+    trainingDate: TODAY_DATE,
     conflicts: [],
   }
 }

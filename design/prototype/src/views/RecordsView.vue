@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  formatTime,
   setValueLabel,
   summarizeRecordSets,
 } from '../utils/format'
@@ -141,12 +140,12 @@ function jumpToFeedback(): void {
 </script>
 
 <template>
-  <div class="screen screen--wide records">
+  <div class="screen screen--wide records studio-records">
     <header class="screen-head">
       <div class="screen-heading">
         <p class="screen-kicker">来自已确认的组记录</p>
-        <h1 class="screen-title">记录</h1>
-        <p class="screen-sub">时间范围、动作和单位一起看；训练量不等于身体结果。</p>
+        <h1 class="screen-title">看见自己的训练积累</h1>
+        <p class="screen-sub">每一次实际记录，都能回头看、接着练。</p>
       </div>
       <div class="screen-tools">
         <button type="button" class="link-btn" @click="goToDiet()">
@@ -173,6 +172,12 @@ function jumpToFeedback(): void {
         </select>
       </label>
     </div>
+
+    <section v-if="displayRows.length" class="studio-record-summary" :aria-label="`${rangeLabel}记录汇总`">
+      <div><span>{{ rangeLabel }} · 训练记录</span><strong class="num">{{ summary.count }} <small>次</small></strong></div>
+      <div><span>实际保存的组</span><strong class="num">{{ summary.sets }} <small>组</small></strong></div>
+      <div><span>{{ recordChartExercise }} · 最近最高值</span><strong v-if="summary.last" class="num">{{ summary.last.value }} <small>{{ summary.unit }}</small></strong><strong v-else>—</strong></div>
+    </section>
 
     <div class="records-grid">
       <section class="trend-panel" aria-labelledby="trend-title">
@@ -231,7 +236,7 @@ function jumpToFeedback(): void {
             <template v-else>{{ deltaLabel }}</template>
           </p>
           <p class="trend-source">
-            来源：已确认组记录 · {{ measureSource }} · 只比较同一动作与同一记录方式；不同方式保留在明细中。
+            来源：已确认组记录 · {{ measureSource }} · 只比较同一动作与同一计量单位；其他数据保留在明细中。
           </p>
         </div>
       </section>
@@ -255,7 +260,7 @@ function jumpToFeedback(): void {
             <li v-for="record in displayRows.slice(0, 4)" :key="record.id">
               <span class="recent-date">{{ record.dateLabel }}</span>
               <span class="recent-title">{{ record.dayTitle }}</span>
-              <span class="recent-meta num">{{ record.sets.length }} 组{{ record.partial ? ' · 未完成' : '' }}</span>
+              <span class="recent-meta num">{{ record.sets.length }} 组{{ record.partial ? ' · 部分组记录' : '' }}</span>
             </li>
             <li v-if="!displayRows.length" class="recent-empty">这个范围没有训练记录。</li>
           </ul>
@@ -282,11 +287,11 @@ function jumpToFeedback(): void {
             <span class="record-main">
               <span class="record-title">
                 {{ record.dayTitle }}
-                <span v-if="record.partial" class="tag tag--accent">未完成 · 历史保留</span>
+                <span v-if="record.partial" class="tag tag--accent">部分组记录</span>
                 <span v-if="record.lateRecorded" class="tag">补记</span>
               </span>
               <span class="record-summary num">{{ recordExerciseValue(record) }}</span>
-              <span v-if="record.lateRecorded && record.lateNote" class="record-late">{{ record.lateNote }}，不是按时完成。</span>
+              <span v-if="record.lateRecorded && record.lateNote" class="record-late">{{ record.lateNote }} · 按训练日期归档。</span>
               <span v-if="record.partial && record.partialNote" class="record-late">{{ record.partialNote }}</span>
             </span>
             <span class="record-more">
@@ -303,14 +308,13 @@ function jumpToFeedback(): void {
                   <span class="set-value num">
                     {{ setValueLabel(set.kind, set) }}
                   </span>
-                  <span class="set-time num">{{ formatTime(set.completedAt) }}</span>
                 </li>
               </ul>
               <div v-if="record.feedback" class="record-feedback">
                 <p class="record-feedback-title">{{ record.feedback.author }} · {{ record.feedback.dateLabel }}</p>
                 <p>{{ record.feedback.text }}</p>
               </div>
-              <p class="record-source">计划版本 {{ record.planVersion }} · 已确认记录，改动不会重写历史。</p>
+              <p class="record-source">计划版本 {{ record.planVersion }} · 按实际填写保存，日期为训练日期。</p>
             </div>
           </Transition>
         </li>
@@ -319,7 +323,7 @@ function jumpToFeedback(): void {
       <div v-else class="empty-state">
         <ChartNoAxesCombined :size="28" aria-hidden="true" class="empty-icon" />
         <h2 class="empty-title">还没有训练记录</h2>
-        <p class="empty-text">完成一组后，记录会出现在这里。</p>
+        <p class="empty-text">保存训练记录后，会出现在这里。</p>
         <div class="empty-actions">
           <button type="button" class="btn" @click="setRange('12w')">查看近 12 周</button>
         </div>
@@ -488,7 +492,7 @@ function jumpToFeedback(): void {
   padding: var(--sp-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .feedback-head {
@@ -625,7 +629,7 @@ function jumpToFeedback(): void {
 
 .set-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 54px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--sp-3);
   padding: 5px 0;
   color: var(--muted);
@@ -642,7 +646,7 @@ function jumpToFeedback(): void {
   margin-top: var(--sp-3);
   padding: var(--sp-3);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.045);
+  background: rgba(var(--ink-rgb), 0.045);
   font-size: var(--text-13);
   line-height: 1.6;
 }
