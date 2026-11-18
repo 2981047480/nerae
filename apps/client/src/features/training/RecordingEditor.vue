@@ -100,6 +100,18 @@ function onMeasure(exerciseEntryKey: string, event: unknown): void {
 function sideMarked(set: DraftSet, side: V2SideName): boolean {
   return (side === 'left' ? set.leftState : set.rightState) === 'not_performed'
 }
+function measureLabel(exercise: DraftExercise): string {
+  return MEASURE_LABELS[exerciseMeasure(exercise)]
+}
+const measureChoiceLabels = V2_MEASURES.map(item => MEASURE_LABELS[item])
+function weightLabel(exercise: DraftExercise): string {
+  if (props.draft.recordFormat === 2 && exercise.kind === 'weight') {
+    const measure = exerciseMeasure(exercise)
+    if (measure === 'pair_each') return '每只重量'
+    if (measure === 'direct') return '记录重量'
+  }
+  return isPerSide(exercise.kind) ? '每侧重量' : '重量'
+}
 const awaitingConfirmation = ref(false)
 const editingExercise = computed(() => props.draft.exercises.find(item => item.exerciseEntryKey === editing.value?.exerciseEntryKey))
 const editingSet = computed(() => editingExercise.value?.sets.find(item => item.recordKey === editing.value?.recordKey))
@@ -271,8 +283,8 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
             <view class="exercise-card__name-block">
               <text class="exercise-card__name">{{ nameOf(exercise) }}</text>
               <text v-if="exercise.kind !== 'weight'" class="exercise-card__kind">{{ kindLabels[exercise.kind] }}</text>
-              <picker v-else-if="draft.recordFormat === 2" mode="selector" :range="V2_MEASURES.map(item => MEASURE_LABELS[item])" :value="measureIndex(exercise)" :disabled="saving" @change="onMeasure(exercise.exerciseEntryKey, $event)">
-                <text class="exercise-card__kind" role="button">重量含义：{{ MEASURE_LABELS[exerciseMeasure(exercise)] }}</text>
+              <picker v-else-if="draft.recordFormat === 2" mode="selector" :range="measureChoiceLabels" :value="measureIndex(exercise)" :disabled="saving" @change="onMeasure(exercise.exerciseEntryKey, $event)">
+                <text class="exercise-card__kind" role="button">重量含义：{{ measureLabel(exercise) }}</text>
               </picker>
             </view>
             <text class="exercise-card__count">{{ exercise.sets.length }} 组</text>
@@ -383,7 +395,7 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
               <text class="set-sheet__status">修改体重会更新本次训练里所有自重组的体重，不改其他训练，也不自动改手填的记录重量。</text>
             </template>
             <template v-else>
-              <RulerInput v-if="hasWeight(editingExercise.kind)" :label="draft.recordFormat === 2 &amp;&amp; editingMeasure() === 'pair_each' ? '每只重量' : draft.recordFormat === 2 &amp;&amp; editingMeasure() === 'direct' ? '记录重量' : isPerSide(editingExercise.kind) ? '每侧重量' : '重量'"
+              <RulerInput v-if="hasWeight(editingExercise.kind)" :label="weightLabel(editingExercise)"
                 unit="kg" kind="digit" :value="editingSet.weightKg"
                 @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'weightKg', $event)" />
               <RulerInput v-if="hasSeconds(editingExercise.kind)" label="实际时间" unit="秒" kind="number" :value="editingSet.seconds"

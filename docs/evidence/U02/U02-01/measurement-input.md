@@ -3,4 +3,4 @@
 - 状态：候选，未接受。自由训练自定义动作可在本机选择合计、每只器械、左右分开、自重、自重加负重、自重减助力或手填记录重量，并写入既有格式 2 测量对象。
 - 左右：先填一侧时，另一侧在被单独修改前使用相同数值；明确标成未做的一侧不进入累计。体重：修改一次会更新本次训练中所有自重组的体重，不改手填记录重量，也不写入身体数据曲线。
 - 未做：计划带入、动作库身份、历史重量带入、教练只看计算结果、标准动作同名。服务端合同与累计口径原本已接受这些方法，本轮没有改 OpenAPI。
-- 验证：在本环境用 Node 22 跑 `apps/client/src/features/training/*.test.mjs`，为 422 通过、2 失败。Node 不能解析不带扩展名的 TypeScript 导入，所以运行时加了只在本地生效的解析挂钩。两则失败是 `TrainingEntry.test.mjs` 与 `TrainingHistory.test.mjs` 找不到 `vue`，本环境没有安装前端依赖，不是计量断言失败。未运行 `vue-tsc`、App/小程序资源编译或真机。
+- 验证：客户端 `vue-tsc --noEmit -p apps/client/tsconfig.json` 通过。`apps/client/src/features/training/*.test.mjs` 453 项通过。未运行 App／小程序资源编译、iOS 模拟器或真机。类型检查和测试通过不等于界面验收。

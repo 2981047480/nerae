@@ -172,10 +172,9 @@ function touchSet(set: DraftSet, field: InputField, value: string): DraftSet {
     }
   }
   if (field === 'rightWeightKg' || field === 'rightReps') {
-    if (next.rightState === 'not_performed') next.rightState = 'performed'
     const weight = (field === 'rightWeightKg' ? value : next.rightWeightKg || '').trim()
     const reps = (field === 'rightReps' ? value : next.rightReps || '').trim()
-    if ((next.rightState ?? 'unknown') !== 'not_performed') next.rightState = weight || reps ? 'performed' : 'unknown'
+    next.rightState = weight || reps ? 'performed' : 'unknown'
   }
   return next
 }
