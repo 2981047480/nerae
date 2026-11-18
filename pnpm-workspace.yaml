@@ -9,6 +9,9 @@ allowBuilds:
 # detect-libc's "glibc" and otherwise skips the optional binding. Loading
 # @dcloudio/uni-uts-v1 then fails and `uni build -p app` exits 0 without
 # app-service.js. "current" keeps musl/glibc selection; "gnu" accepts DCloud's tag.
+# An existing node_modules tree is not updated: delete it, then
+# `pnpm install --frozen-lockfile`. `build:app` exits non-zero if the module
+# is reported missing or this run does not write a nonempty app-service.js.
 supportedArchitectures:
   libc:
     - current

@@ -8,7 +8,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "build:h5": "uni build -p h5",
     "build:mp-weixin": "uni build -p mp-weixin",
-    "build:app": "uni build -p app",
+    "build:app": "node ./scripts/build-app.mjs",
     "build": "pnpm run build:h5 && pnpm run build:mp-weixin && pnpm run build:app"
   },
   "dependencies": {

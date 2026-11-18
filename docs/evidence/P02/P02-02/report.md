@@ -1,5 +1,17 @@
 # P02-02 iPhone 构建与签名进度
 
+## 2026-11-18 资源编译失败门禁（partial，未接受）
+
+- 状态：partial，未接受。基线是已合并的 PR #3，`3f8dd0b2297c883e24072df5057fbd543d0dad15`。这一步只给仓库的 App 资源构建加退出码门禁，不改 U02-04，不改 OpenAPI，也不改 `docs/tasks/tasks.json` 的受理状态。P02-02 与 P02-03 仍未接受。
+- 门禁：`apps/client` 的 `build:app` 改为 `node ./scripts/build-app.mjs`。脚本先删除本次要检查的 `app-service.js`，再执行 `uni build -p app`，并把编译器输出原样打出来。出现 `Cannot find module: @dcloudio/uni-uts-v1`，或结束后没有非空普通文件，脚本以非 0 退出。编译器自己的非 0 退出码保持不变。`UNI_OUTPUT_DIR` 未设置时路径是 `apps/client/dist/build/app/app-service.js`；设置了就是该目录下的 `app-service.js`。空文件和符号链接不算产物。没有修改 `@dcloudio` 编译器。
+- 安装说明：`@dcloudio/uts-linux-x64-gnu` 仍是可选包，`libc` 为 `gnu`。已经存在的 `node_modules` 不会因为再次 `pnpm install --frozen-lockfile` 就补上它。要先删掉 `node_modules`，再在仓库根执行 `pnpm install --frozen-lockfile`。
+- 环境：Linux x86_64，glibc 2.39，Node v22.23.4，pnpm 11.5.3。仓库 `.node-version` 是 26.0.0，本机没有这个 Node。没有 `xcodebuild`、`xcrun`、`adb` 或 `sdkmanager`。
+- 成功：工作树原来没有 `node_modules`。`pnpm install --frozen-lockfile` 退出 0，安装 530 个包，`@dcloudio/uts` 能加载 `@dcloudio/uts-linux-x64-gnu`。`pnpm --filter @nerae/client build:app` 退出 0，编译器自报 5.33（vue3），并打印 `DONE Build complete`。`apps/client/dist/build/app/app-service.js` 为 403401 字节，SHA-256 `e64b8e94f336f3dc976772651e24428304e00d82de9917066cb206ea820aeaf3`。这是资源文件，不是 ipa、apk、签名包或已安装应用。
+- 失败：把 `node_modules/.pnpm/@dcloudio+uts-linux-x64-gnu@3.0.0-5030320261023001/node_modules/@dcloudio/uts-linux-x64-gnu` 整目录移走后，从 `@dcloudio/uts` 加载该绑定抛出 `Cannot find module '@dcloudio/uts-linux-x64-gnu'`。此时默认目录里还有上一份 403401 字节的 `app-service.js`。`pnpm --filter @nerae/client build:app` 退出 1，日志含 `Cannot find module: @dcloudio/uni-uts-v1`，脚本同时报告缺非空产物；结束后该文件不存在。同一状态下直接执行 `pnpm exec uni build -p app` 退出 0，打印同一行，并且没有写出 `app-service.js`。随后已把绑定目录放回。
+- 放回之后：`UNI_OUTPUT_DIR` 指向临时目录时 `build:app` 退出 0，该目录的 `app-service.js` 为同样的 403401 字节和哈希；当时默认路径没有这份文件。接着不设 `UNI_OUTPUT_DIR` 再构建，默认路径退出 0，哈希仍相同。
+- 脚本正反例：`scripts/quality/test_quality.py` 的 `test_app_build_gate_rejects_a_zero_exit_without_the_resource` 用假的 `uni` 通过。覆盖写入非空文件后退出 0、退出 0 但不写文件、旧文件不能冒充本次产物、只打印模块找不到、打印该行同时写了文件、空文件、符号链接、编译器退出 2、`UNI_OUTPUT_DIR`，以及 PATH 上没有 `uni`。`scripts/quality/run_unittest.py scripts/quality` 里这一项通过。同一次运行里，Go 夹具因本机 Go 1.22.2 且 `GOTOOLCHAIN=local` 失败；把客户端复制到临时目录的类型检查夹具也失败。同一工作树直接执行 `pnpm --filter @nerae/client typecheck` 退出 0。这两项失败不是本步的通过证据。
+- 未验：模拟器未跑，真机未跑，没有签名、描述文件、AppKey 或安装。`apps/client/src/manifest.json` 的 `app-plus` 仍为空。GitHub Foundation 本轮没有跑，不能写成通过。资源编译和这个退出码门禁都不是界面验收，也不是 P02-02 或 P02-03 接受。
+
 ## 2026-11-18 资源编译（partial，未签装）
 
 - 状态：partial，未接受。基线 `cc76a602790050127405030c07cd78d423ae1eec`（PR #2 已合并进 main）。执行者是 Cursor cloud agent（Grok 4.7）。环境是 Linux x86_64、glibc 2.39、Node v22.23.4、pnpm 11.5.3。`python3 scripts/plan.py ready` 列出 L01-02、L01-03、L01-04、P02-02、P02-03。L01 是外部取证。本步做 P02-02 的 App 资源编译；P02-03 只共享这一步的 Kotlin 源文件，没有单独做 APK。没有改 U02-04 的产品行为。
