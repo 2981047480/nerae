@@ -9,8 +9,8 @@ import {
   Clock3,
   Share2,
 } from '@lucide/vue'
-import PhotoFrame from '../components/PhotoFrame.vue'
 import BaseSheet from '../components/BaseSheet.vue'
+import PhotoFrame from '../components/PhotoFrame.vue'
 import {
   activePlanDay,
   closeSheet,
@@ -71,10 +71,9 @@ async function copyPreviewLink(): Promise<void> {
 </script>
 
 <template>
-  <div v-if="item" class="screen screen--wide plan-detail">
+  <div v-if="item" class="screen screen--wide plan-detail studio-plan-detail">
     <section class="plan-hero" aria-labelledby="plan-title">
       <div class="plan-hero-media" data-plan-hero>
-        <PhotoFrame :src="item.image" :alt="item.imageAlt" eager fallback-label="训练图片暂不可用" />
         <div class="plan-hero-scrim" aria-hidden="true" />
         <div class="plan-hero-text">
           <p class="plan-kicker">{{ item.source }} · {{ item.perWeek }}</p>
@@ -82,6 +81,10 @@ async function copyPreviewLink(): Promise<void> {
           <p class="plan-meta num">
             {{ item.countLabel }} · {{ item.durationMin }} 分钟 · {{ equipmentLabel }}
           </p>
+        </div>
+        <div class="studio-plan-photo">
+          <PhotoFrame :src="item.image" :alt="`${item.title}内容示意图，不代表服务场地`" :eager="true" />
+          <span>训练内容示意</span>
         </div>
       </div>
 
@@ -176,7 +179,7 @@ async function copyPreviewLink(): Promise<void> {
 
       <aside class="plan-side">
         <section class="side-panel" aria-labelledby="start-title">
-          <h2 id="start-title" class="side-title">开始这次训练</h2>
+          <h2 id="start-title" class="side-title">用这份计划记录</h2>
           <dl class="kv">
             <dt>频率</dt>
             <dd>{{ item.perWeek }}</dd>
@@ -185,12 +188,12 @@ async function copyPreviewLink(): Promise<void> {
             <dt>器械</dt>
             <dd>{{ equipmentLabel }}</dd>
           </dl>
-          <p class="side-day">今天开始：{{ activePlanDay?.title }}</p>
+          <p class="side-day">本次记录：{{ activePlanDay?.title }}</p>
           <p v-if="state.student.planVersion" class="side-note">
-            当前我的计划为版本 {{ state.student.planVersion }}。开始后会保存到我的计划，并只改变未来安排。
+            当前我的计划为版本 {{ state.student.planVersion }}。采用后会保存到我的计划，并只改变未来安排。
           </p>
           <button class="btn btn--accent btn--block start-cta" type="button" :disabled="planStartBlocked" @click="start">
-            开始这次训练
+            用这份计划记录
           </button>
           <p class="side-fine">
             已有安排时会先说明替换影响，不会重写已完成的训练。
@@ -203,22 +206,22 @@ async function copyPreviewLink(): Promise<void> {
             <li v-for="line in item.fit" :key="line">{{ line }}</li>
           </ul>
           <p v-if="!state.auth.signedIn" class="access-note">
-            当前为匿名浏览。开始训练需要登录，并确认已满 18 岁。
+            当前为匿名浏览。记录训练需要登录，并确认已满 18 岁。
           </p>
           <p v-else-if="state.auth.age === 'minor'" class="access-note">
             Nerae 不向未满 18 岁的人提供训练服务；你仍可以继续浏览内容。
           </p>
           <p v-else-if="state.auth.age === 'unknown'" class="access-note">
-            开始训练前需要确认年龄；换一份内容不会跳过这一步。
+            记录训练前需要确认年龄；换一份内容不会跳过这一步。
           </p>
         </section>
       </aside>
     </div>
 
     <BaseSheet :open="ui.sheet === 'replace'" title="替换当前安排" @close="closeSheet">
-      <p class="sheet-day">今天开始：{{ activePlanDay?.title }}</p>
+      <p class="sheet-day">本次记录：{{ activePlanDay?.title }}</p>
       <p class="sheet-copy">
-        今天已有安排或已完成的训练。开始这份内容会替换<strong>未来</strong>的安排；已记录的训练历史保留，不会被改写。
+        已有安排或保存的训练记录。采用这份内容会替换<strong>未来</strong>的安排；已记录的训练历史保留，不会被改写。
       </p>
       <ul class="impact-list">
         <li v-for="slot in planImpact.after" :key="slot.date">
@@ -227,7 +230,7 @@ async function copyPreviewLink(): Promise<void> {
         </li>
       </ul>
       <p class="sheet-copy sheet-copy--muted">
-        今天的当前训练会被结束并改为新的安排；已有组记录仍保留在记录中。
+        今天的当前记录会被归档并改为新的安排；已有组记录仍保留在记录中。
       </p>
       <template #footer>
         <div class="sheet-actions">
@@ -379,7 +382,7 @@ async function copyPreviewLink(): Promise<void> {
 .day-tab--active {
   border-color: var(--ink);
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font-weight: 600;
 }
 
@@ -486,7 +489,7 @@ async function copyPreviewLink(): Promise<void> {
 }
 
 .side-panel--quiet {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 
 .side-title {
@@ -506,7 +509,7 @@ async function copyPreviewLink(): Promise<void> {
   margin-bottom: var(--sp-2);
   padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(25, 47, 57, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   font-size: var(--text-13);
   font-weight: 500;
 }
@@ -565,7 +568,7 @@ async function copyPreviewLink(): Promise<void> {
   margin-top: var(--sp-3);
   padding: var(--sp-4);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.05);
+  background: rgba(var(--ink-rgb), 0.05);
 }
 
 .share-name {

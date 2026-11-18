@@ -86,142 +86,12 @@ function applyDocumentTextScale(scale: 1 | 2): void {
   document.documentElement.dataset.textScale = scale === 2 ? '200' : '100'
 }
 
-function removeFocusGhosts(): void {
-  document.querySelectorAll('.session-focus-ghost, .plan-focus-ghost').forEach((ghost) => ghost.remove())
-}
-
-let planBridgeToken = 0
-
-function runPlanBridge(origin: { x: number; y: number; width: number; height: number; text: string; image?: string }): void {
-  if (typeof document === 'undefined' || motionReduced.value || !origin.image) return
-  const target = document.querySelector<HTMLElement>('[data-plan-hero]')
-  if (!target) return
-  const to = target.getBoundingClientRect()
-  if (!to.width || !to.height) return
-  const ghost = document.createElement('div')
-  ghost.className = 'plan-focus-ghost'
-  ghost.dataset.bridge = 'plan'
-  ghost.setAttribute('aria-hidden', 'true')
-  ghost.style.left = `${origin.x}px`
-  ghost.style.top = `${origin.y}px`
-  ghost.style.width = `${origin.width}px`
-  ghost.style.height = `${origin.height}px`
-  ghost.style.backgroundImage = `url(${origin.image})`
-  document.body.appendChild(ghost)
-  if (typeof ghost.animate !== 'function') {
-    ghost.remove()
-    return
-  }
-  const animation = ghost.animate(
-    [
-      {
-        left: `${origin.x}px`,
-        top: `${origin.y}px`,
-        width: `${origin.width}px`,
-        height: `${origin.height}px`,
-        opacity: 1,
-      },
-      {
-        left: `${to.left}px`,
-        top: `${to.top}px`,
-        width: `${to.width}px`,
-        height: `${to.height}px`,
-        opacity: 0,
-      },
-    ],
-    { duration: 280, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' },
-  )
-  animation.onfinish = () => ghost.remove()
-  window.setTimeout(() => ghost.remove(), 520)
-}
-
-watch(
-  motionReduced,
-  (reduced) => {
-    applyDocumentMotion(reduced)
-    if (reduced) removeFocusGhosts()
-  },
-  { immediate: true },
-)
-
-watch(
-  () => state.textScale,
-  (scale) => {
-    applyDocumentTextScale(scale)
-  },
-  { immediate: true },
-)
-
+watch(motionReduced, applyDocumentMotion, { immediate: true })
+watch(() => state.textScale, applyDocumentTextScale, { immediate: true })
 onBeforeUnmount(() => {
   document.documentElement.dataset.motion = 'full'
   document.documentElement.dataset.textScale = '100'
 })
-
-function runFocusBridge(origin: { x: number; y: number; width: number; height: number; text: string }): void {
-  if (typeof document === 'undefined' || motionReduced.value) return
-  const target = document.querySelector<HTMLElement>('[data-training-title]')
-  if (!target) return
-  const to = target.getBoundingClientRect()
-  if (!to.width || !to.height) return
-  const ghost = document.createElement('div')
-  ghost.className = 'session-focus-ghost'
-  ghost.textContent = origin.text
-  ghost.setAttribute('aria-hidden', 'true')
-  ghost.style.left = `${origin.x}px`
-  ghost.style.top = `${origin.y}px`
-  ghost.style.width = `${origin.width}px`
-  ghost.style.height = `${origin.height}px`
-  ghost.style.fontSize = `${Math.max(28, Math.min(80, origin.height * 0.72))}px`
-  document.body.appendChild(ghost)
-  if (typeof ghost.animate !== 'function') {
-    ghost.remove()
-    return
-  }
-  const scale = Math.max(0.28, to.height / origin.height)
-  const dx = to.left - origin.x
-  const dy = to.top - origin.y
-  const animation = ghost.animate(
-    [
-      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-      { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0 },
-    ],
-    {
-      duration: 260,
-      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-      fill: 'forwards',
-    },
-  )
-  animation.onfinish = () => ghost.remove()
-  window.setTimeout(() => ghost.remove(), 500)
-}
-
-watch(
-  () => state.screen,
-  (screen, previous) => {
-    const origin = ui.focusOrigin
-    ui.focusOrigin = null
-    if (screen !== 'training') removeFocusGhosts()
-    if (screen === 'training' && previous && !motionReduced.value && origin) {
-      nextTick(() => {
-        requestAnimationFrame(() => runFocusBridge(origin))
-      })
-    }
-    planBridgeToken += 1
-    if (screen === 'planDetail' && previous && !motionReduced.value && origin?.image) {
-      const token = planBridgeToken
-      const started = performance.now()
-      const waitForHero = (): void => {
-        if (token !== planBridgeToken || state.screen !== 'planDetail' || motionReduced.value) return
-        if (document.querySelector('[data-plan-hero]')) {
-          runPlanBridge(origin)
-          return
-        }
-        if (performance.now() - started < 600) requestAnimationFrame(waitForHero)
-      }
-      nextTick(() => requestAnimationFrame(waitForHero))
-    }
-  },
-)
 
 const isTraining = computed(() => state.screen === 'training')
 const isCoach = computed(() => state.actor === 'coach')
@@ -236,7 +106,7 @@ const showTabbar = computed(() =>
   <div
     class="app-root"
     :data-motion="motionReduced ? 'reduced' : 'full'"
-    :data-focus-screen="isTraining ? 'true' : 'false'"
+    :data-focus-screen="'false'"
   >
     <template v-if="isTraining">
       <Transition name="focus" appear>
@@ -253,7 +123,7 @@ const showTabbar = computed(() =>
       <TabBar v-if="showTabbar" />
     </template>
 
-    <PreviewControl :dark="isTraining" />
+    <PreviewControl :dark="false" />
 
     <BaseSheet :open="ui.sheet === 'records'" title="本次记录" @close="closeSheet">
       <div class="record-sheet">
@@ -261,7 +131,7 @@ const showTabbar = computed(() =>
           <p class="record-sheet-date">{{ state.session.dateLabel }} · {{ state.session.dayTitle }}</p>
           <p v-if="isComplete" class="record-sheet-status">
             <CheckCircle2 :size="15" aria-hidden="true" />
-            今天已完成
+            记录已保存
           </p>
         </div>
         <ul class="record-sheet-list">
@@ -281,25 +151,25 @@ const showTabbar = computed(() =>
           </li>
         </ul>
         <p v-if="state.session.completedAt" class="record-sheet-foot num">
-          最后一组完成于 {{ formatTime(state.session.completedAt) }}
+          本次记录保存于 {{ formatTime(state.session.completedAt) }}
         </p>
       </div>
     </BaseSheet>
 
     <BaseSheet
       :open="ui.sheet === 'access'"
-      :title="ui.accessStep === 'signin' ? '登录后开始训练' : ui.accessStep === 'age' ? '确认年龄' : '暂不能开始训练'"
+      :title="ui.accessStep === 'signin' ? '登录后记录训练' : ui.accessStep === 'age' ? '确认年龄' : '暂不能记录训练'"
       @close="cancelAccess"
     >
       <template v-if="ui.accessStep === 'signin'">
-        <p class="access-copy">开始训练需要登录。取消会回到同一份内容与同一训练日，不会创建训练或副本。</p>
-        <p class="access-copy access-copy--muted">登录只用于本次开始；已保存的浏览位置与筛选不会丢失。</p>
+        <p class="access-copy">记录训练需要登录。取消会回到同一份内容与同一训练日，不会创建训练或副本。</p>
+        <p class="access-copy access-copy--muted">登录后继续本次记录；已保存的浏览位置与筛选不会丢失。</p>
       </template>
       <template v-else-if="ui.accessStep === 'age'">
         <p class="access-copy">Nerae 不向未满 18 岁的人提供训练服务。请确认你的年龄；这一步不能通过换一份内容跳过。</p>
       </template>
       <template v-else>
-        <p class="access-copy">未满 18 岁不能开始训练或建立服务关系。你仍可以继续浏览免费内容，已保存的收藏与筛选保留。</p>
+        <p class="access-copy">未满 18 岁不能记录训练或建立服务关系。你仍可以继续浏览免费内容，已保存的收藏与筛选保留。</p>
       </template>
       <template #footer>
         <div v-if="ui.accessStep === 'signin'" class="access-actions">

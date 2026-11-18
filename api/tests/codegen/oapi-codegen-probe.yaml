@@ -1,0 +1,10 @@
+# Verification configuration only. F02 must integrate the option into its
+# locked production generator and rerun the complete contract suite.
+package: api
+generate:
+  gin-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  skip-prune: false
+  nullable-type: true

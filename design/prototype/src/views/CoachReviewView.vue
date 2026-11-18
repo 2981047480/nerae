@@ -917,7 +917,7 @@ const dateOfSave = computed(() => {
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(25, 47, 57, 0.08);
+  box-shadow: 0 1px 2px rgba(var(--ink-rgb), 0.08);
 }
 
 .coach-grid {
@@ -1550,7 +1550,7 @@ const dateOfSave = computed(() => {
   padding: var(--sp-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .state-banner--error {

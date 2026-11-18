@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Nerae API
   version: 1.2.0
-  description: 'Nerae A阶段契约修订稿。尚未实现业务服务器，文档校验不等于运行时授权已通过。
+  description: 'Nerae A阶段契约修订稿。K01记录合同正在修订，包含对旧组记录字段的不兼容变化；版本号由K01集成时统一确认，尚未发布。尚未实现业务服务器，文档校验不等于运行时授权已通过。
 
     服务端是身份、资源归属、授权、来源标签、版本和审核结果的唯一权威；客户端不得自行指定可信身份或证据等级。
 
@@ -2990,15 +2990,15 @@ paths:
     post:
       tags:
       - Records
-      summary: 开始自由或指定版本训练
-      description: 验证版本/日属于当前用户的个人计划或其已交付计划；唯一键(user_id,client_event_id)，不同账号键不相互冲突。旧会话引用不随计划编辑变动。
+      summary: 创建或恢复自由/计划训练记录
+      description: 验证版本/日属于当前用户的个人计划或其已交付计划；唯一键(user_id,client_event_id)，不同账号键不相互冲突。旧会话引用不随计划编辑变动。训练后补记使用实际训练日，不调用training-starts伪造训练开始；两种填写模式共享同一会话。
       responses:
         '201':
           description: 成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkoutSession'
+                $ref: '#/components/schemas/WorkoutSessionDetail'
           headers:
             Idempotency-Key-Expires-At:
               description: 本次认证主体与路径内幂等记录的保留到期时间；晚于此时不保证响应缓存重放，但资源唯一约束仍防重。
@@ -3035,19 +3035,62 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       operationId: postMeSessions
       x-required-role: authenticated_resource_owner_or_participant
-  /me/sessions/{id}/sets:
-    post:
+  /me/sessions/{id}:
+    get:
       tags:
       - Records
-      summary: 按版本批量保存训练组
-      description: recordKey在会话内唯一；不同动作编排位置不可用exerciseId+setIndex误合并。重复键同内容幂等，旧版本412。
+      summary: 读取一份训练记录及当前版本
+      description: 按认证主体、资源归属及适用授权读取；无权访问不泄露记录。可用于跨端恢复和412后重新读取，返回实际训练日期与服务端记录时间。
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[1-9][0-9]*$
+          maxLength: 20
       responses:
         '200':
           description: 成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkoutSession'
+                $ref: '#/components/schemas/WorkoutSessionDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+      operationId: getMeSessionsId
+      x-required-role: authenticated_resource_owner_or_participant
+  /me/sessions/{id}/sets:
+    post:
+      tags:
+      - Records
+      summary: 按版本保存或移除实际训练组
+      description: |
+        两种填写模式使用相同session及稳定recordKey。sets是按recordKey新增或完整替换组的显式变更，不代表替换全部组；deleteRecordKeys仅移除列出的键。空白或未确认组不作为实际组上传，未列出的组不受影响。
+        recordKey在会话内区分大小写且唯一；exerciseEntryKey标识同一会话中的一个动作条目，同一动作可以出现多次，不能用exerciseId+setIndex合并不同动作段。动作库条目传exerciseId，自定义动作传exerciseName；服务端在首次写入动作条目时冻结显示名称与来源。同一exerciseEntryKey后续必须匹配原动作身份及自定义名称，否则422；变更动作身份应删除旧组并使用新条目及新组键。同组的测量和顺序可按原键修订。新组不可复用已删除键，未明确恢复时返回409；明确撤销删除时，restoreRecordKeys须列出原键，同时在sets携带该组完整数据，服务端验证键属于本会话的已删除组。
+        批次内组键不可重复，删除键不可与更新键重叠，恢复键必须是本批更新键的子集，合计更新和删除最多200项；服务端校验全部输入后在一个事务内执行，违反返回422且不部分写入。删除不存在的键是无变化操作；整批无实际变更时版本和updatedAt不变。已结束会话允许修订。最后一组被移除时会话变为in_progress草稿并同步重新计算相关完成统计，不保留空完成记录。
+        原子比较expectedVersion，旧版本返回412且不改动；同幂等键及相同请求摘要在保留期内重放原结果，同键异摘要409。新键重试时若版本已变化需读取当前版本并解决冲突，不能盲目覆盖。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkoutSessionDetail'
           headers:
             Idempotency-Key-Expires-At:
               description: 本次认证主体与路径内幂等记录的保留到期时间；晚于此时不保证响应缓存重放，但资源唯一约束仍防重。
@@ -3096,15 +3139,18 @@ paths:
     post:
       tags:
       - Records
-      summary: 结束训练并冻结当前事实
-      description: 结束训练并冻结当前事实
+      summary: 保存或修订训练记录
+      description: |
+        对in_progress或completed会话保存确认，至少已有一组实际数据；没有实际组不能标记完成。对completed记录允许再次修订而不创建新记录。date是实际训练日，不能晚于会话冻结时区的当前日；修改时保留原安排日期并重新计算逾期及统计，不能改变计划引用。
+        durationMin是用户明确提供的实际总时长；缺省时初次保存为未知，修订时保持原值，显式null清除既有值。rpe和note同样允许省略保留原值或使用null清除。不得由计划目标、录入时间或服务器时间推算时长。recordedAt是服务端收到保存确认的时间，不是训练结束或组完成时刻。
+        原子比较expectedVersion，旧版本412且不写入；同幂等键及相同摘要在保留期内重放原结果，同键异摘要409。skipped会话不能直接保存，返回409。
       responses:
         '200':
           description: 成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkoutSession'
+                $ref: '#/components/schemas/WorkoutSessionDetail'
           headers:
             Idempotency-Key-Expires-At:
               description: 本次认证主体与路径内幂等记录的保留到期时间；晚于此时不保证响应缓存重放，但资源唯一约束仍防重。
@@ -7768,12 +7814,18 @@ components:
       - publishedVersion
     WorkoutSession:
       type: object
+      description: 一份训练记录；date是实际训练日，createdAt/updatedAt/recordedAt是服务端处理时间，不能推断训练开始或各组完成时刻。
       properties:
         id:
           type: string
         date:
           type: string
           format: date
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: 创建时冻结的有效IANA时区，用于校验实际训练日；不能随设备变化静默改变。
         status:
           type: string
           enum:
@@ -7789,9 +7841,12 @@ components:
         durationMin:
           type: integer
           nullable: true
+          minimum: 0
         rpe:
-          type: integer
+          type: number
           nullable: true
+          minimum: 1
+          maximum: 10
         note:
           type: string
           nullable: true
@@ -7802,8 +7857,9 @@ components:
           - free
         sets:
           type: array
+          description: 已确认的实际组；空白计划组不在此列表中。
           items:
-            $ref: '#/components/schemas/SetRecord'
+            $ref: '#/components/schemas/WorkoutSetRecord'
         version:
           type: integer
           minimum: 1
@@ -7814,41 +7870,207 @@ components:
           type: string
           pattern: ^[1-9][0-9]*$
           maxLength: 20
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: 服务端创建记录的时间，不代表实际训练开始时间。
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: 服务端最近一次实际变更的时间。
+        recordedAt:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+          description: 最近一次保存确认的服务端接收时间；不是实际训练完成时间。
       required:
       - id
       - date
+      - timeZone
       - status
       - source
       - version
+      - createdAt
+      - updatedAt
+      - recordedAt
+      # 排除非法组合，同时保留可由 Go/TS 生成器构造的对象类型。
+      not:
+        anyOf:
+        - properties:
+            status:
+              type: string
+              enum: [completed]
+          not:
+            properties:
+              recordedAt:
+                type: string
+                format: date-time
+        - required: [sets]
+          properties:
+            status:
+              type: string
+              enum: [skipped]
+            sets:
+              type: array
+              minItems: 1
+    WorkoutSessionDetail:
+      description: 可恢复或处理冲突的完整记录，始终包含当前实际组；completed必须至少有一组。
+      allOf:
+      - $ref: '#/components/schemas/WorkoutSession'
+      - type: object
+        required: [sets]
+        properties:
+          sets:
+            type: array
+            items:
+              $ref: '#/components/schemas/WorkoutSetRecord'
+        not:
+          properties:
+            status:
+              type: string
+              enum: [completed]
+            sets:
+              type: array
+              maxItems: 0
     SetRecord:
       type: object
+      additionalProperties: false
+      description: 已确认的实际组；两种记录模式共享recordKey。kind指明数据的含义，perSide和durationPerSide的数值为每侧值，不自动推断左右分别或合计。秒数由用户手填，不表示计时功能。
       required:
-      - exerciseId
       - setIndex
-      - reps
       - recordKey
+      - exerciseEntryKey
+      - kind
       properties:
         exerciseId:
           type: string
+          pattern: ^[1-9][0-9]*$
+          maxLength: 20
+          description: 动作库中的动作ID；与自定义exerciseName二选一，必须有权使用。
+        exerciseName:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: '\S'
+          description: 用户在本次会话中自行填写的动作名称；与exerciseId二选一，不创建共享动作库条目。
+        exerciseEntryKey:
+          type: string
+          minLength: 8
+          maxLength: 64
+          description: 会话内稳定的动作条目键，同一动作的不同编排段使用不同键；大小写敏感。
+        resolvedExerciseName:
+          type: string
+          minLength: 1
+          maxLength: 128
+          readOnly: true
+          description: 服务端冻结的动作显示名称；自定义名称来自本人输入，库动作来自有权访问的对应快照。服务端不得信任客户端提供的值。
         setIndex:
           type: integer
           minimum: 1
+        kind:
+          type: string
+          enum:
+          - weight
+          - perSide
+          - bodyweight
+          - bodyweightPerSide
+          - duration
+          - durationPerSide
+          - breath
         weightKg:
           type: number
-          nullable: true
           minimum: 0
+          exclusiveMinimum: true
+          maximum: 300
+          description: 用户实际输入的重量，最多两位小数；weight与perSide必填，其他类型不得携带。服务端按十进制校验精度。
         reps:
           type: integer
-          minimum: 0
-        rpe:
+          minimum: 1
+          maximum: 100
+          description: 实际次数或呼吸次数；每侧类型表示每侧的次数。
+        seconds:
           type: integer
+          minimum: 5
+          maximum: 600
+          description: 手填的实际秒数；每侧类型表示每侧的秒数。
+        rpe:
+          type: number
           nullable: true
+          minimum: 1
+          maximum: 10
+          description: 主观评分，最多一位小数；服务端按十进制校验精度。
         completed:
           type: boolean
+          enum:
+          - true
+          description: 此资源仅承载已确认的实际组；空白和未完成组保留在客户端草稿。
         recordKey:
           type: string
           minLength: 8
           maxLength: 64
+      # 排除缺少/重复动作来源与每种类型的非法度量；运行时仍须校验整个请求。
+      not:
+        anyOf:
+        - not:
+            anyOf:
+            - required: [exerciseId]
+            - required: [exerciseName]
+        - required: [exerciseId, exerciseName]
+        - properties:
+            kind:
+              type: string
+              enum: [weight, perSide]
+          anyOf:
+          - not:
+              required: [weightKg]
+          - not:
+              required: [reps]
+          - required: [seconds]
+        - properties:
+            kind:
+              type: string
+              enum: [bodyweight, bodyweightPerSide, breath]
+          anyOf:
+          - not:
+              required: [reps]
+          - required: [weightKg]
+          - required: [seconds]
+        - properties:
+            kind:
+              type: string
+              enum: [duration, durationPerSide]
+          anyOf:
+          - not:
+              required: [seconds]
+          - required: [weightKg]
+          - required: [reps]
+    WorkoutSetRecord:
+      description: 训练组读模型，必须包含服务端冻结的动作显示名称。
+      allOf:
+      - $ref: '#/components/schemas/SetRecord'
+      - type: object
+        required: [resolvedExerciseName]
+        properties:
+          resolvedExerciseName:
+            type: string
+            minLength: 1
+            maxLength: 128
+            readOnly: true
+    SetRecordWrite:
+      description: 训练组写模型；只读的resolvedExerciseName不得由客户端提交。
+      allOf:
+      - $ref: '#/components/schemas/SetRecord'
+      - type: object
+        properties:
+          recordKey:
+            type: string
+            minLength: 8
+            maxLength: 64
+        not:
+          required: [resolvedExerciseName]
     BodyMetric:
       type: object
       properties:
@@ -9683,7 +9905,10 @@ components:
           format: date
         timeZone:
           type: string
+          minLength: 1
+          maxLength: 64
           default: Asia/Shanghai
+          description: 有效IANA时区，服务端校验并冻结；日期不能晚于该时区的当前日。
         planId:
           type: string
           pattern: ^[1-9][0-9]*$
@@ -9726,7 +9951,10 @@ components:
           format: date
         timeZone:
           type: string
+          minLength: 1
+          maxLength: 64
           default: Asia/Shanghai
+          description: 有效IANA时区，服务端校验并冻结；日期不能晚于该时区的当前日。
         clientEventId:
           type: string
           minLength: 8
@@ -9754,12 +9982,39 @@ components:
         sets:
           type: array
           items:
-            $ref: '#/components/schemas/SetRecord'
+            $ref: '#/components/schemas/SetRecordWrite'
           minItems: 1
           maxItems: 200
+        deleteRecordKeys:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 8
+            maxLength: 64
+        restoreRecordKeys:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          description: 明确撤销删除的组键；必须属于本批sets，且服务端确认是本会话已删除的组。不能单独提交。
+          items:
+            type: string
+            minLength: 8
+            maxLength: 64
       required:
       - expectedVersion
-      - sets
+      not:
+        anyOf:
+        - not:
+            anyOf:
+            - required: [sets]
+            - required: [deleteRecordKeys]
+        - required: [restoreRecordKeys]
+          not:
+            required: [sets]
     WorkoutFinish:
       type: object
       additionalProperties: false
@@ -9770,16 +10025,24 @@ components:
         durationMin:
           type: integer
           minimum: 0
+          nullable: true
+          description: 用户提供的实际总时长；省略或null的语义见操作说明，不可用计划时长或录入时间代替。
+        date:
+          type: string
+          format: date
+          description: 实际训练日；可修订，服务端按会话冻结时区拒绝未来日期。
         rpe:
           type: number
+          nullable: true
           minimum: 1
           maximum: 10
+          description: 主观评分，最多一位小数；服务端按十进制校验精度。
         note:
           type: string
+          nullable: true
           maxLength: 2000
       required:
       - expectedVersion
-      - durationMin
     BodyMetricWrite:
       type: object
       additionalProperties: false

@@ -179,7 +179,7 @@ function relationLabel(status: string): string {
 
 @media (min-width: 768px) {
   .student-row:hover {
-    background: rgba(25, 47, 57, 0.02);
+    background: rgba(var(--ink-rgb), 0.02);
   }
 }
 </style>

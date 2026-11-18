@@ -1,0 +1,317 @@
+/* R05: a personal training studio. Photographs show content; facts show service value. */
+:root { --container:1200px; --radius-lg:18px; }
+body { background:var(--canvas); }
+.app-header { border-bottom:1px solid var(--line); margin-bottom:0!important; padding-block:14px!important; }
+.wordmark { font-size:1.25rem!important; letter-spacing:.08em!important; }
+.nav-link--active { color:var(--ink)!important; }
+.tab--active { color:var(--ink)!important; }
+.tab--active svg { stroke-width:2.2; }
+.btn { border-radius:12px; }
+.btn--accent { background:var(--action); color:var(--on-accent); }
+.studio-home,.studio-discover { padding-top:0; }
+.studio-page-head { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:32px 0 26px; }
+.studio-kicker { font-size:.75rem; color:var(--muted); font-weight:550; line-height:1.5; }
+.studio-page-head h1 { font-size:1.875rem; letter-spacing:-.04em; font-weight:700; margin:8px 0; line-height:1.4; }
+.studio-page-head > div > p:last-child { color:var(--muted); font-size:.8125rem; }
+.studio-plan-link { display:flex; align-items:center; gap:9px; font-size:.8125rem; min-height:44px; white-space:nowrap; }
+.studio-main-grid { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr); gap:24px; align-items:start; }
+.studio-training-column { min-width:0; }
+.studio-workout { position:relative; display:grid; grid-template-columns:1.15fr 1fr; border-radius:20px; background:var(--feature); color:var(--feature-text); overflow:hidden; min-height:320px; }
+.studio-workout-body { padding:30px; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
+.studio-workout-label { color:var(--feature-muted); font-size:.75rem; }
+.studio-workout h2 { font-size:2rem; letter-spacing:-.035em; font-weight:650; line-height:1.35; margin:18px 0 10px; }
+.studio-workout-description { font-size:.8125rem; color:var(--feature-muted); }
+.studio-record-status { display:flex; align-items:center; gap:6px; font-size:.75rem; margin:18px 0 24px; color:var(--feature-text); }
+.studio-record-cta.journal-primary { width:100%; margin-top:auto; min-height:48px; padding-inline:16px; background:var(--feature-accent); color:var(--feature-on-accent); gap:14px; }
+.studio-record-cta:hover { background:var(--action)!important; }
+.studio-record-help { font-size:.6875rem; color:var(--feature-muted); margin-top:12px; }
+.studio-workout-visual { position:relative; min-width:0; }
+.studio-workout-visual .photo { position:absolute; inset:0; }
+.studio-workout-visual img { object-position:54% 38%; }
+.studio-workout-visual > span { position:absolute; right:14px; bottom:15px; color:#fff; background:rgba(25,32,27,.82); padding:6px 10px; border-radius:6px; font-size:.625rem; letter-spacing:.06em; }
+.studio-workout-error { display:grid; gap:12px; margin-top:20px; color:var(--feature-text); font-size:.8125rem; }
+.studio-exercises { margin-top:10px; font-size:.8125rem; }
+.studio-exercises summary { min-height:48px; display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; list-style:none; padding:8px 4px; }
+.studio-exercises summary::-webkit-details-marker { display:none; }
+.studio-exercises summary small { color:var(--muted); font-size:.75rem; margin-left:12px; }
+.studio-exercises[open] summary > svg { transform:rotate(180deg); }
+.studio-exercise-list { border-top:1px solid var(--line); padding-bottom:12px; }
+.studio-exercise-list > div { display:flex; align-items:center; gap:16px; min-height:48px; border-bottom:1px solid var(--line); }
+.studio-exercise-list .num { color:var(--muted); font-size:.6875rem; }
+.studio-exercise-list strong { font-weight:550; }
+.studio-exercise-list small { margin-left:auto; color:var(--muted); }
+.studio-week { background:var(--surface); border-radius:16px; margin-top:12px; padding:18px 24px 16px; }
+.studio-week header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.studio-week h2 { font-size:.875rem; font-weight:650; }
+.studio-week header > span { color:var(--muted); font-size:.6875rem; }
+.studio-week-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; margin-top:16px; }
+.studio-week-days > div { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 2px; border-radius:10px; }
+.studio-week-days span { font-size:.6875rem; color:var(--muted); }
+.studio-week-days strong { font-size:1rem; font-weight:600; }
+.studio-week-days i { width:5px; height:13px; }
+.studio-week-days .has-training::before { content:''; display:block; width:4px; height:4px; margin-top:4px; background:var(--line-strong); border-radius:50%; }
+.studio-week-days .is-today { background:var(--soft); }
+.studio-week-days .is-done svg { color:var(--positive); }
+.studio-coach-panel { padding:24px; border-radius:20px; background:#E6EBDD; color:var(--ink); min-width:0; }
+.studio-coach-heading { display:flex; align-items:center; gap:12px; }
+.studio-avatar { display:grid; place-items:center; flex-shrink:0; width:44px; height:44px; border-radius:50%; background:#D3DDC6; color:#394A30; font-size:1.125rem; font-weight:550; }
+.studio-coach-heading > div { min-width:0; flex:1; }
+.studio-coach-heading p { font-size:.6875rem; color:#58624F; margin-bottom:4px; }
+.studio-coach-heading h2 { font-size:1.0625rem; font-weight:650; }
+.studio-coach-heading small { color:#58624F; font-weight:400; font-size:.6875rem; margin-left:5px; }
+.studio-coach-heading .icon-btn { margin-right:-10px; }
+.studio-feedback-date { color:#58624F; font-size:.6875rem; margin:26px 0 12px; }
+.studio-coach-panel blockquote { font-size:1rem; line-height:1.9; letter-spacing:.015em; margin:0 0 15px; }
+.studio-text-action { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-size:.75rem; font-weight:550; color:var(--ink); }
+.studio-delivery { display:flex; align-items:center; width:100%; text-align:left; gap:10px; padding:14px; background:#F5F7EF; border-radius:12px; margin-top:18px; }
+.studio-delivery > span { flex:1; min-width:0; }
+.studio-delivery strong { display:block; font-size:.8125rem; font-weight:600; }
+.studio-delivery small { display:block; font-size:.6875rem; color:#58624F; margin-top:4px; }
+.studio-coach-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding-top:18px; margin-top:18px; border-top:1px solid #C9D2BE; }
+.studio-coach-footer > span { font-size:.625rem; color:#58624F; }
+.studio-coach-footer button { display:flex; align-items:center; gap:5px; min-height:40px; font-size:.75rem; }
+.studio-coach-panel > h2 { font-size:1.5rem; margin:16px 0; }
+.studio-coach-description { font-size:.8125rem; line-height:1.8; color:var(--muted); margin:16px 0; }
+.studio-secondary-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:24px; margin-top:28px; }
+.studio-history { background:var(--surface); border-radius:18px; padding:24px; }
+.studio-section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.studio-section-head h2 { font-size:1.1875rem; font-weight:650; letter-spacing:-.025em; margin-top:5px; }
+.studio-section-head > button { flex-shrink:0; }
+.studio-history-summary { display:flex; gap:36px; margin:18px 0 20px; }
+.studio-history-summary p { display:flex; align-items:baseline; gap:9px; }
+.studio-history-summary strong { font-size:2.125rem; line-height:1.2; font-weight:500; letter-spacing:-.04em; }
+.studio-history-summary span { color:var(--muted); font-size:.6875rem; }
+.studio-history-rows > button { display:flex; align-items:center; width:100%; text-align:left; gap:16px; min-height:48px; border-top:1px solid var(--line); font-size:.75rem; }
+.studio-history-rows > button > span,.studio-history-rows small { color:var(--muted); }
+.studio-history-rows strong { font-weight:550; }
+.studio-history-rows small { margin-left:auto; white-space:nowrap; }
+.studio-diet { display:grid; grid-template-columns:1.15fr 1fr; border-radius:18px; overflow:hidden; background:#E8EBE4; text-align:left; min-width:0; }
+.studio-diet-copy { padding:25px; min-width:0; }
+.studio-diet h2 { font-size:1.375rem; line-height:1.55; letter-spacing:-.035em; margin:12px 0; }
+.studio-diet-copy > p:not(.studio-kicker) { font-size:.75rem; color:var(--muted); line-height:1.8; }
+.studio-diet-copy > span { display:flex; align-items:center; gap:8px; font-size:.75rem; font-weight:600; margin-top:20px; }
+.studio-diet .photo { min-height:240px; }
+.studio-diet img { object-position:44% center; }
+.studio-inspiration { margin-top:38px; }
+.studio-content-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; }
+.content-card { position:relative; min-width:0; }
+.content-card-open { display:block; width:100%; height:100%; text-align:left; min-width:0; }
+.content-card-image { position:relative; height:180px; overflow:hidden; border-radius:15px; background:var(--soft); }
+.content-card-image img { transition:transform 240ms var(--ease-out); }
+.content-card-open:hover .content-card-image img { transform:scale(1.025); }
+.content-card-category { position:absolute; bottom:12px; left:12px; padding:5px 9px; border-radius:6px; font-size:.625rem; background:var(--surface); color:var(--ink); }
+.content-card-copy { padding:15px 2px 5px; }
+.content-card-source { font-size:.625rem; color:var(--muted); }
+.content-card h2 { font-size:1.0625rem; line-height:1.5; font-weight:650; letter-spacing:-.025em; margin-top:6px; }
+.content-card-description { font-size:.75rem; color:var(--muted); line-height:1.8; margin-top:8px; }
+.content-card-meta { display:flex; align-items:center; gap:12px; justify-content:space-between; font-size:.6875rem; margin-top:14px; }
+.content-card-meta svg { flex-shrink:0; }
+.content-card-save { position:absolute; right:10px; top:10px; width:40px; height:40px; display:grid; place-items:center; background:var(--surface); color:var(--ink); border-radius:50%; }
+.studio-preview-note { margin-top:32px; color:var(--muted); font-size:.6875rem; }
+.studio-discover .library-tabs { margin-bottom:22px; }
+.studio-discover .library-toolbar { margin-bottom:10px; }
+.studio-discover .library-search { background:var(--surface); border:1px solid var(--line); border-radius:12px; }
+.studio-discover .library-filter { background:var(--surface); border-radius:12px; }
+.studio-discover .library-caption { margin-bottom:22px; }
+.studio-discover-feature { margin-bottom:30px; }
+.content-card--featured { background:var(--feature); color:var(--feature-text); border-radius:20px; overflow:hidden; }
+.content-card--featured .content-card-open { display:grid; grid-template-columns:1.1fr 1fr; }
+.content-card--featured .content-card-image { height:330px; border-radius:0; }
+.content-card--featured .content-card-copy { padding:32px; display:flex; flex-direction:column; justify-content:center; }
+.content-card--featured .content-card-source { color:var(--feature-muted); font-size:.6875rem; }
+.content-card--featured h2 { font-size:1.75rem; margin-top:16px; line-height:1.45; }
+.content-card--featured .content-card-description { color:var(--feature-muted); margin-top:16px; font-size:.8125rem; }
+.content-card--featured .content-card-meta { color:var(--feature-text); margin-top:24px; }
+.content-card--featured .content-card-save { left:16px; right:auto; top:16px; }
+.studio-catalog-head { margin-bottom:20px; }
+.studio-catalog-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px 22px; }
+.studio-coach-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; list-style:none; padding:0; }
+.studio-provider { background:var(--surface); border-radius:18px; overflow:hidden; min-width:0; }
+.studio-provider-open { display:block; width:100%; height:100%; text-align:left; }
+.studio-provider-image { height:170px; position:relative; overflow:hidden; }
+.studio-provider-image .photo img { filter:saturate(.7); }
+.studio-provider-image > span { position:absolute; bottom:12px; left:16px; font-size:.625rem; padding:5px 9px; color:var(--ink); background:var(--surface); border-radius:6px; }
+.studio-provider-copy { padding:20px; }
+.studio-provider-name { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.studio-provider-name h2 { font-size:1.25rem; font-weight:650; }
+.studio-provider-name > span { font-size:.8125rem; font-weight:550; }
+.studio-provider-copy > h3 { font-size:.875rem; font-weight:500; margin:8px 0 12px; }
+.studio-provider-copy > p { color:var(--muted); font-size:.75rem; line-height:1.8; }
+.studio-provider-includes { list-style:none; padding:14px 0; margin:14px 0; border-block:1px solid var(--line); display:grid; gap:7px; }
+.studio-provider-includes li { display:flex; align-items:center; gap:7px; font-size:.75rem; }
+.studio-provider-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:.6875rem; }
+.studio-provider-foot > span { color:var(--muted); }
+.studio-provider-foot > strong { display:flex; align-items:center; gap:4px; font-weight:550; }
+.studio-photo-note { font-size:.6875rem; color:var(--muted); margin-top:24px; }
+/* The service page makes the selected deliverable and quotation visible together. */
+.coach-detail.studio-coach-detail { padding-top:24px; }
+.studio-coach-cover { display:grid; grid-template-columns:1.2fr 1fr; background:var(--feature); color:var(--feature-text); border-radius:20px; overflow:hidden; margin-bottom:30px; }
+.studio-coach-cover-copy { padding:32px; }
+.studio-coach-cover .coach-kicker,.studio-coach-cover .coach-title,.studio-coach-cover .coach-meta { color:var(--feature-muted); }
+.studio-coach-cover .coach-meta .meta-item { color:var(--feature-muted); }
+.studio-coach-cover .coach-actions { align-items:flex-start; align-self:stretch; text-align:left; margin-top:24px; gap:6px; }
+.studio-coach-cover .coach-name { color:var(--feature-text); font-size:2.5rem; margin-top:16px; }
+.studio-coach-cover .coach-intro { color:var(--feature-text); max-width:48ch; margin:20px 0; }
+.studio-coach-cover .coach-verification { color:var(--feature-muted); margin-top:20px; font-size:.6875rem; }
+.studio-coach-cover .coach-action-note,.studio-cover-offer { color:var(--feature-muted); font-size:.6875rem; line-height:1.8; margin-top:12px; }
+.studio-coach-cover-image { position:relative; min-height:330px; }
+.studio-coach-cover-image .photo { position:absolute; inset:0; }
+.studio-coach-cover-image img { filter:saturate(.45); object-position:60% center; }
+.studio-coach-cover-image > span { position:absolute; bottom:14px; right:14px; background:rgba(25,32,27,.85); color:#fff; font-size:.625rem; padding:6px 10px; border-radius:6px; }
+.studio-coach-detail .package { background:var(--surface); border-radius:14px; border:1px solid var(--line); padding:22px; }
+.studio-coach-detail .package--active { border-color:var(--ink); background:var(--surface); box-shadow:inset 0 0 0 1px var(--ink); }
+.studio-coach-detail .package-price { font-size:1.1875rem; color:var(--ink); }
+.studio-service-deliverables { display:grid; gap:12px; margin-bottom:24px; padding:26px; background:#E6EBDD; border-radius:16px; }
+.studio-service-deliverables h2 { font-size:1.125rem; font-weight:600; margin-bottom:4px; }
+.studio-service-deliverables > p { font-size:.8125rem; color:#58624F; }
+.studio-service-deliverables ul { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:14px; }
+.studio-service-deliverables li { display:flex; align-items:center; gap:12px; font-size:.875rem; }
+.studio-service-deliverables li > span { width:26px; height:26px; display:grid; place-items:center; background:#F5F7EF; border-radius:50%; font-size:.6875rem; flex-shrink:0; color:#58624F; }
+.studio-coach-detail .service-sample { padding:24px; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+.studio-coach-detail .coach-side { align-self:start; position:sticky; top:24px; }
+.studio-coach-detail .side-panel { padding:24px; }
+.studio-price-note { font-size:.6875rem; color:var(--muted); line-height:1.8; margin:14px 0 0; }
+.studio-record-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; padding:24px 0 28px; border-block:1px solid var(--line); margin:8px 0 24px; }
+.studio-record-summary > div { display:grid; gap:8px; }
+.studio-record-summary span { color:var(--muted); font-size:.75rem; }
+.studio-record-summary strong { font-size:2rem; font-weight:500; letter-spacing:-.04em; }
+.studio-record-summary small { font-size:.75rem; font-weight:400; letter-spacing:0; }
+.studio-records .trend-panel { background:var(--feature); color:var(--feature-text); border:0; border-radius:18px; padding:26px; }
+.studio-records .trend-panel .group-title,.studio-records .trend-panel .trend-line-text { color:var(--feature-text); }
+.studio-records .trend-panel .group-meta,.studio-records .trend-panel .trend-source { color:var(--feature-muted); }
+.studio-records .trend-line { stroke:var(--feature-accent); }
+.studio-records .trend-dot { fill:var(--feature-accent); }
+.studio-records .trend-value { fill:var(--feature-text); }
+.studio-records .axis-label,.studio-records .axis-unit,.studio-records .trend-date { fill:var(--feature-muted); }
+.studio-records .axis-grid,.studio-records .axis { stroke:var(--feature-line); }
+.studio-plan-detail .plan-hero-media { display:grid; grid-template-columns:1.1fr 1fr; background:var(--feature)!important; }
+.studio-plan-detail .plan-hero-text { padding:32px!important; align-self:center; }
+.studio-plan-detail .plan-title { color:var(--feature-text)!important; }
+.studio-plan-detail .plan-kicker,.studio-plan-detail .plan-meta { color:var(--feature-muted)!important; }
+.studio-plan-photo { position:relative; min-height:260px; }
+.studio-plan-photo .photo { position:absolute; inset:0; }
+.studio-plan-photo > span { position:absolute; bottom:14px; right:14px; color:#fff; background:rgba(25,32,27,.85); padding:6px 10px; border-radius:6px; font-size:.625rem; }
+@media(max-width:767px) {
+  .studio-plan-detail .plan-hero-media { grid-template-columns:1fr; }
+  .studio-plan-detail .plan-hero-text { padding:24px!important; }
+  .studio-plan-photo { min-height:190px; }
+}
+:root[data-text-scale='200'] .studio-plan-detail .plan-hero-media { grid-template-columns:1fr; }
+.studio-records .feedback-panel { background:#E6EBDD; border-radius:18px; padding:24px; }
+.studio-records .trend-panel .insufficient-title { color:var(--feature-text); }
+.studio-records .trend-panel .insufficient-text,.studio-records .trend-panel .empty-icon { color:var(--feature-muted); }
+@media (max-width:1000px) and (min-width:768px) {
+  .studio-main-grid { grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:20px; }
+  .studio-workout-body { padding:24px; }
+  .studio-workout { grid-template-columns:1.3fr 1fr; }
+  .studio-workout h2 { font-size:1.75rem; }
+  .studio-coach-panel { padding:20px; }
+  .studio-coach-panel blockquote { font-size:.875rem; }
+  .studio-diet-copy { padding:20px; }
+  .studio-history-summary { gap:24px; }
+}
+@media (max-width:767px) {
+  .app-header { padding-block:10px!important; border-bottom:0; }
+  .header-context { display:none; }
+  .studio-page-head { margin:20px 0; align-items:flex-start; gap:12px; }
+  .studio-page-head h1 { font-size:1.5rem; margin:7px 0; }
+  .studio-page-head > div > p:last-child { font-size:.75rem; }
+  .studio-plan-link { font-size:.6875rem; gap:5px; margin-top:-7px; }
+  .studio-plan-link > svg:first-child { display:none; }
+  .studio-main-grid { display:flex; flex-direction:column; gap:16px; }
+  .studio-training-column { display:contents; }
+  .studio-workout { order:0; width:100%; }
+  .studio-exercises { order:1; width:100%; margin-top:0; }
+  .studio-coach-panel { order:2; width:100%; }
+  .studio-week { order:3; width:100%; margin-top:0; }
+  .studio-workout { min-height:295px; grid-template-columns:1.3fr 1fr; border-radius:17px; }
+  .studio-workout-body { padding:24px 18px; }
+  .studio-workout h2 { font-size:1.75rem; margin-top:20px; }
+  .studio-workout-label { font-size:.6875rem; }
+  .studio-workout-description { font-size:.75rem; }
+  .studio-record-status { font-size:.6875rem; line-height:1.7; margin:15px 0 20px; }
+  .studio-record-cta.journal-primary { min-height:46px; font-size:.75rem; padding-inline:11px; gap:7px; }
+  .studio-record-help { font-size:.625rem; line-height:1.8; }
+  .studio-workout-visual > span { font-size:.5625rem; right:8px; bottom:12px; padding:5px 7px; }
+  .studio-exercises summary small { display:block; margin:3px 0 0; font-size:.6875rem; }
+  .studio-exercises summary { padding:10px 2px; }
+  .studio-exercise-list { font-size:.75rem; }
+  .studio-exercise-list > div { gap:10px; }
+  .studio-week { padding:16px; }
+  .studio-week-days { gap:5px; }
+  .studio-coach-panel { padding:22px; border-radius:17px; }
+  .studio-feedback-date { margin-top:22px; }
+  .studio-coach-panel blockquote { font-size:.9375rem; }
+  .studio-secondary-grid { grid-template-columns:minmax(0,1fr); gap:22px; margin-top:22px; }
+  .studio-history { padding:22px; }
+  .studio-history-summary { gap:30px; }
+  .studio-history-summary strong { font-size:2rem; }
+  .studio-history-rows > button { gap:10px; font-size:.6875rem; }
+  .studio-section-head h2 { font-size:1.0625rem; }
+  .studio-section-head .studio-text-action { font-size:.6875rem; gap:4px; }
+  .studio-diet-copy { padding:22px; }
+  .studio-diet h2 { font-size:1.3125rem; }
+  .studio-diet .photo { min-height:260px; }
+  .studio-inspiration { margin-top:30px; }
+  .studio-inspiration .studio-section-head { align-items:flex-end; }
+  .studio-inspiration .studio-section-head h2 { max-width:14ch; line-height:1.6; }
+  .studio-content-grid,.studio-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 14px; }
+  .studio-content-grid > :last-child:nth-child(odd) { display:none; }
+  .content-card-image { height:145px; border-radius:12px; }
+  .content-card h2 { font-size:.9375rem; }
+  .content-card-source { font-size:.625rem; line-height:1.7; }
+  .content-card-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:.6875rem; line-height:1.8; }
+  .content-card-meta { font-size:.625rem; align-items:flex-end; gap:5px; line-height:1.8; }
+  .content-card-meta > svg { width:16px; }
+  .content-card-category { font-size:.5625rem; bottom:8px; left:8px; padding:4px 6px; }
+  .content-card-save { width:36px; height:36px; right:7px; top:7px; }
+  .content-card--featured .content-card-open { grid-template-columns:1fr; }
+  .content-card--featured .content-card-image { height:215px; }
+  .content-card--featured .content-card-copy { padding:24px; }
+  .content-card--featured h2 { font-size:1.375rem; margin-top:8px; }
+  .content-card--featured .content-card-description { display:block; font-size:.75rem; margin-top:10px; }
+  .content-card--featured .content-card-meta { font-size:.6875rem; margin-top:20px; }
+  .content-card--featured .content-card-save { width:40px; height:40px; }
+  .studio-coach-grid { grid-template-columns:1fr; gap:22px; }
+  .studio-provider-image { height:200px; }
+  .studio-coach-cover { grid-template-columns:1fr; margin-bottom:26px; }
+  .studio-coach-cover-copy { padding:26px; }
+  .studio-coach-cover .coach-name { font-size:2.125rem; }
+  .studio-coach-cover-image { min-height:180px; }
+  .studio-coach-detail .coach-side { position:static; }
+  .studio-service-deliverables { padding:22px; }
+  .studio-record-summary { gap:14px; padding:22px 0; }
+  .studio-record-summary span { font-size:.6875rem; }
+  .studio-record-summary strong { font-size:1.75rem; }
+  .studio-records .trend-panel { padding:22px 18px; }
+}
+@media (max-width:359px) {
+  .studio-page-head { display:block; }
+  .studio-plan-link { margin-top:6px; }
+  .studio-workout-body { padding:22px 16px; }
+  .studio-workout { grid-template-columns:1.45fr 1fr; }
+  .studio-history-summary { gap:20px; }
+}
+html[data-text-scale="200"] .studio-page-head { flex-wrap:wrap; }
+html[data-text-scale="200"] .studio-main-grid,
+html[data-text-scale="200"] .studio-secondary-grid,
+html[data-text-scale="200"] .studio-content-grid,
+html[data-text-scale="200"] .studio-catalog-grid,
+html[data-text-scale="200"] .studio-coach-grid,
+html[data-text-scale="200"] .studio-coach-cover { grid-template-columns:minmax(0,1fr); }
+html[data-text-scale="200"] .studio-workout { grid-template-columns:minmax(0,1fr); }
+html[data-text-scale="200"] .studio-workout-visual { min-height:220px; }
+html[data-text-scale="200"] .studio-history-summary,
+html[data-text-scale="200"] .studio-history-summary p,
+html[data-text-scale="200"] .studio-history-rows > button,
+html[data-text-scale="200"] .studio-section-head,
+html[data-text-scale="200"] .studio-provider-name { flex-wrap:wrap; }
+html[data-text-scale="200"] .studio-record-summary { grid-template-columns:minmax(0,1fr); }
+html[data-text-scale="200"] .content-card--featured .content-card-open,
+html[data-text-scale="200"] .studio-diet { grid-template-columns:minmax(0,1fr); }
+html[data-text-scale="200"] .content-card-category,
+html[data-text-scale="200"] .studio-workout-visual > span { position:static; display:inline-block; margin:8px; }
+html[data-text-scale="200"] .content-card-image { height:auto; min-height:200px; }
+html[data-text-scale="200"] .content-card-image .photo { height:200px; }
+html[data-motion="reduced"] .content-card-image img { transition:none; transform:none; }
+@media (prefers-reduced-motion:reduce) { .content-card-image img { transition:none; transform:none!important; } }

@@ -1,0 +1,210 @@
+[
+  {
+    "path": "design/prototype/ASSETS.md",
+    "sha256": "5dc7141b0c69dd90ba2aa8d5e27f25be13a6cf46aaf5039b3bca8107cc778abb"
+  },
+  {
+    "path": "design/prototype/README.md",
+    "sha256": "379a33c5f002ec8493d2ffab6f7095052ea30f7c4490a0e7518e61d172364877"
+  },
+  {
+    "path": "design/prototype/STATES_AND_DATA.md",
+    "sha256": "e4a2c1ad9b8e51aeffc730c5eeb30cdc43f8fb36d92683bc33d8539138f05013"
+  },
+  {
+    "path": "design/prototype/index.html",
+    "sha256": "782178ac32b66663b414d79873f325f33cc83fe642b65ea8f6d889385ebf7bc2"
+  },
+  {
+    "path": "design/prototype/package.json",
+    "sha256": "9410f4bf82f7708abf265ca4869cb743fe2afbc5dcdfd25c3e5c35f70a96f84f"
+  },
+  {
+    "path": "design/prototype/pnpm-lock.yaml",
+    "sha256": "36e0c7eb6454468e3d2d094934e448667eb9cd8491893671c7bf91b39bd7f3a0"
+  },
+  {
+    "path": "design/prototype/pnpm-workspace.yaml",
+    "sha256": "d6d0c24446d91ef762d37c6ba801bb516e65d7055aa9f8027fcd457409a97ce1"
+  },
+  {
+    "path": "design/prototype/src/App.vue",
+    "sha256": "ac336312018e1b9a66844f29b9e3fdc9a9af1f00f5fdf4f30a06673e2985b8b6"
+  },
+  {
+    "path": "design/prototype/src/components/AppHeader.vue",
+    "sha256": "d3f68055eab1efc9d170d110e51ac82defec1bdc2ae97aadc9bf0b638faf2b50"
+  },
+  {
+    "path": "design/prototype/src/components/BaseSheet.vue",
+    "sha256": "0ef52563144d5743de3e42fba32deae36a49962a7bbe191cf13a01d902b26086"
+  },
+  {
+    "path": "design/prototype/src/components/PhotoFrame.vue",
+    "sha256": "595cc2eb8191745683f61f28a1412cdc9ddefd830d002512ee0ad23c31d798c0"
+  },
+  {
+    "path": "design/prototype/src/components/PreviewControl.vue",
+    "sha256": "0fc8faa5aee8069c21ec7928156a6dec251996e35d360fdd066c54cc5b21d4d6"
+  },
+  {
+    "path": "design/prototype/src/components/TabBar.vue",
+    "sha256": "2400f025070e4497bdc36bc568d6760a3fdc4bfc1fdedee0bd9533665175af64"
+  },
+  {
+    "path": "design/prototype/src/components/Wordmark.vue",
+    "sha256": "402bf19909501bd21e569b6ba4fa231dd2aae46e09f5acac1adb9d0ab4dd9c36"
+  },
+  {
+    "path": "design/prototype/src/data/extended.ts",
+    "sha256": "b84c76039cf813cae9b107664724f6599f47f492beb89f41716da3d008371069"
+  },
+  {
+    "path": "design/prototype/src/data/sample.ts",
+    "sha256": "f65a64c4147e5a598442931a72f39de676eb50e05b013d0166a4e2d1d8386611"
+  },
+  {
+    "path": "design/prototype/src/main.ts",
+    "sha256": "159bbe243176f381377d92e58fdc49ace28f591b26a33dca2dadc2178d814eac"
+  },
+  {
+    "path": "design/prototype/src/state/store.ts",
+    "sha256": "8f2b72c22cb44c1d02fb7794d1fde10f14e07f59c35a1ceb2db7ee328b53bd86"
+  },
+  {
+    "path": "design/prototype/src/styles/base.css",
+    "sha256": "f88ff26ab9046d45802bc84323ea5e8cc1e5fb7a10b9a80f0e16e011a0c3111d"
+  },
+  {
+    "path": "design/prototype/src/styles/round-four.css",
+    "sha256": "c825991bcc1b2c08c9479993ec91691a7d85a866c9b47729a79012753eb9c3f3"
+  },
+  {
+    "path": "design/prototype/src/styles/screens.css",
+    "sha256": "5fc9d203af75fed78a33e724d437d5d4d29f9893dc57abb49e4e4532c7641a15"
+  },
+  {
+    "path": "design/prototype/src/styles/tokens.css",
+    "sha256": "6297e3247890c53802b311f6386689abb90b7f02984b278e2b187afd1a0b999c"
+  },
+  {
+    "path": "design/prototype/src/tests/expansion.test.ts",
+    "sha256": "fdc68bc35fb296dfe653a401d908a97280c0424aa58114737e2018c6e151a1a8"
+  },
+  {
+    "path": "design/prototype/src/tests/logic.test.ts",
+    "sha256": "407f23673841c826dc2cdb2b0fdd82928e724ac6102396652c7ab4743a786b5c"
+  },
+  {
+    "path": "design/prototype/src/tests/recording.test.ts",
+    "sha256": "263886ba8f8d118153e421b8d627506de68471334a432cb09f001eee712bd399"
+  },
+  {
+    "path": "design/prototype/src/tests/store.test.ts",
+    "sha256": "db7fbde7fc45e89aaa0008ec9b232f9edee5900593a99fa25cf70c5a7cbcb8fc"
+  },
+  {
+    "path": "design/prototype/src/tests/ui.test.ts",
+    "sha256": "6d063d69dbd5c2fee603e636da02c809ac8bf5b48aaa1242dc8944373f41b0e1"
+  },
+  {
+    "path": "design/prototype/src/types.ts",
+    "sha256": "58432a4351da96458402ffb55529c7ee9d7439860ef838664b7a1d63a35f0bbf"
+  },
+  {
+    "path": "design/prototype/src/utils/dom.ts",
+    "sha256": "3c6cd6406dfd8bb2b5bef9b916b19c3ec74b2416c38ea7ab6578fabab47566ba"
+  },
+  {
+    "path": "design/prototype/src/utils/format.ts",
+    "sha256": "a4b83c672dfa90d280745fc4f76f769feb1620bf355f3724a989b4e09bcd95cb"
+  },
+  {
+    "path": "design/prototype/src/utils/plan.ts",
+    "sha256": "23913aa7ea72143417ab0ea554b1cba36db0d8a0dfc27dccd1fc8482f41b8d85"
+  },
+  {
+    "path": "design/prototype/src/utils/training.ts",
+    "sha256": "b08717c69f0181b19d03adddaa97a913ad5d0433f7013e78c4bd2af41a4ca09f"
+  },
+  {
+    "path": "design/prototype/src/views/AiAssistView.vue",
+    "sha256": "23f2df08485a0d9ad82a5733a95243639807017fd3892b5d97c95300d6245484"
+  },
+  {
+    "path": "design/prototype/src/views/CoachDetailView.vue",
+    "sha256": "e9d77c4c308e53fc5ecf84ee2d3fcf9ad02a919c2b387c9fdbf4da032defbc88"
+  },
+  {
+    "path": "design/prototype/src/views/CoachReviewView.vue",
+    "sha256": "618269d59eef3848dce43abdc6fcfcf32e2d1625bd30fb0728ebf94504ff6edd"
+  },
+  {
+    "path": "design/prototype/src/views/CoachServicesView.vue",
+    "sha256": "84f1ee11eb789be863720093a6966760bcea07f45a60c6be7ad46fc554d48119"
+  },
+  {
+    "path": "design/prototype/src/views/CoachStudentDetailView.vue",
+    "sha256": "f5701812847469108b4b9a675be15d17b179547391edfb8e7f17ebcb63ade0d1"
+  },
+  {
+    "path": "design/prototype/src/views/CoachStudentsView.vue",
+    "sha256": "b79341f8d1c07d36ef3768b8f7cd0f3c1d65724088e3c8d5d94f1e26827fd55d"
+  },
+  {
+    "path": "design/prototype/src/views/CoachTodoView.vue",
+    "sha256": "9fc02aea140752b311403cba1993ce9958b9ab51b5a620735e5557bc761c0f77"
+  },
+  {
+    "path": "design/prototype/src/views/DietView.vue",
+    "sha256": "20cae65ac3035e535f71ce45abfb841e398d52fd8a859526d08ed8822732419c"
+  },
+  {
+    "path": "design/prototype/src/views/ExploreView.vue",
+    "sha256": "5ba23dfca8ca11c93a5fc174b9674a9299681f07f5da021156010ce6d944d3c7"
+  },
+  {
+    "path": "design/prototype/src/views/IncomingPlanView.vue",
+    "sha256": "2c236935900659b061fd903dfbdd84682a6c890a3dd61014cd23c37645cd5372"
+  },
+  {
+    "path": "design/prototype/src/views/MessagesView.vue",
+    "sha256": "78ff2e90869fcfc26517ea007dd45f40255581166547a124a0788f6799b2a500"
+  },
+  {
+    "path": "design/prototype/src/views/MyPlanView.vue",
+    "sha256": "296417460b25cf5f12937bc11b255de44d5d411b06200c6770618577a71e5fbf"
+  },
+  {
+    "path": "design/prototype/src/views/PlanDetailView.vue",
+    "sha256": "6eb01f30a8fe06914354580dd81fd93884c45ccc5934cbc2dca94b79fd5901f9"
+  },
+  {
+    "path": "design/prototype/src/views/RecordsView.vue",
+    "sha256": "6d5443d19d8358518d024094d6e85f05490d183a6c254237787cf1c979315e71"
+  },
+  {
+    "path": "design/prototype/src/views/StudentPlanView.vue",
+    "sha256": "53797e3ef64b8c60d89bacb906161722a8ed3694eabd0c29926d6c0f33565f72"
+  },
+  {
+    "path": "design/prototype/src/views/TodayView.vue",
+    "sha256": "a9f32218e61bd9609c4e3b7e1378368307e3d307ca6778bad663fffa65b29e5d"
+  },
+  {
+    "path": "design/prototype/src/views/TrainingView.vue",
+    "sha256": "2692f702420a1d125bcd24bd3c9bfcee633f64ee8a2c6fbd2ba198f6857e3c8d"
+  },
+  {
+    "path": "design/prototype/src/vite-env.d.ts",
+    "sha256": "697440543ba67a0224010d00f2d2ff4a81e4adaacec00c9cdd9d8f0587ab6b1a"
+  },
+  {
+    "path": "design/prototype/tsconfig.json",
+    "sha256": "a00039790d003904a67021d811926e45ff7f91a07e4a95dcf544c31305f0e3db"
+  },
+  {
+    "path": "design/prototype/vite.config.ts",
+    "sha256": "d0912127795858800c90821e885c6ad3117e0b75098552fc9442150c8eed759c"
+  }
+]

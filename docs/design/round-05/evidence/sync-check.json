@@ -1,0 +1,13 @@
+{
+  "sourceFiles": 52,
+  "sourceHashMatch": true,
+  "buildFiles": 13,
+  "buildHashMatch": true,
+  "originalTypecheckExitCode": 0,
+  "originalBuildExitCode": 0,
+  "preservedOriginalOnly": [
+    ".agents",
+    "skills-lock.json",
+    "docs/design/research/2026-10-27-appllama"
+  ]
+}

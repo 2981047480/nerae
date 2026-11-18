@@ -184,7 +184,7 @@ function goCoachRoot(key: 'todo' | 'students' | 'messages' | 'services'): void {
 
 .nav-link--active {
   color: var(--ink);
-  background: rgba(25, 47, 57, 0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   font-weight: 600;
 }
 

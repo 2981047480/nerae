@@ -481,7 +481,7 @@ function resolve(choice: 'local' | 'remote'): void {
 .day-tab--active {
   border-color: var(--ink);
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font-weight: 600;
 }
 
@@ -559,7 +559,7 @@ function resolve(choice: 'local' | 'remote'): void {
   margin-top: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.05);
+  background: rgba(var(--ink-rgb), 0.05);
   color: var(--muted);
   font-size: var(--text-13);
 }
@@ -605,7 +605,7 @@ function resolve(choice: 'local' | 'remote'): void {
 }
 
 .side-panel--quiet {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 
 .side-title {
@@ -658,7 +658,7 @@ function resolve(choice: 'local' | 'remote'): void {
   margin-top: var(--sp-3);
   padding: var(--sp-4);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.045);
+  background: rgba(var(--ink-rgb), 0.045);
 }
 
 .share-title {

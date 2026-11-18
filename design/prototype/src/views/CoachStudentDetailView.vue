@@ -379,7 +379,7 @@ function plan(): void {
   padding: var(--sp-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .side-title {

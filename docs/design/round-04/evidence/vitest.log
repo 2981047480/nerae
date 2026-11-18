@@ -1,0 +1,104 @@
+
+ RUN  v5.0.5 /Users/zephyr/.codex/worktrees/nerae-recording-redesign/nerae/design/prototype
+
+················stdout | src/tests/store.test.ts > 持久化与错误 > 一次导航后防抖保存一次，空闲不持续自触发
+[fix-evidence] idle-persist {"writesAfterDebounce":1,"writesAfterIdle":1}
+
+·stdout | src/tests/store.test.ts > 持久化与错误 > 存储失败保留内存输入并明确提示，恢复后可重试保存
+[fix-evidence] storage-failure {"firstSave":false,"failureNote":"未能保存到本机。请检查浏览器存储后重试。","recoveredNote":"草稿已保存 · 15:16","finalVersion":8,"recovered":true}
+
+stdout | src/tests/store.test.ts > 草稿版本与不可变交付快照 > 交付后保留不可变快照，后续编辑不改变已交付与学员现用内容
+[fix-evidence] versions {"deliveredVersion":8,"draftVersion":9,"activeStudentVersion":6,"publishedFirstSets":"4","deliveredFirstSets":"4","draftFirstSets":"6"}
+
+······Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+······Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+····Not implemented: Window's scrollTo() method
+stdout | src/tests/ui.test.ts > 弹层焦点 > 打开后焦点在弹层内，初始 Shift+Tab 不逃出，关闭后回到触发按钮
+[fix-evidence] modal-focus {"initialInside":true,"activeLabel":"弹层内操作"}
+
+Not implemented: Window's scrollTo() method
+········Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+···Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+····Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+····Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+·······Not implemented: Window's scrollTo() method
+stdout | src/tests/ui.test.ts > 应用结构与未知过渡根节点 > 记录第 4 组后反馈指向该组，页面不显示休息计时器
+[r04-evidence] logging-feedback {"text":"哑铃卧推 · 第 4 组已记录","completedAt":"2026-10-27T07:16:16.662Z"}
+
+··Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+·······Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+···Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+······Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+······Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+··Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+······Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+········Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+·······Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+·Not implemented: Window's scrollTo() method
+···
+
+ Test Files  5 passed (5)
+      Tests  131 passed (131)
+   Start at  15:16:13
+   Duration  6.97s (tests 60%, environment 33%, import 4%, transform 2%)
+

@@ -47,6 +47,7 @@
   "POST /publish/plans/{id}/withdraw": "postPublishPlansIdWithdraw",
   "GET /me/sessions": "getMeSessions",
   "POST /me/sessions": "postMeSessions",
+  "GET /me/sessions/{id}": "getMeSessionsId",
   "POST /me/sessions/{id}/sets": "postMeSessionsIdSets",
   "POST /me/sessions/{id}/finish": "postMeSessionsIdFinish",
   "GET /me/stats/weekly": "getMeStatsWeekly",

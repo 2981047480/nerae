@@ -255,7 +255,7 @@ function choose(status: 'on_plan' | 'partial' | 'off_plan'): void {
   margin: var(--sp-4) 0;
   padding: var(--sp-3);
   border-radius: var(--radius-md);
-  background: rgba(25, 47, 57, 0.045);
+  background: rgba(var(--ink-rgb), 0.045);
   color: var(--muted);
   font-size: var(--text-12);
   line-height: 1.6;
@@ -286,7 +286,7 @@ function choose(status: 'on_plan' | 'partial' | 'off_plan'): void {
 
 .report-option--active {
   border-color: var(--ink);
-  background: rgba(25, 47, 57, 0.05);
+  background: rgba(var(--ink-rgb), 0.05);
   color: var(--ink);
   font-weight: 600;
 }

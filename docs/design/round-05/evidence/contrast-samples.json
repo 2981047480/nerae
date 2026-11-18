@@ -1,0 +1,86 @@
+[
+  {
+    "background": "rgb(243, 244, 241)",
+    "color": "rgb(37, 44, 41)",
+    "font": "30px",
+    "ratio": 12.93,
+    "selector": ".studio-page-head h1"
+  },
+  {
+    "background": "rgb(243, 244, 241)",
+    "color": "rgb(96, 106, 99)",
+    "font": "13px",
+    "ratio": 5.09,
+    "selector": ".studio-page-head > div > p:last-child"
+  },
+  {
+    "background": "rgb(37, 44, 41)",
+    "color": "rgb(246, 248, 242)",
+    "font": "32px",
+    "ratio": 13.34,
+    "selector": ".studio-workout h2"
+  },
+  {
+    "background": "rgb(37, 44, 41)",
+    "color": "rgb(192, 202, 193)",
+    "font": "13px",
+    "ratio": 8.47,
+    "selector": ".studio-workout-description"
+  },
+  {
+    "background": "rgb(255, 154, 117)",
+    "color": "rgb(37, 44, 41)",
+    "font": "15px",
+    "ratio": 6.89,
+    "selector": ".studio-record-cta"
+  },
+  {
+    "background": "rgb(37, 44, 41)",
+    "color": "rgb(192, 202, 193)",
+    "font": "11px",
+    "ratio": 8.47,
+    "selector": ".studio-record-help"
+  },
+  {
+    "background": "rgb(230, 235, 221)",
+    "color": "rgb(37, 44, 41)",
+    "font": "16px",
+    "ratio": 11.76,
+    "selector": ".studio-coach-panel blockquote"
+  },
+  {
+    "background": "rgb(230, 235, 221)",
+    "color": "rgb(88, 98, 79)",
+    "font": "11px",
+    "ratio": 5.28,
+    "selector": ".studio-feedback-date"
+  },
+  {
+    "background": "rgb(230, 235, 221)",
+    "color": "rgb(88, 98, 79)",
+    "font": "10px",
+    "ratio": 5.28,
+    "selector": ".studio-coach-footer > span"
+  },
+  {
+    "background": "rgb(245, 247, 239)",
+    "color": "rgb(88, 98, 79)",
+    "font": "11px",
+    "ratio": 5.93,
+    "selector": ".studio-delivery small"
+  },
+  {
+    "background": "rgb(243, 244, 241)",
+    "color": "rgb(96, 106, 99)",
+    "font": "10px",
+    "ratio": 5.09,
+    "selector": ".content-card-source"
+  },
+  {
+    "background": "rgb(243, 244, 241)",
+    "color": "rgb(96, 106, 99)",
+    "font": "12px",
+    "ratio": 5.09,
+    "selector": ".content-card-description"
+  }
+]
