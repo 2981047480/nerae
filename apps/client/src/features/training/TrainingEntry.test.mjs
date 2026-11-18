@@ -48,6 +48,7 @@ current.RulerStub = defineComponent({
 const vueURL = import.meta.resolve('vue')
 const draftStorageURL = new URL('./draftStorage.ts', import.meta.url)
 const recordingURL = new URL('./recording.ts', import.meta.url)
+const measureURL = new URL('./recordingV2Measure.ts', import.meta.url)
 const syncURL = new URL('./syncRecordingV2.ts', import.meta.url)
 const conflictURL = new URL('./recordingV2Conflict.ts', import.meta.url)
 registerHooks({ resolve(specifier, context, nextResolve) {
@@ -61,6 +62,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
     if (specifier.endsWith('/TrainingHistory.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeTrainingEntryTest.HistoryStub', shortCircuit: true }
     if (specifier === './draftStorage') return { url: draftStorageURL.href, shortCircuit: true }
     if (specifier === './recording') return { url: recordingURL.href, shortCircuit: true }
+    if (specifier === './recordingV2Measure') return { url: measureURL.href, shortCircuit: true }
     if (specifier === './syncRecordingV2') return { url: syncURL.href, shortCircuit: true }
     if (specifier === './recordingV2Conflict') return { url: conflictURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeTrainingEditor')) return { url: 'data:text/javascript,export const discoverAppTrainingDrafts=(...a)=>globalThis.__neraeTrainingEntryTest.services.discover(...a);export const createAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.create(...a);export const attachAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.attach(...a);export const restoreAppCloudRecordingV2=(...a)=>globalThis.__neraeTrainingEntryTest.services.restore(...a);export const nextAppTrainingRequestKey=()=>globalThis.__neraeTrainingEntryTest.services.nextKey()', shortCircuit: true }

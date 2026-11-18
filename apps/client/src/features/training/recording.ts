@@ -1,4 +1,10 @@
 import { validRecordingV2Set } from './recordingV2Values'
+import {
+  exerciseMeasure, isV2Measure, measureUsesBodyweight, measureUsesSharedWeight, measurementCarry,
+  type SideState, type V2Measure, type V2SideName,
+} from './recordingV2Measure'
+
+export type { V2Measure } from './recordingV2Measure'
 
 /** Shared editing rules for the uni-app training-record feature.
  * The caller owns authenticated storage and network submission. This module
@@ -7,7 +13,7 @@ import { validRecordingV2Set } from './recordingV2Values'
 
 export type RecordingMode = 'after_workout' | 'per_set'
 export type SetKind = 'weight' | 'perSide' | 'bodyweight' | 'bodyweightPerSide' | 'duration' | 'durationPerSide' | 'breath'
-export type InputField = 'weightKg' | 'reps' | 'seconds' | 'rpe'
+export type InputField = 'weightKg' | 'reps' | 'seconds' | 'rpe' | 'leftWeightKg' | 'leftReps' | 'rightWeightKg' | 'rightReps' | 'bodyweightKg' | 'adjustmentKg'
 export type BatchSetField = 'weightKg' | 'reps'
 
 export type ExerciseIdentity =
@@ -28,6 +34,15 @@ export interface DraftSet {
   persisted: boolean
   /** Current values differ from the last acknowledged server values. */
   dirty: boolean
+  /** Format-2 side and bodyweight fields. Absent means that part was not entered. */
+  leftWeightKg?: string
+  leftReps?: string
+  leftState?: 'unknown' | 'performed' | 'not_performed'
+  rightWeightKg?: string
+  rightReps?: string
+  rightState?: 'unknown' | 'performed' | 'not_performed'
+  bodyweightKg?: string
+  adjustmentKg?: string
 }
 
 /** The group and its display position at removal are kept in the protected draft. */
@@ -42,6 +57,8 @@ export interface DraftExercise {
   /** Frozen server display name for catalog actions; absent in older drafts. */
   resolvedExerciseName?: string
   kind: SetKind
+  /** Format-2 weight meaning. Absent means the typed kilograms are a combined total. */
+  measure?: V2Measure
   sets: DraftSet[]
   removedSets?: RemovedDraftSet[]
 }
@@ -134,6 +151,42 @@ function emptySet(recordKey: string, setIndex: number): DraftSet {
   return { recordKey, setIndex, weightKg: '', reps: '', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: false }
 }
 
+function sessionBodyweight(draft: RecordingDraft): string {
+  for (const exercise of draft.exercises) {
+    if (!measureUsesBodyweight(exerciseMeasure(exercise))) continue
+    for (const set of [...exercise.sets, ...(exercise.removedSets || []).map(item => item.set)]) {
+      const value = set.bodyweightKg?.trim()
+      if (value) return set.bodyweightKg!
+    }
+  }
+  return ''
+}
+
+function touchSet(set: DraftSet, field: InputField, value: string): DraftSet {
+  const next: DraftSet = { ...set, [field]: value, confirmed: false, dirty: true }
+  const side = field.startsWith('left') ? 'left' : field.startsWith('right') ? 'right' : null
+  if (!side) return next
+  const other = side === 'left' ? 'right' : 'left'
+  const otherState = (other === 'left' ? next.leftState : next.rightState) ?? 'unknown'
+  // The first side the user types is copied to the other side until that side is edited on its own.
+  if (otherState === 'unknown') {
+    if (field.endsWith('WeightKg')) {
+      if (other === 'left') next.leftWeightKg = value
+      else next.rightWeightKg = value
+    } else if (other === 'left') next.leftReps = value
+    else next.rightReps = value
+  }
+  const ownWeight = (side === 'left' ? next.leftWeightKg : next.rightWeightKg) ?? ''
+  const ownReps = (side === 'left' ? next.leftReps : next.rightReps) ?? ''
+  const ownState = ownWeight.trim() || ownReps.trim() ? 'performed' : 'unknown'
+  if (side === 'left') {
+    if (ownState === 'unknown') delete next.leftState
+    else next.leftState = ownState
+  } else if (ownState === 'unknown') delete next.rightState
+  else next.rightState = ownState
+  return next
+}
+
 function ensureUnusedSetKey(draft: RecordingDraft, recordKey: string): void {
   assertKey(recordKey)
   if (draft.exercises.some(exercise => exercise.sets.some(set => set.recordKey === recordKey) ||
@@ -195,7 +248,12 @@ export function addSet(draft: RecordingDraft, exerciseEntryKey: string, recordKe
   const maximum = [...target.sets, ...(target.removedSets || []).map(item => item.set)]
     .reduce((largest, set) => Math.max(largest, set.setIndex), 0)
   if (!Number.isSafeInteger(maximum) || maximum >= Number.MAX_SAFE_INTEGER) throw new Error('训练组序号不可用')
-  const changed = { ...target, sets: [...target.sets, emptySet(recordKey, maximum + 1)] }
+  const created = emptySet(recordKey, maximum + 1)
+  if (draft.recordFormat === 2 && measureUsesBodyweight(exerciseMeasure(target))) {
+    const known = sessionBodyweight(draft)
+    if (known) created.bodyweightKg = known
+  }
+  const changed = { ...target, sets: [...target.sets, created] }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
 }
 
@@ -204,9 +262,11 @@ export function copySet(draft: RecordingDraft, exerciseEntryKey: string, sourceK
   const source = findSet(findExercise(draft, exerciseEntryKey), sourceKey)
   const added = addSet(draft, exerciseEntryKey, recordKey)
   const target = findExercise(added, exerciseEntryKey)
+  const carried = measurementCarry(source)
   const changed = { ...target, sets: target.sets.map(set => set.recordKey === recordKey ? {
-    ...set, weightKg: source.weightKg, reps: source.reps, seconds: source.seconds, rpe: source.rpe,
-    confirmed: false, persisted: false, dirty: Boolean(source.weightKg || source.reps || source.seconds || source.rpe),
+    ...set, ...carried, weightKg: source.weightKg, reps: source.reps, seconds: source.seconds, rpe: source.rpe,
+    confirmed: false, persisted: false,
+    dirty: Boolean(source.weightKg || source.reps || source.seconds || source.rpe || Object.values(carried).some(Boolean)),
   } : set) }
   return { ...added, exercises: added.exercises.map(item => item === target ? changed : item) }
 }
@@ -220,15 +280,71 @@ export function updateSet(
 ): RecordingDraft {
   const target = findExercise(draft, exerciseEntryKey)
   const set = findSet(target, recordKey)
-  if (!['weightKg', 'reps', 'seconds', 'rpe'].includes(field) || typeof value !== 'string') {
+  if (!['weightKg', 'reps', 'seconds', 'rpe', 'leftWeightKg', 'leftReps', 'rightWeightKg', 'rightReps', 'bodyweightKg', 'adjustmentKg'].includes(field) || typeof value !== 'string') {
     throw new Error('记录输入无效')
   }
+  if (field === 'bodyweightKg' && draft.recordFormat === 2 && measureUsesBodyweight(exerciseMeasure(target))) {
+    if ((set.bodyweightKg ?? '') === value && draft.exercises.every(exercise => !measureUsesBodyweight(exerciseMeasure(exercise)) ||
+        [...exercise.sets, ...(exercise.removedSets || []).map(item => item.set)].every(item => (item.bodyweightKg ?? '') === value))) return draft
+    const apply = (item: DraftSet): DraftSet => (item.bodyweightKg ?? '') === value ? item : { ...item, bodyweightKg: value, dirty: true }
+    return {
+      ...draft,
+      exercises: draft.exercises.map(exercise => measureUsesBodyweight(exerciseMeasure(exercise)) ? {
+        ...exercise,
+        sets: exercise.sets.map(apply),
+        ...(exercise.removedSets ? { removedSets: exercise.removedSets.map(item => ({ ...item, set: apply(item.set) })) } : {}),
+      } : exercise),
+    }
+  }
   if (set[field] === value) return draft
-  const updated = { ...set, [field]: value, confirmed: false, dirty: true }
+  const updated = touchSet(set, field, value)
   const changed = { ...target, sets: target.sets.map(item => item === set ? updated : item) }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
 }
 
+/** Change how this exercise's kilograms are interpreted. Stored numbers stay; the meaning change is synced. */
+export function setExerciseMeasure(draft: RecordingDraft, exerciseEntryKey: string, measure: V2Measure): RecordingDraft {
+  if (draft.recordFormat !== 2) throw new Error('记录格式不支持此操作')
+  if (!isV2Measure(measure)) throw new Error('重量含义无效')
+  const target = findExercise(draft, exerciseEntryKey)
+  if (target.kind !== 'weight') throw new Error('此动作不能改重量含义')
+  if (exerciseMeasure(target) === measure) return draft
+  const known = sessionBodyweight(draft)
+  const apply = (set: DraftSet): DraftSet => {
+    const next: DraftSet = { ...set, dirty: true }
+    if (measureUsesBodyweight(measure) && !next.bodyweightKg?.trim() && known) next.bodyweightKg = known
+    return next
+  }
+  const { measure: _previous, ...rest } = target
+  const changed: DraftExercise = {
+    ...rest,
+    ...(measure === 'total' ? {} : { measure }),
+    sets: target.sets.map(apply),
+    ...(target.removedSets ? { removedSets: target.removedSets.map(item => ({ ...item, set: apply(item.set) })) } : {}),
+  }
+  return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
+}
+
+/** Mark one side not performed, or return it to an empty entry. Old numbers are not restored. */
+export function setSideState(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string, side: V2SideName, state: SideState): RecordingDraft {
+  if (draft.recordFormat !== 2) throw new Error('记录格式不支持此操作')
+  if (side !== 'left' && side !== 'right') throw new Error('记录输入无效')
+  if (state !== 'unknown' && state !== 'performed' && state !== 'not_performed') throw new Error('记录输入无效')
+  const target = findExercise(draft, exerciseEntryKey)
+  if (exerciseMeasure(target) !== 'sides') throw new Error('当前重量含义不能标记单侧')
+  const set = findSet(target, recordKey)
+  const key = side === 'left' ? 'leftState' : 'rightState'
+  if ((set[key] ?? 'unknown') === state) return draft
+  const updated: DraftSet = { ...set, [key]: state, confirmed: false, dirty: true }
+  // 未做 and a return to 未填写 both drop that side's numbers. The wire never stores them for 未做.
+  if (state === 'not_performed' || state === 'unknown') {
+    if (side === 'left') { updated.leftWeightKg = ''; updated.leftReps = '' }
+    else { updated.rightWeightKg = ''; updated.rightReps = '' }
+  }
+  if (state === 'unknown') delete updated[key]
+  const changed = { ...target, sets: target.sets.map(item => item === set ? updated : item) }
+  return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
+}
 
 /** A previously uploaded set needs the server deletion workflow, not local removal. */
 export function removeUnsubmittedSet(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string): RecordingDraft {
@@ -268,13 +384,13 @@ export function restoreUnsubmittedSet(draft: RecordingDraft, exerciseEntryKey: s
 }
 /** A batch selection is invalidated if the groups the user saw have changed. */
 export function batchSetSnapshot(exercise: DraftExercise): string {
-  return JSON.stringify([exercise.exerciseEntryKey, exercise.identity, exercise.kind,
+  return JSON.stringify([exercise.exerciseEntryKey, exercise.identity, exercise.kind, exercise.measure ?? 'total',
     exercise.sets.map(set => [set.recordKey, set.setIndex, set.weightKg, set.reps, set.confirmed])])
 }
 
 /** Blank fields are not applied implicitly; the chosen values must be valid. */
 export function validBatchSetFields(exercise: DraftExercise, source: DraftSet, fields: BatchSetField[]): boolean {
-  return exercise.kind === 'weight' && fields.length > 0 && new Set(fields).size === fields.length &&
+  return exercise.kind === 'weight' && measureUsesSharedWeight(exerciseMeasure(exercise)) && fields.length > 0 && new Set(fields).size === fields.length &&
     fields.every(field => (field === 'weightKg' || field === 'reps') && Boolean(source[field].trim())) &&
     validRecordingV2Set(exercise, {...source, weightKg: fields.includes('weightKg') ? source.weightKg : '',
       reps: fields.includes('reps') ? source.reps : '', seconds: '', rpe: ''})
@@ -284,7 +400,7 @@ export function validBatchSetFields(exercise: DraftExercise, source: DraftSet, f
 export function applyBatchSetValues(draft: RecordingDraft, exerciseEntryKey: string, sourceKey: string,
   recordKeys: string[], fields: BatchSetField[], newRecordKeys: string[], expectedSnapshot: string): RecordingDraft {
   const exercise = findExercise(draft, exerciseEntryKey)
-  if (draft.recordFormat !== 2 || exercise.kind !== 'weight' || batchSetSnapshot(exercise) !== expectedSnapshot ||
+  if (draft.recordFormat !== 2 || exercise.kind !== 'weight' || !measureUsesSharedWeight(exerciseMeasure(exercise)) || batchSetSnapshot(exercise) !== expectedSnapshot ||
       !Array.isArray(recordKeys) || !Array.isArray(newRecordKeys) || !Array.isArray(fields) ||
       recordKeys.length + newRecordKeys.length < 1 || recordKeys.length + newRecordKeys.length > 200 ||
       new Set(recordKeys).size !== recordKeys.length || new Set(newRecordKeys).size !== newRecordKeys.length ||
@@ -478,6 +594,9 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
     if (!['weight', 'perSide', 'bodyweight', 'bodyweightPerSide', 'duration', 'durationPerSide', 'breath'].includes(exercise.kind)) {
       throw new Error('动作计量方式无效')
     }
+    if (exercise.measure !== undefined && (value.recordFormat !== 2 || exercise.kind !== 'weight' || !isV2Measure(exercise.measure))) {
+      throw new Error('动作计量方式无效')
+    }
     // Old drafts cannot prove whether a write reached the server before a
     // local acknowledgement. Preserve them and reconcile before assigning indexes.
     if (exercise.sets.some(group => !object(group))) throw new Error('训练组草稿无效')
@@ -492,6 +611,14 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
         throw new Error('训练组草稿无效')
       }
       assertKey(group.recordKey)
+      for (const key of ['leftWeightKg', 'leftReps', 'rightWeightKg', 'rightReps', 'bodyweightKg', 'adjustmentKg'] as const) {
+        if (Object.prototype.hasOwnProperty.call(group, key) && typeof group[key] !== 'string') throw new Error('训练组草稿无效')
+        if (Object.prototype.hasOwnProperty.call(group, key) && value.recordFormat !== 2) throw new Error('训练组草稿无效')
+      }
+      for (const key of ['leftState', 'rightState'] as const) {
+        if (!Object.prototype.hasOwnProperty.call(group, key)) continue
+        if (value.recordFormat !== 2 || !['unknown', 'performed', 'not_performed'].includes(String(group[key]))) throw new Error('训练组草稿无效')
+      }
       if (group.persisted && value.server === undefined) throw new Error('已保存的组缺少服务端记录')
       if (groups.has(group.recordKey)) throw new Error('训练组标识重复')
       groups.add(group.recordKey)

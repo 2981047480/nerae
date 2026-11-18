@@ -1,15 +1,17 @@
 import type { DraftExercise, DraftSet, RecordingDraft } from './recording'
 import type { RecordingV2Detail } from './recordingV2Projection'
 import { validRecordingV2Set } from './recordingV2Values'
+import {
+  draftFieldsFromMeasurement, exerciseMeasure, isV2Measure, setValueSignature, type V2Measure, type V2Measurement,
+} from './recordingV2Measure'
 
 type RemoteSet = RecordingV2Detail['sets'][number]
-function projectSet(set: RemoteSet): DraftSet | null {
-  const value = set.measurement
-  if (value.method !== 'total' || value.bodyweightKg !== undefined || value.adjustmentKg !== undefined ||
-      value.left !== undefined || value.right !== undefined) return null
-  return {recordKey:set.recordKey,setIndex:set.setIndex,weightKg:value.weightKg ?? '',
-    reps:value.reps === undefined ? '' : String(value.reps),seconds:'',rpe:set.rpe ?? '',
-    confirmed:set.confirmed,persisted:true,dirty:false}
+function projectSet(set: RemoteSet): { measure: V2Measure; draft: DraftSet } | null {
+  if (!isV2Measure(set.measurement.method)) return null
+  const fields = draftFieldsFromMeasurement(set.measurement as V2Measurement)
+  if (!fields) return null
+  return { measure: set.measurement.method, draft: { recordKey: set.recordKey, setIndex: set.setIndex, weightKg: '', reps: '',
+    seconds: '', rpe: set.rpe ?? '', confirmed: set.confirmed, persisted: true, dirty: false, ...fields } }
 }
 
 /**
@@ -38,18 +40,18 @@ export function adoptCloudRecordingV2(draft: RecordingDraft, remote: RecordingV2
     lastPosition = found.index;localEntries.set(exercise.exerciseEntryKey,exercise)
     for (const set of exercise.sets) {
       const cloud = active.get(set.recordKey)
-      if (!cloud || cloud.exerciseEntryKey !== exercise.exerciseEntryKey || cloud.setIndex !== set.setIndex ||
+      const projected = cloud && projectSet(cloud)
+      if (!cloud || !projected || projected.measure !== exerciseMeasure(exercise) || cloud.exerciseEntryKey !== exercise.exerciseEntryKey || cloud.setIndex !== set.setIndex ||
           !set.persisted || set.dirty || set.confirmed !== cloud.confirmed ||
-          !validRecordingV2Set(exercise,set) || !projectSet(cloud)) return null
+          !validRecordingV2Set(exercise,set) || setValueSignature(set, exerciseMeasure(exercise)) !== setValueSignature(projected.draft, projected.measure)) return null
     }
     for (const item of exercise.removedSets || []) {
       const cloud = removed.get(item.set.recordKey)
       const projected = cloud && projectSet(cloud.set)
-      if (!cloud || cloud.set.exerciseEntryKey !== exercise.exerciseEntryKey || cloud.set.setIndex !== item.set.setIndex ||
+      if (!cloud || !projected || projected.measure !== exerciseMeasure(exercise) || cloud.set.exerciseEntryKey !== exercise.exerciseEntryKey || cloud.set.setIndex !== item.set.setIndex ||
           cloud.removedPosition !== item.removedPosition || !item.set.persisted || item.set.dirty ||
-          item.set.confirmed !== cloud.set.confirmed || !validRecordingV2Set(exercise,item.set) || !projected ||
-          item.set.weightKg.trim() !== projected.weightKg.trim() || item.set.reps.trim() !== projected.reps.trim() ||
-          item.set.rpe.trim() !== projected.rpe.trim()) return null
+          item.set.confirmed !== cloud.set.confirmed || !validRecordingV2Set(exercise,item.set) ||
+          setValueSignature(item.set, exerciseMeasure(exercise)) !== setValueSignature(projected.draft, projected.measure)) return null
     }
   }
   const activeByEntry = new Map<string,RemoteSet[]>()
@@ -64,15 +66,26 @@ export function adoptCloudRecordingV2(draft: RecordingDraft, remote: RecordingV2
   for (const entry of remote.entries) {
     const previousExercise=localEntries.get(entry.exerciseEntryKey)
     const sets:DraftSet[]=[];const removedSets:NonNullable<DraftExercise['removedSets']>=[]
+    const seenMeasures = new Set<V2Measure>()
+    const accept = (projected: { measure: V2Measure; draft: DraftSet } | null): DraftSet | null => {
+      if (!projected) return null
+      const expected = previousExercise ? exerciseMeasure(previousExercise) : projected.measure
+      if (projected.measure !== expected) return null
+      if (!previousExercise && seenMeasures.size && !seenMeasures.has(projected.measure)) return null
+      seenMeasures.add(projected.measure)
+      return projected.draft
+    }
     for (const set of (activeByEntry.get(entry.exerciseEntryKey) || []).sort((a,b)=>a.setIndex-b.setIndex)) {
-      const projected=projectSet(set);if (!projected) return null;sets.push(projected)
+      const drafted = accept(projectSet(set)); if (!drafted) return null; sets.push(drafted)
     }
     for (const item of (removedByEntry.get(entry.exerciseEntryKey) || []).sort((a,b)=>a.set.setIndex-b.set.setIndex)) {
-      const projected=projectSet(item.set);if (!projected) return null
-      removedSets.push({set:projected,removedPosition:item.removedPosition})
+      const drafted = accept(projectSet(item.set)); if (!drafted) return null
+      removedSets.push({set:drafted,removedPosition:item.removedPosition})
     }
+    const measure = previousExercise ? exerciseMeasure(previousExercise) : ([...seenMeasures][0] ?? 'total')
     exercises.push(previousExercise ? {...previousExercise,sets,removedSets} : {
-      exerciseEntryKey:entry.exerciseEntryKey,identity:{source:'custom',exerciseName:entry.exerciseName},kind:'weight',sets,removedSets,
+      exerciseEntryKey:entry.exerciseEntryKey,identity:{source:'custom',exerciseName:entry.exerciseName},kind:'weight',
+      ...(measure === 'total' ? {} : { measure }), sets, removedSets,
     })
   }
   // Whole-action deletion is not yet supported by this client. If added later,

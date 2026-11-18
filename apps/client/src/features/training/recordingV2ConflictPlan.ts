@@ -1,28 +1,30 @@
 import type { DraftExercise, DraftSet, RecordingDraft } from './recording'
 import { prepareRecordingV2Batch, rebaseAcknowledgedRecordingV2, type RecordingV2Detail } from './recordingV2Projection'
 import { validRecordingV2Set } from './recordingV2Values'
+import {
+  applyMeasurementFields, describeDraftSet, draftFieldsFromMeasurement, exerciseMeasure, isV2Measure,
+  setValueSignature, type V2Measure, type V2Measurement,
+} from './recordingV2Measure'
 
 export type ConflictChoice = 'local' | 'cloud'
 export interface RecordingConflictRow { key: string; label: string; local: string; cloud: string }
 interface Pair { local: DraftSet; cloud: RecordingV2Detail['sets'][number] }
 interface Plan { rows: RecordingConflictRow[]; sets: Map<string, Pair>; remoteCompletion: boolean; draft: RecordingDraft }
 
-function values(set: DraftSet): string {
-  return JSON.stringify([set.weightKg.trim(), set.reps.trim(), set.rpe.trim(), set.confirmed])
+function values(set: DraftSet, measure: V2Measure): string {
+  return setValueSignature(set, measure)
 }
-function cloudSet(set: RecordingV2Detail['sets'][number]): DraftSet | null {
-  if (set.measurement.method !== 'total' || set.measurement.bodyweightKg !== undefined ||
-      set.measurement.adjustmentKg !== undefined || set.measurement.left !== undefined || set.measurement.right !== undefined) return null
-  return { recordKey: set.recordKey, setIndex: set.setIndex, weightKg: set.measurement.weightKg ?? '',
-    reps: set.measurement.reps === undefined ? '' : String(set.measurement.reps), seconds: '', rpe: set.rpe ?? '',
-    confirmed: set.confirmed, persisted: true, dirty: false }
+function cloudSet(set: RecordingV2Detail['sets'][number]): { measure: V2Measure; draft: DraftSet } | null {
+  if (!isV2Measure(set.measurement.method)) return null
+  const fields = draftFieldsFromMeasurement(set.measurement as V2Measurement)
+  if (!fields) return null
+  return { measure: set.measurement.method, draft: { recordKey: set.recordKey, setIndex: set.setIndex, weightKg: '', reps: '',
+    seconds: '', rpe: set.rpe ?? '', confirmed: set.confirmed, persisted: true, dirty: false, ...fields } }
 }
-function describe(set: DraftSet, showRpe: boolean, showConfirmation: boolean): string {
-  const weight = set.weightKg.trim() ? `${set.weightKg.trim()} kg` : '重量未填'
-  const reps = set.reps.trim() ? `${set.reps.trim()} 次` : '次数未填'
+function describe(set: DraftSet, measure: V2Measure, showRpe: boolean, showConfirmation: boolean): string {
   const rpe = showRpe ? (set.rpe.trim() ? ` · 主观强度 ${set.rpe.trim()}` : ' · 主观强度未填') : ''
   const confirmed = showConfirmation ? ` · ${set.confirmed ? '已单独记下' : '未单独记下'}` : ''
-  return `${weight} × ${reps}${rpe}${confirmed}`
+  return `${describeDraftSet({ measure, kind: 'weight' }, set)}${rpe}${confirmed}`
 }
 function sameKeys(local: DraftSet[], remote: RecordingV2Detail['sets']): boolean {
   return local.length === remote.length && local.every((item, index) =>
@@ -74,17 +76,23 @@ function includeCloudAdditions(draft: RecordingDraft, remote: RecordingV2Detail)
   for (const entry of remote.entries) {
     const existing = localEntries.get(entry.exerciseEntryKey)
     const additions: DraftSet[] = []
+    const additionMeasures = new Set<V2Measure>()
     for (const set of activeByEntry.get(entry.exerciseEntryKey) || []) {
       if (localKeys.has(set.recordKey)) continue
       const value = cloudSet(set)
-      if (!value) return null
-      additions.push(value)
+      if (!value || (existing && value.measure !== exerciseMeasure(existing))) return null
+      additionMeasures.add(value.measure)
+      additions.push(value.draft)
     }
+    if (additionMeasures.size > 1) return null
     const sets = [...(existing?.sets || []),...additions].sort((a,b) => a.setIndex - b.setIndex)
     if (new Set(sets.map(set => set.setIndex)).size !== sets.length) return null
-    exercises.push(existing ? {...existing,sets} : {
-      exerciseEntryKey:entry.exerciseEntryKey,identity:{source:'custom',exerciseName:entry.exerciseName},kind:'weight',sets,removedSets:[],
-    })
+    if (existing) exercises.push({...existing,sets})
+    else {
+      const measure = [...additionMeasures][0] ?? 'total'
+      exercises.push({ exerciseEntryKey:entry.exerciseEntryKey, identity:{source:'custom', exerciseName:entry.exerciseName},
+        kind:'weight', ...(measure === 'total' ? {} : { measure }), sets, removedSets:[] })
+    }
   }
   return {...draft,exercises}
 }
@@ -139,13 +147,14 @@ function conflictPlan(draft: RecordingDraft, remote: RecordingV2Detail): Plan | 
     const segment = (nameCounts.get(entry.exerciseName) || 0) > 1 ? ` · 第 ${occurrence} 段` : ''
     for (let j = 0; j < active.length; j++) {
       const local = exercise.sets[j]; const cloud = active[j]; const projected = cloudSet(cloud)
-      if (!projected || !validRecordingV2Set(exercise, local) || seen.has(local.recordKey)) return null
+      const measure = exerciseMeasure(exercise)
+      if (!projected || projected.measure !== measure || !validRecordingV2Set(exercise, local) || seen.has(local.recordKey)) return null
       seen.add(local.recordKey)
       const key = `set:${local.recordKey}`; sets.set(key, { local, cloud })
-      const showRpe = local.rpe.trim() !== projected.rpe.trim()
-      const showConfirmation = local.confirmed !== projected.confirmed
-      if (values(local) !== values(projected)) rows.push({ key, label:`${entry.exerciseName}${segment} · 第 ${j + 1} 组`,
-        local:describe(local, showRpe, showConfirmation), cloud:describe(projected, showRpe, showConfirmation) })
+      const showRpe = local.rpe.trim() !== projected.draft.rpe.trim()
+      const showConfirmation = local.confirmed !== projected.draft.confirmed
+      if (values(local, measure) !== values(projected.draft, measure)) rows.push({ key, label:`${entry.exerciseName}${segment} · 第 ${j + 1} 组`,
+        local:describe(local, measure, showRpe, showConfirmation), cloud:describe(projected.draft, measure, showRpe, showConfirmation) })
     }
     const removed = removedByEntry.get(entry.exerciseEntryKey) || []
     const removedByKey = new Map(removed.map(item => [item.set.recordKey, item]))
@@ -153,8 +162,9 @@ function conflictPlan(draft: RecordingDraft, remote: RecordingV2Detail): Plan | 
     for (const item of exercise.removedSets || []) {
       const other = removedByKey.get(item.set.recordKey)
       const projected = other && cloudSet(other.set)
-      if (!other || !projected || seen.has(item.set.recordKey) || item.set.setIndex !== other.set.setIndex ||
-          item.removedPosition !== other.removedPosition || values(item.set) !== values(projected)) return null
+      const measure = exerciseMeasure(exercise)
+      if (!other || !projected || projected.measure !== measure || seen.has(item.set.recordKey) || item.set.setIndex !== other.set.setIndex ||
+          item.removedPosition !== other.removedPosition || values(item.set, measure) !== values(projected.draft, measure)) return null
       seen.add(item.set.recordKey)
     }
   }
@@ -200,7 +210,8 @@ export function applyRecordingV2ConflictChoices(draft: RecordingDraft, remote: R
     const key = `set:${set.recordKey}`; const pair = plan.sets.get(key)
     if (choices[key] !== 'cloud' || !pair) return set
     const selected = cloudSet(pair.cloud)
-    return selected ? { ...set, weightKg:selected.weightKg, reps:selected.reps, rpe:selected.rpe, confirmed:selected.confirmed } : set
+    if (!selected || selected.measure !== exerciseMeasure(exercise)) return set
+    return { ...applyMeasurementFields(set, selected.draft), rpe: selected.draft.rpe, confirmed: selected.draft.confirmed, dirty: true }
   }) }))
   const chosen: RecordingDraft = { ...draft, exercises, ...(plan.remoteCompletion ? {completionRequested:true} : {}),
     date: choices.date === 'cloud' ? remote.date : draft.date,
