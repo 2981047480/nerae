@@ -219,6 +219,7 @@ final class NeraeProtectedDraftStore {
         guard let previous = try backend.read(account: owner.account) else { throw NeraeVaultError.conflict }
         let old = try Self.decode(previous, owner: owner)
         try Self.requireLegacySyncPendingPreserved(from: old.payload, to: payload)
+        try Self.requireNondecreasingSchema(from: old.payload, to: payload)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: payload, revision: next, owner: owner, account: owner.account, backend: backend)
     }
@@ -238,6 +239,7 @@ final class NeraeProtectedDraftStore {
         let old = try Self.decode(previous, owner: owner)
         guard old.payload == expectedData else { return false }
         try Self.requireLegacySyncPendingPreserved(from: old.payload, to: data)
+        try Self.requireNondecreasingSchema(from: old.payload, to: data)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: data, revision: next, owner: owner, account: owner.account, backend: backend)
         return true
@@ -272,6 +274,7 @@ final class NeraeProtectedDraftStore {
         if previous != nil { _ = try Self.syncPendingBytes(in: old.payload, malformedError: .unavailable) }
         guard old.revision == expectedRevision, (previous != nil) == expectedFound,
               old.payload == Data(expectedValue.utf8) else { return nil }
+        if previous != nil { try Self.requireNondecreasingSchema(from: old.payload, to: newPayload) }
         let next = try Self.nextRevision(old.revision)
         let encoded = try Self.encode(payload: newPayload, revision: next)
         if previous == nil {
@@ -356,13 +359,28 @@ final class NeraeProtectedDraftStore {
               let raw = try? JSONSerialization.jsonObject(with: data), let envelope = raw as? [String: Any],
               Set(envelope.keys) == Set(["schema", "subjectId", "draft"]),
               let schema = envelope["schema"] as? NSNumber, CFGetTypeID(schema) != CFBooleanGetTypeID(),
-              schema.intValue == 1, schema.doubleValue == 1,
+              (schema.intValue == 1 || schema.intValue == 2), schema.doubleValue == Double(schema.intValue),
               let subject = envelope["subjectId"] as? String,
               let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String else { return false }
         if let owner {
             guard subject.utf8.elementsEqual(owner.subject.utf8), event.utf8.elementsEqual(owner.event.utf8) else { return false }
         }
         return true
+    }
+
+    /// Once an item uses the newer payload schema, an older writer must not
+    /// replace it with a representation that cannot preserve its contents.
+    private static func requireNondecreasingSchema(from previous: Data, to proposed: Data) throws {
+        func version(_ data: Data) -> Int? {
+            guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let number = root["schema"] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+                  (number.intValue == 1 || number.intValue == 2),
+                  number.doubleValue == Double(number.intValue) else { return nil }
+            return number.intValue
+        }
+        guard let old = version(previous), let next = version(proposed), next >= old else {
+            throw NeraeVaultError.invalidState
+        }
     }
 
     /// Compatibility writers have no revision-bound authority to create,
@@ -478,7 +496,7 @@ final class NeraeProtectedDraftStore {
     }
 }
 
-/// Checks only the root draft key and its syncPending field. The containing
+/// Checks the root schema/draft keys and the draft's syncPending field. The containing
 /// JSON is first validated by Foundation. Nested values are skipped with an
 /// explicit stack so old, deeply nested unknown fields do not recurse here.
 private struct NeraeDraftPendingScanner {
@@ -492,13 +510,18 @@ private struct NeraeDraftPendingScanner {
         whitespace()
         guard take(0x7b) else { return .invalid }
         var seenDraft = false
+        var seenSchema = false
         var result: Result = .absent
         whitespace()
         if take(0x7d) { return .invalid }
         while true {
             whitespace()
             guard let key = string(), colon() else { return .invalid }
-            if key == "draft" {
+            if key == "schema" {
+                guard !seenSchema else { return .invalid }
+                seenSchema = true
+                guard skipValue() else { return .invalid }
+            } else if key == "draft" {
                 guard !seenDraft else { return .invalid }
                 seenDraft = true
                 result = draft()
@@ -509,7 +532,7 @@ private struct NeraeDraftPendingScanner {
             guard take(0x2c) else { return .invalid }
         }
         whitespace()
-        return seenDraft && index == bytes.count ? result : .invalid
+        return seenDraft && seenSchema && index == bytes.count ? result : .invalid
     }
 
     private mutating func draft() -> Result {

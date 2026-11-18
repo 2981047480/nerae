@@ -176,11 +176,13 @@ async function change(action: (target: TrainingEditorController) => Promise<Edit
 function changeMode(mode: RecordingMode): void { void change(target => target.setMode(mode)) }
 function changeDate(date: string): void { void change(target => target.setDate(date)) }
 function addSet(exercise: string): void { void change(target => target.addGroup(exercise), true) }
+function copySet(exercise: string, record: string): void { void change(target => target.copyGroup(exercise, record), true) }
 function editSet(exercise: string, record: string, field: InputField, value: string): void {
   void change(target => target.editGroup(exercise, record, field, value))
 }
 function confirmSet(exercise: string, record: string): void { void change(target => target.confirmGroup(exercise, record), true) }
 function removeSet(exercise: string, record: string): void { void change(target => target.removeGroup(exercise, record), true) }
+function restoreSet(exercise: string, record: string): void { void change(target => target.restoreGroup(exercise, record), true) }
 function cancelExercise(): void {
   if (pending.value > 0) return
   exerciseName.value = ''
@@ -318,36 +320,36 @@ onBeforeUnmount(() => {
         @tap="change(target => target.retryLocalSave(), true)">重试本机保存</button>
       <RecordingEditor :draft="draft" :latest-allowed-date="latestAllowedDate" :exercise-labels="exerciseLabels || {}" :issues="[]"
         :status-message="statusMessage" :saving="pending > 0" :can-save="false"
-        @change-mode="changeMode" @prepare-date="dateRefresh++" @change-date="changeDate" @add-exercise="enteringExercise = true" @add-set="addSet"
-        @edit-set="editSet" @confirm-set="confirmSet" @remove-set="removeSet" />
+        @change-mode="changeMode" @prepare-date="dateRefresh++" @change-date="changeDate" @add-exercise="enteringExercise = true" @add-set="addSet" @copy-set="copySet"
+        @edit-set="editSet" @confirm-set="confirmSet" @remove-set="removeSet" @restore-set="restoreSet" />
     </template>
   </view>
 </template>
 
 <style scoped>
-.training-entry { min-height: 100vh; background: #f3f4f1; color: #252c29; }
-.training-entry__heading { display: flex; flex-direction: column; gap: 14rpx; padding: 52rpx 40rpx 38rpx; background: #252c29; color: #fff; }
-.training-entry__eyebrow { color: #c4cbc5; font-size: 21rpx; letter-spacing: 3rpx; }
-.training-entry__title { font-size: 46rpx; font-weight: 650; }
-.training-entry__caption { color: #707a73; font-size: 25rpx; line-height: 1.5; }
-.training-entry__heading .training-entry__caption { color: #d4d9d5; }
+.training-entry { min-height: 100vh; background: var(--nerae-surface); color: var(--nerae-text); }
+.training-entry__heading { display: flex; flex-direction: column; gap: 14rpx; padding: 52rpx 40rpx 38rpx; background: var(--nerae-surface); color: var(--nerae-text); }
+.training-entry__eyebrow { color: var(--nerae-text-secondary); font-size: 21rpx; letter-spacing: 3rpx; }
+.training-entry__title { font-family: "Songti SC", "Noto Serif SC", serif; font-size: 46rpx; font-weight: 700; }
+.training-entry__caption { color: var(--nerae-text-secondary); font-size: 25rpx; line-height: 1.5; }
+.training-entry__heading .training-entry__caption { color: var(--nerae-text-secondary); }
 .training-entry__body { display: flex; flex-direction: column; gap: 20rpx; padding: 36rpx 32rpx; }
-.training-entry__error { color: #9c3c2d; font-size: 24rpx; line-height: 1.5; }
-.training-entry__empty { padding: 32rpx 0; color: #707a73; font-size: 25rpx; }
+.training-entry__error { color: var(--nerae-text); font-size: 24rpx; line-height: 1.5; }
+.training-entry__empty { padding: 32rpx 0; color: var(--nerae-text-secondary); font-size: 25rpx; }
 .training-entry__primary, .training-entry__secondary, .training-entry__retry { width: 100%; margin: 0; min-height: 88rpx; border-radius: 18rpx; font-size: 27rpx; }
-.training-entry__primary, .training-entry__retry { background: #f08b65; color: #252c29; }
-.training-entry__secondary { background: #fff; color: #35443b; }
-.draft-row, .editor-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 24rpx; background: #fff; border-radius: 20rpx; }
+.training-entry__primary, .training-entry__retry { background: var(--nerae-primary); color: var(--nerae-primary-text); }
+.training-entry__secondary { background: var(--nerae-surface-subtle); color: var(--nerae-text); }
+.draft-row, .editor-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 24rpx; background: var(--nerae-surface); border-radius: 20rpx; }
 .draft-row__text { display: flex; flex-direction: column; gap: 8rpx; }
 .draft-row__title { font-size: 28rpx; font-weight: 600; }
-.draft-row__detail, .editor-toolbar { color: #606a63; font-size: 23rpx; }
-.draft-row__button { margin: 0; background: #f3f4f1; font-size: 24rpx; }
-.editor-toolbar { padding: 0 24rpx; min-height: 88rpx; border-radius: 0; background: #f3f4f1; color: #252c29; font-size: 27rpx; font-weight: 650; }
+.draft-row__detail, .editor-toolbar { color: var(--nerae-text-secondary); font-size: 23rpx; }
+.draft-row__button { margin: 0; background: var(--nerae-surface-subtle); font-size: 24rpx; }
+.editor-toolbar { padding: 0 24rpx; min-height: 88rpx; border-radius: 0; background: var(--nerae-surface); color: var(--nerae-text); font-size: 27rpx; font-weight: 650; }
 .editor-toolbar button, .editor-toolbar__spacer { flex: 0 0 88rpx; width: 88rpx; }
-.editor-toolbar button { min-height: 88rpx; margin: 0; padding: 0; background: transparent; color: #252c29; font-size: 42rpx; line-height: 88rpx; }
-.exercise-form { display: flex; flex-direction: column; gap: 18rpx; margin: 24rpx; padding: 24rpx; border-radius: 20rpx; background: #fff; }
+.editor-toolbar button { min-height: 88rpx; margin: 0; padding: 0; background: transparent; color: var(--nerae-text); font-size: 42rpx; line-height: 88rpx; }
+.exercise-form { display: flex; flex-direction: column; gap: 18rpx; margin: 24rpx; padding: 24rpx; border: 1px solid var(--nerae-border-decorative); border-radius: 20rpx; background: var(--nerae-surface); }
 .exercise-form__title { font-size: 28rpx; font-weight: 600; }
-.exercise-form input { min-height: 84rpx; padding: 0 20rpx; border: 1px solid #dce2dc; border-radius: 16rpx; }
+.exercise-form input { min-height: 84rpx; padding: 0 20rpx; border: 1px solid var(--nerae-border-control); border-radius: 16rpx; }
 .exercise-form__actions { display: flex; gap: 16rpx; }
 .exercise-form__actions button { flex: 1; font-size: 25rpx; }
 button::after { border: 0; }

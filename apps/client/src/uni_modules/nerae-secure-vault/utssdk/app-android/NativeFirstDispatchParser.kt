@@ -46,7 +46,7 @@ private class StrictJson(private val source: String, private val draftPendingCom
         while (true) {
             ws(); require(i < source.length && source[i] == '"') { "object key" }
             val key = string()
-            val guardedKey = (scope == PendingScope.ROOT && key == "draft") ||
+            val guardedKey = (scope == PendingScope.ROOT && (key == "schema" || key == "draft")) ||
                 (scope == PendingScope.DRAFT && key == "syncPending")
             require(!fields.containsKey(key) || (draftPendingCompatibility && !guardedKey)) { "duplicate key" }
             val childScope = if (scope == PendingScope.ROOT && key == "draft") PendingScope.DRAFT else PendingScope.OTHER
@@ -115,6 +115,17 @@ internal fun draftSyncPendingBytes(value: String): ByteArray? {
     if (!draft.fields.containsKey("syncPending")) return null
     val pending = draft.fields["syncPending"] as? JS ?: error("draft pending")
     return strictUtf8(pending.value)
+}
+
+/** Only supported draft-envelope schemas; duplicate schema/draft keys fail closed. */
+internal fun draftEnvelopeSchema(value: String): Int {
+    val root = StrictJson(value, draftPendingCompatibility = true).parse() as? JO ?: error("draft envelope")
+    val number = (root.fields["schema"] as? JN)?.raw?.toDoubleOrNull() ?: error("draft schema")
+    return when (number) {
+        1.0 -> 1
+        2.0 -> 2
+        else -> error("draft schema")
+    }
 }
 
 private fun strictUtf8(value: String): ByteArray = StandardCharsets.UTF_8.newEncoder()

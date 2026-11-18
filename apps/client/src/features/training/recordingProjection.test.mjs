@@ -419,6 +419,18 @@ test('cross-device restore cannot discard an unresolved local send', async () =>
   }
 })
 
+test('server restore cannot discard a locally removed group even when all visible groups match', async () => {
+  const remote = await scoped()
+  let local = restoreConfirmedSession(remote, auth, today).draft
+  local = { ...local, exercises: local.exercises.map((exercise, index) => index ? exercise : {
+    ...exercise, removedSets: [{ removedPosition: 2, set: { ...exercise.sets[0],
+      recordKey: 'removed-001', setIndex: 20, persisted: false } }],
+  }) }
+  const before = JSON.stringify(local)
+  assert.equal(restoreConfirmedSession(remote, auth, today, local).reason, 'local_unsynced')
+  assert.equal(JSON.stringify(local), before)
+})
+
 test('restore rechecks the live lease before returning and leaves the supplied draft untouched on a session race', async () => {
   const snapshot = await scoped()
   const existing = restoreConfirmedSession(snapshot, auth, today).draft
