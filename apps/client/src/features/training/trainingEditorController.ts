@@ -2,8 +2,10 @@ import {
   addExercise,
   addSet,
   confirmSet,
+  copySet,
   createRecordingDraft,
   removeUnsubmittedSet,
+  restoreUnsubmittedSet,
   restoreDraft,
   switchMode,
   updateSet,
@@ -17,6 +19,7 @@ import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, Ve
 import type { PreparedFreeSessionRequest, PreparedSetsRequest, RecordingApi, RecordingAuth, ScopedSessionDetail } from './recordingApi'
 import type { OrderedPreparation } from './recordingProjection'
 import { pendingSets } from './setsIntent'
+import { encodeDraftEnvelope } from './draftEnvelope'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -222,7 +225,7 @@ export class TrainingEditorController {
         // closes. Reserve before touching native storage so it remains intact.
         state.releaseReservation = VersionedEditorDraft.reserveEmptyForCreation(subjectId, checked.clientEventId)
         if (!state.releaseReservation) return { ok: false, reason: 'local_unsynced' }
-        const value = JSON.stringify({ schema: 1, subjectId, draft: checked })
+        const value = encodeDraftEnvelope(subjectId, checked)
         let result: unknown
         try { result = await storage.createIfAbsent(key, value) }
         catch { return { ok: false, reason: owner.isCurrent() ? 'outcome_unknown' : 'session_changed' } }
@@ -295,7 +298,7 @@ export class TrainingEditorController {
           } else {
             // The initial snapshot is inserted by one atomic operation. Never fall
             // back to DraftController.persist(), which is an unconditional write.
-            const envelope = JSON.stringify({ schema: 1, subjectId: options.subjectId, draft })
+            const envelope = encodeDraftEnvelope(options.subjectId, draft)
             if (!this.isCurrent(options, generation)) throw new Error('session changed')
             let result: unknown
             let unknown = false
@@ -551,7 +554,7 @@ export class TrainingEditorController {
       try {
         const draft = this.local.draft
         const entryKey = this.newUniqueKey(draft.exercises.map(item => item.exerciseEntryKey))
-        const recordKeys = draft.exercises.flatMap(item => item.sets.map(set => set.recordKey))
+        const recordKeys = this.allRecordKeys(draft)
         const firstRecordKey = this.newUniqueKey(recordKeys)
         return await this.mutate(current => addExercise(current, entryKey, { source: 'custom', exerciseName: name }, kind, firstRecordKey))
       } catch (error) { return this.failure(error) }
@@ -562,8 +565,19 @@ export class TrainingEditorController {
     return this.withOwnership(async () => {
       try {
         const draft = this.local.draft
-        const key = this.newUniqueKey(draft.exercises.flatMap(item => item.sets.map(set => set.recordKey)))
+        const key = this.newUniqueKey(this.allRecordKeys(draft))
         return await this.mutate(current => addSet(current, exerciseEntryKey, key))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  async copyGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        const draft = this.local.draft
+        this.findGroup(draft, exerciseEntryKey, recordKey)
+        const key = this.newUniqueKey(this.allRecordKeys(draft))
+        return await this.mutate(current => copySet(current, exerciseEntryKey, recordKey, key))
       } catch (error) { return this.failure(error) }
     })
   }
@@ -593,6 +607,17 @@ export class TrainingEditorController {
           }
         }
         return await this.mutate(current => removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  async restoreGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        const exercise = this.local.draft.exercises.find(item => item.exerciseEntryKey === exerciseEntryKey)
+        if (!exercise) return this.invalid()
+        if (!exercise.removedSets?.some(item => item.set.recordKey === recordKey)) return this.success(false)
+        return await this.mutate(current => restoreUnsubmittedSet(current, exerciseEntryKey, recordKey))
       } catch (error) { return this.failure(error) }
     })
   }
@@ -645,6 +670,13 @@ export class TrainingEditorController {
       }
       return this.success(true)
     } catch (error) { return this.failure(error) }
+  }
+
+  private allRecordKeys(draft: RecordingDraft): string[] {
+    return draft.exercises.flatMap(item => [
+      ...item.sets.map(set => set.recordKey),
+      ...(item.removedSets || []).map(removed => removed.set.recordKey),
+    ])
   }
 
   private newUniqueKey(existing: string[]): string {

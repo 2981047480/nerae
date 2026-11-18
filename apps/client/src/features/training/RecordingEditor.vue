@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import type { DraftExercise, GroupIssue, InputField, RecordingDraft, RecordingMode, SetKind } from './recording'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import type { DraftExercise, DraftSet, GroupIssue, InputField, RecordingDraft, RecordingMode, SetKind } from './recording'
+import RulerInput from './RulerInput.vue'
+import SwipeableSetCard from './SwipeableSetCard.vue'
 
 /** The parent owns authenticated draft persistence, IDs and all server writes. */
 const props = defineProps<{
@@ -19,9 +21,11 @@ const emit = defineEmits<{
   (event: 'change-date', value: string): void
   (event: 'add-exercise'): void
   (event: 'add-set', exerciseEntryKey: string): void
+  (event: 'copy-set', exerciseEntryKey: string, recordKey: string): void
   (event: 'edit-set', exerciseEntryKey: string, recordKey: string, field: InputField, value: string): void
   (event: 'confirm-set', exerciseEntryKey: string, recordKey: string): void
   (event: 'remove-set', exerciseEntryKey: string, recordKey: string): void
+  (event: 'restore-set', exerciseEntryKey: string, recordKey: string): void
   (event: 'save'): void
 }>()
 
@@ -40,6 +44,100 @@ watch(() => props.draft.exercises.map(item => item.exerciseEntryKey), (keys, pre
 const visibleExercises = computed(() => props.draft.mode === 'per_set'
   ? props.draft.exercises.filter(item => item.exerciseEntryKey === selectedExerciseKey.value)
   : props.draft.exercises)
+
+const editing = ref<{ exerciseEntryKey: string; recordKey: string } | null>(null)
+const revealedSet = ref('')
+const expandedRemoved = ref<string[]>([])
+const pendingRemoval = ref<{ exerciseEntryKey: string; recordKey: string } | null>(null)
+const undoTarget = ref<{ exerciseEntryKey: string; recordKey: string } | null>(null)
+let undoHandle: ReturnType<typeof setTimeout> | null = null
+
+function requestRemove(exerciseEntryKey: string, recordKey: string): void {
+  pendingRemoval.value = { exerciseEntryKey, recordKey }
+  revealedSet.value = ''
+  emit('remove-set', exerciseEntryKey, recordKey)
+}
+function restoreSet(exerciseEntryKey: string, recordKey: string): void {
+  emit('restore-set', exerciseEntryKey, recordKey)
+  if (undoTarget.value?.recordKey === recordKey) undoTarget.value = null
+}
+watch(() => props.draft, draft => {
+  const target = pendingRemoval.value
+  if (!target || !draft.exercises.find(item => item.exerciseEntryKey === target.exerciseEntryKey)?.removedSets
+    ?.some(item => item.set.recordKey === target.recordKey)) return
+  pendingRemoval.value = null
+  undoTarget.value = target
+  if (undoHandle) clearTimeout(undoHandle)
+  undoHandle = setTimeout(() => { undoTarget.value = null; undoHandle = null }, 5000)
+})
+onBeforeUnmount(() => { if (undoHandle) clearTimeout(undoHandle) })
+function toggleRemoved(key: string): void {
+  expandedRemoved.value = expandedRemoved.value.includes(key)
+    ? expandedRemoved.value.filter(item => item !== key) : [...expandedRemoved.value, key]
+}
+function removedSummary(set: DraftSet, kind: SetKind): string {
+  const reps = hasSeconds(kind) ? `${set.seconds || '未填'} 秒` : `${set.reps || '未填'} 次`
+  return hasWeight(kind) ? `${set.weightKg || '未填'} kg × ${reps}` : reps
+}
+const awaitingConfirmation = ref(false)
+const editingExercise = computed(() => props.draft.exercises.find(item => item.exerciseEntryKey === editing.value?.exerciseEntryKey))
+const editingSet = computed(() => editingExercise.value?.sets.find(item => item.recordKey === editing.value?.recordKey))
+const editingNumber = computed(() => editingExercise.value?.sets.findIndex(item => item.recordKey === editing.value?.recordKey) ?? -1)
+let sheetTouchStart: { x: number; y: number } | null = null
+
+function sheetTouchPoint(event: unknown, field: 'touches' | 'changedTouches'): { x: number; y: number } | null {
+  if (!event || typeof event !== 'object' || !(field in event)) return null
+  const touches = (event as Record<string, unknown>)[field]
+  if (!touches || typeof touches !== 'object' || !('length' in touches) || touches.length !== 1 || !('0' in touches)) return null
+  const touch = touches[0]
+  if (!touch || typeof touch !== 'object' || !('clientX' in touch) || !('clientY' in touch)) return null
+  return typeof touch.clientX === 'number' && Number.isFinite(touch.clientX) &&
+    typeof touch.clientY === 'number' && Number.isFinite(touch.clientY)
+    ? { x: touch.clientX, y: touch.clientY } : null
+}
+
+function startSheetDrag(event: unknown): void { sheetTouchStart = sheetTouchPoint(event, 'touches') }
+function cancelSheetDrag(): void { sheetTouchStart = null }
+function finishSheetDrag(event: unknown): void {
+  const end = sheetTouchPoint(event, 'changedTouches')
+  const start = sheetTouchStart
+  sheetTouchStart = null
+  if (!start || !end) return
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  if (dy >= 70 && dy > Math.abs(dx) * 1.5) closeSet()
+}
+
+function openSet(exerciseEntryKey: string, recordKey: string): void {
+  revealedSet.value = ''
+  editing.value = { exerciseEntryKey, recordKey }
+  awaitingConfirmation.value = false
+}
+
+function closeSet(): void {
+  editing.value = null
+  awaitingConfirmation.value = false
+  sheetTouchStart = null
+}
+
+function finishSetInput(): void {
+  const current = editing.value
+  if (!current || !editingSet.value) return
+  if (props.draft.mode !== 'per_set' || editingSet.value.confirmed) {
+    closeSet()
+    return
+  }
+  awaitingConfirmation.value = true
+  emit('confirm-set', current.exerciseEntryKey, current.recordKey)
+}
+
+watch(() => editingSet.value?.confirmed, confirmed => {
+  if (awaitingConfirmation.value && confirmed) closeSet()
+})
+watch(() => editing.value && Boolean(editingSet.value), present => {
+  if (editing.value && !present) closeSet()
+})
+watch(() => props.draft.mode, () => { closeSet(); revealedSet.value = '' })
 
 function nameOf(exercise: DraftExercise): string {
   if (exercise.resolvedExerciseName) return exercise.resolvedExerciseName
@@ -71,8 +169,6 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
           <text>{{ draft.date }} ﹀</text>
         </view>
       </picker>
-      <text class="record-header__title">记下实际训练</text>
-      <text class="record-header__description">把训练记下来，让下一次更有方向。</text>
     </view>
 
     <view class="record-body">
@@ -87,12 +183,10 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
             <text class="mode-option__title">每组完成后记录</text>
           </button>
         </view>
-        <text class="mode-note">空白组不会计入；切换方式不改变已填内容。</text>
       </view>
 
       <view class="exercise-section">
-        <view class="section-heading">
-          <view><text class="section-title">训练动作</text><text class="section-caption">按实际完成情况填写</text></view>
+        <view v-if="draft.exercises.length > 0" class="section-heading">
           <button class="text-button" @tap="emit('add-exercise')">＋ 添加动作</button>
         </view>
 
@@ -116,34 +210,28 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
           <view class="exercise-card__header">
             <view class="exercise-card__name-block">
               <text class="exercise-card__name">{{ nameOf(exercise) }}</text>
-              <text class="exercise-card__kind">{{ kindLabels[exercise.kind] }}</text>
+              <text v-if="exercise.kind !== 'weight'" class="exercise-card__kind">{{ kindLabels[exercise.kind] }}</text>
             </view>
             <text class="exercise-card__count">{{ exercise.sets.length }} 组</text>
           </view>
 
-          <view class="set-columns">
-            <text class="set-column__number">组</text>
-            <text v-if="hasWeight(exercise.kind)" class="set-column__input">{{ isPerSide(exercise.kind) ? '每侧重量 kg' : '重量 kg' }}</text>
-            <text class="set-column__input">{{ hasSeconds(exercise.kind) ? (isPerSide(exercise.kind) ? '每侧秒数' : '实际秒数') : (isPerSide(exercise.kind) ? '每侧次数' : exercise.kind === 'breath' ? '呼吸次数' : '次数') }}</text>
-            <text v-if="draft.mode === 'per_set'" class="set-column__confirm">操作</text>
-            <text class="set-column__remove" />
-          </view>
           <view v-for="(set, index) in exercise.sets" :key="set.recordKey" class="set-row">
             <view class="set-row__values">
-              <text class="set-column__number">{{ index + 1 }}</text>
-              <input v-if="hasWeight(exercise.kind)" class="set-input" type="digit" :value="set.weightKg" placeholder="输入"
-                :aria-label="isPerSide(exercise.kind) ? '每侧重量，千克' : '重量，千克'"
-                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'weightKg', valueOf($event))" />
-              <input v-if="!hasSeconds(exercise.kind)" class="set-input" type="number" :value="set.reps" placeholder="输入"
-                :aria-label="isPerSide(exercise.kind) ? '每侧次数' : exercise.kind === 'breath' ? '呼吸次数' : '次数'"
-                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'reps', valueOf($event))" />
-              <input v-else class="set-input" type="number" :value="set.seconds" placeholder="输入"
-                :aria-label="isPerSide(exercise.kind) ? '每侧实际秒数' : '实际秒数'"
-                @input="emit('edit-set', exercise.exerciseEntryKey, set.recordKey, 'seconds', valueOf($event))" />
-              <button v-if="draft.mode === 'per_set'" class="confirm-button" :class="{ 'confirm-button--done': set.confirmed }" :disabled="saving"
-                @tap="emit('confirm-set', exercise.exerciseEntryKey, set.recordKey)">{{ set.confirmed ? '已记下' : '记下' }}</button>
-              <button class="remove-button" :disabled="saving || set.persisted" :aria-label="`移除第 ${index + 1} 组`"
-                @tap="emit('remove-set', exercise.exerciseEntryKey, set.recordKey)">×</button>
+              <SwipeableSetCard :open="revealedSet === set.recordKey" :removable="!set.persisted" :busy="saving"
+                :label="`第 ${index + 1} 组`" @reveal="revealedSet = set.recordKey" @dismiss="revealedSet = ''"
+                @edit="openSet(exercise.exerciseEntryKey, set.recordKey)" @copy="emit('copy-set', exercise.exerciseEntryKey, set.recordKey)"
+                @remove="requestRemove(exercise.exerciseEntryKey, set.recordKey)">
+                <text class="set-card__number">第 {{ index + 1 }} 组</text>
+                <view class="set-card__measurements">
+                  <template v-if="hasWeight(exercise.kind)">
+                    <text class="set-card__value">{{ set.weightKg || '—' }}</text><text class="set-card__unit">kg</text>
+                    <text class="set-card__times">×</text>
+                  </template>
+                  <text class="set-card__value">{{ (hasSeconds(exercise.kind) ? set.seconds : set.reps) || '—' }}</text>
+                  <text class="set-card__unit">{{ hasSeconds(exercise.kind) ? '秒' : '次' }}</text>
+                </view>
+                <text v-if="draft.mode === 'per_set' &amp;&amp; set.confirmed" class="set-card__state">已记下</text>
+              </SwipeableSetCard>
             </view>
             <text v-if="set.persisted &amp;&amp; !set.dirty" class="set-row__confirmed">已保存</text>
             <text v-else-if="set.persisted &amp;&amp; set.dirty" class="set-row__confirmed">已修改，待保存</text>
@@ -152,9 +240,30 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
             </text>
           </view>
           <button class="add-set-button" :disabled="saving" @tap="emit('add-set', exercise.exerciseEntryKey)">＋ 添加一组</button>
+          <view v-if="exercise.removedSets &amp;&amp; exercise.removedSets.length" class="removed-groups">
+            <button class="removed-groups__toggle" :aria-expanded="expandedRemoved.includes(exercise.exerciseEntryKey)"
+              @tap="toggleRemoved(exercise.exerciseEntryKey)">
+              已移除 {{ exercise.removedSets.length }} 组 {{ expandedRemoved.includes(exercise.exerciseEntryKey) ? '⌃' : '⌄' }}
+            </button>
+            <view v-if="expandedRemoved.includes(exercise.exerciseEntryKey)">
+              <view v-for="removed in exercise.removedSets" :key="removed.set.recordKey" class="removed-groups__item">
+                <view class="removed-groups__details">
+                  <text>移除时为第 {{ removed.removedPosition }} 组</text>
+                  <text class="removed-groups__values">{{ removedSummary(removed.set, exercise.kind) }}</text>
+                </view>
+                <button class="removed-groups__restore" :disabled="saving"
+                  @tap="restoreSet(exercise.exerciseEntryKey, removed.set.recordKey)">恢复</button>
+              </view>
+            </view>
+          </view>
         </view>
       </view>
       <view class="record-footer-space" />
+    </view>
+
+    <view v-if="undoTarget" class="undo-notice" role="status">
+      <text>已移除一组</text>
+      <button :disabled="saving" @tap="restoreSet(undoTarget.exerciseEntryKey, undoTarget.recordKey)">撤销</button>
     </view>
 
     <view class="record-footer">
@@ -163,62 +272,102 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
         {{ saving ? '正在保存…' : '保存记录' }}
       </button>
     </view>
+
+    <view v-if="editing &amp;&amp; editingExercise &amp;&amp; editingSet" class="set-sheet-layer">
+      <view class="set-sheet__scrim" @tap="closeSet" @touchmove.stop.prevent />
+      <view class="set-sheet" role="dialog" aria-label="填写训练组">
+        <view class="set-sheet__drag-area" @touchstart="startSheetDrag" @touchend="finishSheetDrag" @touchcancel="cancelSheetDrag">
+          <view class="set-sheet__grip"><view class="set-sheet__handle" /></view>
+          <view class="set-sheet__heading">
+            <view class="set-sheet__title-block">
+              <text class="set-sheet__title">第 {{ editingNumber + 1 }} 组</text>
+              <text class="set-sheet__subtitle">{{ nameOf(editingExercise) }}</text>
+            </view>
+            <button class="set-sheet__close" aria-label="关闭填写" @tap="closeSet">×</button>
+          </view>
+        </view>
+        <view class="set-sheet__fields">
+          <RulerInput v-if="hasWeight(editingExercise.kind)" :label="isPerSide(editingExercise.kind) ? '每侧重量' : '重量'"
+            unit="kg" kind="digit" :value="editingSet.weightKg"
+            @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'weightKg', $event)" />
+          <RulerInput v-if="hasSeconds(editingExercise.kind)" label="实际时间" unit="秒" kind="number" :value="editingSet.seconds"
+            @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'seconds', $event)" />
+          <RulerInput v-else :label="isPerSide(editingExercise.kind) ? '每侧次数' : '次数'" unit="次" kind="number" :value="editingSet.reps"
+            @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'reps', $event)" />
+        </view>
+        <text v-if="statusMessage" class="set-sheet__status" role="status">{{ statusMessage }}</text>
+        <button class="set-sheet__done" :disabled="saving" @tap="finishSetInput">
+          {{ draft.mode === 'per_set' && !editingSet.confirmed ? '记下' : '完成输入' }}
+        </button>
+      </view>
+    </view>
   </view>
 </template>
 
 <style scoped>
-.record-editor { min-height: 100vh; background: #f3f4f1; color: #252c29; }
+.record-editor { min-height: 100vh; background: var(--nerae-surface); color: var(--nerae-text); }
 .record-header { display: flex; flex-direction: column; align-items: flex-start; gap: 12rpx; padding: 12rpx 32rpx 0; }
-.record-header picker { align-self: center; }
-.record-header__title { margin-top: 18rpx; font-size: 42rpx; line-height: 1.22; font-weight: 650; }
-.record-header__description { color: #606a63; font-size: 24rpx; line-height: 1.5; }
-.date-picker { display: flex; align-items: center; justify-content: center; min-height: 88rpx; padding: 0 26rpx; border: 1px solid #d9ded9; border-radius: 44rpx; background: #fff; color: #465149; font-size: 23rpx; }
+.record-header picker { align-self: flex-start; }
+.date-picker { display: flex; align-items: center; justify-content: center; min-height: 76rpx; padding: 0 24rpx; border: 1px solid var(--nerae-border-decorative); border-radius: 40rpx; color: var(--nerae-text); font-size: 23rpx; }
 .record-body { padding: 24rpx 32rpx 0; }
 .mode-section, .exercise-section { margin-bottom: 32rpx; }
-.section-title { display: block; font-size: 32rpx; font-weight: 650; line-height: 1.35; }
-.mode-options { display: flex; gap: 4rpx; padding: 5rpx; border-radius: 40rpx; background: #e5e9e1; }
-.mode-option { display: flex; flex: 1; min-width: 0; min-height: 88rpx; align-items: center; justify-content: center; margin: 0; padding: 10rpx; border: 0; border-radius: 44rpx; background: transparent; color: #465149; line-height: 1.35; }
-.mode-option::after, .text-button::after, .empty-state__button::after, .remove-button::after, .confirm-button::after, .add-set-button::after, .save-button::after { border: 0; }
-.mode-option--active { background: #252c29; color: #fff; }
+.mode-options { display: flex; gap: 4rpx; padding: 5rpx; border: 1px solid var(--nerae-border-decorative); border-radius: 40rpx; }
+.mode-option { display: flex; flex: 1; min-width: 0; min-height: 76rpx; align-items: center; justify-content: center; margin: 0; padding: 10rpx; border: 0; border-radius: 40rpx; background: transparent; color: var(--nerae-text); line-height: 1.35; }
+.mode-option--active { background: var(--nerae-primary); color: var(--nerae-primary-text); }
 .mode-option__title { font-size: 24rpx; font-weight: 650; }
-.mode-note { font-size: 22rpx; color: #606a63; line-height: 1.4; }
-.mode-note { display: block; margin-top: 14rpx; }
-.section-heading { display: flex; justify-content: space-between; align-items: center; gap: 20rpx; }
-.section-caption { display: block; margin-top: 6rpx; font-size: 23rpx; color: #606a63; }
+.section-heading { display: flex; justify-content: flex-end; align-items: center; }
 .exercise-tabs { width: 100%; margin-top: 20rpx; white-space: nowrap; }
 .exercise-tabs__list { display: flex; gap: 12rpx; }
-.exercise-tabs__button { flex: 0 0 auto; max-width: 220rpx; overflow: hidden; text-overflow: ellipsis; margin: 0; padding: 0 24rpx; min-height: 88rpx; line-height: 88rpx; border-radius: 15rpx; background: #e7eae4; color: #465149; font-size: 24rpx; }
-.exercise-tabs__button--active { background: #252c29; color: #fff; }
-.exercise-tabs__button::after { border: 0; }
-.text-button { min-height: 88rpx; margin: 0; padding: 0 4rpx; background: transparent; color: #8d412d; font-size: 25rpx; font-weight: 650; line-height: 88rpx; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 12rpx; margin-top: 22rpx; padding: 56rpx 24rpx; border: 1px solid #e2e5e0; border-radius: 24rpx; background: #fff; text-align: center; }
+.exercise-tabs__button { flex: 0 0 auto; max-width: 220rpx; overflow: hidden; text-overflow: ellipsis; margin: 0; padding: 0 24rpx; min-height: 80rpx; line-height: 80rpx; border-radius: 16rpx; background: var(--nerae-surface-subtle); color: var(--nerae-text); font-size: 24rpx; }
+.exercise-tabs__button--active { background: var(--nerae-primary); color: var(--nerae-primary-text); }
+.text-button { min-height: 88rpx; margin: 0; padding: 0 4rpx; background: transparent; color: var(--nerae-text); font-size: 25rpx; font-weight: 650; line-height: 88rpx; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 12rpx; margin-top: 22rpx; padding: 56rpx 24rpx; border: 1px solid var(--nerae-border-decorative); border-radius: 24rpx; text-align: center; }
 .empty-state__title { font-size: 29rpx; font-weight: 650; }
-.empty-state__detail { color: #606a63; font-size: 24rpx; line-height: 1.5; }
-.empty-state__button { min-height: 88rpx; margin-top: 12rpx; padding: 0 34rpx; border-radius: 16rpx; background: #f08b65; color: #252c29; font-size: 26rpx; line-height: 88rpx; }
-.exercise-card { margin-top: 22rpx; padding: 28rpx; border: 1px solid #e2e5e0; border-radius: 24rpx; background: #fff; }
-.exercise-card__header { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.empty-state__detail { color: var(--nerae-text-secondary); font-size: 24rpx; line-height: 1.5; }
+.empty-state__button { min-height: 88rpx; margin-top: 12rpx; padding: 0 34rpx; border-radius: 16rpx; background: var(--nerae-primary); color: var(--nerae-primary-text); font-size: 26rpx; line-height: 88rpx; }
+.exercise-card { margin-top: 32rpx; }
+.exercise-card__header { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-bottom: 20rpx; }
 .exercise-card__name-block { min-width: 0; flex: 1; }
-.exercise-card__name { display: block; overflow-wrap: anywhere; font-size: 30rpx; font-weight: 650; line-height: 1.4; }
-.exercise-card__kind { display: block; margin-top: 6rpx; color: #606a63; font-size: 23rpx; }
-.exercise-card__count { flex-shrink: 0; color: #606a63; font-size: 23rpx; }
-.set-columns, .set-row__values { display: flex; align-items: center; gap: 10rpx; }
-.set-columns { margin-top: 22rpx; color: #606a63; font-size: 22rpx; }
-.set-column__number { flex: 0 0 38rpx; text-align: center; }
-.set-column__input { flex: 1; min-width: 0; }
-.set-column__confirm { flex: 0 0 92rpx; text-align: center; }
-.set-column__remove { flex: 0 0 88rpx; }
+.exercise-card__name { display: block; overflow-wrap: anywhere; font-family: "Songti SC", "Noto Serif SC", serif; font-size: 34rpx; font-weight: 700; line-height: 1.4; }
+.exercise-card__kind { display: block; margin-top: 6rpx; color: var(--nerae-text-secondary); font-size: 23rpx; }
+.exercise-card__count { flex-shrink: 0; color: var(--nerae-text-secondary); font-size: 23rpx; }
 .set-row { margin-top: 12rpx; }
-.set-row__confirmed { display: block; margin: 6rpx 58rpx 0; color: #606a63; font-size: 21rpx; }
-.set-input { flex: 1; min-width: 0; height: 88rpx; box-sizing: border-box; padding: 0 10rpx; border: 1px solid #d9ded9; border-radius: 12rpx; background: #fafbf9; font-size: 26rpx; text-align: center; }
-.remove-button { flex: 0 0 88rpx; min-width: 88rpx; min-height: 88rpx; margin: 0; padding: 0; background: transparent; color: #7b857d; font-size: 32rpx; line-height: 88rpx; }
-.set-error { display: block; margin-top: 12rpx; color: #a33121; font-size: 23rpx; line-height: 1.4; }
-.confirm-button { flex: 0 0 92rpx; min-width: 92rpx; min-height: 88rpx; margin: 0; padding: 0; border-radius: 12rpx; background: #f08b65; color: #252c29; font-size: 22rpx; line-height: 88rpx; }
-.confirm-button--done { background: #e6ebdc; color: #52604d; }
-.add-set-button { min-height: 76rpx; margin: 18rpx 0 0; border-radius: 14rpx; color: #252c29; font-size: 25rpx; line-height: 76rpx; }
-.add-set-button { width: 100%; border: 1px dashed #b9c1ba; background: #fff; }
+.set-row__values { display: flex; align-items: stretch; }
+.set-card__number { flex: 0 0 auto; font-size: 24rpx; font-weight: 600; white-space: nowrap; }
+.set-card__measurements { display: flex; flex: 1; min-width: 0; align-items: baseline; gap: 5rpx; }
+.set-card__value { font-size: 32rpx; font-weight: 650; }
+.set-card__unit, .set-card__times { color: var(--nerae-text-secondary); font-size: 23rpx; }
+.set-card__times { margin: 0 7rpx; }
+.set-card__state { flex-shrink: 0; color: var(--nerae-text-secondary); font-size: 21rpx; }
+.set-row__confirmed { display: block; margin: 6rpx 20rpx 0; color: var(--nerae-text-secondary); font-size: 21rpx; }
+.removed-groups__toggle { display: inline-flex; align-items: center; min-height: 68rpx; margin: 0; padding: 0 4rpx; background: transparent; color: var(--nerae-text-secondary); font-size: 22rpx; line-height: 1.3; }
+.removed-groups__item { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; padding: 12rpx 16rpx; border-radius: 14rpx; background: var(--nerae-surface-subtle); }
+.removed-groups__item + .removed-groups__item { margin-top: 8rpx; }
+.removed-groups__details { display: flex; flex-direction: column; gap: 4rpx; min-width: 0; color: var(--nerae-text-secondary); font-size: 21rpx; line-height: 1.4; }
+.removed-groups__values { color: var(--nerae-text); font-size: 24rpx; }
+.removed-groups__restore { flex: 0 0 auto; min-height: 68rpx; margin: 0; padding: 0 16rpx; background: transparent; color: var(--nerae-text); font-size: 24rpx; line-height: 68rpx; }
+.undo-notice { position: fixed; z-index: 20; right: 32rpx; bottom: calc(160rpx + env(safe-area-inset-bottom)); left: 32rpx; display: flex; align-items: center; justify-content: space-between; min-height: 82rpx; padding: 0 20rpx 0 26rpx; border-radius: 16rpx; background: var(--nerae-primary); color: var(--nerae-primary-text); font-size: 24rpx; }
+.undo-notice button { min-height: 72rpx; margin: 0; padding: 0 12rpx; background: transparent; color: var(--nerae-primary-text); font-size: 24rpx; line-height: 72rpx; }
+.set-error { display: block; margin-top: 12rpx; color: var(--nerae-text); font-size: 23rpx; line-height: 1.4; }
+.add-set-button { display: inline-flex; min-height: 76rpx; align-items: center; margin: 12rpx 0 0; padding: 0 4rpx; background: transparent; color: var(--nerae-text); font-size: 25rpx; line-height: 76rpx; }
 .record-footer-space { height: 160rpx; }
-.record-footer { position: fixed; right: 0; bottom: 0; left: 0; padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #e2e5e0; }
-.record-footer__status { display: block; margin-bottom: 10rpx; color: #606a63; font-size: 22rpx; line-height: 1.4; }
-.save-button { min-height: 96rpx; margin: 0; border-radius: 18rpx; background: #f08b65; color: #252c29; font-size: 29rpx; font-weight: 650; line-height: 96rpx; }
-.save-button[disabled] { background: #dce0db; color: #788079; }
+.record-footer { position: fixed; right: 0; bottom: 0; left: 0; padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom)); background: var(--nerae-surface); border-top: 1px solid var(--nerae-border-decorative); }
+.record-footer__status { display: block; margin-bottom: 10rpx; color: var(--nerae-text-secondary); font-size: 22rpx; line-height: 1.4; }
+.save-button, .set-sheet__done { min-height: 96rpx; margin: 0; border-radius: 18rpx; background: var(--nerae-primary); color: var(--nerae-primary-text); font-size: 29rpx; font-weight: 650; line-height: 96rpx; }
+.save-button[disabled], .set-sheet__done[disabled] { opacity: 1; background: var(--nerae-disabled); color: var(--nerae-primary-text); }
+.set-sheet-layer { position: fixed; inset: 0; z-index: 30; }
+.set-sheet__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.36); }
+.set-sheet { position: absolute; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; gap: 24rpx; max-height: 85vh; box-sizing: border-box; overflow-y: auto; padding: 0 32rpx calc(28rpx + env(safe-area-inset-bottom)); border-radius: 32rpx 32rpx 0 0; background: var(--nerae-surface); }
+.set-sheet__drag-area { display: flex; flex-direction: column; gap: 6rpx; }
+.set-sheet__grip { display: flex; height: 40rpx; align-items: center; justify-content: center; }
+.set-sheet__handle { width: 80rpx; height: 8rpx; border-radius: 8rpx; background: var(--nerae-border-decorative); }
+.set-sheet__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
+.set-sheet__title-block { display: flex; min-width: 0; flex-direction: column; gap: 6rpx; }
+.set-sheet__title { font-family: "Songti SC", "Noto Serif SC", serif; font-size: 38rpx; font-weight: 700; }
+.set-sheet__subtitle { color: var(--nerae-text-secondary); font-size: 24rpx; overflow-wrap: anywhere; }
+.set-sheet__close { flex: 0 0 76rpx; width: 76rpx; min-height: 76rpx; margin: 0; padding: 0; border-radius: 40rpx; background: var(--nerae-surface-subtle); color: var(--nerae-text); font-size: 36rpx; line-height: 76rpx; }
+.set-sheet__fields { display: flex; flex-direction: column; gap: 22rpx; }
+.set-sheet__status { color: var(--nerae-text-secondary); font-size: 22rpx; line-height: 1.5; }
+.set-sheet__done { width: 100%; }
+button::after { border: 0; }
 </style>

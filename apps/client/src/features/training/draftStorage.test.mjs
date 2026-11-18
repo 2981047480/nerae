@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { registerHooks } from 'node:module'
 import { test } from 'node:test'
-import { addExercise, createRecordingDraft, switchMode, updateSet } from './recording.ts'
+import { addExercise, createRecordingDraft, removeUnsubmittedSet, switchMode, updateSet } from './recording.ts'
 
 // Node's built-in TypeScript support requires an extension; uni-app/Vite does not.
 const hooks = registerHooks({
@@ -42,6 +42,33 @@ test('real user input and the selected mode restore under the same authenticated
   assert.equal(restored.draft.exercises[0].sets[0].recordKey, 'record-001')
   assert.equal(restored.draft.exercises[0].sets[0].reps, '8')
   assert.equal(restored.status, 'saved_locally')
+})
+
+test('legacy drafts upgrade on write and removed-group snapshots survive reload', async () => {
+  const storage = memoryStore()
+  const auth = { generation: 'schema-session', isCurrent: (id, generation) => id === '101' && generation === 'schema-session' }
+  const key = 'nerae.workout.draft.v1.101.event-0001'
+  storage.data.set(key, JSON.stringify({ schema: 1, subjectId: '101', draft: makeDraft() }))
+  const loaded = await DraftController.load('101', 'event-0001', storage, now, auth)
+  assert.equal(await loaded.update(draft => removeUnsubmittedSet(draft, 'entry-0001', 'record-001')), true)
+  assert.equal(JSON.parse(storage.data.get(key)).schema, 2)
+  const reopened = await DraftController.load('101', 'event-0001', storage, now, auth)
+  assert.equal(reopened.draft.exercises[0].removedSets[0].set.recordKey, 'record-001')
+})
+
+test('unknown schema or removed groups disguised as legacy are rejected without changing bytes', async () => {
+  const auth = { generation: 'schema-reject', isCurrent: (id, generation) => id === '101' && generation === 'schema-reject' }
+  for (const envelope of [
+    { schema: 3, subjectId: '101', draft: makeDraft() },
+    { schema: 1, subjectId: '101', draft: removeUnsubmittedSet(makeDraft(), 'entry-0001', 'record-001') },
+  ]) {
+    const storage = memoryStore()
+    const key = 'nerae.workout.draft.v1.101.event-0001'
+    const before = JSON.stringify(envelope)
+    storage.data.set(key, before)
+    await assert.rejects(DraftController.load('101', 'event-0001', storage, now, auth))
+    assert.equal(storage.data.get(key), before)
+  }
 })
 
 test('Unicode event IDs use character counts consistently for local draft persistence', async () => {

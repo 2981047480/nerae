@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "as_of": "2026-10-28",
+  "as_of": "2026-11-14",
   "status_semantics": "工作包与可派发执行卡在同一DAG；ready只列未暂缓、依赖已accepted的task/integration。planned不代表实施。",
   "model_policies": {
     "judgment": {
@@ -297,56 +297,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -354,7 +354,7 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "breakdown": "complete",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -410,7 +410,7 @@
       },
       "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
       "actual_reasoning": "Native session setting not exposed",
-      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "base_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "review_mode": "sequential_role_review",
       "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed."
     },
@@ -704,7 +704,8 @@
         "AGENTS.md",
         "docs/CURRENT_STATE.md",
         "docs/APP_FLOW.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/design/recording-review/DECISIONS.md"
       ],
       "deliverables": "实现日历、计划采用、会话/稳定组记录、训练后与逐组共用一份记录、补录、修订与完成率；不模拟训练播放器或编造实际时长。",
       "acceptance": [
@@ -737,7 +738,10 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": []
+      "acceptance_requires": [
+        "K01-05",
+        "K01-06"
+      ]
     },
     {
       "id": "A05",
@@ -1040,7 +1044,8 @@
       "depends_on": [
         "F02",
         "D02",
-        "P02-01"
+        "P02-01",
+        "U01-01"
       ],
       "role": "ui-builder",
       "model_policy": "implementation",
@@ -1053,7 +1058,11 @@
         "apps/client/src/navigation/",
         "apps/client/src/styles/",
         "apps/client/src/stores/",
-        "docs/evidence/U01/"
+        "docs/evidence/U01/",
+        "apps/client/src/App.vue",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/features/auth/AuthEntry.vue",
+        "apps/client/src/features/auth/DeviceApprovalPanel.vue"
       ],
       "inputs": [
         "AGENTS.md",
@@ -1062,7 +1071,9 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/RECORDING_DELIVERY_PLAN.md"
       ],
       "deliverables": "把token/版式/组件转为uni-app实现；统一平台登录/存储/导航、错误中文映射与账号隔离；非页面业务不散落uni调用。",
       "acceptance": [
@@ -1070,7 +1081,7 @@
         "320/390/430宽、桌面、200%文字及Reduce Motion等价",
         "页面只有清晰主操作；键盘与安全区不遮控件；小程序、iOS 与 Android 三端分别构建及实际验收",
         "正式接受前分别引用 P02-02 与 P02-03 的可安装制品与真机证据；可在证据缺失时先开展独立设计与实现。",
-        "细拆执行卡时写明对应 D02 产出、R05 页面与状态、素材来源和三端实际截图；旧视觉不作为当前接受基线。"
+        "仅 U01-01 可在完整 F02 之前开始；后续正式页面执行卡保留原工程/设计前置。旧 R05 只供流程参考，每端按白底灰阶规范以真实画面验收。"
       ],
       "verification_commands": [
         "make typecheck-client",
@@ -1105,7 +1116,8 @@
       "acceptance_requires": [
         "P02-02",
         "P02-03"
-      ]
+      ],
+      "breakdown": "partial"
     },
     {
       "id": "U02",
@@ -1115,7 +1127,9 @@
       "depends_on": [
         "A04",
         "U01",
-        "U02-01"
+        "U02-01",
+        "U02-03",
+        "U02-04"
       ],
       "role": "ui-builder",
       "model_policy": "implementation",
@@ -1123,6 +1137,7 @@
       "write_allowlist": [
         "apps/client/src/features/training/",
         "apps/client/src/features/today/",
+        "apps/client/src/pages/index/index.vue",
         "docs/evidence/U02/"
       ],
       "inputs": [
@@ -1132,7 +1147,10 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md"
       ],
       "deliverables": "实现今天/休息/暂停/未安排、训练后记录与每组完成后记录、草稿恢复、受限离线同步和结果反馈；两模式共用同一记录，不实现计时器。",
       "acceptance": [
@@ -1167,7 +1185,8 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错返回真实命令/错误/影响/下一步；同类第二次重评输入、环境、范围和模型；第三次停止该路径并明确 blocked，独立工作继续。",
       "external_prerequisites": [],
-      "acceptance_requires": []
+      "acceptance_requires": [],
+      "breakdown": "partial"
     },
     {
       "id": "U03",
@@ -1194,7 +1213,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现草稿恢复、AI差异/缺项/阻断、手动编辑和发布确认，授权分区与待办顺序。",
       "acceptance": [
@@ -1253,7 +1273,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现咨询/关系独立线程、发送重试、未读、敏感不可见和结束只读；授权范围提示不泄漏内容。",
       "acceptance": [
@@ -1314,7 +1335,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现发现与服务说明、咨询预填、条件联络入口、同条款确认与逐范围授权。 实现教练服务包管理：创建、编辑、上下架与查看已确认的历史服务快照。",
       "acceptance": [
@@ -1847,7 +1869,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现训练/饮食发现、内容详情、采用或记录的默认下一步、来源说明、另存/分享、AI预填编辑与审核结果。",
       "acceptance": [
@@ -1908,7 +1931,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现轻量自评、可选观察、信息不足状态、建议前后差异/确认/过期/采用新版提示。",
       "acceptance": [
@@ -2582,22 +2606,22 @@
         {
           "path": "docs/evidence/F01/F01-01/clean-checkout-20261028.md",
           "sha256": "d9a020f26904569af148fc46a0de58e40d6b1bcc0010d08ee2a22b6e294dc4ba",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/workspace-snapshot-provenance.json",
           "sha256": "7a1965a243f5e8a20d87a883be1fe01e1ae7f6f2fcf27b96b63b9f9c33c797fc",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/image-lock.json",
           "sha256": "e11118b6027e9497179c630fff51e1b7f02ad1227c47bfad45e495c9975ef1e8",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/generator-probe/check.sh",
           "sha256": "599642f44bc72c576be0e43dd3b2635a03e4191779352bc067dca6c01352fbe3",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2608,11 +2632,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_mode": "independent",
       "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
-      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "reviewed_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_summary": "独立复核在集成提交重新运行冻结安装、peer、三端资源编译、Go探针和生成器探针；检查快照归属与镜像清单。镜像未运行，真实隔离留给 F01-04。",
       "completion": {
         "scope": {
@@ -2712,47 +2736,47 @@
         {
           "path": "apps/api/go.mod",
           "sha256": "487e3c7e3d4c97bccad2157282cb67a6b4d169a762b627ebaa8f20f2979e9487",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/go.sum",
           "sha256": "5b435e519d710064b93a6775dbc4eaf7d84a73e4a7b4ffc61ef3f9fc4935fee6",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/cmd/api/server.go",
           "sha256": "006e4d1bbb7dd386779e6bfa9f3d605c538467fee97b7508e2199b9d20b6e28f",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/cmd/api/server_test.go",
           "sha256": "fb4eb8b78c5495867ff3e202959ed56e389f62a9d092439b054aea2e30b147ca",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/internal/config/config_test.go",
           "sha256": "85494adc062283ea5c846af9a09ac8aa4edee2d41ab2399ecc98b769170634d5",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/README.md",
           "sha256": "2ab73f9d79c81c6706ad001d7e01a8f114fe383ac01c6e3fb01c2a38e6437ebe",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/report.md",
           "sha256": "64ca4c09a9a79a32f6521f5b89ab58d8b11bc4ace1508ce78ea1f0904eb9df4f",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/smoke.py",
           "sha256": "a88d4be9e410a897ef258b0c41c07a47ac3c54476ca08fbc8a4a986796ddf9de",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/drain_smoke.py",
           "sha256": "9227e61855da536c2102f835d8f1a15aa2caf3987d825a1d7317deb2cfe2a84c",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2763,11 +2787,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
-      "accepted_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "base_revision": "5d9a687a1b1f9e5dc35dc550bd54e5a5261e85bd",
+      "accepted_revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "reviewed_revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78",
       "review_summary": "独立复核与 Lead 均在该提交干净归档运行 Go build、race、vet、API/worker 构建和两个本机进程测试；缺健康 MySQL/Redis 与实际队列仍交后续卡验证。",
       "completion": {
         "scope": {
@@ -2891,32 +2915,32 @@
         {
           "path": "apps/client/vite.config.ts",
           "sha256": "3add394bdd8e79ba36334fdb4fc490353acda91c2ae2927df15acd6b74ce497a",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/client/index.html",
           "sha256": "1beef966181ffe5b2553fd381bf44573a1938727b67310fcf16dd9fee03fb6f9",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/client/src/manifest.json",
           "sha256": "435090945ff22d94c69368868784c09e7e21697931cd5234023196ec8ec729b1",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/admin/src/main.ts",
           "sha256": "9f3aa00dcb444d739ab72b1677254ed62372825d55bb718420358ada2cd79fd0",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "pnpm-lock.yaml",
           "sha256": "b0a4cee8c2dc9aec7c91dbd8af096a21a89d87645d585c5090653889a1115167",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "docs/evidence/F01/F01-03/report.md",
           "sha256": "9bca75be16c163bcced4041e52820cf8a7785ad1ad0cf35db6a331298287fed2",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2927,11 +2951,11 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
-      "accepted_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "base_revision": "5d9a687a1b1f9e5dc35dc550bd54e5a5261e85bd",
+      "accepted_revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3",
       "review_mode": "independent",
       "reviewed_by": "/root (Codex Lead; gpt-6.1-terra, max)",
-      "reviewed_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "reviewed_revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3",
       "review_summary": "Lead 独立审阅修复并从该提交的全新归档执行 frozen install、peer、两端类型检查、三端资源与后台构建，验证关键产物非空；不代表原生包或业务验收。",
       "completion": {
         "scope": {
@@ -3039,7 +3063,7 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+      "base_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
     },
     {
       "id": "F01-05",
@@ -3109,7 +3133,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "0106cf37cc6e804478e6b249612b6c041880d904"
+      "base_revision": "0eccd97f35387f17273444328cae40461a32b62e"
     },
     {
       "id": "F01-I",
@@ -3242,7 +3266,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "7621f1cfc590616cc343bca72f23909b17d9bbfd"
+      "base_revision": "c7d56a0965a0540505be8f92477c1f9d74c11b62"
     },
     {
       "id": "F02-01",
@@ -3328,7 +3352,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "e4aede85c9e9e75584b2a83109f2a03d921bc506"
+      "base_revision": "f67bec60288022f8e6d6bc977f3b2d23c3743d11"
     },
     {
       "id": "F02-02",
@@ -3397,7 +3421,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "a71a7840e0c390eaca66906ea6c5bc35c8e21eef"
+      "base_revision": "5f756ad721b6cc0d444c60ebc5f5aa2c2fb0e8f1"
     },
     {
       "id": "F02-03",
@@ -3568,12 +3592,12 @@
         {
           "path": "docs/evidence/L01/L01-01/report.md",
           "sha256": "72896e48a7ee0e08131a20469da4075b23b03fe7ea1111e55cc1094be57dedaf",
-          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+          "revision": "1da641cf2fac0e8c917b2d062584d190f5db2623"
         },
         {
           "path": "docs/evidence/L01/L01-01/continuation.md",
           "sha256": "14b16300b7ed8551349c7f35fb7e7e64ab904646ab24ddc6bce231e24f210c62",
-          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+          "revision": "1da641cf2fac0e8c917b2d062584d190f5db2623"
         }
       ],
       "decision_owner": "Project Lead",
@@ -3584,9 +3608,9 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
-      "reviewed_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
+      "reviewed_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
       "review_mode": "independent",
       "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
       "review_summary": "独立复核同一集成提交，确认三端主体/渠道/身份与六类留存、AI 条款和责任角色均登记为待取得证据；该盘点不代表任何平台或法律批准。",
@@ -4015,7 +4039,8 @@
         "docs/ENGINEERING_STANDARDS.md",
         "docs/DEFINITION_OF_DONE.md",
         "api/openapi.yaml",
-        "docs/VALIDATION_PLAN.md"
+        "docs/VALIDATION_PLAN.md",
+        "docs/design/recording-review/DECISIONS.md"
       ],
       "deliverables": "接线草稿/发布/当前日历/一步开始/组记录；验证固定快照和记录恢复，使用已审核种子内容。",
       "acceptance": [
@@ -4322,17 +4347,17 @@
         {
           "path": "docs/evidence/D01/round-03/reasoning/REPORT.md",
           "sha256": "3cb0f0da05bec04ef14516e797f5df528c48f71104a9b16b54565bd550c46193",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         },
         {
           "path": "docs/evidence/D01/round-03/reasoning/checks.json",
           "sha256": "483edfd1252682f899a2d7bc6bcea01c7c876e0b305c9e286606a166cefe3037",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         },
         {
           "path": "docs/evidence/D01/round-03/reasoning/design-manifest.json",
           "sha256": "366f88c573acc18f63e235c14cf54b6181fc7b0c6d2e70cbc839624c018a038e",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4343,8 +4368,8 @@
       "kind": "task",
       "actual_model": "native Codex session; precise model id not exposed",
       "actual_reasoning": "session default; precise effort not exposed",
-      "base_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
-      "accepted_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
+      "base_revision": "0b794889bca50d9363d59b682b38dc71b5eb330c",
+      "accepted_revision": "0b794889bca50d9363d59b682b38dc71b5eb330c",
       "reviewed_by": "/root (Codex Lead)",
       "review_mode": "sequential_role_review",
       "review_reason": "同一Lead依次承担产品/交互/视觉规范与批判复核；没有独立子代理意见或用户研究；只接受文稿，执行指定DeepSeek后另作视觉验收",
@@ -4453,63 +4478,63 @@
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_04.md",
           "sha256": "f14b7892e6bd0964e527ee85e64243363342a2582002f17b2065624fe3609687",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/checks.json",
           "sha256": "496a0cffef3e204b0afd0053bcf3f539cb295c35412ba6b961361869b16c3361",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/SOURCE_MANIFEST.json",
           "sha256": "d0cc8217a1dbd45c10f143dea6b81b30260685f77e012dc6f5083a3ed3e2ff18",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/POST_QA_SOURCE_CHECK.json",
           "sha256": "11c11de78f26d45cf1f55bf52e859c361e241b7cb4767b5e6aac7f9d38a7a2d8",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/INTEGRATION_BYTE_CHECK.json",
           "sha256": "3bfa131556d9d1916e50a182cb5015226f329e734afe0a892b94ad5d1415f889",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/focus-and-scale.json",
           "sha256": "293179fa27b8c86a331b8c96fbadd2d685e6b69b1e8a94266e66087773b4c2ef",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/publish-result.json",
           "sha256": "bc848a8a61b68d6d05ddd41893170ef66ad19cb441b39b4caf3e11a434f71fa3",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/rest-recovery.json",
           "sha256": "fdb86ba70dc427ff9cacd356ab9d19f3409add60f2477f189f8bd2e54f37072f",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/store-final.json",
           "sha256": "d19cc0e5f6966f1bc24d762e031cc663153a1b4ef084fbabbdc72235f6586db6",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/README_ACCEPTED.md",
           "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442",
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
           "archived_from": {
-            "revision": "b10c799295a091d2238f5d75995b66b154725442",
+            "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
             "path": "design/prototype/README.md",
             "method": "git show; byte-identical immutable archive before full UI import"
           },
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/worker/fix02-report.json",
           "sha256": "72c418b0eb24f74e5fbeb6258e224dc8d8abb9333d1fcac3c307e61ee4949aa4",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4520,7 +4545,7 @@
       "kind": "task",
       "actual_model": "opencode-go/deepseek-v4.1-flash",
       "actual_reasoning": "Medium (initial Max stopped after prolonged no-source planning)",
-      "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
+      "base_revision": "e14b108ed49b861c72548fcfa380d5822fa4d22d",
       "workspace": "/private/tmp/nerae-ui-round-three",
       "branch": "ui/round-three",
       "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
@@ -4541,7 +4566,7 @@
       },
       "fix03_feedback_sent": true,
       "fix03_normal_feedback_sent": true,
-      "accepted_revision": "b10c799295a091d2238f5d75995b66b154725442",
+      "accepted_revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
       "reviewed_by": "/root (Codex Lead)",
       "review_mode": "independent",
       "completion": {
@@ -4655,56 +4680,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4724,14 +4749,14 @@
       },
       "actual_model": "opencode-go/deepseek-v4.1-flash",
       "actual_reasoning": "Medium (Lead execution adjustment)",
-      "base_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+      "base_revision": "cb854ee10d22fbde1e73ae61b863848732fd55e0",
       "workspace": "/private/tmp/nerae-ui-complete",
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
       "execution_state": "normal worker handback; exact integration and independent Lead review accepted",
       "candidate_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -4855,56 +4880,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4913,7 +4938,7 @@
       "acceptance_requires": [],
       "parent": "D01",
       "kind": "integration",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -4969,19 +4994,19 @@
       },
       "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
       "actual_reasoning": "Native session setting not exposed",
-      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "base_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "review_mode": "sequential_role_review",
       "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed.",
       "workspace": "/Users/zephyr/Documents/项目/nerae",
       "branch": "main",
       "preview_port": 4187,
       "integration_result": {
-        "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+        "integrated_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
         "covered_tasks": [
           "D01-03"
         ],
         "dependency_acceptances": {
-          "D01-03": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "D01-03": "1c53f2def7b84eb4be25aca4d8686392d2bd9495"
         },
         "evidence": [
           "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
@@ -5000,7 +5025,10 @@
         "K01-01",
         "K01-02",
         "K01-03",
-        "K01-I"
+        "K01-I",
+        "K01-04",
+        "K01-05",
+        "K01-06"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -5011,7 +5039,8 @@
         "api/tests/",
         "docs/evidence/K01/",
         "docs/DECISION_LOG.md",
-        "docs/APP_FLOW.md"
+        "docs/APP_FLOW.md",
+        "docs/PRD.md"
       ],
       "inputs": [
         "AGENTS.md",
@@ -5021,13 +5050,16 @@
         "docs/design/round-04/INTEGRATION.md",
         "api/openapi.yaml",
         "docs/数据模型与ER设计.md",
-        "docs/IMPLEMENTATION_PLAN.md"
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md"
       ],
       "deliverables": "对齐训练后/逐组记录、跨端同一主体与安全绑定、可发起注销的 OpenAPI/ER 合同；输出真实反例与复核，供 F02 生成消费。",
       "acceptance": [
         "缺省时长、不同动作测量、删除/修订、稳定 recordKey 与训练日期均可无歧义表达",
         "多平台身份须验证凭据与双边确认后关联；重复绑定/主体冲突不得泄露或合并",
-        "注销可由 App 内发起，保留/删除规则由 L01 取得依据；不假称已实现"
+        "注销可由 App 内发起，保留/删除规则由 L01 取得依据；不假称已实现",
+        "最新记录决定逐项映射到组与完成、草稿/恢复/权限及兼容用例；旧语义不可原样通过。"
       ],
       "verification_commands": [
         "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
@@ -5038,8 +5070,8 @@
         "先将 NERAE_TEST_PYTHON 指向含 PyYAML 的 Python 3.11 隔离解释器；本工作树缺 venv，临时复用路径见 IMPLEMENTATION_PLAN。"
       ],
       "effort_days": [
-        4.5,
-        9.5
+        8,
+        16.5
       ],
       "flow_ids": [
         "F01",
@@ -5116,32 +5148,32 @@
         {
           "path": "api/openapi.yaml",
           "sha256": "dc38a60d86634bfb6f573caf49c0d7f71eddc9aaa837d801372e3aef56092957",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "api/tests/test_recording_contract.py",
           "sha256": "fbe86dfff5fa0e7884ccd34376fbeed0f8ec61faefbd0f29c446f736962f2e35",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "api/tests/codegen/check.sh",
           "sha256": "49cf17730549b8acaded6da041583728e0e13874c2b411e90fa9dd4d13516694",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/K01/K01-01/codegen-integration.md",
           "sha256": "c9c44ea47d422dc342d618c0c7df1a50c3edda82a451f9b15a6f784f30bbd1d4",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/K01/K01-01/runtime-cases.md",
           "sha256": "ba272566aa72295cc3ce165190b59ed6bf29473080064c14d6a94c4643f202a6",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/数据模型与ER设计.md",
           "sha256": "28aa6c7006e90fe2552ff8c2e3c0e57b219b84797a1c6f95d7bc4c841928286b",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5152,11 +5184,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "reviewed_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_summary": "独立复核在集成提交复跑78项静态合同测试、OpenAPI校验和TS/Go生成探针；运行时授权、幂等、事务和正式生成配置仍分别由后续任务验收。",
       "completion": {
         "scope": {
@@ -5280,7 +5312,7 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+      "base_revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
     },
     {
       "id": "K01-03",
@@ -5288,7 +5320,8 @@
       "batch": "foundation",
       "status": "planned",
       "depends_on": [
-        "K01-02"
+        "K01-02",
+        "K01-06"
       ],
       "role": "tech-architect",
       "model_policy": "judgment",
@@ -5353,7 +5386,9 @@
       "depends_on": [
         "K01-01",
         "K01-02",
-        "K01-03"
+        "K01-03",
+        "K01-05",
+        "K01-06"
       ],
       "role": "reviewer",
       "model_policy": "judgment",
@@ -5368,12 +5403,14 @@
         "docs/APP_FLOW.md",
         "api/openapi.yaml",
         "docs/数据模型与ER设计.md",
-        "docs/IMPLEMENTATION_PLAN.md"
+        "docs/IMPLEMENTATION_PLAN.md",
+        "docs/design/recording-review/DECISIONS.md"
       ],
       "deliverables": "对同一集成版本检查训练、身份、注销和测试邮箱合同及消费者路径，记录缺口、运行静态合同测试与独立或顺序角色复核。",
       "acceptance": [
         "直接依赖各合同卡的接受证据均对应同一集成版本，权限与数据恢复反例完整",
-        "旧 operationId/消费者兼容、合同与 ER 一致；不能将静态测试称为真实 HTTP/DB"
+        "旧 operationId/消费者兼容、合同与 ER 一致；不能将静态测试称为真实 HTTP/DB",
+        "同一版本复核新计量、缺项、草稿/删除冲突、教练授权和旧端兼容；保留早期 K01-01 的历史接受范围。"
       ],
       "verification_commands": [
         "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
@@ -5467,37 +5504,37 @@
         {
           "path": "docs/evidence/D02/D02-I/report.md",
           "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/UI_SPEC.md",
           "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/screen-map.md",
           "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/interaction-spec.md",
           "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/account-control.md",
           "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/platform-state-matrix.md",
           "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/asset-ledger.md",
           "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5507,9 +5544,9 @@
       "breakdown": "complete",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
-      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
+      "reviewed_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "D02-01 和 D02-I 已在集成版本复核；接受范围仅为三端文字设计规格，不代表 UI、素材权利或真机通过。",
@@ -5620,37 +5657,37 @@
         {
           "path": "docs/UI_SPEC.md",
           "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/screen-map.md",
           "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/interaction-spec.md",
           "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/account-control.md",
           "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/platform-state-matrix.md",
           "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/asset-ledger.md",
           "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/evidence/D02/D02-01/continuation.md",
           "sha256": "b6f6d952d94aabd0915336ad0748cf062c638ac57ada70de8228fb2896313408",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5661,9 +5698,9 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
-      "reviewed_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "b7e495dc33074139246335191775579481a4eae4",
+      "reviewed_revision": "b7e495dc33074139246335191775579481a4eae4",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "独立复核在同一集成提交检查任务覆盖、离线注销与未缓存分支、链接及任务图；真实界面、设备、素材权利和身份合同仍由后续卡验收。",
@@ -5773,7 +5810,7 @@
         {
           "path": "docs/evidence/D02/D02-I/report.md",
           "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5784,14 +5821,14 @@
       "kind": "integration",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
-      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
-      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "base_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
+      "accepted_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
+      "reviewed_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "独立复核同一集成提交、D02-01 证据哈希、30 屏任务映射、三端状态与素材边界；正式 UI、真实素材及设备仍未验收。",
       "integration_result": {
-        "integrated_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+        "integrated_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
         "covered_tasks": [
           "D02-01"
         ],
@@ -5892,17 +5929,17 @@
         {
           "path": "docs/evidence/P02/P02-01/report.md",
           "sha256": "42533906a3f7cb83746b4994bc2060a30e10992e4e470586249af0d2c84d54ce",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         },
         {
           "path": "docs/plans/app/P02-01-platform-checklist.md",
           "sha256": "4f36775220659ed14f25578ac52a2377621c1e50b6f2623cb6050ed5f168125e",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         },
         {
           "path": "infra/app/P02-01-tooling-inventory.md",
           "sha256": "0318e33bbc495f1eb4ba12cb1133526661d2d4d3db2afff0286bab11ddb5cf04",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5913,11 +5950,11 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "4d15f5b39ca9f976a251c167cc3cdfbe9ff69d67",
-      "accepted_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "base_revision": "d81cd21cd1008e13dd05d500a46e6d0174b23f23",
+      "accepted_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "reviewed_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6",
       "review_summary": "独立复核在集成提交干净归档复跑冻结安装、peer 和三端资源构建并检查产物；Lead 对模拟器受沙箱限制作受控只读复核。原生安装、签名和真机仍未验证。",
       "completion": {
         "scope": {
@@ -6137,13 +6174,16 @@
       "id": "P02-02",
       "title": "iOS 可安装开发包与真机链路",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "P02-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "Project Lead",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "运行时未提供",
+      "base_revision": "e411986c3765c4951a9ea3f189717114fae4894b",
       "write_allowlist": [
         "infra/app/ios/build/",
         "docs/evidence/P02/P02-02/"
@@ -6229,13 +6269,16 @@
       "id": "P02-03",
       "title": "Android 可安装开发包与真机链路",
       "batch": "foundation",
-      "status": "planned",
+      "status": "active",
       "depends_on": [
         "P02-01"
       ],
       "role": "worker",
       "model_policy": "implementation",
-      "owner": null,
+      "owner": "Project Lead",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "运行时未提供",
+      "base_revision": "e411986c3765c4951a9ea3f189717114fae4894b",
       "write_allowlist": [
         "infra/app/android/",
         "docs/evidence/P02/P02-03/"
@@ -6307,7 +6350,8 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-05/BRIEF.md",
-        "docs/design/round-05/app-storyboards/README.md"
+        "docs/design/round-05/app-storyboards/README.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md"
       ],
       "deliverables": "实现三端安全关联与注销入口、本人确认、可见的处理状态和取消/失败恢复；调用 A01 与 O03 已定义的服务端职责。 提供按用途采集同意的说明、拒绝与撤回入口；采集同意与关系授权分别表达。",
       "acceptance": [
@@ -6375,14 +6419,18 @@
         "docs/VALIDATION_PLAN.md",
         "docs/APP_FLOW.md",
         "docs/UI_SPEC.md",
-        "api/openapi.yaml"
+        "api/openapi.yaml",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md"
       ],
       "deliverables": "在同一集成版本连通真实服务、小程序和可安装 iOS/Android 开发包，完成记录及跨端恢复，并组织获授权的目标用户内部试用。",
       "acceptance": [
         "两模式共用一份 session/recordKey，小程序到 App、App 到小程序均可保存、回看和修订；空白组、未知时长、幂等及 412 冲突有反例",
         "iOS 微信、Android 微信、iOS App、Android App 分别在真机验证；断网重试、重启、账号切换及数据隔离有证据",
         "至少一位同意参与的目标学员独立完成两种记录方式，记录动作/输入、失败点和结果；无人试用时用户可用性保持未通过",
-        "明确记录技术验证与用户试用证据对应的同一版本，未通过或不可用项不冒称 M1 已验收"
+        "明确记录技术验证与用户试用证据对应的同一版本，未通过或不可用项不冒称 M1 已验收",
+        "用真实邮箱/微信及本人确认验证登录方式控制权；用两部独立真设备验证同账号草稿和完成记录双向写回、删除冲突，覆盖缺项累计和白底灰阶视觉。仅同机双会话或手机浏览器均不通过。"
       ],
       "verification_commands": [
         "make e2e FLOW=m1-recording",
@@ -6526,23 +6574,23 @@
         {
           "path": "scripts/plan.py",
           "sha256": "6f439fe024f4e72b0bf5be4470d800224f6ce8c9bc33a26c94df178de059b467",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "scripts/tests/test_plan.py",
           "sha256": "738335cf666b31c1a63a19f50e8e90c114bf6bd0669a8a7f2997f89cf284612d",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "docs/DEFINITION_OF_DONE.md",
           "sha256": "bac225bb83c9f6abcdd052e994099f3d587edd63713004c0d2e816510eb0d7b1",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "docs/evidence/Q02/Q02-01/report.md",
           "sha256": "a23887f96e15fbed0768c7ae06c4b4ef18ebc230528bb4ac1f0f95d21ef935cd",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
-          "source_revision": "206f2137fad9a1784451c5b0f018e2e8d7bcf89d"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925",
+          "source_revision": "2599b2dc0ea8fd0df5ab8f543b31b5bc738edbd7"
         }
       ],
       "decision_owner": "Project Lead",
@@ -6559,8 +6607,8 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "839e242a6357895c86cd4990bb3163f7b6b5c921",
-      "accepted_revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
+      "base_revision": "86db6b6465be63aa10ed3bc7383e302298120e45",
+      "accepted_revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests",
       "review_summary": "独立 reviewer 在同一集成提交复跑 46 项任务图测试和检查；历史及归档来源与 SHA-256 均可核验。",
@@ -6664,23 +6712,23 @@
         {
           "path": "scripts/plan.py",
           "sha256": "b4ba59ad2af68c2b31c8a0dd8bd1231be67caca502fd9b649055ce1c407564eb",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "scripts/tests/test_plan.py",
           "sha256": "5589148e5b19ff5cfcf351552e372215656449cf922c8e990eb7caa34a411dab",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "docs/tasks/tasks.json",
           "sha256": "e2fec2865660216df6840e565ad1d3f06d0526f0d2fd1822f446a0ba0503afbe",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "docs/evidence/Q02/Q02-02/report.md",
           "sha256": "d0182fc3011062327ebd40adc5866ce25d3e11829402a2ecdfc7ac0436d9e30c",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
-          "source_revision": "a29bb89b3bba07ccdd5d91210ae254ae8667a2b7"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9",
+          "source_revision": "471b0348c97b9de6a374c0c8d6edbd6e55caeeca"
         }
       ],
       "decision_owner": "Project Lead",
@@ -6691,8 +6739,8 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "ebe136b8b3f14e5283d2a9593996b9b67dd392ea",
-      "accepted_revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
+      "base_revision": "56b33c3b13d63ddad47c50ea2ecd14441bbd86b7",
+      "accepted_revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests",
       "review_summary": "独立 reviewer 在集成提交复跑 51 项任务图测试和 plan check；真实写冲突与最终接受门槛均保留。",
@@ -6752,7 +6800,9 @@
         "U01",
         "A04",
         "P02-02",
-        "P02-03"
+        "P02-03",
+        "K01-05",
+        "K01-06"
       ],
       "parent": "U02",
       "kind": "task",
@@ -6761,7 +6811,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "e6d274e06bcd85b2f25e262bd6a19de9ab0cea80",
+      "base_revision": "c62dca77622ac24163d82b03593546d42039b5d9",
       "write_allowlist": [
         "apps/client/src/features/training/",
         "docs/evidence/U02/U02-01/"
@@ -6773,7 +6823,9 @@
         "api/openapi.yaml",
         "docs/UI_SPEC.md",
         "docs/design/round-04/BRIEF.md",
-        "docs/design/round-05/implementation/interaction-spec.md"
+        "docs/design/round-05/implementation/interaction-spec.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/design/recording-review/DECISIONS.md"
       ],
       "deliverables": "在正式 uni-app 客户端实现共用记录模型的训练后和逐组编辑；保留真实输入、稳定键和明确的校验与保存状态，接口接线前不伪装服务端同步。",
       "acceptance": [
@@ -6866,7 +6918,7 @@
       "external_prerequisites": [],
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "620befb974e2da8a3922494ebe32127229bb1ac9"
+      "base_revision": "3b182440a3e02bfac16c4c06a2fa6561d057e26f"
     },
     {
       "id": "A04-02",
@@ -7175,7 +7227,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
+      "base_revision": "faf01be8a4cf75b6b0ef1033e53a32d30ad4540c",
       "write_allowlist": ["apps/api/internal/modules/auth/domain/device_proof.go", "apps/api/internal/modules/auth/domain/device_proof_test.go", "apps/api/internal/modules/auth/domain/sms_challenge.go", "apps/api/internal/modules/auth/domain/sms_challenge_test.go", "apps/api/internal/modules/auth/domain/email_challenge.go", "apps/api/internal/modules/auth/domain/email_challenge_test.go", "apps/api/internal/modules/auth/domain/email_identity.go", "apps/api/internal/modules/auth/domain/email_identity_test.go", "docs/evidence/A01/A01-01/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
       "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信和测试邮箱挑战随机码，使用服务端密钥对验证码生成用途隔离的绑定摘要；测试邮箱地址规范化、受保护索引和加密；不发送验证码或签发账号会话。",
@@ -7209,7 +7261,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "b52bcfae560c7f8204541b5506012fca7a28f86d",
+      "base_revision": "33a7080fb89d43b76e86538b5ce452858e03c058",
       "write_allowlist": ["apps/api/internal/modules/auth/repository/", "apps/api/migrations/auth/0001_device_proof_replay.up.sql", "docs/evidence/A01/A01-02/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
       "deliverables": "实现设备证明 JTI 的受保护摘要、事务内唯一消费和足够长的保留期限；真实会话及响应重放另行接入。",
@@ -8125,10 +8177,386 @@
       "decision_owner": "Project Lead",
       "failure_protocol": "首错记录真实错误；同类第二次重评；第三次停止该路径并报告阻塞。",
       "external_prerequisites": []
+    },
+    {
+      "id": "K01-04",
+      "title": "把训练记录新决定对到正式产品规则",
+      "batch": "foundation",
+      "kind": "task",
+      "parent": "K01",
+      "status": "active",
+      "depends_on": [
+        "K01-01",
+        "D02-I"
+      ],
+      "acceptance_requires": [],
+      "role": "product",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "运行时未提供",
+      "base_revision": "e411986c3765c4951a9ea3f189717114fae4894b",
+      "write_allowlist": [
+        "docs/PRD.md",
+        "docs/evidence/K01/K01-04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/DECISION_LOG.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md"
+      ],
+      "deliverables": "更新 PRD 记录规则，并交付带旧字段、消费者和验收例子的兼容差异表；共享接口留给后续合同卡。",
+      "acceptance": [
+        "用普通、复制、预填、空白、缺项、已移除和同名动作分段列出完成后逐组结果；明确草稿与完成的区别。",
+        "覆盖左右侧、自重/助力、计划范围、教练可见性与撤权；区分已决定和仍待看稿项；每项都有对应后续消费者。"
+      ],
+      "verification_commands": [
+        "逐条对照 DECISIONS、PRD、APP_FLOW、ER 与 SetRecord；按差异表手算至少一个部分累计并复审。",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "旧文档和代码有互相冲突的确认规则，不得将仍待看的设计升格为需求。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在该卡写域内工作；不覆盖其他人的未提交文件，不记录凭据或真实训练数据。",
+        "不以效果图、资源编译或同机合成会话充当真实 App、真实跨设备或发布验收。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际输出、影响及下一步；同类第二次复核输入和范围，第三次标阻塞；不降低验收条件。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "K01-05",
+      "title": "组的计量、缺项及整次完成合同",
+      "batch": "foundation",
+      "kind": "task",
+      "parent": "K01",
+      "status": "planned",
+      "depends_on": [
+        "K01-04",
+        "K01-02"
+      ],
+      "acceptance_requires": [],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/APP_FLOW.md",
+        "api/tests/",
+        "docs/evidence/K01/K01-05/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md"
+      ],
+      "deliverables": "串行修订组输入/读取、计量、计划目标和完成语义；保存稳定键和已有 operationId，输出兼容矩阵。",
+      "acceptance": [
+        "保留空组/缺项各计一组，缺失不当 0；保留的预填和复制组不漏不重；局部累计 284 kg，双哑铃示例 240 kg 有合同及消费者示例。",
+        "可表示实际/目标范围、左右未做、自重加负重/减助力与手填；0 组动作与完成后转草稿能表达，不编造训练时间。",
+        "旧记录可读；旧端不能静默覆盖新数据；明确协议兼容或版本拒绝路径，迁移和生成物后交 F02/A04。"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "受共享 API/ER 写域约束；待 K01-02 交回写权才改。静态合同不等于持久化和端到端验收。"
+      ],
+      "effort_days": [
+        1.5,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在该卡写域内工作；不覆盖其他人的未提交文件，不记录凭据或真实训练数据。",
+        "不以效果图、资源编译或同机合成会话充当真实 App、真实跨设备或发布验收。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际输出、影响及下一步；同类第二次复核输入和范围，第三次标阻塞；不降低验收条件。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "K01-06",
+      "title": "草稿同步、移除恢复与冲突合同",
+      "batch": "foundation",
+      "kind": "task",
+      "parent": "K01",
+      "status": "planned",
+      "depends_on": [
+        "K01-05"
+      ],
+      "acceptance_requires": [],
+      "role": "tech-architect",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md",
+        "docs/APP_FLOW.md",
+        "api/tests/",
+        "docs/evidence/K01/K01-06/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/PRD.md",
+        "docs/APP_FLOW.md",
+        "api/openapi.yaml",
+        "docs/数据模型与ER设计.md"
+      ],
+      "deliverables": "规定本人草稿的版本、移除与恢复的稳定身份/顺序，写明双端并发、删除和授权的读写边界。",
+      "acceptance": [
+        "撤销组/动作能恢复原内容、相对位置与此前状态；最后一组移除后完成转草稿；同名动作段不因名字相同合并。",
+        "两端修改同组必须保留两值；离线修改对远端整条删除仅可另存新记录或丢弃；重试和可信回执正反例有定义。",
+        "本人跨设备读草稿；教练不能读草稿、撤权后不可再读；仅有记录授权时只返回结果，身体数据拆分需独立授权。"
+      ],
+      "verification_commands": [
+        "PYTHONDONTWRITEBYTECODE=1 \"$NERAE_TEST_PYTHON\" api/tests/run_contract_tests.py --summary",
+        "python3.11 scripts/plan.py check"
+      ],
+      "risks": [
+        "现有已确认组详情不能冒充草稿或恢复快照；加密存储和设备实现由后续卡单独验证。"
+      ],
+      "effort_days": [
+        1.5,
+        3
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在该卡写域内工作；不覆盖其他人的未提交文件，不记录凭据或真实训练数据。",
+        "不以效果图、资源编译或同机合成会话充当真实 App、真实跨设备或发布验收。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际输出、影响及下一步；同类第二次复核输入和范围，第三次标阻塞；不降低验收条件。",
+      "external_prerequisites": []
+    },
+    {
+      "id": "U01-01",
+      "title": "白底灰阶语义样式与真实登录入口试点",
+      "batch": "foundation",
+      "kind": "task",
+      "parent": "U01",
+      "status": "active",
+      "depends_on": [
+        "F01-03",
+        "D02-I",
+        "P02-01"
+      ],
+      "acceptance_requires": [
+        "P02-02"
+      ],
+      "role": "ui-builder",
+      "model_policy": "judgment",
+      "owner": "Project Lead",
+      "actual_model": "gpt-6.1-terra",
+      "actual_reasoning": "运行时未提供",
+      "base_revision": "e411986c3765c4951a9ea3f189717114fae4894b",
+      "write_allowlist": [
+        "packages/ui/",
+        "apps/client/src/styles/",
+        "apps/client/src/App.vue",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/features/auth/AuthEntry.vue",
+        "apps/client/src/features/auth/DeviceApprovalPanel.vue",
+        "docs/evidence/U01/U01-01/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/UI_SPEC.md",
+        "docs/design/recording-review/assets/approved-monochrome-baseline-20261114.png",
+        "apps/client/src/App.vue",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/features/auth/AuthEntry.vue"
+      ],
+      "deliverables": "建立唯一语义色源；接入 uni-app 外壳、邮箱与新设备确认界面；交候选色值、对比与来源明确的实际渲染。",
+      "acceptance": [
+        "白底、深色主操作与浅装饰线，错误/焦点/待审批不用灰度单独表示；核对字体回退、键盘与放大、读屏标签；不改变登录逻辑。",
+        "类型检查、App 与微信资源构建分列；iOS 试点在自己的已签构建上取证，编译不代替各端验收。该卡仅接受已验证平台/范围；其余平台在 U01 整包、I-A04 各自取证。"
+      ],
+      "verification_commands": [
+        "pnpm --filter @nerae/client typecheck",
+        "pnpm --filter @nerae/client build:app",
+        "pnpm --filter @nerae/client build:mp-weixin",
+        "在签名的 iPhone 构建实际操作并截图，记录包号、系统、键盘和相邻对比。"
+      ],
+      "risks": [
+        "不能将旧样机设置的主题色传播给真实入口；不把系统控件/用户照片强制改灰。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在该卡写域内工作；不覆盖其他人的未提交文件，不记录凭据或真实训练数据。",
+        "不以效果图、资源编译或同机合成会话充当真实 App、真实跨设备或发布验收。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际输出、影响及下一步；同类第二次复核输入和范围，第三次标阻塞；不降低验收条件。",
+      "external_prerequisites": [
+        "组件开发可先行；接受 iOS 试点需要 P02-02 提供实际签名安装。"
+      ]
+    },
+    {
+      "id": "U02-03",
+      "title": "实页查看登录、组卡与首页最近记录",
+      "batch": "P0-A",
+      "kind": "integration",
+      "parent": "U02",
+      "status": "planned",
+      "depends_on": [
+        "U01-01",
+        "K01-04",
+        "U02-04"
+      ],
+      "acceptance_requires": [],
+      "role": "reviewer",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "docs/evidence/U02/U02-03/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/design/recording-review/DECISIONS.md",
+        "docs/UI_SPEC.md",
+        "docs/design/recording-review/assets/monochrome-home-balanced-20261114.png",
+        "apps/client/src/features/training/RecordingEditor.vue",
+        "apps/client/src/pages/index/index.vue"
+      ],
+      "deliverables": "把同一版本的登录、记录组卡/半屏、首页最近记录放在一起核对；只验收画面/交互与实际来源，把问题退回组件负责人。",
+      "acceptance": [
+        "实际页面能操作并留版号和来源：最近记录图文去竖线、数据对齐，组卡/半屏在小屏与大字下可读，键盘及手势可操作。",
+        "三处未全部接入或缺签装/数据时可给用户阶段反馈，但不能验收本卡。只验 iOS 早期体验；Android、微信及正式三端分别留证。",
+        "复核试点与规则卡实际交付，沿用同一版本；先取得集中反馈，再批量复制样式。"
+      ],
+      "verification_commands": [
+        "python3.11 scripts/plan.py packet U02-03",
+        "核对同一提交/构建和三处实际用户路径，检查录屏、截图和对比度，登记实测范围。"
+      ],
+      "risks": [
+        "不能用示意数据伪装成我的最近记录；首轮缺组件时明确部分，不能据此提前接受 U01/U02。"
+      ],
+      "effort_days": [
+        0.5,
+        1
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "仅在该卡写域内工作；不覆盖其他人的未提交文件，不记录凭据或真实训练数据。",
+        "不以效果图、资源编译或同机合成会话充当真实 App、真实跨设备或发布验收。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记录实际输出、影响及下一步；同类第二次复核输入和范围，第三次标阻塞；不降低验收条件。",
+      "external_prerequisites": [
+        "用户的 iPhone 及已签测试构建；首页/记录组件达到可检查状态、本人或授权测试数据。"
+      ]
+    },
+    {
+      "id": "U02-04",
+      "title": "首页最近记录接本人历史并按去线基准重排",
+      "batch": "P0-A",
+      "kind": "task",
+      "parent": "U02",
+      "status": "planned",
+      "depends_on": [
+        "U01-01",
+        "K01-04"
+      ],
+      "acceptance_requires": [],
+      "role": "ui-builder",
+      "model_policy": "judgment",
+      "owner": null,
+      "write_allowlist": [
+        "apps/client/src/features/today/",
+        "apps/client/src/pages/index/index.vue",
+        "docs/evidence/U02/U02-04/"
+      ],
+      "inputs": [
+        "AGENTS.md",
+        "docs/RECORDING_DELIVERY_PLAN.md",
+        "docs/DEFINITION_OF_DONE.md",
+        "docs/design/MONOCHROME_COLOR_SYSTEM.md",
+        "docs/design/recording-review/assets/monochrome-home-balanced-20261114.png",
+        "apps/client/src/pages/index/index.vue",
+        "apps/client/src/features/training/TrainingHistory.vue",
+        "apps/client/src/features/training/recordingApi.ts"
+      ],
+      "deliverables": "在同一 iOS 试点入口接入本人已完成且有权读取的历史，用已存在的列表/详情适配器构成首页最近记录；只展示服务确实返回的动作和组数据，保留现有进入训练与审批路径。",
+      "acceptance": [
+        "登录后看到真实动作、重量和次数；没有记录、读取失败、尚未同步分别呈现；切号与迟到响应不能泄露上一账号数据。",
+        "图和名称之间无竖线，图文归组，重量、次数和单位对齐；缺项不是 0；使用有权素材，无素材时留可读名称。",
+        "有记录、无记录及放大后均有脱敏真机截图；无训练时不造假反馈或成绩。不重写共用接口/历史领域逻辑。"
+      ],
+      "verification_commands": [
+        "pnpm --filter @nerae/client typecheck",
+        "pnpm --filter @nerae/client build:app",
+        "测试正常/空/读失败与切号迟到返回；在签名的同版本上用本人或授权测试账号拍摄首页和重开后的结果。"
+      ],
+      "risks": [
+        "历史只有摘要时用现有授权详情读取，不用假数据填满卡片；首页共享入口只在 U01-01 交还后写。"
+      ],
+      "effort_days": [
+        1,
+        2
+      ],
+      "flow_ids": [
+        "F01",
+        "F02"
+      ],
+      "forbidden": [
+        "不修改认证/训练模块、共享 API 或既有记录；未完成、未同步和其他账号记录不得伪装成已完成。"
+      ],
+      "decision_owner": "Project Lead",
+      "failure_protocol": "首错记证据与影响，同类第二次复核边界，第三次标阻塞；独立工作继续。",
+      "external_prerequisites": [
+        "接受须有签名 iPhone、实际测试服务和一条真正由测试者录入的授权记录。"
+      ]
     }
   ],
   "deferred_packages": {
-    "U01": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U03": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U04": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",
     "U05": "正式三端 UI 卡等待 F02、第五轮实施规格及各自依赖；先拆为不超过 3 人日的执行卡，通过证据后由 Lead 移除暂缓。",

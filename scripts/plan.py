@@ -363,7 +363,7 @@ def main():
         print('预测依赖层；不等于已放行，并发上限与外部条件仍需 Lead 核对。')
         for i,group in enumerate(waves(tasks),1): print(str(i)+': '+', '.join(group))
     elif args.command == 'catalog':
-        print('# 开发任务目录\n\n由 `scripts/plan.py catalog` 从 tasks.json 生成；JSON是唯一状态源。work_package不能直接派发；task/integration才是执行卡，单卡不超过3有效人日。估工不含外部等待，不是agent运行时间或日历承诺。微信小程序、iOS与Android App同步纳入；正式U01–U08等待工程、R05实施规格和依赖证据。\n')
+        print('# 开发任务目录\n\n由 `scripts/plan.py catalog` 从 tasks.json 生成；JSON 是唯一状态源。工作包不能直接派发，执行/集成卡不超过 3 有效人日。估工不含外部等待。三端同步推进，近期实施与阶段验收见[首版交付计划](../RECORDING_DELIVERY_PLAN.md)；所有自有 UI 遵守[白底灰阶规范](../design/MONOCHROME_COLOR_SYSTEM.md)。各卡按自身依赖开始和验收。\n')
         print('| ID | 用户结果 / 任务 | 类型/工作包 | 开始依赖 | 接受前置 | 人日假设 | 状态 |')
         print('|---|---|---|---|---|---|---|')
         for t in doc['tasks']:

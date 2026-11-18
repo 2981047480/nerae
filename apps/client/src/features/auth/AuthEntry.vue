@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import type { AppAuthRuntime } from '../../platform/app/nativeAuthRuntime'
 import type { PublicSession } from './sessionCoordinator'
 import { AuthEntryController, type AuthEntryState } from './authEntryController'
@@ -8,7 +8,11 @@ const props = withDefaults(defineProps<{ runtime: AppAuthRuntime; allowCancel?: 
 const emit = defineEmits<{ authenticated: [session: PublicSession]; cancel: [] }>()
 const controller = new AuthEntryController(props.runtime, session => emit('authenticated', session))
 const state = shallowRef<AuthEntryState>(controller.state)
-controller.subscribe(next => { state.value = next })
+const focusedField = ref<'email' | 'code' | null>(null)
+controller.subscribe(next => {
+  if (next.status !== state.value.status) focusedField.value = null
+  state.value = next
+})
 let cancelEmitted = false
 
 async function cancel(): Promise<void> {
@@ -34,11 +38,9 @@ onBeforeUnmount(() => controller.dispose())
 
 <template>
   <view class="auth-entry">
-    <view class="auth-entry__brand"><text class="auth-entry__mark">N</text><text>NERAE</text></view>
+    <view class="auth-entry__brand"><text>NERAE</text></view>
     <text class="auth-entry__eyebrow">安全恢复</text>
     <text class="auth-entry__title">记录由你掌握</text>
-    <text class="auth-entry__intro">登录后可以安全保存和恢复训练记录。</text>
-
     <view v-if="state.status === 'restoring'" class="auth-entry__notice" aria-live="polite">
       <text>{{ state.message }}</text>
     </view>
@@ -46,8 +48,10 @@ onBeforeUnmount(() => controller.dispose())
     <view v-else-if="state.status === 'email' || state.status === 'sending_code' || state.status === 'retry_challenge'"
       class="auth-entry__form">
       <text class="auth-entry__label">邮箱</text>
-      <input class="auth-entry__input" type="text" inputmode="email" autocomplete="email"
+      <input class="auth-entry__input" :class="{ 'auth-entry__input--focused': focusedField === 'email' }"
+        type="text" inputmode="email" autocomplete="email" aria-label="邮箱地址"
         placeholder="请输入邮箱地址" :value="state.email" :disabled="state.status !== 'email'"
+        @focus="focusedField = 'email'" @blur="focusedField = null"
         @input="controller.setEmail(inputValue($event))" />
       <text v-if="state.message" class="auth-entry__message" aria-live="polite">{{ state.message }}</text>
       <button class="auth-entry__primary" :disabled="state.status === 'sending_code' || !state.email"
@@ -61,8 +65,11 @@ onBeforeUnmount(() => controller.dispose())
       <text class="auth-entry__label">请查看此邮箱</text>
       <text class="auth-entry__email">{{ state.email }}</text>
       <text v-if="state.status === 'retry_login'" class="auth-entry__message">登录结果尚未确认。重新验证会继续处理当前验证码，不会再次发送邮件。</text>
-      <input v-else class="auth-entry__input auth-entry__code" type="number" inputmode="numeric" autocomplete="one-time-code"
+      <input v-else class="auth-entry__input auth-entry__code"
+        :class="{ 'auth-entry__input--focused': focusedField === 'code' }"
+        type="number" inputmode="numeric" autocomplete="one-time-code" aria-label="邮箱验证码"
         placeholder="请输入邮箱验证码" :value="state.code" :disabled="state.status === 'submitting_code'"
+        @focus="focusedField = 'code'" @blur="focusedField = null"
         @input="controller.setCode(inputValue($event))" />
       <text v-if="state.message" class="auth-entry__message" aria-live="polite">{{ state.message }}</text>
       <button v-if="state.status === 'retry_login'" class="auth-entry__primary"
@@ -120,27 +127,28 @@ onBeforeUnmount(() => controller.dispose())
 </template>
 
 <style scoped>
-.auth-entry { padding: 28rpx 24rpx 32rpx; border-radius: 28rpx; background: #fff; color: #252c29; display: flex; flex-direction: column; gap: 16rpx; }
-.auth-entry__brand { display: flex; align-items: center; gap: 10rpx; color: #42534a; font-size: 22rpx; font-weight: 700; letter-spacing: 3rpx; }
-.auth-entry__mark { display: inline-flex; align-items: center; justify-content: center; width: 44rpx; height: 44rpx; border-radius: 14rpx; background: #e8eee8; color: #315647; font-size: 24rpx; }
-.auth-entry__eyebrow { color: #707a73; font-size: 22rpx; letter-spacing: 2rpx; }
-.auth-entry__title { font-size: 42rpx; line-height: 1.25; font-weight: 700; letter-spacing: -1rpx; }
-.auth-entry__intro { color: #68716b; font-size: 26rpx; line-height: 1.65; }
-.auth-entry__form, .auth-entry__notice { display: flex; flex-direction: column; gap: 18rpx; }
-.auth-entry__label { color: #48544d; font-size: 24rpx; font-weight: 600; }
-.auth-entry__input { box-sizing: border-box; width: 100%; height: 92rpx; padding: 0 24rpx; border: 1rpx solid #dce2dc; border-radius: 18rpx; background: #fbfcfa; font-size: 28rpx; }
+.auth-entry { padding: 28rpx 4rpx 32rpx; background: var(--nerae-surface); color: var(--nerae-text); display: flex; flex-direction: column; gap: 16rpx; }
+.auth-entry__brand { color: var(--nerae-text); font-size: 26rpx; font-weight: 700; letter-spacing: 3rpx; }
+.auth-entry__eyebrow { margin-top: 30rpx; color: var(--nerae-text-secondary); font-size: 23rpx; letter-spacing: 2rpx; }
+.auth-entry__title { font-family: "Songti SC", "Noto Serif SC", serif; font-size: 48rpx; line-height: 1.3; font-weight: 700; }
+.auth-entry__form, .auth-entry__notice { display: flex; flex-direction: column; gap: 18rpx; margin-top: 24rpx; }
+.auth-entry__label { color: var(--nerae-text); font-size: 25rpx; font-weight: 600; }
+.auth-entry__input { box-sizing: border-box; width: 100%; height: 96rpx; padding: 0 24rpx; border: 2rpx solid transparent; border-radius: 18rpx; background: var(--nerae-surface-subtle); color: var(--nerae-text); font-size: 28rpx; }
+.auth-entry__input--focused { border-color: var(--nerae-border-control); }
 .auth-entry__code { letter-spacing: 8rpx; }
-.auth-entry__email { color: #315647; font-size: 25rpx; word-break: break-all; }
-.auth-entry__message { color: #68716b; font-size: 23rpx; line-height: 1.5; }
-.auth-entry__notice { padding: 24rpx; border-radius: 20rpx; background: #f2f5f1; color: #58645c; font-size: 25rpx; line-height: 1.55; }
-.auth-entry__notice-title { color: #252c29; font-size: 29rpx; font-weight: 700; }
-.auth-entry__comparison-label { color: #58645c; font-size: 23rpx; }
-.auth-entry__comparison-code { color: #252c29; font-size: 44rpx; font-weight: 700; letter-spacing: 8rpx; }
-.auth-entry__success { background: #eef5ef; }
-.auth-entry__primary, .auth-entry__secondary { margin: 0; width: 100%; height: 92rpx; line-height: 92rpx; border-radius: 18rpx; font-size: 27rpx; font-weight: 650; }
-.auth-entry__primary { border: 0; background: #ff9a75; color: #252c29; }
-.auth-entry__primary[disabled] { opacity: .55; }
-.auth-entry__secondary { border: 1rpx solid #cfd7d0; background: #fff; color: #35443b; }
-.auth-entry__browse { margin: 2rpx 0 0; width: 100%; height: 72rpx; line-height: 72rpx; color: #58645c; font-size: 23rpx; background: transparent; }
+.auth-entry__email { color: var(--nerae-text); font-size: 25rpx; word-break: break-all; }
+.auth-entry__message { color: var(--nerae-text-secondary); font-size: 24rpx; line-height: 1.5; }
+.auth-entry__notice { padding: 24rpx; border-radius: 20rpx; background: var(--nerae-surface-subtle); color: var(--nerae-text-secondary); font-size: 25rpx; line-height: 1.55; }
+.auth-entry__notice-title { color: var(--nerae-text); font-size: 29rpx; font-weight: 700; }
+.auth-entry__comparison-label { color: var(--nerae-text-secondary); font-size: 23rpx; }
+.auth-entry__comparison-code { color: var(--nerae-text); font-size: 44rpx; font-weight: 700; letter-spacing: 8rpx; }
+.auth-entry__primary, .auth-entry__secondary { margin: 0; width: 100%; min-height: 96rpx; padding: 20rpx; line-height: 1.5; border-radius: 18rpx; font-size: 27rpx; font-weight: 650; }
+.auth-entry__primary { border: 0; background: var(--nerae-primary); color: var(--nerae-primary-text); }
+.auth-entry__primary:active { background: var(--nerae-primary-pressed); }
+.auth-entry__primary[disabled] { opacity: 1; background: var(--nerae-disabled); color: var(--nerae-primary-text); }
+.auth-entry__secondary { border: 1rpx solid var(--nerae-border-control); background: var(--nerae-surface); color: var(--nerae-text); }
+.auth-entry__secondary:active, .auth-entry__browse:active { background: var(--nerae-surface-pressed); }
+.auth-entry__browse { margin: 2rpx 0 0; width: 100%; min-height: 80rpx; padding: 16rpx; line-height: 1.5; color: var(--nerae-text-secondary); font-size: 24rpx; background: transparent; }
+.auth-entry__primary:focus-visible, .auth-entry__secondary:focus-visible, .auth-entry__browse:focus-visible { outline: 2px solid var(--nerae-border-control); outline-offset: 2px; }
 button::after { border: 0; }
 </style>

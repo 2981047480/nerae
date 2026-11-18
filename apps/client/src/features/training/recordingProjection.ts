@@ -357,6 +357,8 @@ export function restoreConfirmedSession(
     // A server snapshot alone cannot prove what happened to a local request
     // awaiting reconciliation. Reconstructing the draft would discard it.
     if (Object.prototype.hasOwnProperty.call(local, 'syncPending')) return restoreFailure('local_unsynced')
+    // Rebuilding from the server would otherwise discard locally restorable groups.
+    if (local.exercises.some(exercise => (exercise.removedSets?.length || 0) > 0)) return restoreFailure('local_unsynced')
     if (local.clientEventId !== detail.clientEventId || local.date !== detail.date || local.timeZone !== detail.timeZone) {
       return restoreFailure('reconcile_required')
     }

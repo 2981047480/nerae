@@ -1,4 +1,5 @@
 import { restoreDraft, type RecordingDraft } from './recording'
+import { encodeDraftEnvelope, supportsDraftEnvelope } from './draftEnvelope'
 import { todayInTimezone, type AuthLease, type DraftStorage, type DraftVersionState, type LocalDraftStatus } from './draftStorage'
 import { acknowledgesFreeSession, encodePendingSetsBody, isPreparedFreeSessionFor, isPreparedSetsFor,
   type PreparedFreeSessionRequest, type PreparedSetsRequest, type RecordingApi, type RecordingAuth, type ScopedSessionDetail } from './recordingApi'
@@ -52,7 +53,7 @@ function draftKey(subjectId: string, eventId: string): string {
 }
 
 function envelope(subjectId: string, draft: RecordingDraft): string {
-  return JSON.stringify({ schema: 1, subjectId, draft })
+  return encodeDraftEnvelope(subjectId, draft)
 }
 
 function pendingMarker(draft: RecordingDraft): { present: boolean; value: unknown } {
@@ -65,8 +66,9 @@ function decode(raw: string, subjectId: string, eventId: string, now: () => Date
   try { parsed = JSON.parse(raw) } catch { throw new Error('本机草稿无法读取') }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('本机草稿格式无效')
   const value = parsed as Record<string, unknown>
-  if (value.schema !== 1 || value.subjectId !== subjectId || !value.draft || typeof value.draft !== 'object' ||
-    Array.isArray(value.draft)) throw new Error('本机草稿不属于当前账号')
+  if (!supportsDraftEnvelope(value.schema, value.draft) || value.subjectId !== subjectId) {
+    throw new Error('本机草稿不属于当前账号或版本不受支持')
+  }
   const draft = value.draft as Record<string, unknown>
   if (draft.clientEventId !== eventId || typeof draft.timeZone !== 'string') throw new Error('本机草稿不属于当前记录')
   return restoreDraft(draft, todayInTimezone(draft.timeZone, now()))

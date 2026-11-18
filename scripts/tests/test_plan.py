@@ -182,6 +182,28 @@ class PlanTests(unittest.TestCase):
             self.assertIn('P02-01',plan.ancestors(tasks,build))
             self.assertNotIn('V03',plan.ancestors(tasks,build))
 
+    def test_monochrome_pilot_can_start_early_but_needs_installed_ios(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        for key in ['F01-03','D02-I','P02-01']:
+            tasks[key]['status']='accepted'
+        self.assertIn('U01-01',plan.ready_tasks(tasks,self.doc['deferred_packages']))
+        self.assertNotIn('F02',plan.ancestors(tasks,'U01-01'))
+        self.assertIn('P02-02',tasks['U01-01']['acceptance_requires'])
+        self.assertIn('U02-04',tasks['U02-03']['depends_on'])
+        self.assertIn('U01-01',plan.ancestors(tasks,'U02-04'))
+        self.assertEqual(tasks['U01']['breakdown'],'partial')
+
+    def test_new_recording_contracts_gate_final_consumers(self):
+        tasks={t['id']:t for t in self.doc['tasks']}
+        combined={k:dict(t,depends_on=list(set(t['depends_on']) |
+                  set(t.get('acceptance_requires',[])))) for k,t in tasks.items()}
+        for key in ['A04','U02-01','I-A04']:
+            self.assertTrue({'K01-05','K01-06'} <= plan.ancestors(combined,key),key)
+        self.assertIn('K01-02',plan.ancestors(tasks,'K01-05'))
+        self.assertIn('K01-06',plan.ancestors(tasks,'K01-03'))
+        for n in range(1,9):
+            self.assertIn('docs/design/MONOCHROME_COLOR_SYSTEM.md',tasks[f'U{n:02d}']['inputs'])
+
     def test_external_requirements_block_only_the_relevant_acceptance(self):
         tasks={t['id']:t for t in self.doc['tasks']}
         combined={k:dict(t,depends_on=list(set(t['depends_on']) | set(t.get('acceptance_requires',[])))) for k,t in tasks.items()}

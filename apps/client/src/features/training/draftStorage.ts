@@ -1,4 +1,5 @@
 import { restoreDraft, type RecordingDraft } from './recording'
+import { encodeDraftEnvelope, supportsDraftEnvelope } from './draftEnvelope'
 
 /** This is only a local persistence port. It never authorizes server access. */
 export interface DraftStorage {
@@ -79,7 +80,6 @@ type DraftPersistenceProofRecord = {
 
 const draftPersistenceProofs = new WeakMap<object, DraftPersistenceProofRecord>()
 
-type DraftEnvelope = { schema: 1; subjectId: string; draft: RecordingDraft }
 
 function cloneDraft(draft: RecordingDraft): RecordingDraft {
   // RecordingDraft is a JSON-shaped value. Returning a copy prevents callers
@@ -210,7 +210,7 @@ export class DraftController {
       throw new Error('本机草稿格式无效，原数据仍被保留')
     }
     const value = envelope as Record<string, unknown>
-    if (value.schema !== 1 || value.subjectId !== subjectId || !value.draft || typeof value.draft !== 'object') {
+    if (!supportsDraftEnvelope(value.schema, value.draft) || value.subjectId !== subjectId) {
       throw new Error('本机草稿不属于当前账号或版本不受支持')
     }
     const candidate = value.draft as Record<string, unknown>
@@ -263,7 +263,7 @@ export class DraftController {
       record.writeRevision !== persistenceWriteRevision || this.status !== 'saved_locally') return false
     try {
       this.assertCurrent()
-      return JSON.stringify({ schema: 1, subjectId: this.subjectId, draft: this.currentDraft }) === record.snapshot
+      return encodeDraftEnvelope(this.subjectId, this.currentDraft) === record.snapshot
     } catch { return false }
   }
 
@@ -278,8 +278,7 @@ export class DraftController {
     if (!Number.isSafeInteger(persistenceWriteRevision + 1)) throw new Error('本机写入版本不可用')
     const writeRevision = ++persistenceWriteRevision
     for (const fence of readsByKey.get(this.key) || []) fence.changed = true
-    const envelope: DraftEnvelope = { schema: 1, subjectId: this.subjectId, draft: cloneDraft(this.currentDraft) }
-    const snapshot = JSON.stringify(envelope)
+    const snapshot = encodeDraftEnvelope(this.subjectId, cloneDraft(this.currentDraft))
     let commit: () => Promise<void>
     try {
       commit = this.storage.prepareWrite ? this.storage.prepareWrite(this.key, snapshot) : () => this.storage.write(this.key, snapshot)

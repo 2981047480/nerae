@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  addExercise, addSet, confirmSet, createRecordingDraft, prepareConfirmedSet as prepareConfirmedSetAt,
+  addExercise, addSet, confirmSet, copySet, createRecordingDraft, prepareConfirmedSet as prepareConfirmedSetAt,
   preparePerSetFinish as preparePerSetFinishAt, prepareSave as prepareSaveAt,
-  removeUnsubmittedSet, restoreDraft, switchMode, updateSet,
+  removeUnsubmittedSet, restoreDraft, restoreUnsubmittedSet, switchMode, updateSet,
 } from './recording.ts'
 
 const prepareSave = draft => prepareSaveAt(draft, '2026-10-29')
@@ -221,6 +221,51 @@ test('unsubmitted rows can be removed, but synced rows need the real deletion wo
   assert.deepEqual(removed.exercises[0].sets.map(item => item.recordKey), ['record-001'])
   const synced = { ...removed, exercises: [{ ...removed.exercises[0], sets: [{ ...removed.exercises[0].sets[0], persisted: true }] }] }
   assert.throws(() => removeUnsubmittedSet(synced, 'entry-0001', 'record-001'), /删除流程/)
+})
+
+test('a removed group keeps its content and position across reload and later additions', () => {
+  let draft = addSet(addSet(withExercise(), 'entry-0001', 'record-002'), 'entry-0001', 'record-003')
+  draft = setInput(setInput(draft, 'record-002', 'weightKg', '45'), 'record-002', 'reps', '8')
+  draft = removeUnsubmittedSet(draft, 'entry-0001', 'record-002')
+  assert.equal(draft.exercises[0].removedSets[0].removedPosition, 2)
+  assert.throws(() => addSet(draft, 'entry-0001', 'record-002'), /标识已存在/)
+  draft = addSet(restoreDraft(JSON.stringify(draft), '2026-10-29'), 'entry-0001', 'record-004')
+  assert.deepEqual(draft.exercises[0].sets.map(set => set.setIndex), [1, 3, 4])
+  draft = restoreUnsubmittedSet(draft, 'entry-0001', 'record-002')
+  assert.deepEqual(draft.exercises[0].sets.map(set => set.recordKey), ['record-001', 'record-002', 'record-003', 'record-004'])
+  assert.equal(draft.exercises[0].sets[1].weightKg, '45')
+  assert.equal(draft.exercises[0].sets[1].reps, '8')
+  assert.throws(() => restoreUnsubmittedSet(draft, 'entry-0001', 'record-002'), /不存在/)
+})
+
+test('copying appends an independent unconfirmed group with the same input and a fresh key', () => {
+  let draft = setInput(setInput(withExercise(), 'record-001', 'weightKg', '45'), 'record-001', 'reps', '8')
+  draft = confirmSet(draft, 'entry-0001', 'record-001').draft
+  draft = { ...draft, server: { id: '101', version: 1 }, exercises: [{ ...draft.exercises[0],
+    sets: [{ ...draft.exercises[0].sets[0], persisted: true, dirty: false }] }] }
+  const copied = copySet(draft, 'entry-0001', 'record-001', 'record-002')
+  assert.deepEqual(copied.exercises[0].sets[1], { recordKey: 'record-002', setIndex: 2,
+    weightKg: '45', reps: '8', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: true })
+  assert.equal(copied.exercises[0].sets[0].persisted, true)
+  const edited = setInput(copied, 'record-002', 'reps', '10')
+  assert.equal(edited.exercises[0].sets[0].reps, '8')
+  assert.throws(() => copySet(copied, 'entry-0001', 'record-001', 'record-002'), /标识已存在/)
+  assert.throws(() => copySet(copied, 'entry-0001', 'missing-01', 'record-003'), /不存在/)
+})
+
+test('damaged removed groups cannot alias an active group or claim server acknowledgement', () => {
+  let draft = addSet(withExercise(), 'entry-0001', 'record-002')
+  draft = removeUnsubmittedSet(draft, 'entry-0001', 'record-002')
+  for (const mutate of [
+    item => { item.set.recordKey = 'record-001' },
+    item => { item.set.setIndex = 1 },
+    item => { item.set.persisted = true },
+    item => { item.removedPosition = 0 },
+  ]) {
+    const damaged = JSON.parse(JSON.stringify(draft))
+    mutate(damaged.exercises[0].removedSets[0])
+    assert.throws(() => restoreDraft(damaged, '2026-10-29'))
+  }
 })
 
 test('empty records and batches over the contract limit do not produce a save', () => {

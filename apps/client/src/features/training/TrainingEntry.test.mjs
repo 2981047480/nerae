@@ -12,19 +12,31 @@ const current = { services: null, editorEmit: null, editorProps: null }
 globalThis.__neraeTrainingEntryTest = current
 const EditorStub = defineComponent({
   props: ['draft', 'latestAllowedDate', 'exerciseLabels', 'issues', 'statusMessage', 'saving', 'canSave'],
-  emits: ['change-mode', 'prepare-date', 'change-date', 'add-exercise', 'add-set', 'edit-set', 'confirm-set', 'remove-set', 'save'],
+  emits: ['change-mode', 'prepare-date', 'change-date', 'add-exercise', 'add-set', 'copy-set', 'edit-set', 'confirm-set', 'remove-set', 'restore-set', 'save'],
   setup(props, { emit }) {
     current.editorEmit = emit
     return () => { current.editorProps = { ...props }; return h('recording-editor') }
   },
 })
 current.EditorStub = EditorStub
+// The editor tests exercise the parent/editor contract; the ruler has its own
+// numeric tests and is separately mounted in the platform component probe.
+current.RulerStub = defineComponent({
+  props: ['label', 'unit', 'value', 'kind'],
+  emits: ['change'],
+  setup(props, { emit }) {
+    return () => h('input', { value: props.value, 'aria-label': props.label,
+      onInput: event => emit('change', event.detail.value) })
+  },
+})
 const vueURL = import.meta.resolve('vue')
 const draftStorageURL = new URL('./draftStorage.ts', import.meta.url)
 registerHooks({ resolve(specifier, context, nextResolve) {
   if (context.parentURL?.startsWith('data:text/javascript')) {
     if (specifier === 'vue') return { url: vueURL, shortCircuit: true }
     if (specifier.endsWith('/RecordingEditor.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeTrainingEntryTest.EditorStub', shortCircuit: true }
+    if (specifier === './RulerInput.vue') return { url: 'data:text/javascript,export default globalThis.__neraeTrainingEntryTest.RulerStub', shortCircuit: true }
+    if (specifier === './SwipeableSetCard.vue') return { url: 'data:text/javascript,export default globalThis.__neraeTrainingEntryTest.Swipeable', shortCircuit: true }
     if (specifier.endsWith('/TrainingHistory.vue')) return { url: 'data:text/javascript,export default {render(){return null}}', shortCircuit: true }
     if (specifier === './draftStorage') return { url: draftStorageURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeTrainingEditor')) return { url: 'data:text/javascript,export const discoverAppTrainingDrafts=(...a)=>globalThis.__neraeTrainingEntryTest.services.discover(...a);export const createAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.create(...a);export const attachAppTrainingEditor=(...a)=>globalThis.__neraeTrainingEntryTest.services.attach(...a)', shortCircuit: true }
@@ -36,6 +48,11 @@ const descriptor = parse(source, { filename: 'TrainingEntry.vue' }).descriptor
 const compiled = compileScript(descriptor, { id: 'training-entry-test', inlineTemplate: true }).content
 const javascript = ts.transpileModule(compiled, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
 const { default: Page } = await import(`data:text/javascript,${encodeURIComponent(javascript)}`)
+const swipeSource = readFileSync(new URL('./SwipeableSetCard.vue', import.meta.url), 'utf8')
+const swipeDescriptor = parse(swipeSource, { filename: 'SwipeableSetCard.vue' }).descriptor
+const swipeCompiled = compileScript(swipeDescriptor, { id: 'swipeable-test', inlineTemplate: true }).content
+const swipeJavascript = ts.transpileModule(swipeCompiled, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
+current.Swipeable = (await import(`data:text/javascript,${encodeURIComponent(swipeJavascript)}`)).default
 const editorSource = readFileSync(new URL('./RecordingEditor.vue', import.meta.url), 'utf8')
 const editorDescriptor = parse(editorSource, { filename: 'RecordingEditor.vue' }).descriptor
 const editorCompiled = compileScript(editorDescriptor, { id: 'recording-editor-test', inlineTemplate: true,
@@ -161,6 +178,10 @@ test('both recording modes preserve rapid edits and failed device saves can be r
   exercise = current.editorProps.draft.exercises[0]
   assert.equal(exercise.sets[0].weightKg, '42')
   assert.equal(exercise.sets[0].reps, '8')
+  current.editorEmit('copy-set', exercise.exerciseEntryKey, record)
+  await flush()
+  assert.equal(current.editorProps.draft.exercises[0].sets[1].weightKg, '42')
+  assert.equal(current.editorProps.draft.exercises[0].sets[1].confirmed, false)
   context.fail(true)
   current.editorEmit('edit-set', exercise.exerciseEntryKey, record, 'reps', '9')
   await flush()
@@ -384,6 +405,7 @@ test('per-set mode focuses one exercise at a time while after-workout mode shows
   const host = defineComponent({ setup: () => () => h(ActualEditor, { draft: state.draft,
     latestAllowedDate: '2026-10-28', exerciseLabels: {}, issues: [], statusMessage: '', saving: false, canSave: false,
     onEditSet: (...args) => actions.push(['edit', ...args]), onConfirmSet: (...args) => actions.push(['confirm', ...args]),
+    onCopySet: (...args) => actions.push(['copy', ...args]),
     onRemoveSet: (...args) => actions.push(['remove', ...args]) }) })
   const app = renderer.createApp(host)
   app.component('picker', defineComponent({ setup: (_props, { slots }) => () => h('picker', {}, slots.default?.()) }))
@@ -396,12 +418,25 @@ test('per-set mode focuses one exercise at a time while after-workout mode shows
   tabs()[1].props.onTap()
   await nextTick()
   assert.deepEqual(cardNames(), ['划船'])
+  const copy = find(root, node => node.type === 'button' && node.props?.['aria-label'] === '复制第 1 组')
+  assert.ok(copy)
+  copy.props.onTap({ stopPropagation() {} })
+  const setCard = find(root, node => node.type === 'button' && node.props?.class === 'swipe-card__face')
+  assert.ok(setCard)
+  setCard.props.onTap()
+  await nextTick()
   const inputs = findAll(root, node => node.type === 'input')
   assert.equal(inputs.length, 2)
   inputs[0].props.onInput({ detail: { value: '50' } })
   button(root, '记下').props.onTap()
   button(root, '×').props.onTap()
-  assert.deepEqual(actions, [ ['edit', 'entry-0002', 'record-002', 'weightKg', '50'],
+  setCard.props.onLongpress()
+  await nextTick()
+  const remove = find(root, node => node.type === 'button' && node.props?.['aria-label'] === '移除第 1 组')
+  assert.ok(remove)
+  assert.equal(remove.props.disabled, false)
+  remove.props.onTap({ stopPropagation() {} })
+  assert.deepEqual(actions, [ ['copy', 'entry-0002', 'record-002'], ['edit', 'entry-0002', 'record-002', 'weightKg', '50'],
     ['confirm', 'entry-0002', 'record-002'], ['remove', 'entry-0002', 'record-002'] ])
   state.draft.mode = 'after_workout'
   await nextTick()
@@ -412,5 +447,109 @@ test('per-set mode focuses one exercise at a time while after-workout mode shows
   await nextTick()
   assert.deepEqual(cardNames(), ['推举'])
   assert.equal(state.draft.exercises.length, 3)
+  app.unmount()
+})
+
+test('the group sheet keeps edits after closing and waits for successful per-set confirmation', async () => {
+  const state = reactive({ draft: { date: '2026-10-28', mode: 'after_workout', exercises: [{
+    exerciseEntryKey: 'entry-0001', identity: { source: 'custom', exerciseName: '深蹲' }, kind: 'weight',
+    sets: [{ recordKey: 'record-001', setIndex: 1, weightKg: '40', reps: '8', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: false }],
+  }] } })
+  const root = { type: 'root', children: [] }
+  let attempts = 0
+  const app = renderer.createApp(defineComponent({ setup: () => () => h(ActualEditor, {
+    draft: state.draft, latestAllowedDate: '2026-10-28', exerciseLabels: {}, issues: [], statusMessage: '', saving: false, canSave: false,
+    onEditSet: (_exercise, _record, field, value) => { state.draft.exercises[0].sets[0][field] = value; state.draft.exercises[0].sets[0].confirmed = false },
+    onConfirmSet: () => { attempts++; const set = state.draft.exercises[0].sets[0]; if (set.weightKg && set.reps) set.confirmed = true },
+  }) }))
+  app.component('picker', defineComponent({ setup: (_props, { slots }) => () => h('picker', {}, slots.default?.()) }))
+  app.component('scroll-view', defineComponent({ setup: (_props, { slots }) => () => h('scroll-view', {}, slots.default?.()) }))
+  app.mount(root)
+  const open = async () => { find(root, node => node.type === 'button' && node.props?.class === 'swipe-card__face').props.onTap(); await nextTick() }
+  await open()
+  let inputs = findAll(root, node => node.type === 'input')
+  inputs[0].props.onInput({ detail: { value: '45' } })
+  await nextTick()
+  button(root, '完成输入').props.onTap()
+  await nextTick()
+  await open()
+  inputs = findAll(root, node => node.type === 'input')
+  assert.equal(inputs[0].props.value, '45')
+  assert.equal(inputs[1].props.value, '8')
+  const dragArea = find(root, node => node.props?.class === 'set-sheet__drag-area')
+  assert.ok(dragArea)
+  dragArea.props.onTouchstart({ touches: [{ clientX: 100, clientY: 100 }] })
+  dragArea.props.onTouchend({ changedTouches: [{ clientX: 200, clientY: 145 }] })
+  await nextTick()
+  assert.ok(find(root, node => node.props?.class === 'set-sheet'))
+  dragArea.props.onTouchstart({ touches: [{ clientX: 100, clientY: 100 }] })
+  dragArea.props.onTouchend({ changedTouches: [{ clientX: 105, clientY: 180 }] })
+  await nextTick()
+  assert.equal(find(root, node => node.props?.class === 'set-sheet'), undefined)
+  await open()
+  inputs = findAll(root, node => node.type === 'input')
+  assert.equal(inputs[0].props.value, '45')
+  state.draft.mode = 'per_set'
+  await nextTick()
+  assert.equal(find(root, node => node.props?.class === 'set-sheet'), undefined)
+  await open()
+  inputs = findAll(root, node => node.type === 'input')
+  inputs[1].props.onInput({ detail: { value: '' } })
+  await nextTick()
+  button(root, '记下').props.onTap()
+  await nextTick()
+  assert.equal(attempts, 1)
+  assert.ok(find(root, node => node.props?.class === 'set-sheet'))
+  inputs[1].props.onInput({ detail: { value: '10' } })
+  await nextTick()
+  button(root, '记下').props.onTap()
+  await nextTick()
+  assert.equal(attempts, 2)
+  assert.equal(find(root, node => node.props?.class === 'set-sheet'), undefined)
+  assert.equal(state.draft.exercises[0].sets[0].confirmed, true)
+  assert.equal(state.draft.exercises[0].sets[0].weightKg, '45')
+  app.unmount()
+})
+
+test('group swipe reveals removal, undo restores input, and removed list remains recoverable', async () => {
+  const original = { recordKey: 'record-001', setIndex: 1, weightKg: '45', reps: '8', seconds: '', rpe: '', confirmed: false, persisted: false, dirty: true }
+  const state = reactive({ draft: { date: '2026-10-28', mode: 'after_workout', exercises: [{
+    exerciseEntryKey: 'entry-0001', identity: { source: 'custom', exerciseName: '深蹲' }, kind: 'weight', sets: [original],
+  }] } })
+  const root = { type: 'root', children: [] }
+  const app = renderer.createApp(defineComponent({ setup: () => () => h(ActualEditor, {
+    draft: state.draft, latestAllowedDate: '2026-10-28', exerciseLabels: {}, issues: [], statusMessage: '', saving: false, canSave: false,
+    onRemoveSet: () => { const e = state.draft.exercises[0]; state.draft = { ...state.draft, exercises: [{ ...e, sets: [], removedSets: [{ set: e.sets[0], removedPosition: 1 }] }] } },
+    onRestoreSet: () => { const e = state.draft.exercises[0]; state.draft = { ...state.draft, exercises: [{ ...e, sets: [e.removedSets[0].set], removedSets: [] }] } },
+  }) }))
+  app.component('picker', defineComponent({ setup: (_props, { slots }) => () => h('picker', {}, slots.default?.()) }))
+  app.component('scroll-view', defineComponent({ setup: (_props, { slots }) => () => h('scroll-view', {}, slots.default?.()) }))
+  app.mount(root)
+  const reveal = async () => {
+    const card = find(root, node => node.props?.class === 'swipe-card')
+    card.props.onTouchstart({ touches: [{ clientX: 200, clientY: 200 }] })
+    card.props.onTouchmove({ touches: [{ clientX: 110, clientY: 203 }] })
+    card.props.onTouchend()
+    await nextTick()
+    const remove = find(root, node => node.props?.class === 'swipe-card__remove')
+    assert.equal(remove.props.disabled, false)
+    remove.props.onTap({ stopPropagation() {} })
+    await nextTick()
+  }
+  await reveal()
+  assert.ok(find(root, node => node.props?.class === 'undo-notice'))
+  button(root, '撤销').props.onTap()
+  await nextTick()
+  assert.equal(state.draft.exercises[0].sets[0].weightKg, '45')
+  assert.equal(state.draft.exercises[0].sets[0].reps, '8')
+  await reveal()
+  const toggle = find(root, node => node.props?.class === 'removed-groups__toggle')
+  toggle.props.onTap()
+  await nextTick()
+  assert.ok(find(root, node => node.text?.includes('移除时为第 1 组')))
+  assert.equal(find(root, node => node.props?.class === 'removed-groups__values').text, '45 kg × 8 次')
+  button(root, '恢复').props.onTap()
+  await nextTick()
+  assert.equal(state.draft.exercises[0].sets.length, 1)
   app.unmount()
 })

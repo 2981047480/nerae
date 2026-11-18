@@ -43,6 +43,33 @@ function createRequest(eventId, date = '2026-11-03', subjectId = '101', generati
   return api.prepareFreeSessionRequest({ date, timeZone: 'Asia/Shanghai', clientEventId: eventId }, 'create-key-0001')
 }
 
+test('versioned legacy draft upgrades atomically and a removed group restores after reopening', async () => {
+  const port = nativePort()
+  const auth = { generation: 'generation-1', isCurrent: (subject, generation) => subject === '101' && generation === 'generation-1' }
+  const storage = new SecureDraftStorage(port, '101', auth)
+  const now = () => new Date('2026-11-03T01:00:00Z')
+  const keys = ['event-schema-v2', 'entry-0001', 'record-001']
+  const ids = { nextId: () => keys.shift() }
+  const created = await TrainingEditorController.create({ storage, auth, subjectId: '101', date: '2026-11-03', timeZone: 'Asia/Shanghai', now, ids })
+  assert.equal(created.ok, true)
+  assert.equal((await created.controller.addCustomExercise('深蹲', 'weight')).ok, true)
+  assert.equal((await created.controller.editGroup('entry-0001', 'record-001', 'weightKg', '45')).ok, true)
+  await created.controller.close()
+  const row = [...port.rows.values()][0]
+  row.value = JSON.stringify({ ...JSON.parse(row.value), schema: 1 })
+  const legacy = await TrainingEditorController.attach('101', 'event-schema-v2', storage, now, auth, ids)
+  assert.equal(legacy.ok, true)
+  assert.equal((await legacy.controller.removeGroup('entry-0001', 'record-001')).ok, true)
+  assert.equal(JSON.parse([...port.rows.values()][0].value).schema, 2)
+  await legacy.controller.close()
+  const reopened = await TrainingEditorController.attach('101', 'event-schema-v2', storage, now, auth, ids)
+  assert.equal(reopened.ok, true)
+  assert.equal(reopened.controller.draft.exercises[0].removedSets[0].set.weightKg, '45')
+  assert.equal((await reopened.controller.restoreGroup('entry-0001', 'record-001')).ok, true)
+  assert.equal(reopened.controller.draft.exercises[0].sets[0].weightKg, '45')
+  await reopened.controller.close()
+})
+
 test('a prepared creation can be staged once, survives reopening and freezes the creation date', async () => {
   const port = nativePort()
   const auth = { generation: 'generation-1', isCurrent: (subject, generation) => subject === '101' && generation === 'generation-1' }

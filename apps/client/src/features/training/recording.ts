@@ -27,6 +27,12 @@ export interface DraftSet {
   dirty: boolean
 }
 
+/** The group and its display position at removal are kept in the protected draft. */
+export interface RemovedDraftSet {
+  set: DraftSet
+  removedPosition: number
+}
+
 export interface DraftExercise {
   exerciseEntryKey: string
   identity: ExerciseIdentity
@@ -34,6 +40,7 @@ export interface DraftExercise {
   resolvedExerciseName?: string
   kind: SetKind
   sets: DraftSet[]
+  removedSets?: RemovedDraftSet[]
 }
 
 export interface RecordingDraft {
@@ -120,7 +127,8 @@ function emptySet(recordKey: string, setIndex: number): DraftSet {
 
 function ensureUnusedSetKey(draft: RecordingDraft, recordKey: string): void {
   assertKey(recordKey)
-  if (draft.exercises.some(exercise => exercise.sets.some(set => set.recordKey === recordKey))) {
+  if (draft.exercises.some(exercise => exercise.sets.some(set => set.recordKey === recordKey) ||
+    exercise.removedSets?.some(item => item.set.recordKey === recordKey))) {
     throw new Error('记录组标识已存在')
   }
 }
@@ -175,10 +183,23 @@ export function addExercise(
 export function addSet(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string): RecordingDraft {
   const target = findExercise(draft, exerciseEntryKey)
   ensureUnusedSetKey(draft, recordKey)
-  const maximum = target.sets.reduce((largest, set) => Math.max(largest, set.setIndex), 0)
+  const maximum = [...target.sets, ...(target.removedSets || []).map(item => item.set)]
+    .reduce((largest, set) => Math.max(largest, set.setIndex), 0)
   if (!Number.isSafeInteger(maximum) || maximum >= Number.MAX_SAFE_INTEGER) throw new Error('训练组序号不可用')
   const changed = { ...target, sets: [...target.sets, emptySet(recordKey, maximum + 1)] }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
+}
+
+/** Copy input into a new final group; it has never been confirmed or uploaded. */
+export function copySet(draft: RecordingDraft, exerciseEntryKey: string, sourceKey: string, recordKey: string): RecordingDraft {
+  const source = findSet(findExercise(draft, exerciseEntryKey), sourceKey)
+  const added = addSet(draft, exerciseEntryKey, recordKey)
+  const target = findExercise(added, exerciseEntryKey)
+  const changed = { ...target, sets: target.sets.map(set => set.recordKey === recordKey ? {
+    ...set, weightKg: source.weightKg, reps: source.reps, seconds: source.seconds, rpe: source.rpe,
+    confirmed: false, persisted: false, dirty: Boolean(source.weightKg || source.reps || source.seconds || source.rpe),
+  } : set) }
+  return { ...added, exercises: added.exercises.map(item => item === target ? changed : item) }
 }
 
 export function updateSet(
@@ -205,10 +226,24 @@ export function removeUnsubmittedSet(draft: RecordingDraft, exerciseEntryKey: st
   const target = findExercise(draft, exerciseEntryKey)
   const set = findSet(target, recordKey)
   if (set.persisted) throw new Error('已同步的组需要通过删除流程处理')
-  const changed = { ...target, sets: target.sets.filter(item => item !== set) }
+  const removedPosition = target.sets.findIndex(item => item === set) + 1
+  const changed = { ...target, sets: target.sets.filter(item => item !== set),
+    removedSets: [...(target.removedSets || []), { set: { ...set }, removedPosition }] }
   return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
 }
 
+/** Restore an unsent group using its original stable order and untouched input. */
+export function restoreUnsubmittedSet(draft: RecordingDraft, exerciseEntryKey: string, recordKey: string): RecordingDraft {
+  const target = findExercise(draft, exerciseEntryKey)
+  const removed = target.removedSets?.find(item => item.set.recordKey === recordKey)
+  if (!removed) throw new Error('已移除的组不存在')
+  if (removed.set.persisted || target.sets.some(set => set.recordKey === recordKey || set.setIndex === removed.set.setIndex)) {
+    throw new Error('训练组需要先核对后恢复')
+  }
+  const sets = [...target.sets, { ...removed.set }].sort((a, b) => a.setIndex - b.setIndex)
+  const changed = { ...target, sets, removedSets: target.removedSets!.filter(item => item !== removed) }
+  return { ...draft, exercises: draft.exercises.map(item => item === target ? changed : item) }
+}
 function decimal(value: string, maxPlaces: number, minimum: number, maximum: number): number | undefined {
   const raw = value.trim()
   const pattern = maxPlaces ? new RegExp(`^\\d+(?:\\.\\d{1,${maxPlaces}})?$`) : /^\d+$/
@@ -377,8 +412,8 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
     if (exercise.sets.some(group => object(group) && group.setIndex === undefined)) {
       throw new Error('旧草稿需要核对训练组序号，原数据仍被保留')
     }
-    let previousIndex = 0
-    for (const group of exercise.sets) {
+    const indexes = new Set<number>()
+    const validateGroup = (group: unknown): number => {
       if (!object(group) || typeof group.recordKey !== 'string' || typeof group.weightKg !== 'string' ||
         typeof group.reps !== 'string' || typeof group.seconds !== 'string' || typeof group.rpe !== 'string' ||
         typeof group.confirmed !== 'boolean' || typeof group.persisted !== 'boolean' || typeof group.dirty !== 'boolean') {
@@ -389,8 +424,23 @@ export function restoreDraft(raw: unknown, today: string): RecordingDraft {
       if (groups.has(group.recordKey)) throw new Error('训练组标识重复')
       groups.add(group.recordKey)
       const index = group.setIndex
-      if (!Number.isSafeInteger(index) || Number(index) <= previousIndex) throw new Error('训练组序号无效或顺序重复')
-      previousIndex = Number(index)
+      if (!Number.isSafeInteger(index) || Number(index) < 1 || indexes.has(Number(index))) throw new Error('训练组序号无效或顺序重复')
+      indexes.add(Number(index))
+      return Number(index)
+    }
+    let previousIndex = 0
+    for (const group of exercise.sets) {
+      const index = validateGroup(group)
+      if (index <= previousIndex) throw new Error('训练组序号无效或顺序重复')
+      previousIndex = index
+    }
+    if (exercise.removedSets !== undefined) {
+      if (!Array.isArray(exercise.removedSets)) throw new Error('已移除的组无效')
+      for (const removed of exercise.removedSets) {
+        if (!object(removed) || !Number.isSafeInteger(removed.removedPosition) || Number(removed.removedPosition) < 1 ||
+          !object(removed.set) || removed.set.persisted !== false) throw new Error('已移除的组无效')
+        validateGroup(removed.set)
+      }
     }
   }
   return value as unknown as RecordingDraft
