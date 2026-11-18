@@ -11,7 +11,7 @@ import (
 )
 
 const workoutCompleteSessionSQL = `UPDATE workout_session SET status = 'completed', recorded_at = ?, updated_at = ?, version = version + 1
-        WHERE id = ? AND user_id = ?`
+        WHERE id = ? AND user_id = ? AND record_format = 1`
 
 // CompletionStatements returns a fresh slice containing this file's fixed write SQL.
 func CompletionStatements() []string { return []string{workoutCompleteSessionSQL} }

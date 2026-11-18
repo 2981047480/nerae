@@ -58,7 +58,7 @@ internal class AndroidTrainingDraftPayloadValidator : TrainingDraftPayloadValida
             val root = JSONObject(value)
             if (root.keys().asSequence().toSet() != setOf("schema", "subjectId", "draft")) return null
             val schema = root.opt("schema")
-            if (schema !is Number || schema.toDouble() != 1.0 || schema.toInt() != 1) return null
+            if (schema !is Number || schema.toDouble() !in setOf(1.0, 2.0, 3.0, 4.0)) return null
             val subject = root.opt("subjectId") as? String ?: return null
             val draft = root.optJSONObject("draft") ?: return null
             val event = draft.opt("clientEventId") as? String ?: return null
@@ -115,12 +115,15 @@ internal class NeraeProtectedTrainingDraftStore(
         val previous = readSlot(slot)
         if (!previous.found) throw VaultFailure("conflict")
         if (!validPayload(previous.value, owner.subject, owner.event)) throw VaultFailure()
+        val previousSchema = try { draftEnvelopeSchema(previous.value) } catch (_: Exception) { throw VaultFailure() }
+        if (previousSchema >= 4) throw VaultFailure("conflict")
         val currentPending = pendingBytes(previous.value, "unavailable")
         // A stale unversioned editor may neither change nor resurrect a pending operation.
         if ((currentPending == null) != (proposedPending == null) ||
             (currentPending != null && proposedPending != null && !currentPending.contentEquals(proposedPending))) {
             throw VaultFailure("conflict")
         }
+        requireNondecreasingSchema(previous.value, value)
         persist(slot, owner, previous, value)
     }
 
@@ -139,6 +142,7 @@ internal class NeraeProtectedTrainingDraftStore(
         if (previous.found) pendingBytes(previous.value, "unavailable")
         if (previous.revision != revision || previous.found != expectedFound ||
             previous.value != expectedValue) throw VaultFailure("conflict")
+        if (previous.found) requireNondecreasingSchema(previous.value, value)
         val committed = persist(slot, owner, previous, value)
         VersionedTrainingDraftResult(false, "", committed.revision.toString())
     }
@@ -314,6 +318,14 @@ internal class NeraeProtectedTrainingDraftStore(
         if (owner.digest != expectedDigest || !validPayload(value, subject, event)) throw VaultFailure()
         pendingBytes(value, "unavailable")
         return owner
+    }
+
+    private fun requireNondecreasingSchema(previous: String, value: String) {
+        try {
+            if (draftEnvelopeSchema(value) < draftEnvelopeSchema(previous)) throw IllegalArgumentException()
+        } catch (_: Exception) {
+            throw VaultFailure("invalid_state")
+        }
     }
 
     private fun validPayload(value: String, subject: String, event: String): Boolean {

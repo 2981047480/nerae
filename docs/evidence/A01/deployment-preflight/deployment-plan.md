@@ -31,10 +31,10 @@ Before exposing a route:
 
    The tested socket directory was owned by the sidecar UID, had the gateway
    group and mode `2750`; the socket itself had mode `0660`. The sidecar's
-   generated config was readable only by its own UID. For deployment, use a
-   root-owned, group-readable config and root-controlled parent directory so
-   the sidecar can read but cannot replace its settings; this variation has not
-   yet been tested. None of these permissions have been verified live.
+   generated config was readable only by its own UID. A subsequent isolated
+   test verified a root-owned, sidecar-group-readable config and root-controlled
+   parent: the sidecar could read but could not write or replace it. These
+   permissions have not been verified on the live deployment.
 
 On failure, stop only Nerae-owned processes, restore the validated prior Caddy
 configuration if it was changed, and preserve the data and protected key

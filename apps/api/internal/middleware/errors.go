@@ -33,6 +33,7 @@ const (
 	Forbidden
 	NotFound
 	Conflict
+	UpgradeRequired
 	VersionConflict
 	ValidationError
 	RateLimited
@@ -58,6 +59,8 @@ func errorDetails(kind ErrorKind) publicError {
 		return publicError{http.StatusNotFound, "NOT_FOUND", "未找到相关内容"}
 	case Conflict:
 		return publicError{http.StatusConflict, "CONFLICT", "状态已变化，请检查当前内容"}
+	case UpgradeRequired:
+		return publicError{http.StatusConflict, "CLIENT_UPGRADE_REQUIRED", "此记录需要更新应用后查看"}
 	case VersionConflict:
 		return publicError{http.StatusPreconditionFailed, "VERSION_CONFLICT", "记录已更新，请先查看最新内容"}
 	case ValidationError:

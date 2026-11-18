@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	ErrInvalid     = errors.New("invalid workout session")
-	ErrConflict    = errors.New("workout event conflict")
-	ErrUnavailable = errors.New("workout session unavailable")
+	ErrInvalid               = errors.New("invalid workout session")
+	ErrConflict              = errors.New("workout event conflict")
+	ErrUnavailable           = errors.New("workout session unavailable")
+	ErrClientUpgradeRequired = errors.New("client upgrade required for workout")
 )
 
 type FreeSessionInput struct {
@@ -54,7 +55,7 @@ const (
 		VALUES (?, 'free', ?, ?, 'in_progress', 1, ?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE id = id`
 	freeReadEventSQL = `SELECT id, version, creation_request_hash FROM workout_session
-        WHERE user_id = ? AND client_event_id = ? FOR UPDATE`
+        WHERE user_id = ? AND client_event_id = ? AND record_format = 1 FOR UPDATE`
 )
 
 // FreeSessionStatements returns the fixed SQL required by CreateFreeTx.

@@ -250,5 +250,30 @@ fun main() {
             expect(result(setsPath, body) == ClaimResult.Unavailable, "server-invalid precision rejected")
         }
     }
-    println("PASS 14 synthetic groups")
+    run {
+        fun result(path: String, requestBody: String): ClaimResult {
+            val request = "\"request\":{\"method\":\"POST\",\"path\":${quote(path)},\"idempotencyKey\":\"v2-test-key-1\",\"body\":${quote(requestBody)}}"
+            val before = registry(op("ready", 1, request = request)); val after = registry(op("in_flight", 2, "gen-A", request))
+            return FirstDispatchGate(MemorySlot(env(before))).claim(7, before, key, after)
+        }
+        val create = """{"source":"free","date":"2026-11-04","clientEventId":"event-0001","mode":"after_workout"}"""
+        val blank = """{"expectedVersion":1,"exerciseEntryKeys":["entry-0001"],"addEntries":[{"exerciseEntryKey":"entry-0001","exerciseName":"深蹲"}],"sets":[{"recordKey":"record-001","exerciseEntryKey":"entry-0001","setIndex":1,"confirmed":false,"measurement":{"method":"total"}}]}"""
+        val sides = """{"expectedVersion":1,"exerciseEntryKeys":["entry-0001"],"sets":[{"recordKey":"record-001","exerciseEntryKey":"entry-0001","setIndex":1,"confirmed":true,"measurement":{"method":"sides","left":{"state":"performed","weightKg":"12","reps":10},"right":{"state":"not_performed"}}}]}"""
+        val assisted = """{"expectedVersion":1,"exerciseEntryKeys":["entry-0001"],"sets":[{"recordKey":"record-001","exerciseEntryKey":"entry-0001","setIndex":1,"confirmed":false,"measurement":{"method":"bodyweight_assisted","bodyweightKg":"70","adjustmentKg":"20","reps":8}}]}"""
+        expect(result("/me/recordings", create) is ClaimResult.Claimed, "v2 create accepted")
+        expect(result("/me/recordings/55/sets", blank) is ClaimResult.Claimed, "v2 blank set accepted")
+        expect(result("/me/recordings/55/sets", """{"expectedVersion":1,"date":"2026-02-28","exerciseEntryKeys":[]}""") is ClaimResult.Claimed, "v2 training date accepted")
+        expect(result("/me/recordings/55/sets", """{"expectedVersion":1,"date":"2026-02-30","exerciseEntryKeys":[]}""") == ClaimResult.Unavailable, "v2 invalid training date rejected")
+        expect(result("/me/recordings/55/sets", sides) is ClaimResult.Claimed, "v2 unilateral set accepted")
+        expect(result("/me/recordings/55/sets", assisted) is ClaimResult.Claimed, "v2 assisted set accepted")
+        expect(result("/me/recordings/55/finish", """{"expectedVersion":2}""") is ClaimResult.Claimed, "v2 finish accepted")
+        expect(result("/me/recordings", create.replace("event-0001", "event-other")) == ClaimResult.Unavailable, "v2 wrong event rejected")
+        expect(result("/me/recordings", create.replace("2026-11-04", "2026-02-30")) == ClaimResult.Unavailable, "v2 invalid date rejected")
+        expect(result("/me/recordings/55/sets", blank.replace("\"confirmed\":false", "\"confirmed\":1")) == ClaimResult.Unavailable, "v2 non boolean confirmation rejected")
+        expect(result("/me/recordings/55/sets", assisted.replace("\"20\"", "\"80\"")) == ClaimResult.Unavailable, "v2 excessive assistance rejected")
+        expect(result("/me/recordings/55/sets", blank.replace("\"expectedVersion\":1", "\"expectedVersion\":9007199254740992")) == ClaimResult.Unavailable, "v2 unsafe version rejected")
+        expect(result("/me/recordings/55/finish", """{"expectedVersion":1,"extra":0}""") == ClaimResult.Unavailable, "v2 extra finish field rejected")
+        expect(result("/me/recordings/55/other", blank) == ClaimResult.Unavailable, "v2 invalid route rejected")
+    }
+    println("PASS 15 synthetic groups including recording v2")
 }

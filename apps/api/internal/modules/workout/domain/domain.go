@@ -34,6 +34,9 @@ type Source string
 const (
 	Catalog Source = "catalog"
 	Custom  Source = "custom"
+	// Personal is a versioned, account-owned action. It is supported only by
+	// recording v2, never by the older exercise contract.
+	Personal Source = "personal"
 )
 
 var (
@@ -45,6 +48,7 @@ var (
 type Exercise struct {
 	Source   Source
 	ID, Name string
+	Version  uint64
 }
 type Set struct {
 	RecordKey, ExerciseEntryKey string
@@ -185,6 +189,9 @@ func Complete(s Session) (Session, error) {
 	return n, nil
 }
 func validateExercise(e Exercise) error {
+	if e.Version != 0 {
+		return ErrInvalid
+	}
 	switch e.Source {
 	case Catalog:
 		if !numericID(e.ID) || e.Name != "" {

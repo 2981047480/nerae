@@ -282,6 +282,22 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	if err != nil {
 		return nil, errBusinessStartup
 	}
+	recordingStore, err := workoutrepo.NewRecordingV2Store(keys.workoutName, keys.workoutNameID)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	recordingService, err := workoutapp.NewRecordingV2Service(sessions, recordingStore)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	recordingExecutor, err := workoutapp.NewRecordingV2Executor(sessions, keys.workoutHash, keys.workoutCipher, keys.workoutID, policy.workoutRetention)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
+	recordingHandler, err := workouttransport.NewRecordingV2Handler(db, recordingService, recordingStore, recordingExecutor, validator)
+	if err != nil {
+		return nil, errBusinessStartup
+	}
 
 	identityEpoch, err := bootstrap.NewIdentityEpochInitializer(identities)
 	if err != nil {
@@ -295,7 +311,7 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	for _, initialize := range []func(context.Context, *sql.Tx) error{
 		identityEpoch.Initialize, ensureEmptyCodeEpochHistory, producer.InitializeCodeKey, hashEpoch.Initialize,
 		issuer.InitializeKey, ledger.Initialize, approvals.InitializeKey, poll.Initialize,
-		executor.InitializeKey, decisionExecutor.Initialize, nameProtector.InitializeExerciseKey,
+		executor.InitializeKey, recordingExecutor.InitializeKey, decisionExecutor.Initialize, nameProtector.InitializeExerciseKey,
 	} {
 		if err := initialize(ctx, tx); err != nil {
 			return nil, errBusinessStartup
@@ -321,6 +337,8 @@ func buildBusinessHandler(ctx context.Context, db *sql.DB, rdb *redis.Client, ke
 	mux.Handle("/me/age-verify", ageHandler)
 	mux.Handle("/me/login-approvals", approvalListHandler)
 	mux.Handle("/me/login-approvals/", decisionHandler)
+	mux.Handle("/me/recordings", recordingHandler)
+	mux.Handle("/me/recordings/", recordingHandler)
 	mux.Handle("/me/sessions", workoutHandler)
 	mux.Handle("/me/sessions/", workoutHandler)
 	return mux, nil

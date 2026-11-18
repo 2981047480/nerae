@@ -26,7 +26,7 @@ openssl x509 -req -in "$scratch/server.csr" -CA "$scratch/ca.pem" -CAkey "$scrat
 openssl req -x509 -newkey rsa:2048 -nodes -keyout "$scratch/bad.key" -out "$scratch/bad.pem" -days 1 -subj '/CN=Untrusted Recovery Test CA' >/dev/null 2>&1
 openssl x509 -in "$scratch/bad.pem" -outform DER -out "$scratch/bad.der"
 xcrun swiftc -module-cache-path "$scratch/modules" -D NERAE_RECOVERY_HTTP_TESTING \
-  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
+  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeRecordingV2JournalValidator.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
   "$source_dir/NeraeAuthenticationStateGeneration.swift" \
   "$source_dir/NeraeRecoveryReplayValidator.swift" "$source_dir/NeraeRecoveryInspector.swift" \
   "$evidence_dir/RecoveryHTTPProbe.swift" -framework Security -o "$scratch/probe"
@@ -56,7 +56,7 @@ print('PASS: exact replay-only routes; no mismatched-owner, redirect destination
 PY
 sdk_path=$(xcrun --sdk iphoneos --show-sdk-path)
 xcrun swiftc -module-cache-path "$scratch/modules" -target arm64-apple-ios15.0 -sdk "$sdk_path" -typecheck \
-  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
+  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeRecordingV2JournalValidator.swift" "$source_dir/NeraeSecureVaultBridge.swift" "$source_dir/NeraeRecoveryHTTP.swift" \
   "$source_dir/NeraeAuthenticationStateGeneration.swift" \
   "$source_dir/NeraeRecoveryReplayValidator.swift" "$source_dir/NeraeRecoveryInspector.swift"
 printf 'PASS: iPhoneOS arm64 source typecheck; no signed app or device was run\n'

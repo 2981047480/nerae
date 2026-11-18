@@ -29,7 +29,7 @@ type RecordStore struct {
 
 const (
 	workoutLockSubjectSQL    = `SELECT status FROM user WHERE id = ? FOR UPDATE`
-	workoutLockSessionSQL    = `SELECT source, status, version FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+	workoutLockSessionSQL    = `SELECT source, status, version FROM workout_session WHERE id = ? AND user_id = ? AND record_format = 1 FOR UPDATE`
 	workoutLockKeyEpochSQL   = `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`
 	workoutInsertExerciseSQL = `INSERT INTO workout_exercise
             (session_id, exercise_entry_key, source, name_snapshot_enc, key_id, created_at, updated_at)
@@ -43,7 +43,7 @@ const (
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	workoutUpdateSetSQL = `UPDATE set_record SET set_index = ?, kind = ?, weight_kg = ?, reps = ?, seconds = ?, rpe = ?, updated_at = ?
                 WHERE session_id = ? AND record_key = ?`
-	workoutUpdateSessionSQL = `UPDATE workout_session SET status = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`
+	workoutUpdateSessionSQL = `UPDATE workout_session SET status = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ? AND record_format = 1`
 	workoutLoadExercisesSQL = `SELECT exercise_entry_key, source, name_snapshot_enc, key_id FROM workout_exercise WHERE session_id = ?`
 	workoutLoadSetKeysSQL   = `SELECT record_key, exercise_entry_key, state FROM set_record_key WHERE session_id = ?`
 	workoutLoadSetsSQL      = `SELECT record_key, set_index, kind, weight_kg, reps, seconds, rpe FROM set_record WHERE session_id = ?`

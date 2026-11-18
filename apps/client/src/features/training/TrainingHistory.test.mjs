@@ -47,7 +47,7 @@ const renderer = createRenderer({
 const find = (node, predicate) => predicate(node) ? node : (node.children || []).map(child => find(child, predicate)).find(Boolean)
 const flush = async () => { await nextTick(); await new Promise(resolve => setImmediate(resolve)); await nextTick() }
 const lease = { subjectId: '101', generation: 'session-one' }
-const summary = { id: '42', date: '2026-10-29', status: 'completed' }
+const summary = { id: '42', date: '2026-10-29', status: 'completed', recordFormat: 1 }
 function fixture(api) {
   let active = true
   const listeners = new Set()
@@ -60,9 +60,10 @@ function fixture(api) {
   }
   const root = { type: 'root', children: [] }
   let changes = 0
-  const app = renderer.createApp(Page, { session, api, onSessionChanged: () => changes++ })
+  const edits = []
+  const app = renderer.createApp(Page, { session, api, onSessionChanged: () => changes++, onEditV2: (id, eventId) => edits.push([id, eventId]) })
   app.mount(root)
-  return { root, app, session, changes: () => changes }
+  return { root, app, session, edits, changes: () => changes }
 }
 function button(root, label) {
   const result = find(root, node => node.type === 'button' && node.text === label)
@@ -73,7 +74,7 @@ function button(root, label) {
 test('authenticated history lists and reads saved training without touching local drafts', async () => {
   const calls = []
   const api = {
-    async listSessions(input) { calls.push(input); return { lease, page: 1, pageSize: 20, total: 1, items: [summary] } },
+    async listRecordingsV2(input) { calls.push(input); return { lease, page: 1, pageSize: 20, total: 1, items: [summary] } },
     async readSession(id) {
       calls.push(id)
       return { lease, detail: { date: summary.date, sets: [{ recordKey: 'record-001', exerciseName: '深蹲', setIndex: 1, weightKg: 50, reps: 8 }] } }
@@ -93,7 +94,7 @@ test('authenticated history lists and reads saved training without touching loca
 
 test('a failed cloud read can be retried and an empty result is shown honestly', async () => {
   let attempts = 0
-  const api = { async listSessions() {
+  const api = { async listRecordingsV2() {
     if (++attempts === 1) throw Error('network')
     return { lease, page: 1, pageSize: 20, total: 0, items: [] }
   } }
@@ -109,7 +110,7 @@ test('a failed cloud read can be retried and an empty result is shown honestly',
 test('account changes discard an in-flight cloud response', async () => {
   let release
   const waiting = new Promise(resolve => { release = resolve })
-  const { root, app, session, changes } = fixture({ listSessions: () => waiting })
+  const { root, app, session, changes } = fixture({ listRecordingsV2: () => waiting })
   session.invalidate()
   release({ lease, page: 1, pageSize: 20, total: 1, items: [summary] })
   await flush()
@@ -121,7 +122,7 @@ test('account changes discard an in-flight cloud response', async () => {
 test('more cloud records load by page without repeating records', async () => {
   const calls = []
   const first = Array.from({ length: 20 }, (_, index) => ({ ...summary, id: String(index + 1), date: `2026-10-${String(index + 1).padStart(2, '0')}` }))
-  const api = { async listSessions(input) {
+  const api = { async listRecordingsV2(input) {
     calls.push(input.page)
     return input.page === 1
       ? { lease, page: 1, pageSize: 20, total: 21, items: first }
@@ -139,7 +140,7 @@ test('more cloud records load by page without repeating records', async () => {
 
 test('a denied record read clears cached account data and asks for a session recheck', async () => {
   const api = {
-    async listSessions() { return { lease, page: 1, pageSize: 20, total: 1, items: [summary] } },
+    async listRecordingsV2() { return { lease, page: 1, pageSize: 20, total: 1, items: [summary] } },
     async readSession() { throw new RecordingApiError('forbidden', 403) },
   }
   const { root, app, changes } = fixture(api)
@@ -149,5 +150,26 @@ test('a denied record read clears cached account data and asks for a session rec
   await flush()
   assert.equal(changes(), 1)
   assert.equal(find(root, node => node.text === '2026-10-29'), undefined)
+  app.unmount()
+})
+
+
+test('v2 cloud history displays retained blank and partial groups', async () => {
+  const api = {
+    async listRecordingsV2() { return { lease, page: 1, pageSize: 20, total: 1, items: [{ ...summary, recordFormat: 2 }] } },
+    async readRecordingV2(id) {
+      assert.equal(id, '42')
+      return { lease, detail: { id:'42', clientEventId:'event-0001', date: summary.date, status:'completed',
+        entries:[{exerciseEntryKey:'entry-0001',source:'custom',exerciseName:'深蹲',volume:{calculatedKg:'284.00',fullSets:2,partialSets:0,excludedSets:1}}],
+        sets:[{recordKey:'record-001',exerciseEntryKey:'entry-0001',setIndex:1,measurement:{method:'total',weightKg:'12',reps:12}},
+              {recordKey:'record-002',exerciseEntryKey:'entry-0001',setIndex:2,measurement:{method:'total',weightKg:'14',reps:10}},
+              {recordKey:'record-003',exerciseEntryKey:'entry-0001',setIndex:3,measurement:{method:'total'}}],removedSets:[] } }
+    },
+  }
+  const { root, app, edits }=fixture(api); await flush(); button(root,'查看').props.onTap(); await flush()
+  assert.ok(find(root,node=>node.text==='12 kg × 12 次'))
+  assert.ok(find(root,node=>node.text==='重量未填 × 次数未填'))
+  assert.ok(find(root,node=>node.text==='已计算 284 kg，1 组未计入'))
+  button(root,'编辑记录').props.onTap();assert.deepEqual(edits,[['42','event-0001']])
   app.unmount()
 })

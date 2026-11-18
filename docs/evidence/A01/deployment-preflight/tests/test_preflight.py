@@ -118,7 +118,8 @@ class PreflightTests(unittest.TestCase):
         result = self.run_cli()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("offline contract check", result.stdout)
-        self.assertIn("18 migrations", result.stdout)
+        manifest = json.loads((self.base / "release/scripts/dev/migrations.json").read_text())
+        self.assertIn(f"{len(manifest['migrations'])} migrations", result.stdout)
         self.assertNotIn(self.worker["smtp_password"], result.stdout + result.stderr)
         self.assertNotIn(next(iter(self.api.values())), result.stdout + result.stderr)
 

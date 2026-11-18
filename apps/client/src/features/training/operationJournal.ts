@@ -152,8 +152,8 @@ function validRequestKey(value: unknown): value is string {
 }
 
 function validPath(value: unknown): value is string {
-  return typeof value === 'string' && (value === '/me/sessions' ||
-    /^\/me\/sessions\/[1-9]\d{0,19}\/(sets|finish)$/.test(value))
+  return typeof value === 'string' && (value === '/me/sessions' || value === '/me/recordings' ||
+    /^\/me\/(?:sessions|recordings)\/[1-9]\d{0,19}\/(sets|finish)$/.test(value))
 }
 
 function utf8Length(value: string): number {
@@ -221,9 +221,104 @@ function validSetWrite(value: unknown): boolean {
     optionalValue(value, 'completed', item => item === true)
 }
 
+export function validV2Key(value: unknown): value is string {
+  return validEventId(value) && !/[\r\n]/.test(value)
+}
+function validV2Keys(value: unknown, limit: number): value is string[] {
+  return Array.isArray(value) && value.length <= limit && value.every(validV2Key) && new Set(value).size === value.length
+}
+function validV2Weight(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{1,6}(?:\.\d{1,2})?$/.test(value)
+}
+function validV2Side(value: unknown): boolean {
+  if (!hasOnlyAllowedKeys(value, ['state', 'weightKg', 'reps'], ['state']) ||
+      !['unknown', 'performed', 'not_performed'].includes(String(value.state))) return false
+  return optionalValue(value, 'weightKg', validV2Weight) && optionalValue(value, 'reps', v => Number.isSafeInteger(v) && Number(v) >= 1 && Number(v) <= 100)
+}
+function validV2Measurement(value: unknown): boolean {
+  const keys = ['method', 'weightKg', 'reps', 'bodyweightKg', 'adjustmentKg', 'left', 'right'] as const
+  if (!hasOnlyAllowedKeys(value, keys, ['method']) ||
+      !optionalValue(value, 'weightKg', validV2Weight) || !optionalValue(value, 'bodyweightKg', validV2Weight) ||
+      !optionalValue(value, 'adjustmentKg', validV2Weight) || !optionalValue(value, 'left', validV2Side) ||
+      !optionalValue(value, 'right', validV2Side) || !optionalValue(value, 'reps', v => Number.isSafeInteger(v) && Number(v) >= 1 && Number(v) <= 100)) return false
+  if (value.bodyweightKg !== undefined && Number(value.bodyweightKg) <= 0) return false
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(value, key)
+  if (['total', 'pair_each', 'direct'].includes(String(value.method))) return !has('bodyweightKg') && !has('adjustmentKg') && !has('left') && !has('right')
+  if (value.method === 'sides') return !has('weightKg') && !has('reps') && !has('bodyweightKg') && !has('adjustmentKg')
+  if (value.method === 'bodyweight') return !has('weightKg') && !has('adjustmentKg') && !has('left') && !has('right')
+  if (value.method === 'bodyweight_extra' || value.method === 'bodyweight_assisted') {
+    return !has('weightKg') && !has('left') && !has('right') && !(value.method === 'bodyweight_assisted' &&
+      value.bodyweightKg !== undefined && value.adjustmentKg !== undefined && Number(value.adjustmentKg) > Number(value.bodyweightKg))
+  }
+  return false
+}
+export function validV2Set(value: unknown): boolean {
+  if (!hasOnlyAllowedKeys(value, ['recordKey', 'exerciseEntryKey', 'setIndex', 'confirmed', 'rpe', 'measurement'],
+      ['recordKey', 'exerciseEntryKey', 'setIndex', 'confirmed', 'measurement'])) return false
+  return validV2Key(value.recordKey) && validV2Key(value.exerciseEntryKey) && Number.isSafeInteger(value.setIndex) && Number(value.setIndex) >= 1 &&
+    typeof value.confirmed === 'boolean' && optionalValue(value, 'rpe', v => typeof v === 'string' && /^(?:[1-9](?:\.\d)?|10(?:\.0)?)$/.test(v)) &&
+    validV2Measurement(value.measurement)
+}
+function validRecordingDate(value: unknown): boolean {
+  if (typeof value !== 'string' || !/^[1-9]\d{3}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00.000Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+export function validateV2RequestBody(path: string, body: Record<string, unknown>, eventId: string): void {
+  const invalid: () => never = () => { throw new OperationJournalError('invalid_operation') }
+  if (path === '/me/recordings') {
+    if (!hasOnlyAllowedKeys(body, ['source', 'date', 'timeZone', 'clientEventId', 'mode'], ['source', 'date', 'clientEventId', 'mode']) ||
+        body.source !== 'free' || typeof body.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date) || body.clientEventId !== eventId ||
+        !['after_workout', 'per_set'].includes(String(body.mode)) || !optionalValue(body, 'timeZone', v => typeof v === 'string' && v.length > 0 && v.length <= 64)) invalid()
+    return
+  }
+  if (!Number.isSafeInteger(body.expectedVersion) || Number(body.expectedVersion) < 1) invalid()
+  if (path.endsWith('/finish')) {
+    if (!hasOnlyAllowedKeys(body, ['expectedVersion'], ['expectedVersion'])) invalid()
+    return
+  }
+  const allowed = ['expectedVersion', 'date', 'mode', 'addEntries', 'sets', 'removeRecordKeys', 'removeRecords', 'restoreRecordKeys', 'removeEntryKeys', 'restoreEntryKeys', 'exerciseEntryKeys'] as const
+  if (!hasOnlyAllowedKeys(body, allowed, ['expectedVersion', 'exerciseEntryKeys']) || !validV2Keys(body.exerciseEntryKeys, 2000) ||
+      !optionalValue(body, 'date', validRecordingDate) || !optionalValue(body, 'mode', v => v === 'after_workout' || v === 'per_set')) invalid()
+  const order = body.exerciseEntryKeys as string[]
+  const addEntries = body.addEntries === undefined ? [] : body.addEntries
+  if (!Array.isArray(addEntries) || addEntries.length > 2000) invalid()
+  const added = new Set<string>()
+  for (const entry of addEntries as unknown[]) {
+    if (!hasOnlyAllowedKeys(entry, ['exerciseEntryKey', 'exerciseName'], ['exerciseEntryKey', 'exerciseName']) || !validV2Key(entry.exerciseEntryKey) ||
+        typeof entry.exerciseName !== 'string' || !entry.exerciseName.trim() || Array.from(entry.exerciseName).length > 60 ||
+        /[\uD800-\uDFFF]/.test(entry.exerciseName.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')) || added.has(entry.exerciseEntryKey) || !order.includes(entry.exerciseEntryKey)) invalid()
+    added.add(entry.exerciseEntryKey as string)
+  }
+  const sets = body.sets === undefined ? [] : body.sets
+  if (!Array.isArray(sets) || sets.length > 200 || !sets.every(validV2Set)) invalid()
+  const records = new Set<string>(); const indexes = new Set<string>()
+  for (const item of sets as Record<string, unknown>[]) {
+    const record = item.recordKey as string; const entry = item.exerciseEntryKey as string; const index = `${entry}\0${item.setIndex}`
+    if (records.has(record) || indexes.has(index) || !order.includes(entry)) invalid()
+    records.add(record); indexes.add(index)
+  }
+  for (const key of ['removeRecordKeys', 'restoreRecordKeys', 'removeEntryKeys', 'restoreEntryKeys'] as const) {
+    if (!optionalValue(body, key, v => validV2Keys(v, 200))) invalid()
+  }
+  const removals = body.removeRecords === undefined ? [] : body.removeRecords
+  if (!Array.isArray(removals) || removals.length > 200) invalid()
+  const removed = new Set((body.removeRecordKeys || []) as string[])
+  for (const item of removals as unknown[]) {
+    if (!hasOnlyAllowedKeys(item, ['recordKey', 'removedPosition'], ['recordKey', 'removedPosition']) || !validV2Key(item.recordKey) ||
+        !Number.isSafeInteger(item.removedPosition) || Number(item.removedPosition) < 1 || removed.has(item.recordKey)) invalid()
+    removed.add(item.recordKey as string)
+  }
+  const restores = (body.restoreRecordKeys || []) as string[]
+  if (restores.some(key => removed.has(key) && !records.has(key)) ||
+      ((body.removeEntryKeys || []) as string[]).some(key => ((body.restoreEntryKeys || []) as string[]).includes(key)) ||
+      (sets as unknown[]).length + removed.size + restores.length + ((body.removeEntryKeys || []) as string[]).length + ((body.restoreEntryKeys || []) as string[]).length > 200) invalid()
+}
+
 function validateRequestBody(path: string, value: unknown, eventId: string): void {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new OperationJournalError('invalid_operation')
   const body = value as Record<string, unknown>
+  if (path === '/me/recordings' || path.startsWith('/me/recordings/')) { validateV2RequestBody(path, body, eventId); return }
   if (path === '/me/sessions') {
     if (body.source === 'free') {
       if (!hasOnlyAllowedKeys(body, FREE_SESSION_KEYS, ['source', 'date', 'clientEventId']) ||
@@ -283,6 +378,15 @@ function normalizeRequest(value: unknown, eventId: string): JournalRequest {
   inspectBoundedBody(parsed)
   validateRequestBody(candidate.path, parsed, eventId)
   return Object.freeze({ method: 'POST', path: candidate.path, body: candidate.body, idempotencyKey: candidate.idempotencyKey })
+}
+
+/** Validate and freeze an exact recording-v2 request for protected draft storage. */
+export function normalizeRecordingV2Request(value: unknown, eventId: string): JournalRequest {
+  const request = normalizeRequest(value, eventId)
+  if (request.path !== '/me/recordings' && !/^\/me\/recordings\/[1-9]\d{0,19}\/(sets|finish)$/.test(request.path)) {
+    throw new OperationJournalError('invalid_operation')
+  }
+  return request
 }
 
 function storageKey(subjectId: string, eventId: string): string {

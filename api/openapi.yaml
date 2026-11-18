@@ -4228,6 +4228,261 @@ paths:
           $ref: '#/components/responses/Error'
       operationId: postPublishPlansIdWithdraw
       x-required-role: authenticated_resource_owner_or_participant
+  /me/recordings:
+    get:
+      tags: [Records]
+      operationId: getMeRecordings
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 列出本人的训练记录及格式
+      description: 只返回本人记录；同时列出旧格式和新格式，客户端按 recordFormat 选择对应详情接口，不得静默隐藏旧记录。
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PageSize'
+      - name: from
+        in: query
+        schema: {type: string, format: date}
+      - name: to
+        in: query
+        schema: {type: string, format: date}
+      responses:
+        '200':
+          description: 记录列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Page' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Records]
+      operationId: postMeRecordings
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 创建本人的自由训练草稿
+      description: 按本人 clientEventId 防重；训练后和逐组方式共享同一份记录。初始仅支持自由训练，计划来源另行接入。
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Create' }
+      responses:
+        '201':
+          description: 已提交的记录标识和版本；详情须另读。
+          headers:
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/{id}:
+    get:
+      tags: [Records]
+      operationId: getMeRecordingsId
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 读取本人新格式草稿或完成记录
+      description: 草稿仅本人可读；响应含动作段、未移除组及完整恢复快照。旧格式详情沿用原接口。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      responses:
+        '200':
+          description: 完整记录
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Detail' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/{id}/sets:
+    post:
+      tags: [Records]
+      operationId: postMeRecordingsIdSets
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 按版本保存草稿组、顺序和移除状态
+      description: |
+        一个动作可分成多个有独立键的动作段；组键稳定。完整顺序含暂时移除的动作，以便恢复原位置。空组和缺项组允许保存，缺失不是零；确认单组不等于完成整场。
+        所有变更在同一事务生效，expectedVersion 不符返回 412，远端内容不变；客户端保留本地内容并让本人解决冲突。无变更不递增版本。移除最后一组使已完成记录回到草稿。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Batch' }
+      responses:
+        '200':
+          description: 提交版本；详情须另读。
+          headers:
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/{id}/finish:
+    post:
+      tags: [Records]
+      operationId: postMeRecordingsIdFinish
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 完成本次训练记录
+      description: 保存时保留列表中的每一组，包括空组和缺项组，无须逐组确认；没有可见组时不能完成。不得推算训练时间。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Finish' }
+      responses:
+        '200':
+          description: 提交版本；详情须另读。
+          headers:
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Error' }
+        '412': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/replay:
+    post:
+      tags: [Records]
+      operationId: postMeRecordingsReplay
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 查询原请求回执，不执行写入
+      description: 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Create' }
+      responses:
+        '201':
+          description: 经重新授权的原回执
+          headers:
+            Idempotency-Replayed:
+              required: true
+              schema: {type: string, enum: ['true']}
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '412': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '422': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/{id}/sets/replay:
+    post:
+      tags: [Records]
+      operationId: postMeRecordingsIdSetsReplay
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 查询原请求回执，不执行写入
+      description: 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Batch' }
+      responses:
+        '200':
+          description: 经重新授权的原回执
+          headers:
+            Idempotency-Replayed:
+              required: true
+              schema: {type: string, enum: ['true']}
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '412': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '422': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /me/recordings/{id}/finish/replay:
+    post:
+      tags: [Records]
+      operationId: postMeRecordingsIdFinishReplay
+      x-required-role: authenticated_resource_owner_or_participant
+      summary: 查询原请求回执，不执行写入
+      description: 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+      parameters:
+      - $ref: '#/components/parameters/WorkoutSessionId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordingV2Finish' }
+      responses:
+        '200':
+          description: 经重新授权的原回执
+          headers:
+            Idempotency-Replayed:
+              required: true
+              schema: {type: string, enum: ['true']}
+            Idempotency-Key-Expires-At:
+              schema: {type: string, format: date-time}
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecordingV2Receipt' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '412': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '422': { $ref: '#/components/responses/WorkoutReplayFailure' }
+        '429': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /me/sessions:
     get:
       tags:
@@ -4264,6 +4519,8 @@ paths:
           $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
         '422':
           $ref: '#/components/responses/Error'
         '429':
@@ -4355,6 +4612,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
         '422':
           $ref: '#/components/responses/Error'
         '429':
@@ -10052,6 +10311,238 @@ components:
       - createdAt
       - updatedAt
       - publishedVersion
+    RecordingV2Key:
+      type: string
+      minLength: 8
+      maxLength: 64
+      description: 稳定键，大小写敏感；同一训练内不得复用。
+    RecordingV2Version:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 9007199254740991
+    RecordingV2Mode:
+      type: string
+      enum: [after_workout, per_set]
+    RecordingV2Weight:
+      type: string
+      pattern: '^[0-9]{1,6}(\.[0-9]{1,2})?$'
+      description: 千克十进制文本；字段省略表示未填，字符串 0 是实际填写的零，不等同于未填。
+    RecordingV2Create:
+      type: object
+      additionalProperties: false
+      required: [source, date, clientEventId, mode]
+      properties:
+        source: {type: string, enum: [free]}
+        date: {type: string, format: date}
+        timeZone: {type: string, minLength: 1, maxLength: 64}
+        clientEventId: { $ref: '#/components/schemas/RecordingV2Key' }
+        mode: { $ref: '#/components/schemas/RecordingV2Mode' }
+    RecordingV2Receipt:
+      type: object
+      additionalProperties: false
+      required: [id, version]
+      properties:
+        id: {type: string, pattern: '^[1-9][0-9]*$', maxLength: 20}
+        version: { $ref: '#/components/schemas/RecordingV2Version' }
+    RecordingV2Side:
+      type: object
+      additionalProperties: false
+      required: [state]
+      properties:
+        state: {type: string, enum: [unknown, performed, not_performed]}
+        weightKg: { $ref: '#/components/schemas/RecordingV2Weight' }
+        reps: {type: integer, minimum: 1, maximum: 100}
+    RecordingV2Measurement:
+      type: object
+      additionalProperties: false
+      required: [method]
+      description: |
+        total 是合计重量，pair_each 是每只器械重量（两只），sides 分别存左右；bodyweight 是自重，bodyweight_extra 加额外负重，bodyweight_assisted 减助力，direct 是手填结果。
+        缺项时仍保存；服务器校验各方法允许的字段，只按已知且可计算的部分累计。未做的一侧不累计。
+      properties:
+        method: {type: string, enum: [total, pair_each, sides, bodyweight, bodyweight_extra, bodyweight_assisted, direct]}
+        weightKg: { $ref: '#/components/schemas/RecordingV2Weight' }
+        reps: {type: integer, minimum: 1, maximum: 100}
+        bodyweightKg: { $ref: '#/components/schemas/RecordingV2Weight' }
+        adjustmentKg: { $ref: '#/components/schemas/RecordingV2Weight' }
+        left: { $ref: '#/components/schemas/RecordingV2Side' }
+        right: { $ref: '#/components/schemas/RecordingV2Side' }
+    RecordingV2EntryInput:
+      type: object
+      additionalProperties: false
+      required: [exerciseEntryKey, exerciseName]
+      description: 目前只接收用户本次输入的自定义名称；动作库身份、冻结版本和计划来源待接入。
+      properties:
+        exerciseEntryKey: { $ref: '#/components/schemas/RecordingV2Key' }
+        exerciseName: {type: string, minLength: 1, maxLength: 60}
+    RecordingV2Entry:
+      type: object
+      additionalProperties: false
+      required: [exerciseEntryKey, source, exerciseName]
+      properties:
+        exerciseEntryKey: { $ref: '#/components/schemas/RecordingV2Key' }
+        source: {type: string, enum: [custom]}
+        exerciseName: {type: string, minLength: 1, maxLength: 60}
+        removedPosition: {type: integer, minimum: 1}
+        volume: { $ref: '#/components/schemas/RecordingV2Volume' }
+    RecordingV2Volume:
+      type: object
+      additionalProperties: false
+      required: [fullSets, partialSets, excludedSets]
+      description: 按当前动作段的活动组和记录口径计算；缺项不算零，移除的组不计入。公斤数字不等同实际测得的受力。
+      properties:
+        calculatedKg: {type: string, maxLength: 32, pattern: '^[0-9]+(?:\.[0-9]{1,2})?$'}
+        fullSets: {type: integer, minimum: 0, maximum: 9007199254740991}
+        partialSets: {type: integer, minimum: 0, maximum: 9007199254740991}
+        excludedSets: {type: integer, minimum: 0, maximum: 9007199254740991}
+    RecordingV2Set:
+      type: object
+      additionalProperties: false
+      required: [recordKey, exerciseEntryKey, setIndex, confirmed, measurement]
+      properties:
+        recordKey: { $ref: '#/components/schemas/RecordingV2Key' }
+        exerciseEntryKey: { $ref: '#/components/schemas/RecordingV2Key' }
+        setIndex: {type: integer, format: int64, minimum: 1, maximum: 9007199254740991}
+        confirmed: {type: boolean, description: 仅表示逐组记下，不是整场完成的前置条件。}
+        rpe: {type: string, pattern: '^(?:[1-9](?:\.[0-9])?|10(?:\.0)?)$'}
+        measurement: { $ref: '#/components/schemas/RecordingV2Measurement' }
+    RecordingV2RemovedSet:
+      type: object
+      additionalProperties: false
+      required: [set, removedPosition]
+      properties:
+        set: { $ref: '#/components/schemas/RecordingV2Set' }
+        removedPosition: {type: integer, minimum: 1}
+    RecordingV2Removal:
+      type: object
+      additionalProperties: false
+      required: [recordKey, removedPosition]
+      properties:
+        recordKey: { $ref: '#/components/schemas/RecordingV2Key' }
+        removedPosition: {type: integer, minimum: 1, maximum: 9007199254740991}
+    RecordingV2Batch:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, exerciseEntryKeys]
+      description: |
+        sets 是完整替换各自组值的显式变更；未列出的组保持不变。exerciseEntryKeys 包含所有动作段键及其顺序，包括暂时移除的动作。动作段身份和组身份不可静默复用。
+        更新、组移除/恢复与动作移除/恢复合计最多 200 项。同一组允许在一批中先恢复、更新再移除，以保留离线最新输入；仅在该组同时提供更新时才可同时移除与恢复。重复键、无效顺序或不相容计量字段不得部分提交。
+      properties:
+        expectedVersion: { $ref: '#/components/schemas/RecordingV2Version' }
+        date: {type: string, format: date, pattern: '^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}$', description: 训练发生日期；按本记录冻结的时区校验不得晚于当天。}
+        mode: { $ref: '#/components/schemas/RecordingV2Mode' }
+        addEntries:
+          type: array
+          maxItems: 2000
+          items: { $ref: '#/components/schemas/RecordingV2EntryInput' }
+        sets:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/RecordingV2Set' }
+        removeRecordKeys:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+        removeRecords:
+          type: array
+          maxItems: 200
+          description: 离线顺序移除时携带每组移除时的可见编号；不得与 removeRecordKeys 重复。
+          items: { $ref: '#/components/schemas/RecordingV2Removal' }
+        restoreRecordKeys:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+        removeEntryKeys:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+        restoreEntryKeys:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+        exerciseEntryKeys:
+          type: array
+          maxItems: 2000
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+    RecordingV2Finish:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { $ref: '#/components/schemas/RecordingV2Version' }
+    RecordingV2ActionVolume:
+      type: object
+      additionalProperties: false
+      required: [exerciseEntryKeys, volume]
+      description: 同一动作在本次记录中各活动动作段的累计；不把缺项作为零。
+      properties:
+        exerciseEntryKeys:
+          type: array
+          minItems: 1
+          maxItems: 2000
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/RecordingV2Key' }
+        volume: { $ref: '#/components/schemas/RecordingV2Volume' }
+    RecordingV2Detail:
+      type: object
+      additionalProperties: false
+      required: [id, version, source, date, timeZone, clientEventId, status, mode, createdAt, updatedAt, entries, sets, removedSets]
+      properties:
+        id: {type: string, pattern: '^[1-9][0-9]*$', maxLength: 20}
+        version: { $ref: '#/components/schemas/RecordingV2Version' }
+        source: {type: string, enum: [free]}
+        date: {type: string, format: date}
+        timeZone: {type: string, minLength: 1, maxLength: 64}
+        clientEventId: { $ref: '#/components/schemas/RecordingV2Key' }
+        status: {type: string, enum: [in_progress, completed]}
+        mode: { $ref: '#/components/schemas/RecordingV2Mode' }
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        recordedAt: {type: string, format: date-time}
+        entries:
+          type: array
+          maxItems: 2000
+          items: { $ref: '#/components/schemas/RecordingV2Entry' }
+        sets:
+          type: array
+          items: { $ref: '#/components/schemas/RecordingV2Set' }
+        removedSets:
+          type: array
+          items: { $ref: '#/components/schemas/RecordingV2RemovedSet' }
+        actionVolumes:
+          type: array
+          maxItems: 2000
+          description: 按本次记录中的同一动作汇总活动段；旧服务可能未提供。
+          items: { $ref: '#/components/schemas/RecordingV2ActionVolume' }
+    RecordingV2Summary:
+      type: object
+      additionalProperties: false
+      required: [id, version, recordFormat, date, timeZone, status]
+      properties:
+        id: {type: string, pattern: '^[1-9][0-9]*$', maxLength: 20}
+        version: { $ref: '#/components/schemas/RecordingV2Version' }
+        recordFormat: {type: integer, enum: [1, 2]}
+        date: {type: string, format: date}
+        timeZone: {type: string, minLength: 1, maxLength: 64}
+        status: {type: string, enum: [in_progress, completed, skipped]}
+    RecordingV2Page:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/RecordingV2Summary' }
+        page: {type: integer, minimum: 1}
+        pageSize: {type: integer, minimum: 1, maximum: 50}
+        total: {type: integer, minimum: 0}
     WorkoutSession:
       type: object
       description: 一份训练记录；date是实际训练日，createdAt/updatedAt/recordedAt是服务端处理时间，不能推断训练开始或各组完成时刻。

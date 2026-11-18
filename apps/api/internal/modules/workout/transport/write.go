@@ -70,6 +70,8 @@ func writeFailureKind(err error) middleware.ErrorKind {
 		return middleware.Unauthenticated
 	case errors.Is(err, idempotency.ErrForbidden), errors.Is(err, application.ErrAgeRequired):
 		return middleware.Forbidden
+	case errors.Is(err, idempotency.ErrUpgradeRequired):
+		return middleware.UpgradeRequired
 	case errors.Is(err, idempotency.ErrConflict), errors.Is(err, idempotency.ErrInProgress), errors.Is(err, repository.ErrSetConflict), errors.Is(err, repository.ErrConflict):
 		return middleware.Conflict
 	case errors.Is(err, repository.ErrVersionConflict):
@@ -368,11 +370,15 @@ func (h *writeHandler) rejectUnsupportedExisting(w http.ResponseWriter, r *http.
 }
 
 func (h *writeHandler) writeResult(w http.ResponseWriter, id middleware.RequestID, result idempotency.Result) {
+	h.writeResultWithSchema(w, id, result, "WorkoutSessionDetail")
+}
+
+func (h *writeHandler) writeResultWithSchema(w http.ResponseWriter, id middleware.RequestID, result idempotency.Result, successSchema string) {
 	// A cached response can outlive a deployment. Check it against the current
 	// schema before releasing it, but preserve its exact bytes for replay.
 	schema := "Error"
 	if result.Status >= 200 && result.Status <= 299 {
-		schema = "WorkoutSessionDetail"
+		schema = successSchema
 	}
 	decoder := json.NewDecoder(bytes.NewReader(result.Body))
 	decoder.UseNumber()

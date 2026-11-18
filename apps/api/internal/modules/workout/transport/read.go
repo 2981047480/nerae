@@ -55,6 +55,8 @@ func errorKind(err error) middleware.ErrorKind {
 		return middleware.Forbidden
 	case errors.Is(err, application.ErrWorkoutNotFound):
 		return middleware.NotFound
+	case errors.Is(err, repository.ErrClientUpgradeRequired):
+		return middleware.UpgradeRequired
 	case errors.Is(err, repository.ErrInvalid):
 		return middleware.ValidationError
 	case errors.Is(err, application.ErrUnavailable), errors.Is(err, repository.ErrUnavailable):

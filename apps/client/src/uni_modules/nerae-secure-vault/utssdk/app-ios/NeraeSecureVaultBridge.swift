@@ -218,7 +218,9 @@ final class NeraeProtectedDraftStore {
         defer { Self.lock.unlock() }
         guard let previous = try backend.read(account: owner.account) else { throw NeraeVaultError.conflict }
         let old = try Self.decode(previous, owner: owner)
+        try Self.requireLegacyWriterAllowed(old.payload)
         try Self.requireLegacySyncPendingPreserved(from: old.payload, to: payload)
+        try Self.requireNondecreasingSchema(from: old.payload, to: payload)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: payload, revision: next, owner: owner, account: owner.account, backend: backend)
     }
@@ -237,7 +239,9 @@ final class NeraeProtectedDraftStore {
         guard let previous = try backend.read(account: owner.account) else { return false }
         let old = try Self.decode(previous, owner: owner)
         guard old.payload == expectedData else { return false }
+        try Self.requireLegacyWriterAllowed(old.payload)
         try Self.requireLegacySyncPendingPreserved(from: old.payload, to: data)
+        try Self.requireNondecreasingSchema(from: old.payload, to: data)
         let next = try Self.nextRevision(old.revision)
         try Self.persist(payload: data, revision: next, owner: owner, account: owner.account, backend: backend)
         return true
@@ -272,6 +276,7 @@ final class NeraeProtectedDraftStore {
         if previous != nil { _ = try Self.syncPendingBytes(in: old.payload, malformedError: .unavailable) }
         guard old.revision == expectedRevision, (previous != nil) == expectedFound,
               old.payload == Data(expectedValue.utf8) else { return nil }
+        if previous != nil { try Self.requireNondecreasingSchema(from: old.payload, to: newPayload) }
         let next = try Self.nextRevision(old.revision)
         let encoded = try Self.encode(payload: newPayload, revision: next)
         if previous == nil {
@@ -356,13 +361,38 @@ final class NeraeProtectedDraftStore {
               let raw = try? JSONSerialization.jsonObject(with: data), let envelope = raw as? [String: Any],
               Set(envelope.keys) == Set(["schema", "subjectId", "draft"]),
               let schema = envelope["schema"] as? NSNumber, CFGetTypeID(schema) != CFBooleanGetTypeID(),
-              schema.intValue == 1, schema.doubleValue == 1,
+              (1...4).contains(schema.intValue), schema.doubleValue == Double(schema.intValue),
               let subject = envelope["subjectId"] as? String,
               let draft = envelope["draft"] as? [String: Any], let event = draft["clientEventId"] as? String else { return false }
         if let owner {
             guard subject.utf8.elementsEqual(owner.subject.utf8), event.utf8.elementsEqual(owner.event.utf8) else { return false }
         }
         return true
+    }
+
+    /// Once an item uses the newer payload schema, an older writer must not
+    /// replace it with a representation that cannot preserve its contents.
+    private static func requireNondecreasingSchema(from previous: Data, to proposed: Data) throws {
+        func version(_ data: Data) -> Int? {
+            guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let number = root["schema"] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+                  (1...4).contains(number.intValue),
+                  number.doubleValue == Double(number.intValue) else { return nil }
+            return number.intValue
+        }
+        guard let old = version(previous), let next = version(proposed), next >= old else {
+            throw NeraeVaultError.invalidState
+        }
+    }
+
+    /// Tracked drafts require revision-bound writes; compatibility APIs cannot
+    /// preserve the change-tracking guarantees needed for cloud adoption.
+    private static func requireLegacyWriterAllowed(_ previous: Data) throws {
+        guard let root = try? JSONSerialization.jsonObject(with: previous) as? [String: Any],
+              let number = root["schema"] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+              number.doubleValue == Double(number.intValue), (1...3).contains(number.intValue) else {
+            throw NeraeVaultError.invalidState
+        }
     }
 
     /// Compatibility writers have no revision-bound authority to create,
@@ -478,7 +508,7 @@ final class NeraeProtectedDraftStore {
     }
 }
 
-/// Checks only the root draft key and its syncPending field. The containing
+/// Checks the root schema/draft keys and the draft's syncPending field. The containing
 /// JSON is first validated by Foundation. Nested values are skipped with an
 /// explicit stack so old, deeply nested unknown fields do not recurse here.
 private struct NeraeDraftPendingScanner {
@@ -492,13 +522,18 @@ private struct NeraeDraftPendingScanner {
         whitespace()
         guard take(0x7b) else { return .invalid }
         var seenDraft = false
+        var seenSchema = false
         var result: Result = .absent
         whitespace()
         if take(0x7d) { return .invalid }
         while true {
             whitespace()
             guard let key = string(), colon() else { return .invalid }
-            if key == "draft" {
+            if key == "schema" {
+                guard !seenSchema else { return .invalid }
+                seenSchema = true
+                guard skipValue() else { return .invalid }
+            } else if key == "draft" {
                 guard !seenDraft else { return .invalid }
                 seenDraft = true
                 result = draft()
@@ -509,7 +544,7 @@ private struct NeraeDraftPendingScanner {
             guard take(0x2c) else { return .invalid }
         }
         whitespace()
-        return seenDraft && index == bytes.count ? result : .invalid
+        return seenDraft && seenSchema && index == bytes.count ? result : .invalid
     }
 
     private mutating func draft() -> Result {
@@ -1371,6 +1406,9 @@ final class NeraeVersionedTrainingJournal {
                   optional(item, "rpe", { $0 is NSNull || number($0) }), optional(item, "completed", trueBoolean) else { return false }
             return true
         }
+        if path == "/me/recordings" || path.hasPrefix("/me/recordings/") {
+            return NeraeRecordingV2JournalValidator.validate(path: path, body: fields, event: event)
+        }
         if path == "/me/sessions" {
             guard let source = fields["source"] as? String, let submitted = fields["clientEventId"] as? String,
                   submitted.utf8.elementsEqual(event.utf8), fields["date"] is String,
@@ -1405,8 +1443,8 @@ final class NeraeVersionedTrainingJournal {
     }
 
     private static func validWorkoutPath(_ path: String) -> Bool {
-        if path == "/me/sessions" { return true }
-        guard let match = path.range(of: #"^/me/sessions/[1-9][0-9]{0,19}/(sets|finish)$"#, options: .regularExpression) else {
+        if path == "/me/sessions" || path == "/me/recordings" { return true }
+        guard let match = path.range(of: #"^/me/(?:sessions|recordings)/[1-9][0-9]{0,19}/(sets|finish)$"#, options: .regularExpression) else {
             return false
         }
         return match.lowerBound == path.startIndex && match.upperBound == path.endIndex

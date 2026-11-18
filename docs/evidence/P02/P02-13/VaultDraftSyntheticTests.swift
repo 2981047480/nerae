@@ -596,6 +596,26 @@ private func expect(_ expected: NeraeVaultError, _ body: () throws -> Void) thro
         }
         try check(maxBackend.values[account(for: maxKey)] == maxBytes)
 
+        // A tracked schema-4 draft can only be changed through revision-bound CAS.
+        let trackedBackend = FakeDraftBackend()
+        let trackedStore = NeraeProtectedDraftStore(backend: trackedBackend)
+        let trackedKey = "nerae.workout.draft.v1.101.event-track01"
+        let oldSchema = #"{"schema":3,"subjectId":"101","draft":{"clientEventId":"event-track01","recordFormat":2}}"#
+        let tracked = #"{"schema":4,"subjectId":"101","draft":{"clientEventId":"event-track01","recordFormat":2,"syncTracking":1}}"#
+        let trackedEdit = #"{"schema":4,"subjectId":"101","draft":{"clientEventId":"event-track01","recordFormat":2,"syncTracking":1,"note":"new"}}"#
+        try check(try trackedStore.create(key: trackedKey, value: oldSchema))
+        let beforeTracking = try trackedStore.readVersioned(key: trackedKey)
+        try check(try trackedStore.compareAndSetVersioned(key: trackedKey, expectedRevision: beforeTracking.revision,
+          expectedFound: true, expectedValue: beforeTracking.value, value: tracked))
+        let trackedState = try trackedStore.readVersioned(key: trackedKey)
+        try expect(.invalidState) { try trackedStore.write(key: trackedKey, value: trackedEdit) }
+        try expect(.invalidState) { _ = try trackedStore.compareAndSet(key: trackedKey, expected: tracked, value: trackedEdit) }
+        try expect(.invalidState) { _ = try trackedStore.compareAndSetVersioned(key: trackedKey, expectedRevision: trackedState.revision,
+          expectedFound: true, expectedValue: tracked, value: oldSchema) }
+        try check(try trackedStore.compareAndSetVersioned(key: trackedKey, expectedRevision: trackedState.revision,
+          expectedFound: true, expectedValue: tracked, value: trackedEdit))
+        try check(try trackedStore.readVersioned(key: trackedKey).value == trackedEdit)
+
         // Discovery accepts legacy and versioned items without rewriting either.
         let mixedBackend = FakeDraftBackend()
         let mixedStore = NeraeProtectedDraftStore(backend: mixedBackend)

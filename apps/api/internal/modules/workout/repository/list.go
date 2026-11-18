@@ -64,6 +64,15 @@ func (s *SessionStore) ListFree(ctx context.Context, tx *sql.Tx, subjectID uint6
 	if err := tx.QueryRowContext(ctx, `SELECT status FROM user WHERE id = ? FOR UPDATE`, subjectID).Scan(&status); err != nil || status != "active" {
 		return SessionPage{}, ErrUnavailable
 	}
+	// Do not present a partial legacy history when this owner has a format the
+	// old client cannot open. The new list explicitly includes both formats.
+	var needsUpgrade bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM workout_session WHERE user_id = ? AND source = 'free' AND record_format = 2)`, subjectID).Scan(&needsUpgrade); err != nil {
+		return SessionPage{}, ErrUnavailable
+	}
+	if needsUpgrade {
+		return SessionPage{}, ErrClientUpgradeRequired
+	}
 	clause := ` FROM workout_session WHERE user_id = ? AND source = 'free'`
 	args := []any{subjectID}
 	if filter.From != "" {

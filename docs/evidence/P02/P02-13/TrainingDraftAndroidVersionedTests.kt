@@ -54,7 +54,7 @@ private class VersionedDraftTestValidator : TrainingDraftPayloadValidator {
     override fun owner(value: String): TrainingDraftPayloadOwner? {
         val subject = Regex("\\\"subjectId\\\":\\\"([0-9]+)\\\"").find(value)?.groupValues?.get(1) ?: return null
         val event = Regex("\\\"clientEventId\\\":\\\"([^\\\"]+)\\\"").find(value)?.groupValues?.get(1) ?: return null
-        if (!value.startsWith("{\"schema\":1,\"subjectId\":\"$subject\",\"draft\":{\"clientEventId\":\"$event\",\"note\":\"")) return null
+        if (listOf(1, 3, 4).none { schema -> value.startsWith("{\"schema\":$schema,\"subjectId\":\"$subject\",\"draft\":{\"clientEventId\":\"$event\",\"note\":\"") }) return null
         if (!value.endsWith("}}")) return null
         return TrainingDraftPayloadOwner(subject, event)
     }
@@ -231,8 +231,25 @@ private fun verifyLegacyBridgeCannotOverwriteVersionedDraft() {
     check(store.readVersioned(key) == committed)
 }
 
+private fun verifyTrackedSchemaRequiresVersionedWrites() {
+    val backend = VersionedDraftTestBackend()
+    val store = NeraeProtectedTrainingDraftStore(backend, Any(), VersionedDraftTestValidator())
+    val old = value("old").replace("\"schema\":1", "\"schema\":3")
+    val tracked = value("tracked").replace("\"schema\":1", "\"schema\":4")
+    val changed = value("changed").replace("\"schema\":1", "\"schema\":4")
+    check(store.create(key, old))
+    val initial = store.readVersioned(key)
+    store.compareAndSetVersioned(key, initial.revision, true, initial.value, tracked)
+    val committed = store.readVersioned(key)
+    expect("conflict") { store.write(key, changed) }
+    expect("invalid_state") { store.compareAndSetVersioned(key, committed.revision, true, committed.value, old) }
+    store.compareAndSetVersioned(key, committed.revision, true, committed.value, changed)
+    check(store.readVersioned(key).value == changed)
+}
+
 fun main() {
     verifyLegacyBridgeCannotOverwriteVersionedDraft()
+    verifyTrackedSchemaRequiresVersionedWrites()
     verifyPendingGuard()
     val legacyBackend = VersionedDraftTestBackend()
     val legacyPayload = value("旧草稿 e\u0301")

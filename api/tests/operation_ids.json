@@ -107,5 +107,13 @@
   "PUT /plaza/plans/{id}/favorite": "putPlazaPlansIdFavorite",
   "DELETE /plaza/plans/{id}/favorite": "deletePlazaPlansIdFavorite",
   "GET /coach/relations/{id}/anomalies": "getCoachRelationsIdAnomalies",
-  "POST /coach/anomalies/{id}/resolve": "postCoachAnomaliesIdResolve"
+  "POST /coach/anomalies/{id}/resolve": "postCoachAnomaliesIdResolve",
+  "GET /me/recordings": "getMeRecordings",
+  "POST /me/recordings": "postMeRecordings",
+  "GET /me/recordings/{id}": "getMeRecordingsId",
+  "POST /me/recordings/{id}/sets": "postMeRecordingsIdSets",
+  "POST /me/recordings/{id}/finish": "postMeRecordingsIdFinish",
+  "POST /me/recordings/replay": "postMeRecordingsReplay",
+  "POST /me/recordings/{id}/sets/replay": "postMeRecordingsIdSetsReplay",
+  "POST /me/recordings/{id}/finish/replay": "postMeRecordingsIdFinishReplay"
 }

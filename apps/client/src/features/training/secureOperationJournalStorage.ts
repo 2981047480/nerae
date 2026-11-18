@@ -1,3 +1,5 @@
+import { validateV2RequestBody } from './operationJournal'
+
 /**
  * Adapts the single protected native training-journal value to the per-key
  * JournalStorage contract used by TrainingOperationJournal (2d405b4).
@@ -159,7 +161,7 @@ function validateOperation(key: string, value: unknown): asserts value is string
   if (!request || typeof request !== 'object' || Array.isArray(request)) throw new SecureJournalStorageError('invalid_operation')
   const req = request as Record<string, unknown>
   if (!exactKeys(req, ['body', 'idempotencyKey', 'method', 'path']) || req.method !== 'POST' ||
-    typeof req.path !== 'string' || !(req.path === '/me/sessions' || /^\/me\/sessions\/[1-9]\d{0,19}\/(sets|finish)$/.test(req.path)) ||
+    typeof req.path !== 'string' || !(req.path === '/me/sessions' || req.path === '/me/recordings' || /^\/me\/(?:sessions|recordings)\/[1-9]\d{0,19}\/(sets|finish)$/.test(req.path)) ||
     typeof req.idempotencyKey !== 'string' || !/^[A-Za-z0-9._~-]{8,128}$/.test(req.idempotencyKey) || typeof req.body !== 'string') {
     throw new SecureJournalStorageError('invalid_operation')
   }
@@ -225,6 +227,10 @@ function validUniqueKeyArray(value: unknown, minItems: number, maxItems: number)
 
 /** Field-shape guard only; OpenAPI/server validation remains authoritative. */
 function validateRequestBody(path: string, body: Record<string, unknown>, eventId: string): void {
+  if (path === '/me/recordings' || path.startsWith('/me/recordings/')) {
+    try { validateV2RequestBody(path, body, eventId) } catch { throw new SecureJournalStorageError('invalid_operation') }
+    return
+  }
   if (path === '/me/sessions') {
     const common = body.source === 'free' ? FREE_CREATE_KEYS : body.source === 'plan' ? PLANNED_CREATE_KEYS : null
     if (!common) throw new SecureJournalStorageError('invalid_operation')

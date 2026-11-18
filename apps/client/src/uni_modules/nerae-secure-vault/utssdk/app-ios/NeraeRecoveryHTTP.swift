@@ -63,8 +63,8 @@ struct NeraeRecoveryHTTPConfiguration {
     }
 
     private static func validWorkoutPath(_ path: String) -> Bool {
-        if path == "/me/sessions" { return true }
-        guard let match = path.range(of: #"^/me/sessions/[1-9][0-9]{0,19}/(sets|finish)$"#, options: .regularExpression) else { return false }
+        if path == "/me/sessions" || path == "/me/recordings" { return true }
+        guard let match = path.range(of: #"\A/me/(?:sessions|recordings)/[1-9][0-9]{0,19}/(?:sets|finish)\z"#, options: .regularExpression) else { return false }
         return match.lowerBound == path.startIndex && match.upperBound == path.endIndex
     }
 }

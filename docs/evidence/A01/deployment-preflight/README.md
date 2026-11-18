@@ -31,8 +31,10 @@ public route. No real credential is included.
 - `proxy-isolation-smoke.py`: isolated synthetic front/sidecar check. It needs
   root on a host with Caddy in order to use separate test UIDs, binds only a
   temporary loopback listener and Unix socket, and cleans up its own test
-  directory on success. It requires at least 4 GiB free and limits each child
-  process file to 1 MiB; failed test directories are retained for diagnosis.
+  directory on success. It checks root-owned sidecar configuration that the
+  sidecar can read but cannot modify or replace, while the front cannot read it.
+  It requires at least 4 GiB free and limits each child process file to 1 MiB;
+  failed test directories are retained for diagnosis.
   This small proxy test does not relax the separate database test's space guard.
 - `deployment-plan.md`: service isolation, ordered rollout, blockers and
   rollback boundaries.

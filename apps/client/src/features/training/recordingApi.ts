@@ -1,5 +1,8 @@
 import type { RecordingDraft, SetKind, SetWrite } from './recording'
-import { samePendingSnapshot, TrainingOperationJournal, type JournalRequest } from './operationJournal'
+import { samePendingSnapshot, TrainingOperationJournal, type DispatchPermit, type JournalRequest } from './operationJournal'
+import { parseRecordingV2Detail, parseRecordingV2Page, type RecordingV2Page } from './recordingV2Response'
+import type { RecordingV2Detail } from './recordingV2Projection'
+import { pendingRecordingV2 } from './recordingV2Intent'
 import { pendingSets } from './setsIntent'
 
 /** Credentials come from the real identity module and are never stored here. */
@@ -18,6 +21,32 @@ export interface RecordingAuth {
 export interface RecordingLease {
   subjectId: string
   generation: string
+}
+
+export interface ScopedRecordingV2Detail {
+  readonly lease: RecordingLease
+  readonly detail: RecordingV2Detail
+}
+
+/** A write response is historical evidence and cannot itself settle the journal. */
+export interface ScopedRecordingV2Receipt {
+  readonly lease: RecordingLease
+  readonly receipt: Readonly<{ id: string; version: number }>
+  readonly idempotencyKeyExpiresAt: string
+}
+const storedRecordingV2Receipts = new WeakMap<object, { owner: RecordingApi; auth: RecordingAuth; marker: string; isCurrent: () => boolean }>()
+/** Only the issuing adapter's authenticated response for this exact marker may acknowledge it. */
+export function acknowledgesStoredRecordingV2(response: unknown, marker: string, api: RecordingApi, auth: RecordingAuth): response is ScopedRecordingV2Receipt {
+  if (!response || typeof response !== 'object') return false
+  const proof = storedRecordingV2Receipts.get(response)
+  if (!proof || proof.owner !== api || proof.auth !== auth || proof.marker !== marker) return false
+  try { return proof.isCurrent() } catch { return false }
+}
+
+const issuedRecordingV2Snapshots = new WeakMap<object, object>()
+export function isIssuedRecordingV2Snapshot(value: unknown, api?: RecordingApi): value is ScopedRecordingV2Detail {
+  return value !== null && typeof value === 'object' && issuedRecordingV2Snapshots.has(value) &&
+    (api === undefined || issuedRecordingV2Snapshots.get(value) === api)
 }
 
 export interface ScopedSessionDetail {
@@ -621,6 +650,18 @@ function replayMatches(detail: WorkoutSessionDetail, eventId: string, body: Reco
 }
 
 /** Only HTTPS is accepted; the app must provide a real, configured API base. */
+function recordingV2Receipt(data: unknown, request: JournalRequest): Readonly<{ id: string; version: number }> | null {
+  let parsed: unknown; let submitted: unknown
+  try { parsed = JSON.parse(JSON.stringify(data)); submitted = JSON.parse(request.body) } catch { return null }
+  if (!object(parsed) || Object.keys(parsed).sort().join(',') !== 'id,version' || !validId(parsed.id) ||
+      !validVersion(parsed.version) || !object(submitted)) return null
+  const match = /^\/me\/recordings\/([1-9]\d{0,19})\/(sets|finish)$/.exec(request.path)
+  if (!match && request.path !== '/me/recordings') return null
+  if (match && (parsed.id !== match[1] || !validVersion(submitted.expectedVersion) ||
+      (parsed.version !== submitted.expectedVersion && parsed.version !== submitted.expectedVersion + 1))) return null
+  return Object.freeze({ id: parsed.id, version: parsed.version })
+}
+
 function apiBase(value: string): string {
   let parsed: URL
   try { parsed = new URL(value) } catch { throw new Error('服务地址无效') }
@@ -863,6 +904,151 @@ export class RecordingApi {
     if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
     issuedSnapshots.set(scoped, this)
     return scoped
+  }
+
+  /** Discover both legacy and v2 records for the authenticated owner. */
+  async listRecordingsV2(input: SessionListInput): Promise<Readonly<RecordingV2Page & { lease: RecordingLease }>> {
+    if (!object(input)) throw new RecordingApiError('invalid_request')
+    const { page, pageSize, from, to } = input
+    if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50 ||
+        (from !== undefined && !validDate(from)) || (to !== undefined && !validDate(to)) ||
+        (from !== undefined && to !== undefined && from > to)) throw new RecordingApiError('invalid_request')
+    const query = [`page=${page}`, `pageSize=${pageSize}`]
+    if (from !== undefined) query.push(`from=${encodeURIComponent(from)}`)
+    if (to !== undefined) query.push(`to=${encodeURIComponent(to)}`)
+    const response = await this.requestJson('GET', `/me/recordings?${query.join('&')}`, 200)
+    let result: RecordingV2Page
+    try { result = parseRecordingV2Page(response.data, page, pageSize) }
+    catch { throw new RecordingApiError('invalid_response') }
+    if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
+    return Object.freeze({ lease: Object.freeze(response.lease), ...result })
+  }
+
+  /** Fetch the authenticated owner's latest v2 snapshot without mutating a draft. */
+  async readRecordingV2(id: string): Promise<ScopedRecordingV2Detail> {
+    if (!validId(id)) throw new RecordingApiError('invalid_request')
+    const response = await this.requestJson('GET', `/me/recordings/${id}`, 200)
+    let detail: RecordingV2Detail
+    try { detail = parseRecordingV2Detail(response.data, id) }
+    catch { throw new RecordingApiError('invalid_response') }
+    if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
+    const result = Object.freeze({ lease: Object.freeze(response.lease), detail })
+    issuedRecordingV2Snapshots.set(result, this)
+    return result
+  }
+
+  /**
+   * Send only the exact request claimed in protected native storage. A successful
+   * receipt is a candidate; a later coordinator must safely reconcile its draft.
+   */
+  async dispatchFirstRecordingV2(journal: TrainingOperationJournal, permit: DispatchPermit,
+    isDraftCurrent: () => boolean): Promise<ScopedRecordingV2Receipt> {
+    if (!(journal instanceof TrainingOperationJournal) || !permit || typeof isDraftCurrent !== 'function') {
+      throw new RecordingApiError('invalid_request')
+    }
+    const request = permit.operation?.request
+    if (!request || request.method !== 'POST' || (request.path !== '/me/recordings' &&
+      !/^\/me\/recordings\/[1-9]\d{0,19}\/(sets|finish)$/.test(request.path))) throw new RecordingApiError('invalid_request')
+    return journal.dispatchFirst(permit, request, async (exact, lease, claimCurrent) => {
+      const captured = this.captureCredential()
+      if (captured.subjectId !== lease.subjectId || captured.generation !== lease.generation) throw new RecordingApiError('session_changed')
+      const match = /^\/me\/recordings\/([1-9]\d{0,19})\/(sets|finish)$/.exec(exact.path)
+      const response = await this.requestJson('POST', exact.path, match ? 200 : 201, undefined,
+        exact.idempotencyKey, exact.body, () => claimCurrent() && isDraftCurrent())
+      const expiry = writeExpiry(response.headers)
+      const receipt = recordingV2Receipt(response.data, exact)
+      if (!receipt) throw new RecordingApiError('reconcile_required')
+      if (!response.isSameCredential()) throw new RecordingApiError('session_changed')
+      return Object.freeze({ lease: Object.freeze(response.lease), receipt, idempotencyKeyExpiresAt: expiry })
+    })
+  }
+
+  /** Send an already-persisted exact v2 intent; callers must guard the durable draft immediately before transport. */
+  async sendStoredRecordingV2(draft: RecordingDraft, isDraftCurrent: () => boolean): Promise<ScopedRecordingV2Receipt> {
+    const credential = this.captureCredential()
+    const pending = pendingRecordingV2(draft, credential.subjectId)
+    const marker = draft.syncPending
+    if (!pending || typeof marker !== 'string' || typeof isDraftCurrent !== 'function') throw new RecordingApiError('invalid_request')
+    const request = pending.request
+    const match = /^\/me\/recordings\/([1-9]\d{0,19})\/(sets|finish)$/.exec(request.path)
+    const response = await this.requestJson('POST', request.path, match ? 200 : 201, undefined,
+      request.idempotencyKey, request.body, () => credential.isSameCredential() && isDraftCurrent())
+    const receipt = recordingV2Receipt(response.data, request)
+    const expiry = writeExpiry(response.headers)
+    const current = (): boolean => {
+      try { return credential.isSameCredential() && response.isSameCredential() && isDraftCurrent() === true }
+      catch { return false }
+    }
+    if (!receipt || !current()) throw new RecordingApiError('reconcile_required')
+    const result = Object.freeze({ lease: Object.freeze(response.lease), receipt, idempotencyKeyExpiresAt: expiry })
+    storedRecordingV2Receipts.set(result, { owner: this, auth: this.auth, marker, isCurrent: current })
+    return result
+  }
+
+  /** Query the server for an exact retained intent without executing another write. */
+  async replayStoredRecordingV2(draft: RecordingDraft, isDraftCurrent: () => boolean): Promise<
+    { readonly state: 'unresolved' } | ({ readonly state: 'candidate'; readonly response: ScopedRecordingV2Receipt })
+  > {
+    const credential = this.captureCredential()
+    const pending = pendingRecordingV2(draft, credential.subjectId)
+    const marker = draft.syncPending
+    if (!pending || typeof marker !== 'string' || typeof isDraftCurrent !== 'function') throw new RecordingApiError('invalid_request')
+    const request = pending.request
+    const match = /^\/me\/recordings\/([1-9]\d{0,19})\/(sets|finish)$/.exec(request.path)
+    let response: Awaited<ReturnType<RecordingApi['requestJson']>>
+    try {
+      response = await this.requestJson('POST', `${request.path}/replay`, match ? 200 : 201,
+        undefined, request.idempotencyKey, request.body, () => credential.isSameCredential() && isDraftCurrent())
+    } catch (error) {
+      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+      if (error instanceof RecordingApiError && error.code === 'unauthenticated') throw error
+      return { state: 'unresolved' }
+    }
+    if (!validReplayHeaders(response.headers)) return { state: 'unresolved' }
+    let expiry: string
+    try { expiry = writeExpiry(response.headers) } catch { return { state: 'unresolved' } }
+    const receipt = recordingV2Receipt(response.data, request)
+    const current = (): boolean => {
+      try { return credential.isSameCredential() && response.isSameCredential() && isDraftCurrent() === true }
+      catch { return false }
+    }
+    if (!receipt || !current()) return { state: 'unresolved' }
+    const candidate = Object.freeze({ lease: Object.freeze(response.lease), receipt, idempotencyKeyExpiresAt: expiry })
+    storedRecordingV2Receipts.set(candidate, { owner: this, auth: this.auth, marker, isCurrent: current })
+    return Object.freeze({ state: 'candidate', response: candidate })
+  }
+
+  /** Read a historical server receipt for the exact pending protected request. */
+  async replayPendingRecordingV2(journal: TrainingOperationJournal, eventId: string): Promise<
+    { readonly state: 'unresolved' } | ({ readonly state: 'candidate' } & ScopedRecordingV2Receipt)
+  > {
+    if (!(journal instanceof TrainingOperationJournal) || !validKey(eventId)) throw new RecordingApiError('invalid_request')
+    const pending = await journal.readPending(eventId)
+    const credential = this.captureCredential()
+    if (!pending || pending.subjectId !== credential.subjectId || pending.clientEventId !== eventId ||
+        (pending.state !== 'in_flight' && pending.state !== 'uncertain')) return { state: 'unresolved' }
+    const request = pending.request
+    const match = /^\/me\/recordings\/([1-9]\d{0,19})\/(sets|finish)$/.exec(request.path)
+    if (request.path !== '/me/recordings' && !match) return { state: 'unresolved' }
+    let response: Awaited<ReturnType<RecordingApi['requestJson']>>
+    try {
+      response = await this.requestJson('POST', `${request.path}/replay`, match ? 200 : 201,
+        undefined, request.idempotencyKey, request.body)
+    } catch (error) {
+      if (!credential.isSameCredential()) throw new RecordingApiError('session_changed')
+      if (error instanceof RecordingApiError && error.code === 'unauthenticated') throw error
+      return { state: 'unresolved' }
+    }
+    if (!validReplayHeaders(response.headers)) return { state: 'unresolved' }
+    let expiry: string
+    try { expiry = writeExpiry(response.headers) } catch { return { state: 'unresolved' } }
+    const receipt = recordingV2Receipt(response.data, request)
+    if (!receipt) return { state: 'unresolved' }
+    let latest
+    try { latest = await journal.readPending(eventId) } catch { return { state: 'unresolved' } }
+    if (!credential.isSameCredential() || !response.isSameCredential()) throw new RecordingApiError('session_changed')
+    if (!samePendingSnapshot(pending, latest)) return { state: 'unresolved' }
+    return Object.freeze({ state: 'candidate', lease: Object.freeze(response.lease), receipt, idempotencyKeyExpiresAt: expiry })
   }
 
   async listSessions(input: SessionListInput): Promise<ScopedSessionPage> {

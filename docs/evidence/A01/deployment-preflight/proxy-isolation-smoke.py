@@ -27,7 +27,7 @@ def drop(uid, gid):
         # The proxies have no persistent config or certificates; cap any
         # per-process test file, including the temporary stdout/stderr log.
         resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_CHILD_FILE_BYTES, MAX_CHILD_FILE_BYTES))
-        os.setgroups([])
+        os.setgroups([SIDE_UID] if uid == SIDE_UID else [])
         os.setgid(gid)
         os.setuid(uid)
     return become
@@ -95,7 +95,9 @@ def run():
     try:
         front_dir, side_dir, socket_dir = base / 'front', base / 'side', base / 'socket'
         chown_dir(front_dir, FRONT_UID, SHARED_GID, 0o700)
-        chown_dir(side_dir, SIDE_UID, SHARED_GID, 0o700)
+        chown_dir(side_dir, 0, SIDE_UID, 0o750)
+        side_data = base / 'side-data'
+        chown_dir(side_data, SIDE_UID, SHARED_GID, 0o700)
         chown_dir(socket_dir, SIDE_UID, SHARED_GID, 0o2750)
         front_port = free_port()
         backend = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Backend)
@@ -128,10 +130,11 @@ http://127.0.0.1:%s {
         for directory, uid, config in ((side_dir, SIDE_UID, side_config), (front_dir, FRONT_UID, front_config)):
             path = directory / 'Caddyfile'
             path.write_text(config)
-            os.chown(path, uid, SHARED_GID)
-            os.chmod(path, 0o600)
-            env = {'PATH': '/usr/bin:/bin', 'HOME': str(directory), 'XDG_CONFIG_HOME': str(directory / 'config'),
-                   'XDG_DATA_HOME': str(directory / 'data')}
+            os.chown(path, 0 if directory == side_dir else uid, SIDE_UID if directory == side_dir else SHARED_GID)
+            os.chmod(path, 0o640 if directory == side_dir else 0o600)
+            data_dir = side_data if directory == side_dir else directory
+            env = {'PATH': '/usr/bin:/bin', 'HOME': str(data_dir), 'XDG_CONFIG_HOME': str(data_dir / 'config'),
+                   'XDG_DATA_HOME': str(data_dir / 'data')}
             adapt = subprocess.run(['caddy', 'adapt', '--config', str(path), '--adapter', 'caddyfile', '--validate'],
                                    env=env, preexec_fn=drop(uid, SHARED_GID), capture_output=True, timeout=20)
             if adapt.returncode:
@@ -210,6 +213,19 @@ http://127.0.0.1:%s {
                                      stderr=subprocess.DEVNULL, timeout=5)
         if not denied_read.returncode:
             raise RuntimeError('front service can read sidecar credential file')
+        write_probe = 'import os,sys; fd=os.open(sys.argv[1],os.O_WRONLY|os.O_APPEND); os.close(fd)'
+        denied_write = subprocess.run([sys.executable, '-c', write_probe, str(side_dir / 'Caddyfile')],
+                                      preexec_fn=drop(SIDE_UID, SHARED_GID), stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL, timeout=5)
+        if not denied_write.returncode:
+            raise RuntimeError('sidecar UID can rewrite root-owned credential configuration')
+        create_probe = 'import os,sys; fd=os.open(sys.argv[1],os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600); os.close(fd)'
+        denied_create = subprocess.run([sys.executable, '-c', create_probe, str(side_dir / 'probe')],
+                                       preexec_fn=drop(SIDE_UID, SHARED_GID), stdout=subprocess.DEVNULL,
+                                       stderr=subprocess.DEVNULL, timeout=5)
+        if not denied_create.returncode:
+            raise RuntimeError('sidecar UID can replace protected configuration')
+        print('PASS: root-owned sidecar config readable by sidecar, not writable or replaceable')
         print('PASS: isolated Unix socket front/sidecar, header replacement, health denial and non-secret config')
         print('PASS: shared socket access, unrelated UID denied, front UID cannot read sidecar configuration')
         print('PASS: disabled admin/config autosave; non-target route preserved in isolated configuration')

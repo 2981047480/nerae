@@ -25,9 +25,13 @@ import (
 	"nerae/api/internal/modules/auth/approval"
 	"nerae/api/internal/modules/auth/challenge"
 	"nerae/api/internal/modules/auth/domain"
+	authidentity "nerae/api/internal/modules/auth/identity"
 	"nerae/api/internal/modules/auth/issuance"
 	"nerae/api/internal/modules/auth/ratelimit"
+	authsession "nerae/api/internal/modules/auth/session"
 	"nerae/api/internal/modules/auth/trustedproxy"
+	workoutapp "nerae/api/internal/modules/workout/application"
+	workoutdomain "nerae/api/internal/modules/workout/domain"
 	workoutrepo "nerae/api/internal/modules/workout/repository"
 )
 
@@ -322,6 +326,47 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 		t.Fatalf("login status %d", login.Code)
 	}
 	token := success.Token
+	// Exercise library is tested through its authenticated application boundary
+	// only; it is deliberately not mounted as a public HTTP route yet.
+	personalStore, err := workoutrepo.NewPersonalExerciseStore(keys.workoutName, keys.workoutNameID)
+	if err != nil {
+		t.Fatal("personal exercise store setup failed")
+	}
+	personalEpoch, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal("personal exercise epoch transaction failed")
+	}
+	if err := personalStore.InitializeKey(ctx, personalEpoch); err != nil {
+		personalEpoch.Rollback()
+		t.Fatal("personal exercise epoch failed")
+	}
+	if err := personalEpoch.Commit(); err != nil {
+		t.Fatal("personal exercise epoch commit failed")
+	}
+	personalIdentity, err := domain.NewEmailIdentityProtector(keys.identityIndex, keys.identityCipher, keys.identityID)
+	if err != nil {
+		t.Fatal("personal exercise identity setup failed")
+	}
+	personalResolver, err := authidentity.NewResolver(personalIdentity)
+	if err != nil {
+		t.Fatal("personal exercise resolver setup failed")
+	}
+	personalCodec, err := authsession.NewTokenCodec(keys.sessionToken, authsession.TokenPolicy{MaxLifetime: policy.sessionLifetime})
+	if err != nil {
+		t.Fatal("personal exercise token setup failed")
+	}
+	personalSessions, err := authsession.NewStore(personalResolver, personalCodec)
+	if err != nil {
+		t.Fatal("personal exercise session setup failed")
+	}
+	personalService, err := workoutapp.NewPersonalExerciseService(personalSessions, personalStore)
+	if err != nil {
+		t.Fatal("personal exercise service setup failed")
+	}
+	personal := workoutdomain.PersonalExercise{ID: "97ab0210c56f48ae930de1629b761f09", Name: "划船"}
+	if _, _, err := personalService.PutOwn(ctx, db, token, personal, 0); !errors.Is(err, workoutapp.ErrAgeRequired) {
+		t.Fatal("personal exercise allowed a user without age verification")
+	}
 	secondDevice, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatal("second synthetic device setup failed")
@@ -411,6 +456,36 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	if age.Code != http.StatusOK {
 		t.Fatalf("age status %d", age.Code)
 	}
+	createdPersonal, changed, err := personalService.PutOwn(ctx, db, token, personal, 0)
+	if err != nil || !changed || createdPersonal.Version != 1 {
+		t.Fatal("authenticated personal exercise create failed")
+	}
+	otherPersonal, err := personalService.ReadOwn(ctx, db, secondSuccess.Token, personal.ID)
+	if err != nil || otherPersonal.Name != personal.Name || otherPersonal.ID != personal.ID {
+		t.Fatal("approved second device could not read the same personal action")
+	}
+	personal.Name = "坐姿划船"
+	renamedPersonal, changed, err := personalService.PutOwn(ctx, db, secondSuccess.Token, personal, 1)
+	if err != nil || !changed || renamedPersonal.Version != 2 {
+		t.Fatal("approved device could not rename personal action")
+	}
+	ownAgain, err := personalService.ReadOwn(ctx, db, token, personal.ID)
+	if err != nil || ownAgain.ID != personal.ID || ownAgain.Name != personal.Name {
+		t.Fatal("renamed action did not keep its identity")
+	}
+	personalHistory, err := personalService.ReadOwnVersion(ctx, db, token, personal.ID, 1)
+	if err != nil || personalHistory.ID != personal.ID || personalHistory.Name != "划船" {
+		t.Fatal("renaming changed the personal action historical snapshot")
+	}
+	personalPage, err := personalService.ListOwn(ctx, db, secondSuccess.Token, "划船", "", 20)
+	if err != nil || len(personalPage.Items) != 1 || personalPage.Items[0].ID != personal.ID {
+		t.Fatal("approved device could not search personal action")
+	}
+	if _, err := personalService.ReadOwn(ctx, db, "invalid", personal.ID); !errors.Is(err, workoutapp.ErrAuthentication) {
+		t.Fatal("personal action accepted an unauthenticated session")
+	}
+	t.Log("PASS: approved devices read historical personal exercise names")
+	t.Log("PASS: approved synthetic devices share an age-gated personal exercise identity")
 	create := []byte(fmt.Sprintf(`{"source":"free","date":%q,"timeZone":"UTC","clientEventId":"api-assembly-event-001"}`, time.Now().UTC().Format("2006-01-02")))
 	createKey := requestKey()
 	created := request("POST", "/me/sessions", create, token, createKey, peer, source)
@@ -442,6 +517,58 @@ func TestBusinessAssemblyPrivateServices(t *testing.T) {
 	if anonymous.Code != http.StatusUnauthorized || bytes.Contains(anonymous.Body.Bytes(), []byte("record-001")) {
 		t.Fatal("anonymous record access not denied")
 	}
+	// Exercise the current recording contract using the two separately approved
+	// synthetic devices, not only the legacy session route above.
+	v2Create := []byte(fmt.Sprintf(`{"source":"free","date":%q,"timeZone":"UTC","clientEventId":"api-assembly-v2-event-01","mode":"after_workout"}`, time.Now().UTC().Format("2006-01-02")))
+	v2Created := request("POST", "/me/recordings", v2Create, token, requestKey(), peer, source)
+	var v2 struct {
+		ID      string `json:"id"`
+		Version int    `json:"version"`
+	}
+	if v2Created.Code != http.StatusCreated || json.Unmarshal(v2Created.Body.Bytes(), &v2) != nil || v2.ID == "" || v2.Version != 1 {
+		t.Fatalf("v2 create status %d", v2Created.Code)
+	}
+	v2Path := "/me/recordings/" + v2.ID
+	v2Batch := []byte(`{"expectedVersion":1,"addEntries":[{"exerciseEntryKey":"v2-entry-001","exerciseName":"深蹲"}],"sets":[{"recordKey":"v2-record-001","exerciseEntryKey":"v2-entry-001","setIndex":1,"confirmed":false,"measurement":{"method":"total","weightKg":"45","reps":8}},{"recordKey":"v2-record-002","exerciseEntryKey":"v2-entry-001","setIndex":2,"confirmed":false,"measurement":{"method":"total"}}],"exerciseEntryKeys":["v2-entry-001"]}`)
+	if got := request("POST", v2Path+"/sets", v2Batch, secondSuccess.Token, requestKey(), peer, source); got.Code != http.StatusOK {
+		t.Fatalf("v2 second-device write status %d", got.Code)
+	}
+	v2Add := []byte(`{"expectedVersion":2,"sets":[{"recordKey":"v2-record-003","exerciseEntryKey":"v2-entry-001","setIndex":3,"confirmed":false,"measurement":{"method":"total","weightKg":"50","reps":6}}],"exerciseEntryKeys":["v2-entry-001"]}`)
+	if got := request("POST", v2Path+"/sets", v2Add, secondSuccess.Token, requestKey(), peer, source); got.Code != http.StatusOK {
+		t.Fatalf("v2 added group status %d", got.Code)
+	}
+	if got := request("POST", v2Path+"/sets", v2Add, token, requestKey(), peer, source); got.Code != http.StatusPreconditionFailed {
+		t.Fatalf("v2 stale write status %d", got.Code)
+	}
+	if got := request("POST", v2Path+"/finish", []byte(`{"expectedVersion":3}`), token, requestKey(), peer, source); got.Code != http.StatusOK {
+		t.Fatalf("v2 finish status %d", got.Code)
+	}
+	v2Read := request("GET", v2Path, nil, secondSuccess.Token, "", peer, source)
+	var v2Detail struct {
+		Version int    `json:"version"`
+		Status  string `json:"status"`
+		Sets    []struct {
+			Measurement map[string]any `json:"measurement"`
+		} `json:"sets"`
+		ActionVolumes []struct {
+			Volume struct {
+				CalculatedKg string `json:"calculatedKg"`
+				ExcludedSets int    `json:"excludedSets"`
+			} `json:"volume"`
+		} `json:"actionVolumes"`
+	}
+	if v2Read.Code != http.StatusOK || json.Unmarshal(v2Read.Body.Bytes(), &v2Detail) != nil || v2Detail.Version != 4 ||
+		v2Detail.Status != "completed" || len(v2Detail.Sets) != 3 || len(v2Detail.ActionVolumes) != 1 ||
+		v2Detail.ActionVolumes[0].Volume.CalculatedKg != "660.00" || v2Detail.ActionVolumes[0].Volume.ExcludedSets != 1 {
+		t.Fatal("v2 two-device read lost a group, completion or calculated total")
+	}
+	if _, exists := v2Detail.Sets[1].Measurement["weightKg"]; exists {
+		t.Fatal("v2 blank group was converted to zero")
+	}
+	if got := request("GET", v2Path, nil, "", "", peer, source); got.Code != http.StatusUnauthorized {
+		t.Fatalf("v2 anonymous status %d", got.Code)
+	}
+	t.Log("PASS: approved synthetic devices share v2 groups, completion and missing values")
 	t.Log("PASS: assembled handler challenge -> synthetic derived code login -> age -> workout create/set/read")
 	t.Log("PASS: assembled new-device decision uses trusted IP, shared idempotency epoch and authorized replay")
 	t.Log("PASS: assembled new-device exchange and shared workout through proxy boundary")

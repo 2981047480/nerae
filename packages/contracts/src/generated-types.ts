@@ -399,7 +399,7 @@ export interface paths {
         put?: never;
         /**
          * 查询并领取新设备登录结果
-         * @description 匿名端必须同时提交仅由原登录尝试获得的 approvalSecret 与同一设备私钥签名；签名含服务端 nonce、审批 ID 和单次 jti，校验时效、防重、设备归属和批准状态。批准端的会话权限不能由此轮询凭据替代。未批准、拒绝和过期不返回用户资料或会话；已批准且凭据未吊销时原子发放/幂等重放结果，机密不进入日志或 URL。
+         * @description 匿名端必须同时提交仅由原登录尝试获得的 approvalSecret 与同一设备私钥签名；签名含服务端 nonce、审批 ID 和单次 jti，校验时效、防重、设备归属和批准状态。批准端的会话权限不能由此轮询凭据替代。未批准、拒绝和过期不返回用户资料或会话；已批准且凭据未吊销时原子发放/幂等重放结果。网络重试保留原键和原证明，返回首次非认证状态快照；要获取更新的审批状态，客户端发起新的轮询，使用新随机键和新 jti。每次重试仍须满足证明时效及当前授权；机密不进入日志或 URL。
          */
         post: operations["postAuthLoginApprovalExchange"];
         delete?: never;
@@ -1463,6 +1463,152 @@ export interface paths {
         put?: never;
         /** 下架我发布的计划 */
         post: operations["postPublishPlansIdWithdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 列出本人的训练记录及格式
+         * @description 只返回本人记录；同时列出旧格式和新格式，客户端按 recordFormat 选择对应详情接口，不得静默隐藏旧记录。
+         */
+        get: operations["getMeRecordings"];
+        put?: never;
+        /**
+         * 创建本人的自由训练草稿
+         * @description 按本人 clientEventId 防重；训练后和逐组方式共享同一份记录。初始仅支持自由训练，计划来源另行接入。
+         */
+        post: operations["postMeRecordings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取本人新格式草稿或完成记录
+         * @description 草稿仅本人可读；响应含动作段、未移除组及完整恢复快照。旧格式详情沿用原接口。
+         */
+        get: operations["getMeRecordingsId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/{id}/sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 按版本保存草稿组、顺序和移除状态
+         * @description 一个动作可分成多个有独立键的动作段；组键稳定。完整顺序含暂时移除的动作，以便恢复原位置。空组和缺项组允许保存，缺失不是零；确认单组不等于完成整场。
+         *     所有变更在同一事务生效，expectedVersion 不符返回 412，远端内容不变；客户端保留本地内容并让本人解决冲突。无变更不递增版本。移除最后一组使已完成记录回到草稿。
+         *
+         */
+        post: operations["postMeRecordingsIdSets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 完成本次训练记录
+         * @description 保存时保留列表中的每一组，包括空组和缺项组，无须逐组确认；没有可见组时不能完成。不得推算训练时间。
+         */
+        post: operations["postMeRecordingsIdFinish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 查询原请求回执，不执行写入
+         * @description 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+         */
+        post: operations["postMeRecordingsReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/{id}/sets/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 查询原请求回执，不执行写入
+         * @description 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+         */
+        post: operations["postMeRecordingsIdSetsReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/recordings/{id}/finish/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 查询原请求回执，不执行写入
+         * @description 同一主体、原幂等键及原请求正文；回执不存在或过期时不得重新执行写入。
+         */
+        post: operations["postMeRecordingsIdFinishReplay"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3355,6 +3501,154 @@ export interface components {
             updatedAt: string;
             publishedVersion: number | null;
         };
+        /** @description 稳定键，大小写敏感；同一训练内不得复用。 */
+        RecordingV2Key: string;
+        /** Format: int64 */
+        RecordingV2Version: number;
+        /** @enum {string} */
+        RecordingV2Mode: "after_workout" | "per_set";
+        /** @description 千克十进制文本；字段省略表示未填，字符串 0 是实际填写的零，不等同于未填。 */
+        RecordingV2Weight: string;
+        RecordingV2Create: {
+            /** @enum {string} */
+            source: "free";
+            /** Format: date */
+            date: string;
+            timeZone?: string;
+            clientEventId: components["schemas"]["RecordingV2Key"];
+            mode: components["schemas"]["RecordingV2Mode"];
+        };
+        RecordingV2Receipt: {
+            id: string;
+            version: components["schemas"]["RecordingV2Version"];
+        };
+        RecordingV2Side: {
+            /** @enum {string} */
+            state: "unknown" | "performed" | "not_performed";
+            weightKg?: components["schemas"]["RecordingV2Weight"];
+            reps?: number;
+        };
+        /** @description total 是合计重量，pair_each 是每只器械重量（两只），sides 分别存左右；bodyweight 是自重，bodyweight_extra 加额外负重，bodyweight_assisted 减助力，direct 是手填结果。
+         *     缺项时仍保存；服务器校验各方法允许的字段，只按已知且可计算的部分累计。未做的一侧不累计。
+         *      */
+        RecordingV2Measurement: {
+            /** @enum {string} */
+            method: "total" | "pair_each" | "sides" | "bodyweight" | "bodyweight_extra" | "bodyweight_assisted" | "direct";
+            weightKg?: components["schemas"]["RecordingV2Weight"];
+            reps?: number;
+            bodyweightKg?: components["schemas"]["RecordingV2Weight"];
+            adjustmentKg?: components["schemas"]["RecordingV2Weight"];
+            left?: components["schemas"]["RecordingV2Side"];
+            right?: components["schemas"]["RecordingV2Side"];
+        };
+        /** @description 目前只接收用户本次输入的自定义名称；动作库身份、冻结版本和计划来源待接入。 */
+        RecordingV2EntryInput: {
+            exerciseEntryKey: components["schemas"]["RecordingV2Key"];
+            exerciseName: string;
+        };
+        RecordingV2Entry: {
+            exerciseEntryKey: components["schemas"]["RecordingV2Key"];
+            /** @enum {string} */
+            source: "custom";
+            exerciseName: string;
+            removedPosition?: number;
+            volume?: components["schemas"]["RecordingV2Volume"];
+        };
+        /** @description 按当前动作段的活动组和记录口径计算；缺项不算零，移除的组不计入。公斤数字不等同实际测得的受力。 */
+        RecordingV2Volume: {
+            calculatedKg?: string;
+            fullSets: number;
+            partialSets: number;
+            excludedSets: number;
+        };
+        RecordingV2Set: {
+            recordKey: components["schemas"]["RecordingV2Key"];
+            exerciseEntryKey: components["schemas"]["RecordingV2Key"];
+            /** Format: int64 */
+            setIndex: number;
+            /** @description 仅表示逐组记下，不是整场完成的前置条件。 */
+            confirmed: boolean;
+            rpe?: string;
+            measurement: components["schemas"]["RecordingV2Measurement"];
+        };
+        RecordingV2RemovedSet: {
+            set: components["schemas"]["RecordingV2Set"];
+            removedPosition: number;
+        };
+        RecordingV2Removal: {
+            recordKey: components["schemas"]["RecordingV2Key"];
+            removedPosition: number;
+        };
+        /** @description sets 是完整替换各自组值的显式变更；未列出的组保持不变。exerciseEntryKeys 包含所有动作段键及其顺序，包括暂时移除的动作。动作段身份和组身份不可静默复用。
+         *     更新、组移除/恢复与动作移除/恢复合计最多 200 项。同一组允许在一批中先恢复、更新再移除，以保留离线最新输入；仅在该组同时提供更新时才可同时移除与恢复。重复键、无效顺序或不相容计量字段不得部分提交。
+         *      */
+        RecordingV2Batch: {
+            expectedVersion: components["schemas"]["RecordingV2Version"];
+            /**
+             * Format: date
+             * @description 训练发生日期；按本记录冻结的时区校验不得晚于当天。
+             */
+            date?: string;
+            mode?: components["schemas"]["RecordingV2Mode"];
+            addEntries?: components["schemas"]["RecordingV2EntryInput"][];
+            sets?: components["schemas"]["RecordingV2Set"][];
+            removeRecordKeys?: components["schemas"]["RecordingV2Key"][];
+            /** @description 离线顺序移除时携带每组移除时的可见编号；不得与 removeRecordKeys 重复。 */
+            removeRecords?: components["schemas"]["RecordingV2Removal"][];
+            restoreRecordKeys?: components["schemas"]["RecordingV2Key"][];
+            removeEntryKeys?: components["schemas"]["RecordingV2Key"][];
+            restoreEntryKeys?: components["schemas"]["RecordingV2Key"][];
+            exerciseEntryKeys: components["schemas"]["RecordingV2Key"][];
+        };
+        RecordingV2Finish: {
+            expectedVersion: components["schemas"]["RecordingV2Version"];
+        };
+        /** @description 同一动作在本次记录中各活动动作段的累计；不把缺项作为零。 */
+        RecordingV2ActionVolume: {
+            exerciseEntryKeys: components["schemas"]["RecordingV2Key"][];
+            volume: components["schemas"]["RecordingV2Volume"];
+        };
+        RecordingV2Detail: {
+            id: string;
+            version: components["schemas"]["RecordingV2Version"];
+            /** @enum {string} */
+            source: "free";
+            /** Format: date */
+            date: string;
+            timeZone: string;
+            clientEventId: components["schemas"]["RecordingV2Key"];
+            /** @enum {string} */
+            status: "in_progress" | "completed";
+            mode: components["schemas"]["RecordingV2Mode"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            recordedAt?: string;
+            entries: components["schemas"]["RecordingV2Entry"][];
+            sets: components["schemas"]["RecordingV2Set"][];
+            removedSets: components["schemas"]["RecordingV2RemovedSet"][];
+            /** @description 按本次记录中的同一动作汇总活动段；旧服务可能未提供。 */
+            actionVolumes?: components["schemas"]["RecordingV2ActionVolume"][];
+        };
+        RecordingV2Summary: {
+            id: string;
+            version: components["schemas"]["RecordingV2Version"];
+            /** @enum {integer} */
+            recordFormat: 1 | 2;
+            /** Format: date */
+            date: string;
+            timeZone: string;
+            /** @enum {string} */
+            status: "in_progress" | "completed" | "skipped";
+        };
+        RecordingV2Page: {
+            items: components["schemas"]["RecordingV2Summary"][];
+            page: number;
+            pageSize: number;
+            total: number;
+        };
         /** @description 一份训练记录；date是实际训练日，createdAt/updatedAt/recordedAt是服务端处理时间，不能推断训练开始或各组完成时刻。 */
         WorkoutSession: {
             id: string;
@@ -4991,7 +5285,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 客户端以安全随机数生成至少128位不可预测键。匿名认证按号码索引与用途或挑战、请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。 */
+                /** @description 客户端以安全随机数生成至少128位不可预测键。此接口按服务端确认的申请、主体及请求摘要隔离，不接受客户端 userId；含凭据的幂等结果须加密、短期保留并验证原持有证明，不进入日志。 */
                 "Idempotency-Key": string;
             };
             path: {
@@ -7287,6 +7581,298 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    getMeRecordings: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                pageSize?: components["parameters"]["PageSize"];
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 记录列表 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Page"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordings: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Create"];
+            };
+        };
+        responses: {
+            /** @description 已提交的记录标识和版本；详情须另读。 */
+            201: {
+                headers: {
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMeRecordingsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 完整记录 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Detail"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordingsIdSets: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Batch"];
+            };
+        };
+        responses: {
+            /** @description 提交版本；详情须另读。 */
+            200: {
+                headers: {
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordingsIdFinish: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Finish"];
+            };
+        };
+        responses: {
+            /** @description 提交版本；详情须另读。 */
+            200: {
+                headers: {
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Error"];
+            412: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordingsReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Create"];
+            };
+        };
+        responses: {
+            /** @description 经重新授权的原回执 */
+            201: {
+                headers: {
+                    "Idempotency-Replayed": "true";
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordingsIdSetsReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Batch"];
+            };
+        };
+        responses: {
+            /** @description 经重新授权的原回执 */
+            200: {
+                headers: {
+                    "Idempotency-Replayed": "true";
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postMeRecordingsIdFinishReplay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 认证主体+HTTP方法+规范路径内唯一；同键同摘要返回首次结果，同键异摘要409。保留窗口是上线前必须确认的配置（暂定24h），成功响应返回到期时间。 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["WorkoutSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordingV2Finish"];
+            };
+        };
+        responses: {
+            /** @description 经重新授权的原回执 */
+            200: {
+                headers: {
+                    "Idempotency-Replayed": "true";
+                    "Idempotency-Key-Expires-At"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingV2Receipt"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["WorkoutReplayFailure"];
+            412: components["responses"]["WorkoutReplayFailure"];
+            422: components["responses"]["WorkoutReplayFailure"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getMeSessions: {
         parameters: {
             query?: {
@@ -7316,6 +7902,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             429: components["responses"]["Error"];
             500: components["responses"]["Error"];
@@ -7385,6 +7972,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             429: components["responses"]["Error"];
             500: components["responses"]["Error"];

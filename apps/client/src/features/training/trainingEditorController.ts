@@ -1,22 +1,31 @@
 import {
   addExercise,
   addSet,
+  applyBatchSetValues,
   confirmSet,
+  copySet,
   createRecordingDraft,
   removeUnsubmittedSet,
+  removeRecordedSetV2,
+  restoreUnsubmittedSet,
   restoreDraft,
   switchMode,
   updateSet,
   type InputField,
+  type BatchSetField,
   type RecordingDraft,
   type RecordingMode,
   type SetKind,
 } from './recording'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
 import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
-import type { PreparedFreeSessionRequest, PreparedSetsRequest, RecordingApi, RecordingAuth, ScopedSessionDetail } from './recordingApi'
+import type { PreparedFreeSessionRequest, PreparedSetsRequest, RecordingApi, RecordingAuth, ScopedSessionDetail, ScopedRecordingV2Detail, ScopedRecordingV2Receipt } from './recordingApi'
+import type { JournalRequest } from './operationJournal'
 import type { OrderedPreparation } from './recordingProjection'
 import { pendingSets } from './setsIntent'
+import { encodeDraftEnvelope } from './draftEnvelope'
+import { validRecordingV2Set } from './recordingV2Values'
+import type { ConflictChoice } from './recordingV2ConflictPlan'
 
 /** The host must implement this with the platform's secure random ID source. */
 export interface SecureRecordingIdProvider {
@@ -222,7 +231,7 @@ export class TrainingEditorController {
         // closes. Reserve before touching native storage so it remains intact.
         state.releaseReservation = VersionedEditorDraft.reserveEmptyForCreation(subjectId, checked.clientEventId)
         if (!state.releaseReservation) return { ok: false, reason: 'local_unsynced' }
-        const value = JSON.stringify({ schema: 1, subjectId, draft: checked })
+        const value = encodeDraftEnvelope(subjectId, checked)
         let result: unknown
         try { result = await storage.createIfAbsent(key, value) }
         catch { return { ok: false, reason: owner.isCurrent() ? 'outcome_unknown' : 'session_changed' } }
@@ -295,7 +304,7 @@ export class TrainingEditorController {
           } else {
             // The initial snapshot is inserted by one atomic operation. Never fall
             // back to DraftController.persist(), which is an unconditional write.
-            const envelope = JSON.stringify({ schema: 1, subjectId: options.subjectId, draft })
+            const envelope = encodeDraftEnvelope(options.subjectId, draft)
             if (!this.isCurrent(options, generation)) throw new Error('session changed')
             let result: unknown
             let unknown = false
@@ -476,6 +485,98 @@ export class TrainingEditorController {
     })
   }
 
+  /** Persist a v2 request before sending; it remains bound to this owner and draft. */
+  async stageRecordingV2(request: JournalRequest, baseline: ScopedRecordingV2Detail | null,
+    api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const staged = await this.local.stageRecordingV2(request, baseline, api, auth)
+        try { void this.local.draft } catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (staged.saved && this.local.status === 'saved_locally') return this.success(staged.changed)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: staged.changed, localStatus: this.local.status }
+        return { ok: false, reason: 'pending', changed: staged.changed, localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
+    })
+  }
+
+  /** Apply only a receipt bound to the persisted request and a fresh cloud snapshot. */
+  async acknowledgeRecordingV2(response: ScopedRecordingV2Receipt, snapshot: ScopedRecordingV2Detail,
+    api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.acknowledgeRecordingV2(response, snapshot, api, auth)
+        try { void this.local.draft } catch { return { ok: false, reason: 'session_changed', localStatus: this.local.status } }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return { ok: false, reason: 'storage_error', changed: true, localStatus: this.local.status }
+        return { ok: false, reason: 'pending', changed: true, localStatus: this.local.status }
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return { ok: false, reason: 'pending', localStatus: this.local.status }
+        if (error instanceof DraftStageStorageError) return { ok: false, reason: 'storage_error', localStatus: this.local.status }
+        return this.failure(error)
+      }
+    })
+  }
+
+  /** Apply reviewed choices only to the current protected local version. */
+  async resolveRecordingV2Conflict(snapshot: ScopedRecordingV2Detail, expectedDraft: string,
+    choices: Record<string, ConflictChoice>, api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.resolveRecordingV2Conflict(snapshot, expectedDraft, choices, api, auth)
+        try { void this.local.draft } catch { return {ok:false,reason:'session_changed',localStatus:this.local.status} }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return {ok:false,reason:'storage_error',changed:true,localStatus:this.local.status}
+        return {ok:false,reason:'pending',changed:true,localStatus:this.local.status}
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return {ok:false,reason:'pending',localStatus:this.local.status}
+        if (error instanceof DraftStageStorageError) return {ok:false,reason:'storage_error',localStatus:this.local.status}
+        return this.failure(error)
+      }
+    })
+  }
+
+  async markRecordingV2Tracking(snapshot: ScopedRecordingV2Detail, api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.markRecordingV2Tracking(snapshot,api,auth)
+        try { void this.local.draft } catch { return {ok:false,reason:'session_changed',localStatus:this.local.status} }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return {ok:false,reason:'storage_error',localStatus:this.local.status}
+        return {ok:false,reason:'pending',localStatus:this.local.status}
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return {ok:false,reason:'pending',localStatus:this.local.status}
+        if (error instanceof DraftStageStorageError) return {ok:false,reason:'storage_error',localStatus:this.local.status}
+        return this.failure(error)
+      }
+    })
+  }
+
+  async adoptCloudRecordingV2(snapshot: ScopedRecordingV2Detail, expectedDraft: string,
+    api: RecordingApi, auth: RecordingAuth): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      if (!(this.local instanceof VersionedEditorDraft)) return this.invalid()
+      try {
+        const saved = await this.local.adoptCloudRecordingV2(snapshot,expectedDraft,api,auth)
+        try { void this.local.draft } catch { return {ok:false,reason:'session_changed',localStatus:this.local.status} }
+        if (saved && this.local.status === 'saved_locally') return this.success(true)
+        if (this.local.status === 'storage_error') return {ok:false,reason:'storage_error',localStatus:this.local.status}
+        return {ok:false,reason:'pending',localStatus:this.local.status}
+      } catch (error) {
+        if (error instanceof DraftStageBusyError) return {ok:false,reason:'pending',localStatus:this.local.status}
+        if (error instanceof DraftStageStorageError) return {ok:false,reason:'storage_error',localStatus:this.local.status}
+        return this.failure(error)
+      }
+    })
+  }
+
   /** Apply a verified creation response without replacing later local input. */
   async acknowledgeFreeSession(request: PreparedFreeSessionRequest, response: ScopedSessionDetail): Promise<EditorResult> {
     return this.withOwnership(async () => {
@@ -532,6 +633,30 @@ export class TrainingEditorController {
     })
   }
 
+  /** Enable the new protected draft format before any background synchronization. */
+  async enableV2Recording(): Promise<EditorResult> {
+    return this.withOwnership(() => this.mutate(draft => {
+      if (!(this.local instanceof VersionedEditorDraft)) throw new EditorValidationError('此设备暂不支持安全保存训练记录')
+      if (draft.recordFormat === 2) return draft
+      if (draft.server || draft.syncPending !== undefined) throw new EditorValidationError('旧记录需要先核对后才能同步')
+      return { ...draft, recordFormat: 2, completionRequested: false }
+    }))
+  }
+
+  /** Save the user's completion request locally; it is not yet a cloud confirmation. */
+  async requestV2Completion(): Promise<EditorResult> {
+    return this.withOwnership(() => this.mutate(draft => {
+      if (!(this.local instanceof VersionedEditorDraft)) throw new EditorValidationError('此设备暂不支持安全保存训练记录')
+      if (draft.server && draft.recordFormat !== 2) throw new EditorValidationError('旧记录需要先升级后才能完成')
+      if (!draft.exercises.some(exercise => exercise.sets.length > 0)) throw new EditorValidationError('请先添加至少一组')
+      if (draft.exercises.some(exercise => exercise.sets.some(set => !validRecordingV2Set(exercise, set)))) {
+        throw new EditorValidationError('请检查组内的重量和次数')
+      }
+      if (draft.recordFormat === 2 && draft.completionRequested === true) return draft
+      return { ...draft, recordFormat: 2, completionRequested: true }
+    }))
+  }
+
   async setMode(mode: RecordingMode): Promise<EditorResult> {
     return this.withOwnership(() => this.mutate(draft => switchMode(draft, mode)))
   }
@@ -540,7 +665,7 @@ export class TrainingEditorController {
     return this.withOwnership(async () => {
       try {
         const current = this.local.draft
-        if (!validDate(date) || date > todayInTimezone(current.timeZone, this.now())) return this.invalid()
+        if (!validDate(date) || date < '1000-01-01' || date > todayInTimezone(current.timeZone, this.now())) return this.invalid()
         return await this.mutate(draft => draft.date === date ? draft : { ...draft, date })
       } catch (error) { return this.failure(error) }
     })
@@ -551,7 +676,7 @@ export class TrainingEditorController {
       try {
         const draft = this.local.draft
         const entryKey = this.newUniqueKey(draft.exercises.map(item => item.exerciseEntryKey))
-        const recordKeys = draft.exercises.flatMap(item => item.sets.map(set => set.recordKey))
+        const recordKeys = this.allRecordKeys(draft)
         const firstRecordKey = this.newUniqueKey(recordKeys)
         return await this.mutate(current => addExercise(current, entryKey, { source: 'custom', exerciseName: name }, kind, firstRecordKey))
       } catch (error) { return this.failure(error) }
@@ -562,8 +687,19 @@ export class TrainingEditorController {
     return this.withOwnership(async () => {
       try {
         const draft = this.local.draft
-        const key = this.newUniqueKey(draft.exercises.flatMap(item => item.sets.map(set => set.recordKey)))
+        const key = this.newUniqueKey(this.allRecordKeys(draft))
         return await this.mutate(current => addSet(current, exerciseEntryKey, key))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  async copyGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        const draft = this.local.draft
+        this.findGroup(draft, exerciseEntryKey, recordKey)
+        const key = this.newUniqueKey(this.allRecordKeys(draft))
+        return await this.mutate(current => copySet(current, exerciseEntryKey, recordKey, key))
       } catch (error) { return this.failure(error) }
     })
   }
@@ -577,6 +713,27 @@ export class TrainingEditorController {
     })
   }
 
+  /** Apply to existing and newly generated groups in one protected local write. */
+  async applyBatchGroups(exerciseEntryKey: string, sourceKey: string, recordKeys: string[],
+    fields: BatchSetField[], newCount: number, expectedSnapshot: string): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        if (!Number.isSafeInteger(newCount) || newCount < 0 || newCount > 200 ||
+            !Array.isArray(recordKeys) || recordKeys.length + newCount > 200) return this.invalid()
+        const used = this.allRecordKeys(this.local.draft)
+        const newKeys: string[] = []
+        for (let i = 0; i < newCount; i++) {
+          const key = this.newUniqueKey(used)
+          used.push(key); newKeys.push(key)
+        }
+        return await this.mutate(draft => {
+          try { return applyBatchSetValues(draft, exerciseEntryKey, sourceKey, recordKeys, fields, newKeys, expectedSnapshot) }
+          catch { throw new EditorValidationError('组内容已变化或输入无效，请重新选择。') }
+        })
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
   async removeGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
     return this.withOwnership(async () => {
       try {
@@ -585,14 +742,27 @@ export class TrainingEditorController {
         if (!exercise) return this.invalid()
         const set = exercise.sets.find(item => item.recordKey === recordKey)
         if (!set) return this.success(false)
-        if (set.persisted) return this.invalid()
-        if (draft.server && Object.prototype.hasOwnProperty.call(draft, 'syncPending')) {
+        if (set.persisted && draft.recordFormat !== 2) return this.invalid()
+        if (draft.server && draft.recordFormat !== 2 && Object.prototype.hasOwnProperty.call(draft, 'syncPending')) {
           const pending = pendingSets(draft, this.ownership.subjectId)
           if (!pending || pending.submitted.some(item => item.exerciseEntryKey === exerciseEntryKey && item.recordKey === recordKey)) {
             return this.invalid('该组正在同步，请稍后再试。')
           }
         }
-        return await this.mutate(current => removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
+        return await this.mutate(current => current.recordFormat === 2 && current.server
+          ? removeRecordedSetV2(current, exerciseEntryKey, recordKey)
+          : removeUnsubmittedSet(current, exerciseEntryKey, recordKey))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  async restoreGroup(exerciseEntryKey: string, recordKey: string): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        const exercise = this.local.draft.exercises.find(item => item.exerciseEntryKey === exerciseEntryKey)
+        if (!exercise) return this.invalid()
+        if (!exercise.removedSets?.some(item => item.set.recordKey === recordKey)) return this.success(false)
+        return await this.mutate(current => restoreUnsubmittedSet(current, exerciseEntryKey, recordKey))
       } catch (error) { return this.failure(error) }
     })
   }
@@ -645,6 +815,13 @@ export class TrainingEditorController {
       }
       return this.success(true)
     } catch (error) { return this.failure(error) }
+  }
+
+  private allRecordKeys(draft: RecordingDraft): string[] {
+    return draft.exercises.flatMap(item => [
+      ...item.sets.map(set => set.recordKey),
+      ...(item.removedSets || []).map(removed => removed.set.recordKey),
+    ])
   }
 
   private newUniqueKey(existing: string[]): string {

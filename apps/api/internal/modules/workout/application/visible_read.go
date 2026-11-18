@@ -23,11 +23,18 @@ func (s *Service) ReadVisibleOrderedFree(ctx context.Context, db *sql.DB, token 
 	var result repository.OrderedSnapshot
 	err := s.inTransaction(ctx, db, token, func(tx *sql.Tx, subjectID uint64) error {
 		var found uint64
-		err := tx.QueryRowContext(ctx, `SELECT id FROM workout_session WHERE id = ? AND user_id = ? AND source = 'free' FOR UPDATE`, sessionID, subjectID).Scan(&found)
+		var format uint8
+		err := tx.QueryRowContext(ctx, `SELECT id, record_format FROM workout_session WHERE id = ? AND user_id = ? AND source = 'free' FOR UPDATE`, sessionID, subjectID).Scan(&found, &format)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrWorkoutNotFound
 		}
 		if err != nil || found != sessionID {
+			return ErrUnavailable
+		}
+		if format == 2 {
+			return repository.ErrClientUpgradeRequired
+		}
+		if format != 1 {
 			return ErrUnavailable
 		}
 		result, err = s.records.ReadOrderedFree(ctx, tx, subjectID, sessionID)

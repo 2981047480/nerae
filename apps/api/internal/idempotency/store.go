@@ -20,13 +20,14 @@ import (
 )
 
 var (
-	ErrInvalid        = errors.New("invalid idempotency request")
-	ErrAuthentication = errors.New("authentication required")
-	ErrForbidden      = errors.New("operation forbidden")
-	ErrConflict       = errors.New("idempotency conflict")
-	ErrInProgress     = errors.New("request in progress")
-	ErrUnavailable    = errors.New("idempotency unavailable")
-	ErrOutcomeUnknown = errors.New("transaction outcome unknown")
+	ErrInvalid         = errors.New("invalid idempotency request")
+	ErrAuthentication  = errors.New("authentication required")
+	ErrForbidden       = errors.New("operation forbidden")
+	ErrUpgradeRequired = errors.New("client upgrade required")
+	ErrConflict        = errors.New("idempotency conflict")
+	ErrInProgress      = errors.New("request in progress")
+	ErrUnavailable     = errors.New("idempotency unavailable")
+	ErrOutcomeUnknown  = errors.New("transaction outcome unknown")
 )
 
 // Request must be derived from the actual validated operation and canonical
@@ -291,6 +292,9 @@ func (s *Store) PurgeExpired(ctx context.Context, db *sql.DB, maxRows int) (int6
 }
 
 func authorizeError(err error) error {
+	if errors.Is(err, ErrUpgradeRequired) {
+		return ErrUpgradeRequired
+	}
 	if errors.Is(err, ErrForbidden) {
 		return ErrForbidden
 	}

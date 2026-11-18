@@ -1,0 +1,22 @@
+/*
+ * Shared semantic colour roles for Nerae's first-party UI.
+ * Decorative borders must not be the only cue for an interactive control.
+ * Values remain candidates until checked on each supported device.
+ */
+page {
+  --nerae-page: #ffffff;
+  --nerae-surface: #ffffff;
+  --nerae-surface-subtle: #f6f6f6;
+  --nerae-surface-pressed: #eeeeee;
+  --nerae-text: #1a1a1a;
+  --nerae-text-secondary: #626262;
+  --nerae-primary: #1a1a1a;
+  --nerae-primary-pressed: #333333;
+  --nerae-primary-text: #ffffff;
+  --nerae-disabled: #767676;
+  --nerae-border-decorative: #e1e1e1;
+  --nerae-border-control: #858585;
+  background: var(--nerae-page);
+  color: var(--nerae-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+}

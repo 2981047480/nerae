@@ -202,3 +202,95 @@ or checked against a real database. It does not resolve the deployment gates.
 The current IP certificate was accepted by this Mac's trust store on
 2026-11-05 and is valid from 2026-11-03 20:11:57 UTC through 2026-11-10
 12:11:56 UTC. Automatic renewal and iPhone trust remain unverified.
+
+
+## 2026-11-16 isolated sidecar ownership check
+
+The checked-in proxy smoke was extended and run on the Tencent host with
+synthetic credentials and two temporary loopback/Unix-socket Caddy processes.
+A root-owned sidecar configuration and root-controlled parent were readable by
+the sidecar's supplementary group, while write/replace attempts by the sidecar
+and read attempts by the front UID failed. Header replacement, health denial,
+unrelated-UID socket denial, disabled test admin/config autosave, and the
+isolated non-target route also passed. The synthetic test directory was removed.
+The existing Caddy process, its live config, ports and other sites were not
+changed; its unprotected management endpoint and live coexistence remain open.
+
+
+## 2026-11-16 migration candidate update
+
+The development tree now includes a candidate 21st and 22nd migrations for private
+exercise storage and historical snapshots. The previously packaged 20-migration server candidate below
+does not contain it and is stale for this source tree. A synthetic, isolated
+MySQL test applied the existing 20 migrations, then the 21st and 22nd, and repeated the
+22-entry run using a database-scoped migration account. The exercise service
+is not mounted or deployed; rebuild and verify the complete release and its
+credential, gateway, backup and restore boundaries before deployment. Before
+the 22nd migration, stop all 0006 personal-exercise writers until every writer
+stores snapshots; a mixed-version writer could otherwise omit a revision.
+
+## 2026-11-16 latest release candidate and SMTP network check
+
+The Tencent host reached `smtp.qq.com:465` over validated TLS and received a
+valid SMTP greeting without authentication or sending mail. This does not
+verify the real QQ credential or delivery from this host. A credential-bearing
+probe was stopped by automatic review pending the user's explicit authorization;
+no QQ credential was sent to the host in that attempt.
+
+An initial candidate accidentally packaged `scripts/dev/migrate.go`; its
+`check` failed because it requires a Git worktree, before any database
+connection. A corrected candidate built `apps/api/cmd/migrate`, along with the
+current API and worker, and was transferred without credentials to
+`/tmp/nerae-v2-date-release-corrected-4ujz532h`. Archive SHA-256 was
+`b4caf03d2961bb8edd455b99960a75a4e3edab269cb849b4a74551cedfd2d3cf`; all
+30 listed files matched their hashes and `check` accepted 20 migrations.
+In the existing Nerae network-isolated synthetic MySQL container, a fresh
+restricted account applied all 20 migrations twice; all ledger rows were clean
+and only that temporary schema/account were removed. This candidate comes from
+the current uncommitted development tree, has not been deployed, and has not
+been used for real accounts, mobile login or public routing.
+
+## 2026-11-16 action-total candidate
+
+The subsequent candidate adds same-record action-segment totals. The Linux
+release in `/tmp/nerae-v2-action-release.1v1w5YO8/package` has archive
+SHA-256 `8629f5ef6e16c88bdb75af0736aceb9ead4e1a4b0df6be9679604cc4e154a21a`.
+All 30 packaged files matched their hashes, and the production migration
+checker accepted all 20 entries without a database connection. A separate
+network-isolated synthetic MySQL/HTTP test exercised the action total; its
+log is `/tmp/nerae-v2-action-evidence-ncj7d27f/http.log`. The candidate was
+not deployed and contained no QQ credentials. The earlier date candidate is
+superseded for this change.
+
+A later public-IP TLS check succeeded using this Mac's trust store; the
+observed certificate expires 2026-11-20 11:51:55 UTC. This does not prove
+iPhone trust, ongoing renewal, or safe coexistence with the existing gateway.
+
+## 2026-11-16 22-migration source snapshot candidate
+
+The current uncommitted integration worktree was copied to a fixed local
+build snapshot; its 218 source/input file hashes matched the worktree before
+packaging. The full Go suite passed after the sandbox's loopback-bind rejection
+was retried with local loopback access; the recording domain, storage,
+application, transport and API packages also passed `go test -race`. Tests
+requiring explicit private database configuration were skipped locally and
+were checked separately with synthetic databases.
+
+The new Linux x86-64 archive is at
+`/tmp/nerae-v2-release22.msQLnj5x/nerae-release22.tar.gz` on the host, SHA-256
+`9b2e28147bb8ef0da96e0341e45c6c757060c094eb871c85d9946f12d92340da`.
+All 33 files listed in the extracted package's checksums match; its migration
+checker reports 22 entries. Its own migration executable was then used with
+the matching release-22 manifest in an isolated, network-disabled MySQL
+container to apply 20→21→22, verify backfill, and repeat 22 successfully.
+The same run verified owner-scoped personal-action snapshots inside a training
+transaction; full output is `/tmp/nerae-release22-check.0oj8WZ7Q/migration-run.log`.
+Successful synthetic container and database directories were removed by the
+test; the release archive and evidence remain.
+
+This package contains no QQ credentials and has not been deployed, started as
+a persistent service, connected to real users, or placed behind the existing
+gateway. It does not establish that personal-action HTTP or client support,
+real email login, iPhone signing, or cross-device mobile sync are complete.
+Upgrading an existing personal-action database still requires the documented
+writer shutdown and key/backup precautions.

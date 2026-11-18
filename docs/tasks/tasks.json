@@ -297,56 +297,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -354,7 +354,7 @@
       "external_prerequisites": [],
       "acceptance_requires": [],
       "breakdown": "complete",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -410,7 +410,7 @@
       },
       "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
       "actual_reasoning": "Native session setting not exposed",
-      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "base_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "review_mode": "sequential_role_review",
       "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed."
     },
@@ -2582,22 +2582,22 @@
         {
           "path": "docs/evidence/F01/F01-01/clean-checkout-20261028.md",
           "sha256": "d9a020f26904569af148fc46a0de58e40d6b1bcc0010d08ee2a22b6e294dc4ba",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/workspace-snapshot-provenance.json",
           "sha256": "7a1965a243f5e8a20d87a883be1fe01e1ae7f6f2fcf27b96b63b9f9c33c797fc",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/image-lock.json",
           "sha256": "e11118b6027e9497179c630fff51e1b7f02ad1227c47bfad45e495c9975ef1e8",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/F01/F01-01/generator-probe/check.sh",
           "sha256": "599642f44bc72c576be0e43dd3b2635a03e4191779352bc067dca6c01352fbe3",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2608,11 +2608,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_mode": "independent",
       "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
-      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "reviewed_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_summary": "独立复核在集成提交重新运行冻结安装、peer、三端资源编译、Go探针和生成器探针；检查快照归属与镜像清单。镜像未运行，真实隔离留给 F01-04。",
       "completion": {
         "scope": {
@@ -2712,47 +2712,47 @@
         {
           "path": "apps/api/go.mod",
           "sha256": "487e3c7e3d4c97bccad2157282cb67a6b4d169a762b627ebaa8f20f2979e9487",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/go.sum",
           "sha256": "5b435e519d710064b93a6775dbc4eaf7d84a73e4a7b4ffc61ef3f9fc4935fee6",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/cmd/api/server.go",
           "sha256": "006e4d1bbb7dd386779e6bfa9f3d605c538467fee97b7508e2199b9d20b6e28f",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/cmd/api/server_test.go",
           "sha256": "fb4eb8b78c5495867ff3e202959ed56e389f62a9d092439b054aea2e30b147ca",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/internal/config/config_test.go",
           "sha256": "85494adc062283ea5c846af9a09ac8aa4edee2d41ab2399ecc98b769170634d5",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "apps/api/README.md",
           "sha256": "2ab73f9d79c81c6706ad001d7e01a8f114fe383ac01c6e3fb01c2a38e6437ebe",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/report.md",
           "sha256": "64ca4c09a9a79a32f6521f5b89ab58d8b11bc4ace1508ce78ea1f0904eb9df4f",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/smoke.py",
           "sha256": "a88d4be9e410a897ef258b0c41c07a47ac3c54476ca08fbc8a4a986796ddf9de",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         },
         {
           "path": "docs/evidence/F01/F01-02/drain_smoke.py",
           "sha256": "9227e61855da536c2102f835d8f1a15aa2caf3987d825a1d7317deb2cfe2a84c",
-          "revision": "49b12005409b25828b364a9f3641311912799b03"
+          "revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2763,11 +2763,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
-      "accepted_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "base_revision": "5d9a687a1b1f9e5dc35dc550bd54e5a5261e85bd",
+      "accepted_revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "49b12005409b25828b364a9f3641311912799b03",
+      "reviewed_revision": "4bf605700ca1b4a85d22e0beebf05546f167ba78",
       "review_summary": "独立复核与 Lead 均在该提交干净归档运行 Go build、race、vet、API/worker 构建和两个本机进程测试；缺健康 MySQL/Redis 与实际队列仍交后续卡验证。",
       "completion": {
         "scope": {
@@ -2891,32 +2891,32 @@
         {
           "path": "apps/client/vite.config.ts",
           "sha256": "3add394bdd8e79ba36334fdb4fc490353acda91c2ae2927df15acd6b74ce497a",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/client/index.html",
           "sha256": "1beef966181ffe5b2553fd381bf44573a1938727b67310fcf16dd9fee03fb6f9",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/client/src/manifest.json",
           "sha256": "435090945ff22d94c69368868784c09e7e21697931cd5234023196ec8ec729b1",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "apps/admin/src/main.ts",
           "sha256": "9f3aa00dcb444d739ab72b1677254ed62372825d55bb718420358ada2cd79fd0",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "pnpm-lock.yaml",
           "sha256": "b0a4cee8c2dc9aec7c91dbd8af096a21a89d87645d585c5090653889a1115167",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         },
         {
           "path": "docs/evidence/F01/F01-03/report.md",
           "sha256": "9bca75be16c163bcced4041e52820cf8a7785ad1ad0cf35db6a331298287fed2",
-          "revision": "03a4564234055b0e87e1d808b79d9afdb621ce16"
+          "revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3"
         }
       ],
       "decision_owner": "Project Lead",
@@ -2927,11 +2927,11 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "c885515b58961e8738df2d63d5d6387d88e4b8eb",
-      "accepted_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "base_revision": "5d9a687a1b1f9e5dc35dc550bd54e5a5261e85bd",
+      "accepted_revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3",
       "review_mode": "independent",
       "reviewed_by": "/root (Codex Lead; gpt-6.1-terra, max)",
-      "reviewed_revision": "03a4564234055b0e87e1d808b79d9afdb621ce16",
+      "reviewed_revision": "9dcba8e710b45bb6ae16dbd6ff1aad6900d9afc3",
       "review_summary": "Lead 独立审阅修复并从该提交的全新归档执行 frozen install、peer、两端类型检查、三端资源与后台构建，验证关键产物非空；不代表原生包或业务验收。",
       "completion": {
         "scope": {
@@ -3039,7 +3039,7 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+      "base_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
     },
     {
       "id": "F01-05",
@@ -3109,7 +3109,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "0106cf37cc6e804478e6b249612b6c041880d904"
+      "base_revision": "0eccd97f35387f17273444328cae40461a32b62e"
     },
     {
       "id": "F01-I",
@@ -3242,7 +3242,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "7621f1cfc590616cc343bca72f23909b17d9bbfd"
+      "base_revision": "c7d56a0965a0540505be8f92477c1f9d74c11b62"
     },
     {
       "id": "F02-01",
@@ -3328,7 +3328,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "e4aede85c9e9e75584b2a83109f2a03d921bc506"
+      "base_revision": "f67bec60288022f8e6d6bc977f3b2d23c3743d11"
     },
     {
       "id": "F02-02",
@@ -3397,7 +3397,7 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "a71a7840e0c390eaca66906ea6c5bc35c8e21eef"
+      "base_revision": "5f756ad721b6cc0d444c60ebc5f5aa2c2fb0e8f1"
     },
     {
       "id": "F02-03",
@@ -3568,12 +3568,12 @@
         {
           "path": "docs/evidence/L01/L01-01/report.md",
           "sha256": "72896e48a7ee0e08131a20469da4075b23b03fe7ea1111e55cc1094be57dedaf",
-          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+          "revision": "1da641cf2fac0e8c917b2d062584d190f5db2623"
         },
         {
           "path": "docs/evidence/L01/L01-01/continuation.md",
           "sha256": "14b16300b7ed8551349c7f35fb7e7e64ab904646ab24ddc6bce231e24f210c62",
-          "revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f"
+          "revision": "1da641cf2fac0e8c917b2d062584d190f5db2623"
         }
       ],
       "decision_owner": "Project Lead",
@@ -3584,9 +3584,9 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
-      "reviewed_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
+      "reviewed_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
       "review_mode": "independent",
       "reviewed_by": "/root/foundation_review (gpt-6-luna, medium)",
       "review_summary": "独立复核同一集成提交，确认三端主体/渠道/身份与六类留存、AI 条款和责任角色均登记为待取得证据；该盘点不代表任何平台或法律批准。",
@@ -4322,17 +4322,17 @@
         {
           "path": "docs/evidence/D01/round-03/reasoning/REPORT.md",
           "sha256": "3cb0f0da05bec04ef14516e797f5df528c48f71104a9b16b54565bd550c46193",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         },
         {
           "path": "docs/evidence/D01/round-03/reasoning/checks.json",
           "sha256": "483edfd1252682f899a2d7bc6bcea01c7c876e0b305c9e286606a166cefe3037",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         },
         {
           "path": "docs/evidence/D01/round-03/reasoning/design-manifest.json",
           "sha256": "366f88c573acc18f63e235c14cf54b6181fc7b0c6d2e70cbc839624c018a038e",
-          "revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c"
+          "revision": "0b794889bca50d9363d59b682b38dc71b5eb330c"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4343,8 +4343,8 @@
       "kind": "task",
       "actual_model": "native Codex session; precise model id not exposed",
       "actual_reasoning": "session default; precise effort not exposed",
-      "base_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
-      "accepted_revision": "9511bab91da0cfc7e9d2a5c3a538dd646299b29c",
+      "base_revision": "0b794889bca50d9363d59b682b38dc71b5eb330c",
+      "accepted_revision": "0b794889bca50d9363d59b682b38dc71b5eb330c",
       "reviewed_by": "/root (Codex Lead)",
       "review_mode": "sequential_role_review",
       "review_reason": "同一Lead依次承担产品/交互/视觉规范与批判复核；没有独立子代理意见或用户研究；只接受文稿，执行指定DeepSeek后另作视觉验收",
@@ -4453,63 +4453,63 @@
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_04.md",
           "sha256": "f14b7892e6bd0964e527ee85e64243363342a2582002f17b2065624fe3609687",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/checks.json",
           "sha256": "496a0cffef3e204b0afd0053bcf3f539cb295c35412ba6b961361869b16c3361",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/SOURCE_MANIFEST.json",
           "sha256": "d0cc8217a1dbd45c10f143dea6b81b30260685f77e012dc6f5083a3ed3e2ff18",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/POST_QA_SOURCE_CHECK.json",
           "sha256": "11c11de78f26d45cf1f55bf52e859c361e241b7cb4767b5e6aac7f9d38a7a2d8",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/INTEGRATION_BYTE_CHECK.json",
           "sha256": "3bfa131556d9d1916e50a182cb5015226f329e734afe0a892b94ad5d1415f889",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/focus-and-scale.json",
           "sha256": "293179fa27b8c86a331b8c96fbadd2d685e6b69b1e8a94266e66087773b4c2ef",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/publish-result.json",
           "sha256": "bc848a8a61b68d6d05ddd41893170ef66ad19cb441b39b4caf3e11a434f71fa3",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/rest-recovery.json",
           "sha256": "fdb86ba70dc427ff9cacd356ab9d19f3409add60f2477f189f8bd2e54f37072f",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/store-final.json",
           "sha256": "d19cc0e5f6966f1bc24d762e031cc663153a1b4ef084fbabbdc72235f6586db6",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/fix-04/frozen/README_ACCEPTED.md",
           "sha256": "c394284ecc4ff7cdaae49ceb4d06f0d421cd1110c26cfc7ba33d072cb4df73a5",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442",
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
           "archived_from": {
-            "revision": "b10c799295a091d2238f5d75995b66b154725442",
+            "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
             "path": "design/prototype/README.md",
             "method": "git show; byte-identical immutable archive before full UI import"
           },
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/worker/fix02-report.json",
           "sha256": "72c418b0eb24f74e5fbeb6258e224dc8d8abb9333d1fcac3c307e61ee4949aa4",
-          "revision": "b10c799295a091d2238f5d75995b66b154725442"
+          "revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4520,7 +4520,7 @@
       "kind": "task",
       "actual_model": "opencode-go/deepseek-v4.1-flash",
       "actual_reasoning": "Medium (initial Max stopped after prolonged no-source planning)",
-      "base_revision": "f7a78004c0ed0b18b56fa58e8a313b0cf3205c81",
+      "base_revision": "e14b108ed49b861c72548fcfa380d5822fa4d22d",
       "workspace": "/private/tmp/nerae-ui-round-three",
       "branch": "ui/round-three",
       "execution_adjustment": "Same exact provider/model and session; Medium for bounded implementation. Initial request stopped at 38 steps, preserved dependency/assets. No UI acceptance.",
@@ -4541,7 +4541,7 @@
       },
       "fix03_feedback_sent": true,
       "fix03_normal_feedback_sent": true,
-      "accepted_revision": "b10c799295a091d2238f5d75995b66b154725442",
+      "accepted_revision": "5a1c5442a783a6793fde0a1a1e6d517b7110aee4",
       "reviewed_by": "/root (Codex Lead)",
       "review_mode": "independent",
       "completion": {
@@ -4655,56 +4655,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4724,14 +4724,14 @@
       },
       "actual_model": "opencode-go/deepseek-v4.1-flash",
       "actual_reasoning": "Medium (Lead execution adjustment)",
-      "base_revision": "b3949bfbd0ec5e5b6d88594c3c3948b47681b8ed",
+      "base_revision": "cb854ee10d22fbde1e73ae61b863848732fd55e0",
       "workspace": "/private/tmp/nerae-ui-complete",
       "branch": "ui/full-round-three",
       "session_id": "session-15de3174-0b22-47b7-9574-29dd3b032a8c",
       "preview_port": 4187,
       "execution_state": "normal worker handback; exact integration and independent Lead review accepted",
       "candidate_revision": "898e3546363cf7348b6599601b2570597a14820c",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -4855,56 +4855,56 @@
         {
           "path": "docs/evidence/D01/round-03/lead/integration/REPORT.md",
           "sha256": "8ac9b107d84f8fdfd0dad1b50d3f18892cb0c68c8f2d486318c59c932b5a57ef",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
           "sha256": "f66becab7a4b1957c61649f91b468098fdedbbb9d1bc93a01dd0b251b3ef845a",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/code-checks.json",
           "sha256": "4540943ed511d3ee0809e93bde378545d796136afa1dcd9505f3f0a8bdce446f",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/code/identity-seams.json",
           "sha256": "38138adeb2afe3506f43abe7ba4644b622c9ecb99af7811b5dff672358f1873d",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/smoke-results.json",
           "sha256": "443eb163de8ea26607a25e416412425f997dc581816db6e2ba2b1f9ed6a80ce6",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ui/final-preview-visible.json",
           "sha256": "7d19dad07f9e5f94949e7d5c3f2c9fd9b824759827a9d4bc1e36da652ff54691",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/integration/ACTION_BUDGET_REVIEW.json",
           "sha256": "541449f3a4c2eda606282f63a565394bb2d9701705cb12cddab6e03b4c390e55",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/REVIEW_14.md",
           "sha256": "b69d5f60132d775ab43774db91267f26df2d9e3aee96d68fc1ff13891af319bb",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         },
         {
           "path": "docs/evidence/D01/round-03/lead/expansion/coverage-review-ledger.json",
           "sha256": "ed89c7fbb54d72fd1a3eadb357c66c70d6aedf9b9ae0da85c3274f6ee196e192",
-          "revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
-          "source_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93"
+          "revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
+          "source_revision": "3f54a9105abbfa30f5e00889dc22e406785533db"
         }
       ],
       "decision_owner": "Project Lead",
@@ -4913,7 +4913,7 @@
       "acceptance_requires": [],
       "parent": "D01",
       "kind": "integration",
-      "accepted_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "accepted_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "accepted_at": "2026-10-25T12:21:55.858392+00:00",
       "reviewed_by": "Codex Project Lead",
       "completion": {
@@ -4969,19 +4969,19 @@
       },
       "actual_model": "Codex / GPT-6 current session; exact identifier not exposed",
       "actual_reasoning": "Native session setting not exposed",
-      "base_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+      "base_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
       "review_mode": "sequential_role_review",
       "review_reason": "Lead owns integration/aggregate and reviews sequentially as product, interaction, visual and QA; no separate independent agent is claimed.",
       "workspace": "/Users/zephyr/Documents/项目/nerae",
       "branch": "main",
       "preview_port": 4187,
       "integration_result": {
-        "integrated_revision": "c33b581432bb025db0eff8c1aba55eb6e02e7715",
+        "integrated_revision": "1c53f2def7b84eb4be25aca4d8686392d2bd9495",
         "covered_tasks": [
           "D01-03"
         ],
         "dependency_acceptances": {
-          "D01-03": "c33b581432bb025db0eff8c1aba55eb6e02e7715"
+          "D01-03": "1c53f2def7b84eb4be25aca4d8686392d2bd9495"
         },
         "evidence": [
           "docs/evidence/D01/round-03/lead/integration/integrated-source-build.json",
@@ -5116,32 +5116,32 @@
         {
           "path": "api/openapi.yaml",
           "sha256": "dc38a60d86634bfb6f573caf49c0d7f71eddc9aaa837d801372e3aef56092957",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "api/tests/test_recording_contract.py",
           "sha256": "fbe86dfff5fa0e7884ccd34376fbeed0f8ec61faefbd0f29c446f736962f2e35",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "api/tests/codegen/check.sh",
           "sha256": "49cf17730549b8acaded6da041583728e0e13874c2b411e90fa9dd4d13516694",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/K01/K01-01/codegen-integration.md",
           "sha256": "c9c44ea47d422dc342d618c0c7df1a50c3edda82a451f9b15a6f784f30bbd1d4",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/evidence/K01/K01-01/runtime-cases.md",
           "sha256": "ba272566aa72295cc3ce165190b59ed6bf29473080064c14d6a94c4643f202a6",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         },
         {
           "path": "docs/数据模型与ER设计.md",
           "sha256": "28aa6c7006e90fe2552ff8c2e3c0e57b219b84797a1c6f95d7bc4c841928286b",
-          "revision": "aa551c21ef26d136448cdff6926e37c343c32298"
+          "revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5152,11 +5152,11 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "aa551c21ef26d136448cdff6926e37c343c32298",
+      "reviewed_revision": "58d22bc0db87e61b2a4fdf2b60e2e004bcd1b745",
       "review_summary": "独立复核在集成提交复跑78项静态合同测试、OpenAPI校验和TS/Go生成探针；运行时授权、幂等、事务和正式生成配置仍分别由后续任务验收。",
       "completion": {
         "scope": {
@@ -5280,7 +5280,7 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+      "base_revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
     },
     {
       "id": "K01-03",
@@ -5467,37 +5467,37 @@
         {
           "path": "docs/evidence/D02/D02-I/report.md",
           "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/UI_SPEC.md",
           "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/screen-map.md",
           "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/interaction-spec.md",
           "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/account-control.md",
           "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/platform-state-matrix.md",
           "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         },
         {
           "path": "docs/design/round-05/implementation/asset-ledger.md",
           "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5507,9 +5507,9 @@
       "breakdown": "complete",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
-      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
+      "reviewed_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "D02-01 和 D02-I 已在集成版本复核；接受范围仅为三端文字设计规格，不代表 UI、素材权利或真机通过。",
@@ -5620,37 +5620,37 @@
         {
           "path": "docs/UI_SPEC.md",
           "sha256": "a57139dfed990c94b15d983b7e17b31ec0d3dc155c00ac075e624f71c9cca1c0",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/screen-map.md",
           "sha256": "56355c6616e4508bb817d28d636ac0da12471bfa2ecfa4578eec34a52680d7ff",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/interaction-spec.md",
           "sha256": "aa350c12533cbb608cccc8b6b8a2d3639e04cd479ceb9581429abe43db5483b4",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/account-control.md",
           "sha256": "0bab1156dc6f1b2f27f2328f4ea9a75ad7d84dafffd9e856df1c8dffb2ce79dd",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/platform-state-matrix.md",
           "sha256": "382e9675f329befdb9e0f0347315f16922fb6ee65314a4f3a64ea1c353d72273",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/design/round-05/implementation/asset-ledger.md",
           "sha256": "a80cdedecbb344719828c92baa3af688bf28699883a24b5f8eb20e8b9229465c",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         },
         {
           "path": "docs/evidence/D02/D02-01/continuation.md",
           "sha256": "b6f6d952d94aabd0915336ad0748cf062c638ac57ada70de8228fb2896313408",
-          "revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31"
+          "revision": "b7e495dc33074139246335191775579481a4eae4"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5661,9 +5661,9 @@
       "kind": "task",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "e4610a7e69fb926782200a1c89373b3ba427fc93",
-      "accepted_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
-      "reviewed_revision": "459a4d0ebfa0965dcebe0c2caef7690428361d31",
+      "base_revision": "3f54a9105abbfa30f5e00889dc22e406785533db",
+      "accepted_revision": "b7e495dc33074139246335191775579481a4eae4",
+      "reviewed_revision": "b7e495dc33074139246335191775579481a4eae4",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "独立复核在同一集成提交检查任务覆盖、离线注销与未缓存分支、链接及任务图；真实界面、设备、素材权利和身份合同仍由后续卡验收。",
@@ -5773,7 +5773,7 @@
         {
           "path": "docs/evidence/D02/D02-I/report.md",
           "sha256": "942c2510ccdb4c47836465df97e70b936c58ad7a8a0c558670fc1bfa46f4a302",
-          "revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8"
+          "revision": "ef5c5d43d5af6031076741c028b37a85a987b067"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5784,14 +5784,14 @@
       "kind": "integration",
       "actual_model": "gpt-6.1-terra",
       "actual_reasoning": "max",
-      "base_revision": "4481f2864d6d83232d572a6ea229448a7d7f5f3f",
-      "accepted_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
-      "reviewed_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+      "base_revision": "1da641cf2fac0e8c917b2d062584d190f5db2623",
+      "accepted_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
+      "reviewed_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
       "review_summary": "独立复核同一集成提交、D02-01 证据哈希、30 屏任务映射、三端状态与素材边界；正式 UI、真实素材及设备仍未验收。",
       "integration_result": {
-        "integrated_revision": "45d643a5212ffb54ba168bd4559efe97b9194dc8",
+        "integrated_revision": "ef5c5d43d5af6031076741c028b37a85a987b067",
         "covered_tasks": [
           "D02-01"
         ],
@@ -5892,17 +5892,17 @@
         {
           "path": "docs/evidence/P02/P02-01/report.md",
           "sha256": "42533906a3f7cb83746b4994bc2060a30e10992e4e470586249af0d2c84d54ce",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         },
         {
           "path": "docs/plans/app/P02-01-platform-checklist.md",
           "sha256": "4f36775220659ed14f25578ac52a2377621c1e50b6f2623cb6050ed5f168125e",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         },
         {
           "path": "infra/app/P02-01-tooling-inventory.md",
           "sha256": "0318e33bbc495f1eb4ba12cb1133526661d2d4d3db2afff0286bab11ddb5cf04",
-          "revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c"
+          "revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6"
         }
       ],
       "decision_owner": "Project Lead",
@@ -5913,11 +5913,11 @@
       "kind": "task",
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "4d15f5b39ca9f976a251c167cc3cdfbe9ff69d67",
-      "accepted_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "base_revision": "d81cd21cd1008e13dd05d500a46e6d0174b23f23",
+      "accepted_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests (gpt-6-luna, medium)",
-      "reviewed_revision": "fbb9f91f431842f032e99b9a25c7ce46d466af4c",
+      "reviewed_revision": "5999b0cd80f719fe055e3dac8c311e1c0c7f89f6",
       "review_summary": "独立复核在集成提交干净归档复跑冻结安装、peer 和三端资源构建并检查产物；Lead 对模拟器受沙箱限制作受控只读复核。原生安装、签名和真机仍未验证。",
       "completion": {
         "scope": {
@@ -6526,23 +6526,23 @@
         {
           "path": "scripts/plan.py",
           "sha256": "6f439fe024f4e72b0bf5be4470d800224f6ce8c9bc33a26c94df178de059b467",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "scripts/tests/test_plan.py",
           "sha256": "738335cf666b31c1a63a19f50e8e90c114bf6bd0669a8a7f2997f89cf284612d",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "docs/DEFINITION_OF_DONE.md",
           "sha256": "bac225bb83c9f6abcdd052e994099f3d587edd63713004c0d2e816510eb0d7b1",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925"
         },
         {
           "path": "docs/evidence/Q02/Q02-01/report.md",
           "sha256": "a23887f96e15fbed0768c7ae06c4b4ef18ebc230528bb4ac1f0f95d21ef935cd",
-          "revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
-          "source_revision": "206f2137fad9a1784451c5b0f018e2e8d7bcf89d"
+          "revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925",
+          "source_revision": "2599b2dc0ea8fd0df5ab8f543b31b5bc738edbd7"
         }
       ],
       "decision_owner": "Project Lead",
@@ -6559,8 +6559,8 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "839e242a6357895c86cd4990bb3163f7b6b5c921",
-      "accepted_revision": "eb5ad03fbeba521269bb5a01fe7342b4c2e7e037",
+      "base_revision": "86db6b6465be63aa10ed3bc7383e302298120e45",
+      "accepted_revision": "38fdf6b14a5b245b99678936d6ce2380ca95f925",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests",
       "review_summary": "独立 reviewer 在同一集成提交复跑 46 项任务图测试和检查；历史及归档来源与 SHA-256 均可核验。",
@@ -6664,23 +6664,23 @@
         {
           "path": "scripts/plan.py",
           "sha256": "b4ba59ad2af68c2b31c8a0dd8bd1231be67caca502fd9b649055ce1c407564eb",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "scripts/tests/test_plan.py",
           "sha256": "5589148e5b19ff5cfcf351552e372215656449cf922c8e990eb7caa34a411dab",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "docs/tasks/tasks.json",
           "sha256": "e2fec2865660216df6840e565ad1d3f06d0526f0d2fd1822f446a0ba0503afbe",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9"
         },
         {
           "path": "docs/evidence/Q02/Q02-02/report.md",
           "sha256": "d0182fc3011062327ebd40adc5866ce25d3e11829402a2ecdfc7ac0436d9e30c",
-          "revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
-          "source_revision": "a29bb89b3bba07ccdd5d91210ae254ae8667a2b7"
+          "revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9",
+          "source_revision": "471b0348c97b9de6a374c0c8d6edbd6e55caeeca"
         }
       ],
       "decision_owner": "Project Lead",
@@ -6691,8 +6691,8 @@
       "kind": "task",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "ebe136b8b3f14e5283d2a9593996b9b67dd392ea",
-      "accepted_revision": "5d28f8a679475b830b2a86470ed0d92eef918fe5",
+      "base_revision": "56b33c3b13d63ddad47c50ea2ecd14441bbd86b7",
+      "accepted_revision": "180d91e4aefcd2646923b49a19dccedf8952f1a9",
       "review_mode": "independent",
       "reviewed_by": "/root/contract_tests",
       "review_summary": "独立 reviewer 在集成提交复跑 51 项任务图测试和 plan check；真实写冲突与最终接受门槛均保留。",
@@ -6761,7 +6761,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "e6d274e06bcd85b2f25e262bd6a19de9ab0cea80",
+      "base_revision": "c62dca77622ac24163d82b03593546d42039b5d9",
       "write_allowlist": [
         "apps/client/src/features/training/",
         "docs/evidence/U02/U02-01/"
@@ -6866,7 +6866,7 @@
       "external_prerequisites": [],
       "actual_model": "gpt-6-luna",
       "actual_reasoning": "medium",
-      "base_revision": "620befb974e2da8a3922494ebe32127229bb1ac9"
+      "base_revision": "3b182440a3e02bfac16c4c06a2fa6561d057e26f"
     },
     {
       "id": "A04-02",
@@ -7175,7 +7175,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "45c7840cc14e5032f9d45bb864c35cb5bfb0d93a",
+      "base_revision": "faf01be8a4cf75b6b0ef1033e53a32d30ad4540c",
       "write_allowlist": ["apps/api/internal/modules/auth/domain/device_proof.go", "apps/api/internal/modules/auth/domain/device_proof_test.go", "apps/api/internal/modules/auth/domain/sms_challenge.go", "apps/api/internal/modules/auth/domain/sms_challenge_test.go", "apps/api/internal/modules/auth/domain/email_challenge.go", "apps/api/internal/modules/auth/domain/email_challenge_test.go", "apps/api/internal/modules/auth/domain/email_identity.go", "apps/api/internal/modules/auth/domain/email_identity_test.go", "docs/evidence/A01/A01-01/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml"],
       "deliverables": "实现 P-256 设备公钥与 ES256 设备持有证明的严格校验，绑定用途、挑战、nonce 与有效期；安全生成短信和测试邮箱挑战随机码，使用服务端密钥对验证码生成用途隔离的绑定摘要；测试邮箱地址规范化、受保护索引和加密；不发送验证码或签发账号会话。",
@@ -7209,7 +7209,7 @@
       "owner": "Project Lead",
       "actual_model": "GPT-6 当前主代理，精确型号未由工具报告",
       "actual_reasoning": "未由运行时报告",
-      "base_revision": "b52bcfae560c7f8204541b5506012fca7a28f86d",
+      "base_revision": "33a7080fb89d43b76e86538b5ce452858e03c058",
       "write_allowlist": ["apps/api/internal/modules/auth/repository/", "apps/api/migrations/auth/0001_device_proof_replay.up.sql", "docs/evidence/A01/A01-02/"],
       "inputs": ["AGENTS.md", "docs/CURRENT_STATE.md", "docs/APP_FLOW.md", "api/openapi.yaml", "docs/数据模型与ER设计.md"],
       "deliverables": "实现设备证明 JTI 的受保护摘要、事务内唯一消费和足够长的保留期限；真实会话及响应重放另行接入。",

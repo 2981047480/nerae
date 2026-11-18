@@ -17,7 +17,7 @@ import (
 	"nerae/api/internal/modules/workout/repository"
 )
 
-const workoutWriteAccessSQL = `SELECT source FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+const workoutWriteAccessSQL = `SELECT source, record_format FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
 
 // workoutWritePolicy is fixed server code. The policy itself is not authorization.
 func workoutWritePolicy() idempotency.StatementPolicy {
@@ -335,11 +335,18 @@ func authorizeExistingFree(ctx context.Context, tx idempotency.ReadTransaction, 
 
 func authorizeOwnedFree(ctx context.Context, tx idempotency.ReadTransaction, subjectID, target uint64) error {
 	var source string
-	err := tx.QueryRowContext(ctx, workoutWriteAccessSQL, target, subjectID).Scan(&source)
+	var format uint8
+	err := tx.QueryRowContext(ctx, workoutWriteAccessSQL, target, subjectID).Scan(&source, &format)
 	if errors.Is(err, sql.ErrNoRows) || err == nil && source != "free" {
 		return idempotency.ErrForbidden
 	}
 	if err != nil {
+		return idempotency.ErrUnavailable
+	}
+	if format == 2 {
+		return idempotency.ErrUpgradeRequired
+	}
+	if format != 1 {
 		return idempotency.ErrUnavailable
 	}
 	return nil

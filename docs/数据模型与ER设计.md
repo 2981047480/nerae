@@ -345,13 +345,16 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 
 ### 8.1 `workout_session` 与组记录
 
+本节原有组表描述格式 1 的历史模型；格式 2 的草稿、空组及可恢复快照见下方新节，不能用格式 1 的仅确认组口径覆盖格式 2。
+
 | 字段 | 类型 | 约束/含义 |
 |---|---|---|
 | id / user_id | bigint unsigned / bigint unsigned | PK / REF user；记录归本人 |
 | source | varchar(16) | plan / free |
 | plan_id / plan_version / plan_day_id | bigint unsigned? / int unsigned? / bigint unsigned? | source=plan 时三项均非空；复合定位 plan_version，day 必须属于该版且计划归本人；free 时三项均空 |
 | date / time_zone | date / varchar(64) | 业务日期与有效 IANA 时区；按 API 默认或明确输入冻结，不替代创建时间 |
-| status / version | varchar(16) / int unsigned | in_progress / completed / skipped；修改令牌 >=1 |
+| status / version | varchar(16) / bigint unsigned | in_progress / completed / skipped；修改令牌 >=1，格式 2 的接口版本不超过 JavaScript 安全整数上限 |
+| record_format | tinyint unsigned | 1 为历史组表，2 为新记录快照；旧数据迁移默认 1，旧接口不能覆盖 2 |
 | duration_min / rpe | smallint unsigned? / decimal(3,1)? | 仅接受用户实际提供的总时长，未知为 NULL；RPE 为主观评分，范围服从具名 API，不用作疾病判断 |
 | note_enc / key_id | blob? / varchar(64)? | 主观感受，按 training scope 访问 |
 | client_event_id | varbinary(256) | API 为有效 UTF-8 的 8–64 个字符；以原始字节存储，精确区分大小写及末尾字节。数据库限制 8–256 字节，字符数与 UTF-8 合法性由服务端校验；**UK(user_id,client_event_id)**，不是全局唯一 |
@@ -362,15 +365,27 @@ AI 的运行状态 `insufficient` 与异常分析的结果 `insufficient_data` �
 
 | 实体 | 字段、类型与约束 |
 |---|---|
+| `workout_personal_exercise` | `user_id`、16 字节随机 `exercise_id` 组成主键；本人名称的规范化结果以用户域 HMAC 唯一约束，名称与可选部位/器械标签保存在绑定用户、动作 ID、版本及 key ID 的认证密文中。独立 key epoch 仅可在库为空时初始化。此为存储和认证服务候选；标准库同名处理、HTTP、训练快照引用、改名后的历史关联及客户端尚未接入。 |
+| `workout_personal_exercise_snapshot` | 以用户、动作 ID、版本为复合主键，保存对应版本认证密文及名称摘要；创建或修改动作时与当前行同事务写入。迁移仅复制旧库当前版本，不能推造已丢失的更早名称；迁移前须停止旧版写入。此版本快照尚未被训练记录引用。 |
 | `workout_exercise` | `session_id ID REF workout_session`、`exercise_entry_key varbinary(256)`，二者复合唯一；键由服务端校验为 8–64 个有效 UTF-8 字符，按原始字节区分大小写与结尾字节；`source catalog/custom`；`exercise_id ID? REF exercise_library`；`exercise_version int unsigned?`；`name_snapshot_enc blob`、`key_id varchar(64)`；`created_at/updated_at datetime(3)`。库动作冻结有权访问的版本与名称；自定义动作由本人输入名称，不写入共享动作库。同一会话的同一键固定动作身份和名称，同一库动作的不同编排段使用不同键。仅有已删除组的条目不出现在普通记录读模型；按会话及 L01-03 的已批准策略清理。 |
 | `workout_exercise_order` | `session_id`、`exercise_entry_key` 复合主键并引用 `workout_exercise`；`position` 为会话内正整数且与 `session_id` 组成唯一键。仅为存在实际组的动作条目保存顺序；排序与组增删恢复、会话状态及版本在同一事务写入。交换顺序不得因瞬时唯一键冲突部分提交。读回时核对条目顺序与全部实际组所属条目完全一致，组内 `set_index` 唯一后升序输出；不一致失败关闭，不按数据库自然顺序或录入时间猜测。空白/半填草稿的跨端同步需单独存储，不属于已完成组。迁移前如已有实际组却没有可靠顺序，必须先停止并制定可验证的恢复方案，不静默回填推测顺序。 |
 | `set_record` | `session_id ID REF workout_session`、`record_key varbinary(256)` 组成复合主键并引用 `set_record_key`，动作条目身份通过该键获得；组键由服务端校验为 8–64 个有效 UTF-8 字符，按原始字节精确比较；`set_index bigint unsigned >0`（仅为编排顺序，不作为去重身份）；`kind varchar(24)`（weight/perSide/bodyweight/bodyweightPerSide/duration/durationPerSide/breath）；`weight_kg decimal(8,2)?`；`reps smallint unsigned?`；`seconds smallint unsigned?`；`rpe decimal(3,1)?`；`created_at/updated_at datetime(3)`。仅存已确认实际组；kind 和测量值组合及范围遵循 OpenAPI，空白计划组和未确认组不写入。每侧值表示每侧输入，不推算两侧之和或各侧不同值；秒数为手填值，不产生计时器。API 的 resolvedExerciseName 从对应条目的冻结名称投影，不能信任客户端提供值。 |
 | `set_record_key` | `session_id ID REF workout_session`、`record_key varbinary(256)`（二者复合唯一；服务端校验有效 UTF-8 的 8–64 个字符并按原始字节精确比较）；`exercise_entry_key varbinary(256)`；`state active/deleted`；`created_at/deleted_at datetime(3)?`。保留组键及其动作条目身份供显式撤销删除；删除后从普通读模型和统计中立即移除组值，键注册不得保存已删除的重量、次数、时长、备注或动作内容。组键随所属会话清理，备份与审计保留例外以 L01-03 核定策略为准。 |
 | `body_metric` | `id PK`；`user_id ID REF user`；`date date`；`weight_kg decimal(6,2)? >0`、`body_fat_pct decimal(5,2)?`（0–100）、`waist_cm decimal(6,2)? >0`、`sleep_hours decimal(4,2)?`（0–24）；`version int unsigned`；至少一个测量值非空；`UK(user_id,date)`；健康数据保护/访问按 body scope，范围只是数据有效性检查 |
 
-组批次按稳定键显式增改或删除，未列出的组保持不变。服务端在同一事务内鉴权、校验批内唯一键及恢复键归属、比较会话版本、变更实际组与键注册并更新统计；删除和更新同键、重复组键、恢复键不属于本批更新或不属于本会话均拒绝且不部分提交。新建组不得复用已删除键；明确撤销须携带 `restoreRecordKeys` 和完整组数据，验证已删除状态后恢复同一身份。`skipped` 会话不可包含实际组；历史上曾保存后撤回全部组的接收时间可保留，不代表这次被跳过的训练已完成。请求重放与 412 的顺序和范围以 OpenAPI 为准，不以静态 schema 声称并发与幂等已实现。
+格式 1：组批次按稳定键显式增改或删除，未列出的组保持不变。服务端在同一事务内鉴权、校验批内唯一键及恢复键归属、比较会话版本、变更实际组与键注册并更新统计；删除和更新同键、重复组键、恢复键不属于本批更新或不属于本会话均拒绝且不部分提交。新建组不得复用已删除键；明确撤销须携带 `restoreRecordKeys` 和完整组数据，验证已删除状态后恢复同一身份。`skipped` 会话不可包含实际组；历史上曾保存后撤回全部组的接收时间可保留，不代表这次被跳过的训练已完成。请求重放与 412 的顺序和范围以 OpenAPI 为准，不以静态 schema 声称并发与幂等已实现。
 
-已保存会话允许修订和删除组；删除最后一个实际组使会话回到 `in_progress` 草稿，关联事项的完成投影、逾期标记与统计必须在同事务或一致性机制中更新，原计划与原安排日期不可覆盖。保存要求至少一组实际数据；改训练日时重新计算完成投影且拒绝会话时区下的未来日期。组删除确认、短时撤销及未同步输入由客户端负责，不自动把旧参考值填入事实。
+格式 1 的已保存会话允许修订和删除组；删除最后一个实际组使会话回到 `in_progress` 草稿。关联事项的完成投影、逾期标记与统计必须在同事务或一致性机制中更新，原计划与原安排日期不可覆盖。格式 2 的完成及恢复按下节，不套用格式 1 的空组和短时撤销限制。
+
+### 8.1.1 格式 2：同一训练的可恢复快照
+
+格式 2 的候选迁移在 `workout_session.record_format` 区分新旧记录，新增 `workout_recording_v2`：以 `session_id` 为主键及外键，保存与会话一致的正整数 `version`、`key_id` 和经认证加密的 `snapshot_enc`。快照包括动作段及顺序、各组稳定键、可缺失的重量/次数和计量方式、模式、组与动作的移除快照及位置。组显示编号可顺排，不能以显示编号取代稳定键。
+
+快照密钥从既有训练根密钥派生独立用途的 AES-GCM 密钥；密文认证关联主体、会话、版本和 key ID。会话元数据（包括训练日期）、密文及幂等回执在同一事务内鉴权、比较 `expectedVersion` 并写入；日期按记录冻结时区校验，不得晚于当天。日期变更递增版本，相同日期不产生新版本；任一步失败须整体回滚。旧记录保持格式 1，旧接口对本人的格式 2 记录提示升级，对其他用户不泄露存在性。已删除组的完整快照仅在本人授权读取时用于恢复，不进入活动组及累计。
+
+短期回执以外，`workout_recording_v2_fence` 保存用户与请求键的专用密钥摘要，不保存请求正文或明文请求键。格式 2 的成功写入与此摘要同事务提交；短期回执清理后，同一用户的旧键不能在任何格式 2 写入路由再次执行。失败事务回滚摘要以允许原请求重试。该表与训练记录和密钥须一致备份、恢复；摘要保存期限、账户删除清理、容量监控及密钥轮换的操作方案尚待落地，不得擅自清空以解除冲突。
+
+格式 2 中列表里保留的组在整场完成时都计数，空值不转成 0；累计只计算有完整所需值的贡献，保留未计入组数。同次训练的同一动作分多段时，服务端按动作身份合并活动段的累计；已移除的段和组不计入。当前自由记录候选仅能在单次记录内用自定义动作名称识别，跨训练报告及改名前后关联须先实现稳定的动作库身份，不能依靠名称跨训练合并。最后一个活动组被移除时整场回草稿，恢复后可重新完成。仅本人可读草稿；教练记录授权、身体数据授权及其结果脱敏必须在对应读取接口落实，不能因为加密快照已存在就声称权限完成。自定义动作之外的动作库身份、计划来源、身体数据曲线同步、跨设备冲突界面及最终发布清理策略仍需独立实现和验收。
 
 ### 8.2 `diet_checkin`、修订与可选观察
 

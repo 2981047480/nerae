@@ -43,7 +43,11 @@ type workoutIdempotencyResponse struct {
 
 func newWorkoutIdempotencyFixture(t *testing.T) *workoutIdempotencyFixture {
 	t.Helper()
-	db := integrationDB(t)
+	return newWorkoutIdempotencyFixtureOnDB(t, integrationDB(t))
+}
+
+func newWorkoutIdempotencyFixtureOnDB(t *testing.T, db *sql.DB) *workoutIdempotencyFixture {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	t.Cleanup(cancel)
 

@@ -14,7 +14,7 @@ trap cleanup EXIT
 mkdir -p "$work_dir/cache"
 source_dir="$repo_root/apps/client/src/uni_modules/nerae-secure-vault/utssdk/app-ios"
 xcrun swiftc -module-cache-path "$work_dir/cache" \
-  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeSecureVaultBridge.swift" \
+  "$source_dir/NeraeStrictJSON.swift" "$source_dir/NeraeRecordingV2JournalValidator.swift" "$source_dir/NeraeSecureVaultBridge.swift" \
   "$source_dir/NeraeAuthenticationStateGeneration.swift" \
   "$repo_root/docs/evidence/P02/P02-17/AuthenticationStateGenerationTests.swift" \
   -o "$work_dir/auth-generation-tests"

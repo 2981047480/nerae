@@ -402,3 +402,19 @@ test('accepts a registry of exactly 65,536 UTF-8 bytes and rejects the next byte
 test('unknown native outcomes are not reported as conflicts or successes', () => {
   assert.throws(() => new SecureOperationJournalStorage(null, auth()), error => error instanceof SecureJournalStorageError && error.code === 'unavailable')
 })
+
+test('protected storage accepts v2 blank sets and rejects malformed v2 requests', async () => {
+  const key = registryKey()
+  const bodies = [
+    ['/me/recordings', {source:'free',date:'2026-11-04',clientEventId:'event-0001',mode:'after_workout'}],
+    ['/me/recordings/55/sets', {expectedVersion:1,exerciseEntryKeys:['entry-0001'],sets:[{recordKey:'record-001',exerciseEntryKey:'entry-0001',setIndex:1,confirmed:false,measurement:{method:'total'}}]}],
+    ['/me/recordings/55/finish', {expectedVersion:2}],
+  ]
+  for (const [path,body] of bodies) {
+    const store = makeStore(native()); const value = operation('101','event-0001',1,path,JSON.stringify(body))
+    assert.equal(await store.createIfAbsent(key,value),true); assert.equal(await store.read(key),value)
+  }
+  const store=makeStore(native())
+  const invalid=operation('101','event-0001',1,'/me/recordings/55/sets',JSON.stringify({expectedVersion:1,exerciseEntryKeys:[],extra:1}))
+  await assert.rejects(store.createIfAbsent(key,invalid),error=>error.code==='invalid_operation')
+})

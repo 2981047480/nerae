@@ -34,7 +34,7 @@ func (Snapshot) LogValue() slog.Value         { return slog.StringValue("Workout
 const freeDetailSQL = `SELECT id, version, CAST(date AS CHAR), time_zone, source, status, client_event_id,
         DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s.%f'), DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f'),
         DATE_FORMAT(recorded_at, '%Y-%m-%d %H:%i:%s.%f')
-        FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+        FROM workout_session WHERE id = ? AND user_id = ? AND record_format = 1 FOR UPDATE`
 
 // FreeDetailStatements returns this reader's fixed SQL. Full detail loading
 // also requires the reads returned by RecordStatements.

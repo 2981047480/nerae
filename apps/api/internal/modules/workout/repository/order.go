@@ -30,12 +30,12 @@ func (OrderedSnapshot) LogValue() slog.Value {
 
 const (
 	orderLockSubjectSQL           = `SELECT status FROM user WHERE id = ? FOR UPDATE`
-	orderLockSessionSQL           = `SELECT source, status, version, recorded_at IS NOT NULL FROM workout_session WHERE id = ? AND user_id = ? FOR UPDATE`
+	orderLockSessionSQL           = `SELECT source, status, version, recorded_at IS NOT NULL FROM workout_session WHERE id = ? AND user_id = ? AND record_format = 1 FOR UPDATE`
 	orderLockKeyEpochSQL          = `SELECT key_id, key_tag FROM workout_crypto_key_epoch WHERE slot = 1 FOR SHARE`
 	workoutReadExerciseOrderSQL   = `SELECT exercise_entry_key, position FROM workout_exercise_order WHERE session_id = ? ORDER BY position`
 	workoutDeleteExerciseOrderSQL = `DELETE FROM workout_exercise_order WHERE session_id = ?`
 	workoutInsertExerciseOrderSQL = `INSERT INTO workout_exercise_order (session_id, exercise_entry_key, position) VALUES (?, ?, ?)`
-	workoutUpdateOrderSessionSQL  = `UPDATE workout_session SET version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`
+	workoutUpdateOrderSessionSQL  = `UPDATE workout_session SET version = version + 1, updated_at = ? WHERE id = ? AND user_id = ? AND record_format = 1`
 )
 
 // OrderStatements returns copies of SQL issued directly by this file. The

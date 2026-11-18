@@ -1,5 +1,6 @@
 import type { InitialDraftStorage } from './trainingEditorController'
 import type { AuthLease, DraftVersionState } from './draftStorage'
+import { supportsDraftEnvelope } from './draftEnvelope'
 
 /** Synchronous native operations on one protected draft slot. */
 export interface NativeDraftPort {
@@ -229,7 +230,7 @@ export class SecureDraftStorage implements InitialDraftStorage {
     assertUnicodeStrings(parsed)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || JSON.stringify(parsed) !== value) throw new Error('本机草稿格式无效')
     const envelope = parsed as Record<string, unknown>
-    if (Object.keys(envelope).sort().join(',') !== 'draft,schema,subjectId' || envelope.schema !== 1 || envelope.subjectId !== this.#subjectId ||
+    if (Object.keys(envelope).sort().join(',') !== 'draft,schema,subjectId' || !supportsDraftEnvelope(envelope.schema, envelope.draft) || envelope.subjectId !== this.#subjectId ||
       !envelope.draft || typeof envelope.draft !== 'object' || Array.isArray(envelope.draft) ||
       (envelope.draft as Record<string, unknown>).clientEventId !== event) throw new Error('本机草稿不属于当前记录')
   }

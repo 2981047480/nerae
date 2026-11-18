@@ -126,6 +126,34 @@
       "module": "auth",
       "file": "0012_approval_poll_receipt.up.sql",
       "sha256": "0d8dcc72c60354375287473a4d26c665eded75a5b1440c024cdf458f42b050e5"
+    },
+    {
+      "order": 19,
+      "id": "workout/0004_recording_v2.up.sql",
+      "module": "workout",
+      "file": "0004_recording_v2.up.sql",
+      "sha256": "38e63fee530ae98d8a14f8041f197e1eb70629fb4682269d89dff4ad17e35b08"
+    },
+    {
+      "order": 20,
+      "id": "workout/0005_recording_v2_fence.up.sql",
+      "module": "workout",
+      "file": "0005_recording_v2_fence.up.sql",
+      "sha256": "5250d10141cc61d8d2b6e00353c192bb59bc0fe7e2d2bb4db8f58167f334ad94"
+    },
+    {
+      "order": 21,
+      "id": "workout/0006_personal_exercise.up.sql",
+      "module": "workout",
+      "file": "0006_personal_exercise.up.sql",
+      "sha256": "efed3903b697c0935219bea97ae1d4ff723b52066520da78343f3aa7731311f1"
+    },
+    {
+      "order": 22,
+      "id": "workout/0007_personal_exercise_history.up.sql",
+      "module": "workout",
+      "file": "0007_personal_exercise_history.up.sql",
+      "sha256": "95d21ae451e382f9335e97072e7fc2ca8903ee0045dd4de82b5d559cda0c0475"
     }
   ]
 }

@@ -46,7 +46,7 @@ private class StrictJson(private val source: String, private val draftPendingCom
         while (true) {
             ws(); require(i < source.length && source[i] == '"') { "object key" }
             val key = string()
-            val guardedKey = (scope == PendingScope.ROOT && key == "draft") ||
+            val guardedKey = (scope == PendingScope.ROOT && (key == "schema" || key == "draft")) ||
                 (scope == PendingScope.DRAFT && key == "syncPending")
             require(!fields.containsKey(key) || (draftPendingCompatibility && !guardedKey)) { "duplicate key" }
             val childScope = if (scope == PendingScope.ROOT && key == "draft") PendingScope.DRAFT else PendingScope.OTHER
@@ -115,6 +115,19 @@ internal fun draftSyncPendingBytes(value: String): ByteArray? {
     if (!draft.fields.containsKey("syncPending")) return null
     val pending = draft.fields["syncPending"] as? JS ?: error("draft pending")
     return strictUtf8(pending.value)
+}
+
+/** Only supported draft-envelope schemas; duplicate schema/draft keys fail closed. */
+internal fun draftEnvelopeSchema(value: String): Int {
+    val root = StrictJson(value, draftPendingCompatibility = true).parse() as? JO ?: error("draft envelope")
+    val number = (root.fields["schema"] as? JN)?.raw?.toDoubleOrNull() ?: error("draft schema")
+    return when (number) {
+        1.0 -> 1
+        2.0 -> 2
+        3.0 -> 3
+        4.0 -> 4
+        else -> error("draft schema")
+    }
 }
 
 private fun strictUtf8(value: String): ByteArray = StandardCharsets.UTF_8.newEncoder()
@@ -197,7 +210,7 @@ internal object FirstDispatchNativeParser {
         val request = operation.obj("request") ?: return false
         if (!request.exactKeys("method", "path", "idempotencyKey", "body") || request.str("method") != "POST") return false
         val path = request.str("path") ?: return false
-        if (path != "/me/sessions" && !Regex("/me/sessions/[1-9][0-9]{0,19}/(sets|finish)").matches(path)) return false
+        if (!validWorkoutPath(path)) return false
         val idem = request.str("idempotencyKey") ?: return false
         if (!Regex("[A-Za-z0-9._~-]{8,128}").matches(idem)) return false
         val body = request.str("body") ?: return false
@@ -240,7 +253,7 @@ internal object FirstDispatchNativeParser {
         val request = before.obj("request") ?: error("request"); val nextRequest = after.obj("request") ?: error("request")
         require(request.exactKeys("method", "path", "idempotencyKey", "body") && request.fields == nextRequest.fields)
         require(request.str("method") == "POST")
-        val path = request.str("path") ?: error("path"); require(path == "/me/sessions" || Regex("/me/sessions/[1-9][0-9]{0,19}/(sets|finish)").matches(path))
+        val path = request.str("path") ?: error("path"); require(validWorkoutPath(path))
         val idem = request.str("idempotencyKey") ?: error("idempotency"); require(Regex("[A-Za-z0-9._~-]{8,128}").matches(idem))
         val body = request.str("body") ?: error("body"); val bodyObject = StrictJson(body).parse() as? JO ?: error("body object")
         validateBody(path, event, bodyObject)
@@ -248,7 +261,15 @@ internal object FirstDispatchNativeParser {
         require(expected == after.fields) { "non-target field changed" }
         return Transition(subject, path, idem, body, canonicalBodyMarker(bodyObject))
     }
+    private fun validWorkoutPath(path: String): Boolean =
+        path == "/me/sessions" || path == "/me/recordings" ||
+            Regex("/me/(sessions|recordings)/[1-9][0-9]{0,19}/(sets|finish)").matches(path)
+
     private fun validateBody(path: String, event: String, body: JO) {
+        if (path == "/me/recordings" || path.startsWith("/me/recordings/")) {
+            validateRecordingV2(path, event, body)
+            return
+        }
         fun allowed(required: Set<String>, all: Set<String>) = required.all { it in body.fields.keys } && body.fields.keys.all { it in all }
         fun str(k: String) = body.str(k)
         fun integer(k: String): Long? = exactSafeInteger(body.fields[k])
@@ -344,6 +365,99 @@ internal object FirstDispatchNativeParser {
             return
         }
         error("unsupported path")
+    }
+
+    // Request-shape validation is not authorization. The protected native journal
+    // still binds every claim to the authenticated subject and exact request.
+    private fun validateRecordingV2(path: String, event: String, body: JO) {
+        fun keys(obj: JO, required: Set<String>, allowed: Set<String>) =
+            obj.fields.keys.containsAll(required) && obj.fields.keys.all { it in allowed }
+        fun key(value: J?): String = (value as? JS)?.value?.takeIf {
+            scalarCount(it) in 8..64 && it.isNotBlank() && '\r' !in it && '\n' !in it
+        } ?: error("invalid key")
+        fun array(obj: JO, name: String, limit: Int): List<J> =
+            (obj.fields[name]?.let { (it as? JA)?.items ?: error("array") } ?: emptyList()).also { require(it.size <= limit) }
+        fun unique(obj: JO, name: String, limit: Int): List<String> = array(obj, name, limit).map { key(it) }.also {
+            require(it.toSet().size == it.size)
+        }
+        fun weight(value: J?): BigDecimal {
+            val text = (value as? JS)?.value ?: error("weight")
+            require(Regex("[0-9]{1,6}(\\.[0-9]{1,2})?").matches(text))
+            return BigDecimal(text)
+        }
+        fun repetitions(value: J?) { require(exactSafeInteger(value) in 1L..100L) }
+        fun side(value: J?) {
+            val side = value as? JO ?: error("side")
+            require(keys(side, setOf("state"), setOf("state", "weightKg", "reps")))
+            require(side.str("state") in setOf("unknown", "performed", "not_performed"))
+            side.fields["weightKg"]?.let { weight(it) }
+            side.fields["reps"]?.let { repetitions(it) }
+        }
+        fun measurement(value: J?) {
+            val m = value as? JO ?: error("measurement")
+            require(keys(m, setOf("method"), setOf("method", "weightKg", "reps", "bodyweightKg", "adjustmentKg", "left", "right")))
+            val method = m.str("method") ?: error("method")
+            m.fields["weightKg"]?.let { weight(it) }
+            val bodyWeight = m.fields["bodyweightKg"]?.let { weight(it).also { w -> require(w > BigDecimal.ZERO) } }
+            val adjustment = m.fields["adjustmentKg"]?.let { weight(it) }
+            m.fields["reps"]?.let { repetitions(it) }
+            m.fields["left"]?.let { side(it) }; m.fields["right"]?.let { side(it) }
+            val forbidden = when (method) {
+                "total", "pair_each", "direct" -> setOf("bodyweightKg", "adjustmentKg", "left", "right")
+                "sides" -> setOf("weightKg", "reps", "bodyweightKg", "adjustmentKg")
+                "bodyweight" -> setOf("weightKg", "adjustmentKg", "left", "right")
+                "bodyweight_extra", "bodyweight_assisted" -> setOf("weightKg", "left", "right")
+                else -> error("method")
+            }
+            require(m.fields.keys.none { it in forbidden })
+            if (method == "bodyweight_assisted" && bodyWeight != null && adjustment != null) require(adjustment <= bodyWeight)
+        }
+        if (path == "/me/recordings") {
+            require(keys(body, setOf("source", "date", "clientEventId", "mode"), setOf("source", "date", "timeZone", "clientEventId", "mode")))
+            require(body.str("source") == "free" && body.str("clientEventId") == event && body.str("date")?.let { validDate(it) } == true)
+            require(body.str("mode") in setOf("after_workout", "per_set"))
+            body.fields["timeZone"]?.let { require(it is JS && scalarCount(it.value) in 1..64) }
+            return
+        }
+        require(exactSafeInteger(body.fields["expectedVersion"])?.let { it >= 1 } == true)
+        if (path.endsWith("/finish")) { require(body.exactKeys("expectedVersion")); return }
+        require(path.endsWith("/sets"))
+        require(keys(body, setOf("expectedVersion", "exerciseEntryKeys"), setOf("expectedVersion", "exerciseEntryKeys", "date", "mode", "addEntries", "sets", "removeRecordKeys", "removeRecords", "restoreRecordKeys", "removeEntryKeys", "restoreEntryKeys")))
+        body.fields["date"]?.let { require(it is JS && validDate(it.value) && it.value >= "1000-01-01") }
+        body.fields["mode"]?.let { require(it is JS && it.value in setOf("after_workout", "per_set")) }
+        require(body.fields["exerciseEntryKeys"] is JA)
+        val order = unique(body, "exerciseEntryKeys", 2000).toSet()
+        val added = HashSet<String>()
+        array(body, "addEntries", 2000).forEach { value ->
+            val entry = value as? JO ?: error("entry")
+            require(entry.exactKeys("exerciseEntryKey", "exerciseName"))
+            val entryKey = key(entry.fields["exerciseEntryKey"])
+            val name = entry.str("exerciseName") ?: error("name")
+            require(entryKey in order && added.add(entryKey) && scalarCount(name) in 1..60 && name.isNotBlank())
+        }
+        val sets = array(body, "sets", 200)
+        val records = HashSet<String>(); val indexes = HashSet<Pair<String, Long>>()
+        sets.forEach { value ->
+            val set = value as? JO ?: error("set")
+            require(keys(set, setOf("recordKey", "exerciseEntryKey", "setIndex", "confirmed", "measurement"), setOf("recordKey", "exerciseEntryKey", "setIndex", "confirmed", "rpe", "measurement")))
+            val record = key(set.fields["recordKey"]); val entry = key(set.fields["exerciseEntryKey"])
+            val index = exactSafeInteger(set.fields["setIndex"])?.takeIf { it >= 1 } ?: error("index")
+            require(set.fields["confirmed"] is JB && entry in order && records.add(record) && indexes.add(entry to index))
+            set.fields["rpe"]?.let { require(it is JS && Regex("(?:[1-9](?:\\.[0-9])?|10(?:\\.0)?)").matches(it.value)) }
+            measurement(set.fields["measurement"])
+        }
+        val removed = unique(body, "removeRecordKeys", 200).toMutableSet()
+        val removedObjects = array(body, "removeRecords", 200)
+        removedObjects.forEach { value ->
+            val item = value as? JO ?: error("removal")
+            require(item.exactKeys("recordKey", "removedPosition"))
+            require(removed.add(key(item.fields["recordKey"])) && exactSafeInteger(item.fields["removedPosition"])?.let { it >= 1 } == true)
+        }
+        val restored = unique(body, "restoreRecordKeys", 200).toSet()
+        val removedEntries = unique(body, "removeEntryKeys", 200).toSet()
+        val restoredEntries = unique(body, "restoreEntryKeys", 200).toSet()
+        require(removedEntries.intersect(restoredEntries).isEmpty() && restored.intersect(removed).all { it in records })
+        require(sets.size + removed.size + restored.size + removedEntries.size + restoredEntries.size <= 200)
     }
 
     /** Match the server's bounded exact-decimal parsing before a send is claimed. */

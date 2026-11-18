@@ -11,7 +11,7 @@ const pageURL = new URL('./index.vue', import.meta.url)
 const gateURL = new URL('../../features/auth/appEntrySession.ts', import.meta.url)
 const vueURL = import.meta.resolve('vue')
 const current = { runtime: null, authMounts: 0, panelMounts: 0, authEmit: null, panelEmit: null,
-  backHandler: null, trainingEmit: null, trainingCanLeave: true, recordingApi: null }
+  backHandler: null, showHandler: null, trainingEmit: null, trainingCanLeave: true, recordingApi: null, syncFn: null }
 globalThis.__neraeEntryTest = current
 
 const AuthStub = defineComponent({
@@ -37,7 +37,7 @@ const PanelStub = defineComponent({
   },
 })
 const TrainingStub = defineComponent({
-  props: ['session', 'timeZone', 'recordingApi'], emits: ['exit', 'session-changed'],
+  props: ['session', 'timeZone', 'recordingApi'], emits: ['exit', 'session-changed', 'draft-closed'],
   setup(props, { emit, expose }) {
     current.trainingEmit = emit
     current.recordingApi = props.recordingApi
@@ -52,12 +52,13 @@ current.TrainingStub = TrainingStub
 registerHooks({ resolve(specifier, context, nextResolve) {
   if (context.parentURL?.startsWith('data:text/javascript')) {
     if (specifier === 'vue') return { url: vueURL, shortCircuit: true }
-    if (specifier === '@dcloudio/uni-app') return { url: 'data:text/javascript,export const onBackPress = callback => { globalThis.__neraeEntryTest.backHandler = callback }', shortCircuit: true }
+    if (specifier === '@dcloudio/uni-app') return { url: 'data:text/javascript,export const onBackPress = callback => { globalThis.__neraeEntryTest.backHandler = callback };export const onShow = callback => { globalThis.__neraeEntryTest.showHandler = callback }', shortCircuit: true }
     if (specifier.endsWith('/AuthEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.AuthStub', shortCircuit: true }
     if (specifier.endsWith('/DeviceApprovalPanel.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.PanelStub', shortCircuit: true }
     if (specifier.endsWith('/TrainingEntry.vue')) return { url: 'data:text/javascript,export default globalThis.__neraeEntryTest.TrainingStub', shortCircuit: true }
     if (specifier.endsWith('/appEntrySession')) return { url: gateURL.href, shortCircuit: true }
     if (specifier.endsWith('/nativeAuthRuntime')) return { url: 'data:text/javascript,export const createAppAuthRuntime = () => { if (!globalThis.__neraeEntryTest.runtime) throw Error(); return globalThis.__neraeEntryTest.runtime }', shortCircuit: true }
+    if (specifier.endsWith('/nativeTrainingEditor')) return { url: 'data:text/javascript,export const syncAppTrainingDrafts=(...args)=>globalThis.__neraeEntryTest.syncFn?.(...args) ?? Promise.resolve({state:"synced",conflicts:0})', shortCircuit: true }
   }
   return nextResolve(specifier, context)
 } })
@@ -194,4 +195,27 @@ test('the signed-in recording entry blocks back navigation until its draft can b
   assert.equal(find(root, node => node.type === 'training-entry'), undefined)
   assert.ok(find(root, node => node.text === '登录状态已变化'))
   app.unmount()
+})
+
+test('signed-in app retries protected drafts on reconnect and foreground, and removes its listener', async () => {
+  let stored=JSON.stringify({schema:1,subjectId:'101',accessToken:'synthetic-token'})
+  const user={id:'101',nickname:'',roles:['student'],ageVerified:true}
+  const session=new AuthSessionCoordinator({
+    readAuthenticationState:()=>({ok:true,errorCode:'',found:!!stored,value:stored}),
+    writeAuthenticationState:value=>{stored=value;return{ok:true,errorCode:'',found:false,value:''}},
+    clearAuthenticationState:()=>{stored='';return{ok:true,errorCode:'',found:false,value:''}},
+  },async()=>({status:'valid',user}))
+  const previous=globalThis.uni;let listener=null,removed=false,calls=0
+  globalThis.uni={onNetworkStatusChange:fn=>{listener=fn},offNetworkStatusChange:fn=>{removed=fn===listener}}
+  current.runtime={session,approvals:{},createRecordingApi:()=>({})}
+  current.syncFn=async()=>({state:++calls===1?'pending':'synced',conflicts:0})
+  const {root,app}=mount()
+  try {
+    await flush();assert.equal(calls,1)
+    assert.ok(find(root,node=>node.text==='部分训练待同步，联网或重新打开后会继续尝试。'))
+    listener({isConnected:true});await flush();assert.equal(calls,2)
+    assert.equal(find(root,node=>node.text==='部分训练待同步，联网或重新打开后会继续尝试。'),undefined)
+    current.showHandler();await flush();assert.equal(calls,3)
+  } finally {app.unmount();globalThis.uni=previous;current.syncFn=null}
+  assert.equal(removed,true)
 })

@@ -40,8 +40,12 @@ enum NeraeRecoveryReplayValidator {
               validIdempotencyKey(intent.idempotencyKey), body.utf8.count <= 4 * 1024 * 1024 else { return nil }
         guard let requestBody = strictObject(intent.body),
               let sessionBody = strictObject(body, maxBytes: 4 * 1024 * 1024),
-              let response = parseResponseHeaders(headers),
-              let detail = parseDetail(sessionBody) else { return nil }
+              let response = parseResponseHeaders(headers) else { return nil }
+        if intent.path == "/me/recordings" || intent.path.hasPrefix("/me/recordings/") {
+            return validateRecordingV2(intent: intent, expectedSubjectId: expectedSubjectId, status: status,
+                                       response: response, request: requestBody, receipt: sessionBody, body: body)
+        }
+        guard let detail = parseDetail(sessionBody) else { return nil }
 
         let target: String?
         let expectedStatus: Int
@@ -87,6 +91,30 @@ enum NeraeRecoveryReplayValidator {
     }
 
     private struct ParsedHeaders { let replayed: Bool; let expiry: String }
+
+    // A receipt confirms only the authenticated request's historical result.
+    // It cannot clear a pending journal or replace the latest server snapshot.
+    private static func validateRecordingV2(intent: NeraeRecoveryIntent, expectedSubjectId: String, status: Int,
+                                             response: ParsedHeaders, request: [String: Any],
+                                             receipt: [String: Any], body: String) -> NeraeRecoveryReplayResult? {
+        guard validKey(intent.clientEventId), response.replayed,
+              NeraeRecordingV2JournalValidator.validate(path: intent.path, body: request, event: intent.clientEventId),
+              Set(receipt.keys) == Set(["id", "version"]), let id = receipt["id"] as? String, validId(id),
+              let version = exactInt(receipt["version"]), version >= 1 else { return nil }
+        if intent.path == "/me/recordings" {
+            guard status == 201 else { return nil }
+        } else {
+            guard let regex = try? NSRegularExpression(pattern: #"\A/me/recordings/([1-9][0-9]{0,19})/(?:sets|finish)\z"#),
+                  let match = regex.firstMatch(in: intent.path, range: NSRange(intent.path.startIndex..., in: intent.path)),
+                  let idRange = Range(match.range(at: 1), in: intent.path), sameText(id, String(intent.path[idRange])),
+                  status == 200, let expected = exactInt(request["expectedVersion"]), expected >= 1,
+                  version == expected || (expected < 9_007_199_254_740_991 && version == expected + 1) else { return nil }
+        }
+        return NeraeRecoveryReplayResult(expectedSubjectId: expectedSubjectId, journalRevision: intent.revision,
+                                         operationKey: intent.operationKey, clientEventId: intent.clientEventId,
+                                         sessionId: id, version: version, expiresAt: response.expiry, rawBody: body)
+    }
+
     private static func parseResponseHeaders(_ fields: [NeraeRecoveryHeaderField]) -> ParsedHeaders? {
         var selected: [String: String] = [:]
         let names: Set<String> = ["idempotency-replayed", "idempotency-key-expires-at", "content-type", "cache-control", "x-request-id"]
