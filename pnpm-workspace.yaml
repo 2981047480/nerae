@@ -5,3 +5,11 @@ allowBuilds:
   esbuild: true
   core-js: false
   core-js-pure: false
+# @dcloudio/uts-linux-x64-gnu declares libc "gnu". pnpm compares that with
+# detect-libc's "glibc" and otherwise skips the optional binding. Loading
+# @dcloudio/uni-uts-v1 then fails and `uni build -p app` exits 0 without
+# app-service.js. "current" keeps musl/glibc selection; "gnu" accepts DCloud's tag.
+supportedArchitectures:
+  libc:
+    - current
+    - gnu
