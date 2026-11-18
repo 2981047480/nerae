@@ -122,12 +122,14 @@ onBeforeUnmount(() => gate?.dispose())
 </template>
 
 <style scoped>
-.entry-page { box-sizing: border-box; min-height: 100vh; padding: calc(48rpx + env(safe-area-inset-top)) 32rpx 48rpx; background: #f3f4f1; color: #252c29; }
+.entry-page { box-sizing: border-box; min-height: 100vh; padding: calc(48rpx + env(safe-area-inset-top)) 32rpx 48rpx; background: var(--nerae-page); color: var(--nerae-text); }
 .entry-page--training { padding: env(safe-area-inset-top) 0 0; }
 .entry-page__content, .entry-page__notice { display: flex; flex-direction: column; gap: 18rpx; }
 .entry-page__content { gap: 24rpx; }
-.entry-page__notice { padding: 28rpx; border-radius: 24rpx; background: #fff; color: #606a63; font-size: 25rpx; line-height: 1.55; }
-.entry-page__title { color: #252c29; font-size: 32rpx; font-weight: 700; }
-.entry-page__button { margin: 0; width: 100%; min-height: 88rpx; border-radius: 18rpx; background: #f08b65; color: #252c29; font-size: 27rpx; }
+.entry-page__notice { padding: 28rpx; border: 1rpx solid var(--nerae-border-decorative); border-radius: 24rpx; background: var(--nerae-surface); color: var(--nerae-text-secondary); font-size: 25rpx; line-height: 1.55; }
+.entry-page__title { color: var(--nerae-text); font-size: 32rpx; font-weight: 700; }
+.entry-page__button { margin: 0; width: 100%; min-height: 88rpx; border-radius: 18rpx; background: var(--nerae-primary); color: var(--nerae-primary-text); font-size: 27rpx; }
+.entry-page__button:active { background: var(--nerae-primary-pressed); }
+.entry-page__button:focus-visible { outline: 2px solid var(--nerae-border-control); outline-offset: 2px; }
 .entry-page__button::after { border: 0; }
 </style>

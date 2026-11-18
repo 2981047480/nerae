@@ -47,13 +47,16 @@ onBeforeUnmount(() => controller.dispose())
 
 <style scoped>
 .device-approval, .device-approval__list, .device-approval__item { display: flex; flex-direction: column; gap: 18rpx; }
-.device-approval { padding: 28rpx; border-radius: 24rpx; background: #fff; color: #252c29; }
+.device-approval { padding: 28rpx; border: 1rpx solid var(--nerae-border-decorative); border-radius: 24rpx; background: var(--nerae-surface); color: var(--nerae-text); }
 .device-approval__title { font-size: 32rpx; font-weight: 700; }
-.device-approval__message, .device-approval__item { color: #606a63; font-size: 25rpx; line-height: 1.55; }
-.device-approval__item { padding: 24rpx; border-radius: 20rpx; background: #f3f4f1; }
-.device-approval__code { color: #252c29; font-size: 42rpx; font-weight: 700; letter-spacing: 8rpx; }
+.device-approval__message, .device-approval__item { color: var(--nerae-text-secondary); font-size: 25rpx; line-height: 1.55; }
+.device-approval__item { padding: 24rpx; border-radius: 20rpx; background: var(--nerae-surface-subtle); }
+.device-approval__code { color: var(--nerae-text); font-size: 42rpx; font-weight: 700; letter-spacing: 8rpx; }
 .device-approval__primary, .device-approval__secondary { margin: 0; width: 100%; min-height: 88rpx; line-height: 1.4; padding: 24rpx; border-radius: 18rpx; font-size: 27rpx; }
-.device-approval__primary { border: 0; background: #f08b65; color: #252c29; }
-.device-approval__secondary { border: 1rpx solid #cfd7d0; background: #fff; color: #35443b; }
+.device-approval__primary { border: 0; background: var(--nerae-primary); color: var(--nerae-primary-text); }
+.device-approval__primary:active { background: var(--nerae-primary-pressed); }
+.device-approval__secondary { border: 1rpx solid var(--nerae-border-control); background: var(--nerae-surface); color: var(--nerae-text); }
+.device-approval__secondary:active { background: var(--nerae-surface-pressed); }
+.device-approval__primary:focus-visible, .device-approval__secondary:focus-visible { outline: 2px solid var(--nerae-border-control); outline-offset: 2px; }
 button::after { border: 0; }
 </style>
