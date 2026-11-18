@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SwipeableSetCard from './SwipeableSetCard.vue'
 import type { RecordingDraft } from './recording'
+import { describeDraftSet } from './recordingV2Measure'
 import type { RecordingV2Detail } from './recordingV2Projection'
 
 const props = defineProps<{ draft: RecordingDraft; statusMessage: string; busy: boolean; cloud: RecordingV2Detail | null }>()
@@ -130,7 +131,7 @@ onBeforeUnmount(() => {
           @reveal="revealed = set.recordKey" @dismiss="revealed = ''" @edit="emit('edit-set', exercise.exerciseEntryKey, set.recordKey)"
           @copy="emit('copy-set', exercise.exerciseEntryKey, set.recordKey)" @remove="remove(exercise.exerciseEntryKey, set.recordKey)">
           <text class="completed__set-number">第 {{ index + 1 }} 组</text>
-          <text class="completed__set-value">{{ set.weightKg || '重量未填' }}<text v-if="set.weightKg"> kg</text> × {{ set.reps || '次数未填' }}<text v-if="set.reps"> 次</text></text>
+          <text class="completed__set-value">{{ describeDraftSet(exercise, set) }}</text>
         </SwipeableSetCard>
         <text v-if="volume(exercise.exerciseEntryKey)" class="completed__volume">{{ volume(exercise.exerciseEntryKey) }}</text>
         <text v-if="actionVolume(exercise.exerciseEntryKey)" class="completed__volume">{{ actionVolume(exercise.exerciseEntryKey) }}</text>
@@ -138,7 +139,7 @@ onBeforeUnmount(() => {
           <button class="completed__removed-toggle" @tap="toggleRemoved(exercise.exerciseEntryKey)">已移除 {{ exercise.removedSets.length }} 组</button>
           <view v-if="expanded.includes(exercise.exerciseEntryKey)">
             <view v-for="item in exercise.removedSets" :key="item.set.recordKey" class="completed__removed-row">
-              <text>移除时为第 {{ item.removedPosition }} 组 · {{ item.set.weightKg || '重量未填' }}{{ item.set.weightKg ? ' kg' : '' }} × {{ item.set.reps || '次数未填' }}{{ item.set.reps ? ' 次' : '' }}</text>
+              <text>移除时为第 {{ item.removedPosition }} 组 · {{ describeDraftSet(exercise, item.set) }}</text>
               <button :disabled="busy" @tap="restore(exercise.exerciseEntryKey, item.set.recordKey)">恢复</button>
             </view>
           </view>

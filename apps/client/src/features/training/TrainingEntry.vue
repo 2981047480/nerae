@@ -5,7 +5,8 @@ import RecordingCompleted from './RecordingCompleted.vue'
 import RecordingConflictReview from './RecordingConflictReview.vue'
 import TrainingHistory from './TrainingHistory.vue'
 import { todayInTimezone } from './draftStorage'
-import type { BatchSetField, RecordingDraft, RecordingMode, InputField } from './recording'
+import type { BatchSetField, RecordingDraft, RecordingMode, InputField, V2Measure } from './recording'
+import type { SideState, V2SideName } from './recordingV2Measure'
 import { discoverAppTrainingDrafts, createAppTrainingEditor, attachAppTrainingEditor, nextAppTrainingRequestKey, restoreAppCloudRecordingV2 } from '../../platform/app/nativeTrainingEditor'
 import type { AuthSessionCoordinator } from '../auth/sessionCoordinator'
 import type { EditorResult, TrainingEditorController } from './trainingEditorController'
@@ -372,6 +373,10 @@ function copySet(exercise: string, record: string): void { void change(target =>
 function editSet(exercise: string, record: string, field: InputField, value: string): void {
   void change(target => target.editGroup(exercise, record, field, value))
 }
+function setMeasure(exercise: string, measure: V2Measure): void { void change(target => target.setMeasure(exercise, measure), true) }
+function setSide(exercise: string, record: string, side: V2SideName, state: SideState): void {
+  void change(target => target.setGroupSide(exercise, record, side, state))
+}
 function applyBatch(exercise: string, source: string, records: string[], fields: BatchSetField[], newCount: number, snapshot: string): void {
   void change(target => target.applyBatchGroups(exercise, source, records, fields, newCount, snapshot), true)
 }
@@ -549,7 +554,7 @@ onBeforeUnmount(() => {
       <RecordingEditor v-else ref="editorView" :draft="draft" :latest-allowed-date="latestAllowedDate" :exercise-labels="exerciseLabels || {}" :issues="[]"
         :status-message="statusMessage" :saving="pending > 0" :can-save="canComplete"
         @change-mode="changeMode" @prepare-date="dateRefresh++" @change-date="changeDate" @add-exercise="enteringExercise = true" @add-set="addSet" @copy-set="copySet"
-        @edit-set="editSet" @apply-batch="applyBatch" @confirm-set="confirmSet" @remove-set="removeSet" @restore-set="restoreSet" @save="finish" />
+        @edit-set="editSet" @set-measure="setMeasure" @set-side="setSide" @apply-batch="applyBatch" @confirm-set="confirmSet" @remove-set="removeSet" @restore-set="restoreSet" @save="finish" />
     </template>
   </view>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { batchSetSnapshot, validBatchSetFields, type BatchSetField, type DraftExercise, type DraftSet, type GroupIssue, type InputField, type RecordingDraft, type RecordingMode, type SetKind } from './recording'
+import { batchSetSnapshot, validBatchSetFields, type BatchSetField, type DraftExercise, type DraftSet, type GroupIssue, type InputField, type RecordingDraft, type RecordingMode, type SetKind, type V2Measure } from './recording'
+import { describeDraftSet, exerciseMeasure, MEASURE_LABELS, measureUsesSharedWeight, V2_MEASURES, type SideState, type V2SideName } from './recordingV2Measure'
 import RulerInput from './RulerInput.vue'
 import SwipeableSetCard from './SwipeableSetCard.vue'
 
@@ -23,6 +24,8 @@ const emit = defineEmits<{
   (event: 'add-set', exerciseEntryKey: string): void
   (event: 'copy-set', exerciseEntryKey: string, recordKey: string): void
   (event: 'edit-set', exerciseEntryKey: string, recordKey: string, field: InputField, value: string): void
+  (event: 'set-measure', exerciseEntryKey: string, measure: V2Measure): void
+  (event: 'set-side', exerciseEntryKey: string, recordKey: string, side: V2SideName, state: SideState): void
   (event: 'apply-batch', exerciseEntryKey: string, sourceKey: string, recordKeys: string[], fields: BatchSetField[], newCount: number, snapshot: string): void
   (event: 'confirm-set', exerciseEntryKey: string, recordKey: string): void
   (event: 'remove-set', exerciseEntryKey: string, recordKey: string): void
@@ -76,9 +79,26 @@ function toggleRemoved(key: string): void {
   expandedRemoved.value = expandedRemoved.value.includes(key)
     ? expandedRemoved.value.filter(item => item !== key) : [...expandedRemoved.value, key]
 }
-function removedSummary(set: DraftSet, kind: SetKind): string {
-  const reps = hasSeconds(kind) ? `${set.seconds || '未填'} 秒` : `${set.reps || '未填'} 次`
-  return hasWeight(kind) ? `${set.weightKg || '未填'} kg × ${reps}` : reps
+function removedSummary(set: DraftSet, exercise: DraftExercise): string {
+  if (props.draft.recordFormat === 2 && exercise.kind === 'weight') return describeDraftSet(exercise, set)
+  const reps = hasSeconds(exercise.kind) ? `${set.seconds || '未填'} 秒` : `${set.reps || '未填'} 次`
+  return hasWeight(exercise.kind) ? `${set.weightKg || '未填'} kg × ${reps}` : reps
+}
+function editingMeasure(): V2Measure {
+  return editingExercise.value ? exerciseMeasure(editingExercise.value) : 'total'
+}
+function measureIndex(exercise: DraftExercise): number {
+  return Math.max(0, V2_MEASURES.indexOf(exerciseMeasure(exercise)))
+}
+function onMeasure(exerciseEntryKey: string, event: unknown): void {
+  const raw = valueOf(event)
+  const index = Number(raw)
+  const measure = V2_MEASURES[index]
+  if (!measure || props.saving) return
+  emit('set-measure', exerciseEntryKey, measure)
+}
+function sideMarked(set: DraftSet, side: V2SideName): boolean {
+  return (side === 'left' ? set.leftState : set.rightState) === 'not_performed'
 }
 const awaitingConfirmation = ref(false)
 const editingExercise = computed(() => props.draft.exercises.find(item => item.exerciseEntryKey === editing.value?.exerciseEntryKey))
@@ -251,6 +271,9 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
             <view class="exercise-card__name-block">
               <text class="exercise-card__name">{{ nameOf(exercise) }}</text>
               <text v-if="exercise.kind !== 'weight'" class="exercise-card__kind">{{ kindLabels[exercise.kind] }}</text>
+              <picker v-else-if="draft.recordFormat === 2" mode="selector" :range="V2_MEASURES.map(item => MEASURE_LABELS[item])" :value="measureIndex(exercise)" :disabled="saving" @change="onMeasure(exercise.exerciseEntryKey, $event)">
+                <text class="exercise-card__kind" role="button">重量含义：{{ MEASURE_LABELS[exerciseMeasure(exercise)] }}</text>
+              </picker>
             </view>
             <text class="exercise-card__count">{{ exercise.sets.length }} 组</text>
           </view>
@@ -263,12 +286,15 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
                 @remove="requestRemove(exercise.exerciseEntryKey, set.recordKey)">
                 <text class="set-card__number">第 {{ index + 1 }} 组</text>
                 <view class="set-card__measurements">
-                  <template v-if="hasWeight(exercise.kind)">
-                    <text class="set-card__value">{{ set.weightKg || '—' }}</text><text class="set-card__unit">kg</text>
-                    <text class="set-card__times">×</text>
+                  <text v-if="draft.recordFormat === 2 &amp;&amp; exercise.kind === 'weight' &amp;&amp; exerciseMeasure(exercise) !== 'total'" class="set-card__value">{{ describeDraftSet(exercise, set) }}</text>
+                  <template v-else>
+                    <template v-if="hasWeight(exercise.kind)">
+                      <text class="set-card__value">{{ set.weightKg || '—' }}</text><text class="set-card__unit">kg</text>
+                      <text class="set-card__times">×</text>
+                    </template>
+                    <text class="set-card__value">{{ (hasSeconds(exercise.kind) ? set.seconds : set.reps) || '—' }}</text>
+                    <text class="set-card__unit">{{ hasSeconds(exercise.kind) ? '秒' : '次' }}</text>
                   </template>
-                  <text class="set-card__value">{{ (hasSeconds(exercise.kind) ? set.seconds : set.reps) || '—' }}</text>
-                  <text class="set-card__unit">{{ hasSeconds(exercise.kind) ? '秒' : '次' }}</text>
                 </view>
                 <text v-if="draft.mode === 'per_set' &amp;&amp; set.confirmed" class="set-card__state">已记下</text>
               </SwipeableSetCard>
@@ -289,7 +315,7 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
               <view v-for="removed in exercise.removedSets" :key="removed.set.recordKey" class="removed-groups__item">
                 <view class="removed-groups__details">
                   <text>移除时为第 {{ removed.removedPosition }} 组</text>
-                  <text class="removed-groups__values">{{ removedSummary(removed.set, exercise.kind) }}</text>
+                  <text class="removed-groups__values">{{ removedSummary(removed.set, exercise) }}</text>
                 </view>
                 <button class="removed-groups__restore" :disabled="saving"
                   @tap="restoreSet(exercise.exerciseEntryKey, removed.set.recordKey)">恢复</button>
@@ -328,15 +354,45 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
         </view>
         <template v-if="!batching">
           <view class="set-sheet__fields">
-            <RulerInput v-if="hasWeight(editingExercise.kind)" :label="isPerSide(editingExercise.kind) ? '每侧重量' : '重量'"
-              unit="kg" kind="digit" :value="editingSet.weightKg"
-              @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'weightKg', $event)" />
-            <RulerInput v-if="hasSeconds(editingExercise.kind)" label="实际时间" unit="秒" kind="number" :value="editingSet.seconds"
-              @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'seconds', $event)" />
-            <RulerInput v-else :label="isPerSide(editingExercise.kind) ? '每侧次数' : '次数'" unit="次" kind="number" :value="editingSet.reps"
-              @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'reps', $event)" />
+            <template v-if="draft.recordFormat === 2 &amp;&amp; editingExercise.kind === 'weight' &amp;&amp; editingMeasure() === 'sides'">
+              <RulerInput label="左侧重量" unit="kg" kind="digit" :value="editingSet.leftWeightKg || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'leftWeightKg', $event)" />
+              <RulerInput label="左侧次数" unit="次" kind="number" :value="editingSet.leftReps || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'leftReps', $event)" />
+              <button class="side-toggle" :disabled="saving" :aria-pressed="sideMarked(editingSet, 'left')"
+                @tap="emit('set-side', editing.exerciseEntryKey, editing.recordKey, 'left', sideMarked(editingSet, 'left') ? 'unknown' : 'not_performed')">
+                {{ sideMarked(editingSet, 'left') ? '左侧改为填写' : '左侧未做' }}
+              </button>
+              <RulerInput label="右侧重量" unit="kg" kind="digit" :value="editingSet.rightWeightKg || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'rightWeightKg', $event)" />
+              <RulerInput label="右侧次数" unit="次" kind="number" :value="editingSet.rightReps || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'rightReps', $event)" />
+              <button class="side-toggle" :disabled="saving" :aria-pressed="sideMarked(editingSet, 'right')"
+                @tap="emit('set-side', editing.exerciseEntryKey, editing.recordKey, 'right', sideMarked(editingSet, 'right') ? 'unknown' : 'not_performed')">
+                {{ sideMarked(editingSet, 'right') ? '右侧改为填写' : '右侧未做' }}
+              </button>
+              <text class="set-sheet__status">先填左侧时，右侧在你单独改过之前会使用相同数值。标成未做的一侧不计入。</text>
+            </template>
+            <template v-else-if="draft.recordFormat === 2 &amp;&amp; editingExercise.kind === 'weight' &amp;&amp; (editingMeasure() === 'bodyweight' || editingMeasure() === 'bodyweight_extra' || editingMeasure() === 'bodyweight_assisted')">
+              <RulerInput label="体重" unit="kg" kind="digit" :value="editingSet.bodyweightKg || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'bodyweightKg', $event)" />
+              <RulerInput v-if="editingMeasure() !== 'bodyweight'" :label="editingMeasure() === 'bodyweight_extra' ? '额外负重' : '助力'" unit="kg" kind="digit" :value="editingSet.adjustmentKg || ''"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'adjustmentKg', $event)" />
+              <RulerInput label="次数" unit="次" kind="number" :value="editingSet.reps"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'reps', $event)" />
+              <text class="set-sheet__status">修改体重会更新本次训练里所有自重组的体重，不改其他训练，也不自动改手填的记录重量。</text>
+            </template>
+            <template v-else>
+              <RulerInput v-if="hasWeight(editingExercise.kind)" :label="draft.recordFormat === 2 &amp;&amp; editingMeasure() === 'pair_each' ? '每只重量' : draft.recordFormat === 2 &amp;&amp; editingMeasure() === 'direct' ? '记录重量' : isPerSide(editingExercise.kind) ? '每侧重量' : '重量'"
+                unit="kg" kind="digit" :value="editingSet.weightKg"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'weightKg', $event)" />
+              <RulerInput v-if="hasSeconds(editingExercise.kind)" label="实际时间" unit="秒" kind="number" :value="editingSet.seconds"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'seconds', $event)" />
+              <RulerInput v-else :label="isPerSide(editingExercise.kind) ? '每侧次数' : '次数'" unit="次" kind="number" :value="editingSet.reps"
+                @change="emit('edit-set', editing.exerciseEntryKey, editing.recordKey, 'reps', $event)" />
+            </template>
           </view>
-          <button v-if="draft.recordFormat === 2 &amp;&amp; editingExercise.kind === 'weight'" class="batch-entry"
+          <button v-if="draft.recordFormat === 2 &amp;&amp; editingExercise.kind === 'weight' &amp;&amp; measureUsesSharedWeight(editingMeasure())" class="batch-entry"
             :disabled="saving" @tap="startBatch">应用到多组 <text>选择字段与组 ›</text></button>
           <text v-if="statusMessage" class="set-sheet__status" role="status">{{ statusMessage }}</text>
           <button class="set-sheet__done" :disabled="saving" @tap="finishSetInput">
@@ -413,6 +469,7 @@ function isPerSide(kind: SetKind): boolean { return kind === 'perSide' || kind =
 .exercise-card__name-block { min-width: 0; flex: 1; }
 .exercise-card__name { display: block; overflow-wrap: anywhere; font-family: "Songti SC", "Noto Serif SC", serif; font-size: 34rpx; font-weight: 700; line-height: 1.4; }
 .exercise-card__kind { display: block; margin-top: 6rpx; color: var(--nerae-text-secondary); font-size: 23rpx; }
+.side-toggle { align-self: flex-start; min-height: 72rpx; margin: 0; padding: 0 8rpx; background: transparent; color: var(--nerae-text); font-size: 24rpx; line-height: 72rpx; }
 .exercise-card__count { flex-shrink: 0; color: var(--nerae-text-secondary); font-size: 23rpx; }
 .set-row { margin-top: 12rpx; }
 .set-row__values { display: flex; align-items: stretch; }

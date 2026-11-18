@@ -1,5 +1,6 @@
 import type { components } from '../../../../../packages/contracts/src/generated-types'
 import type { DraftExercise, DraftSet, RecordingDraft } from './recording'
+import { exerciseMeasure, measurementFromSet, measurementsEqual, type V2Measurement } from './recordingV2Measure'
 import { validRecordingV2Set } from './recordingV2Values'
 
 export type RecordingV2Detail = components['schemas']['RecordingV2Detail']
@@ -17,22 +18,20 @@ const validKey = (key: string): boolean => typeof key === 'string' && Array.from
 function group(exercise: DraftExercise, set: DraftSet): V2Set | null {
   if (!set || !validKey(set.recordKey) || !Number.isSafeInteger(set.setIndex) || set.setIndex < 1 ||
       typeof set.confirmed !== 'boolean' || !validRecordingV2Set(exercise, set)) return null
-  const weight = set.weightKg.trim()
-  const repetitions = set.reps.trim()
+  const measurement = measurementFromSet(exercise, set)
+  if (!measurement) return null
   const rpe = set.rpe.trim()
   return {
     recordKey: set.recordKey, exerciseEntryKey: exercise.exerciseEntryKey, setIndex: set.setIndex, confirmed: set.confirmed,
     ...(rpe ? { rpe } : {}),
-    measurement: { method: 'total', ...(weight ? { weightKg: weight } : {}), ...(repetitions ? { reps: Number(repetitions) } : {}) },
+    measurement,
   }
 }
 
 function sameSet(left: V2Set, right: V2Set): boolean {
-  const a = left.measurement; const b = right.measurement
   return left.recordKey === right.recordKey && left.exerciseEntryKey === right.exerciseEntryKey && left.setIndex === right.setIndex &&
-    left.confirmed === right.confirmed && left.rpe === right.rpe && a.method === b.method && a.weightKg === b.weightKg &&
-    a.reps === b.reps && a.bodyweightKg === b.bodyweightKg && a.adjustmentKg === b.adjustmentKg &&
-    a.left === undefined && a.right === undefined && b.left === undefined && b.right === undefined
+    left.confirmed === right.confirmed && left.rpe === right.rpe &&
+    measurementsEqual(left.measurement as V2Measurement, right.measurement as V2Measurement)
 }
 
 /**
@@ -91,7 +90,9 @@ export function prepareRecordingV2Batch(draft: RecordingDraft, remote: Recording
       const tombstone = remoteRemoved.get(set.recordKey)
       const previous = live || tombstone?.set
       if (previous && (previous.exerciseEntryKey !== exercise.exerciseEntryKey || previous.setIndex !== set.setIndex)) return failure('reconcile_required')
-      if (previous && previous.measurement.method !== 'total') return failure('unsupported')
+      if (previous && previous.measurement.method !== exerciseMeasure(exercise)) {
+        if (!set.dirty) return failure('reconcile_required')
+      }
       if (removedPosition === undefined) {
         if (tombstone) restoreRecordKeys.push(set.recordKey)
         if (!previous || !sameSet(mapped, previous)) sets.push(mapped)
@@ -143,7 +144,7 @@ export function rebaseAcknowledgedRecordingV2(draft: RecordingDraft, remote: Rec
       seenGroups.add(set.recordKey)
       const server = active.get(set.recordKey) || removed.get(set.recordKey)
       if (!server) return set.persisted ? null : { ...set }
-      if (server.exerciseEntryKey !== exercise.exerciseEntryKey || server.setIndex !== set.setIndex || server.measurement.method !== 'total') return null
+      if (server.exerciseEntryKey !== exercise.exerciseEntryKey || server.setIndex !== set.setIndex || server.measurement.method !== exerciseMeasure(exercise)) return null
       const mapped = group(exercise, set)
       const sameLocation = isRemoved ? removed.has(set.recordKey) : active.has(set.recordKey)
       return { ...set, persisted: true, dirty: !(sameLocation && mapped && sameSet(mapped, server)) }

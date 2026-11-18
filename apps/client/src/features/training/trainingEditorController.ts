@@ -9,6 +9,8 @@ import {
   removeRecordedSetV2,
   restoreUnsubmittedSet,
   restoreDraft,
+  setExerciseMeasure,
+  setSideState,
   switchMode,
   updateSet,
   type InputField,
@@ -16,7 +18,9 @@ import {
   type RecordingDraft,
   type RecordingMode,
   type SetKind,
+  type V2Measure,
 } from './recording'
+import type { SideState, V2SideName } from './recordingV2Measure'
 import { DraftController, todayInTimezone, type AuthLease, type DraftStorage, type LocalDraftStatus } from './draftStorage'
 import { DraftStageBusyError, DraftStageStorageError, supportsVersionedDraft, VersionedEditorDraft } from './versionedEditorDraft'
 import type { PreparedFreeSessionRequest, PreparedSetsRequest, RecordingApi, RecordingAuth, ScopedSessionDetail, ScopedRecordingV2Detail, ScopedRecordingV2Receipt } from './recordingApi'
@@ -709,6 +713,25 @@ export class TrainingEditorController {
       try {
         this.findGroup(this.local.draft, exerciseEntryKey, recordKey)
         return await this.mutate(draft => updateSet(draft, exerciseEntryKey, recordKey, field, value))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  /** Change the meaning of kilograms for one custom exercise. Numbers already typed stay in place. */
+  async setMeasure(exerciseEntryKey: string, measure: V2Measure): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        if (!this.local.draft.exercises.some(item => item.exerciseEntryKey === exerciseEntryKey)) return this.invalid()
+        return await this.mutate(draft => setExerciseMeasure(draft, exerciseEntryKey, measure))
+      } catch (error) { return this.failure(error) }
+    })
+  }
+
+  async setGroupSide(exerciseEntryKey: string, recordKey: string, side: V2SideName, state: SideState): Promise<EditorResult> {
+    return this.withOwnership(async () => {
+      try {
+        this.findGroup(this.local.draft, exerciseEntryKey, recordKey)
+        return await this.mutate(draft => setSideState(draft, exerciseEntryKey, recordKey, side, state))
       } catch (error) { return this.failure(error) }
     })
   }
